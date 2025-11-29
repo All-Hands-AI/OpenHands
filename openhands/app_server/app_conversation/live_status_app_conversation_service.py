@@ -579,29 +579,22 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
             usage_id='agent',
         )
         # MCP Config
-        mcp_config = {}
+        mcp_config: dict[str, Any] = {}
         if self.web_url:
-            mcp_url = f"{replace_localhost_hostname_for_docker(self.web_url)}/mcp/mcp"
+            # Create MCPConfig
+            mcp_url = f"{self.web_url}/mcp/mcp"
+            mcp_config = {
+                "default": {
+                    "url": mcp_url,
+                }
+            }
 
+            # Add an API Key if present
             mcp_api_key = await self.user_context.get_mcp_api_key()
             if mcp_api_key:
-                mcp_config = {
-                    "default": {
-                        # The URL will differ depending on the type of sandbox.
-                        # If we have a web host, we use that
-                        # Else if the sandbox is docker, we use host.docker.internal and the port
-                        # Else if the sandbox is process we use localhost and the port
-                        # Else no config
-                        "url": mcp_url,
-                        # "url": "https://llm-proxy.staging.all-hands.dev/mcp",
-                        "headers": {
-                        #    "x-litellm-api-key": f"Bearer {user.llm_api_key}",
-                            "X-Session-API-Key": mcp_api_key,
-                            # IF we are saas, we need an API key for the user here...
-                        }
-                    }
+                mcp_config["default"]["headers"] = {
+                    "X-Session-API-Key": mcp_api_key,
                 }
-
 
         # The agent gets passed initial instructions
         # Select agent based on agent_type
