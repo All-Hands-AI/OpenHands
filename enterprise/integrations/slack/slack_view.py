@@ -1,8 +1,15 @@
 from dataclasses import dataclass
+from uuid import uuid4
 
 from integrations.models import Message
 from integrations.slack.slack_types import SlackViewInterface, StartingConvoException
-from integrations.utils import CONVERSATION_URL, get_final_agent_observation
+from integrations.slack.slack_v1_callback_processor import SlackV1CallbackProcessor
+from integrations.resolver_user_context import ResolverUserContext
+from integrations.utils import (
+    CONVERSATION_URL,
+    get_final_agent_observation,
+    get_user_v1_enabled_setting,
+)
 from jinja2 import Environment
 from slack_sdk import WebClient
 from storage.slack_conversation import SlackConversation
@@ -10,11 +17,20 @@ from storage.slack_conversation_store import SlackConversationStore
 from storage.slack_team_store import SlackTeamStore
 from storage.slack_user import SlackUser
 
+from openhands.app_server.app_conversation.app_conversation_models import (
+    AppConversationStartRequest,
+    AppConversationStartTaskStatus,
+    SendMessageRequest,
+)
+from openhands.app_server.config import get_app_conversation_service
+from openhands.app_server.services.injector import InjectorState
+from openhands.app_server.user.specifiy_user_context import USER_CONTEXT_ATTR
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
 from openhands.events.serialization.event import event_to_dict
-from openhands.integrations.provider import ProviderHandler
+from openhands.integrations.provider import ProviderHandler, ProviderType
+from openhands.sdk import TextContent
 from openhands.server.services.conversation_service import (
     create_new_conversation,
     setup_init_conversation_settings,
@@ -25,7 +41,7 @@ from openhands.storage.data_models.conversation_metadata import ConversationTrig
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 # =================================================
-# SECTION: Github view types
+# SECTION: Slack view types
 # =================================================
 
 
@@ -179,6 +195,20 @@ class SlackNewConversationView(SlackViewInterface):
             )
             await slack_conversation_store.create_slack_conversation(slack_conversation)
 
+    def _create_slack_v1_callback_processor(self) -> SlackV1CallbackProcessor:
+        """Create a SlackV1CallbackProcessor for V1 conversation handling."""
+        return SlackV1CallbackProcessor(
+            slack_view_data={
+                'channel_id': self.channel_id,
+                'message_ts': self.message_ts,
+                'thread_ts': self.thread_ts,
+                'team_id': self.team_id,
+                'slack_user_id': self.slack_user_id,
+            },
+            should_request_summary=True,
+            should_extract=self.should_extract,
+        )
+
     async def create_or_update_conversation(self, jinja: Environment) -> str:
         """
         Only creates a new conversation
@@ -187,6 +217,31 @@ class SlackNewConversationView(SlackViewInterface):
 
         provider_tokens = await self.saas_user_auth.get_provider_tokens()
         user_secrets = await self.saas_user_auth.get_secrets()
+
+        # Check if V1 conversations are enabled for this user
+        v1_enabled = await get_user_v1_enabled_setting(
+            self.slack_to_openhands_user.keycloak_user_id
+        )
+
+        if v1_enabled:
+            try:
+                # Use V1 app conversation service
+                await self._create_v1_conversation(jinja, provider_tokens, user_secrets)
+                return self.conversation_id
+
+            except Exception as e:
+                logger.warning(
+                    f'Error creating V1 conversation, falling back to V0: {e}'
+                )
+
+        # Use existing V0 conversation service
+        await self._create_v0_conversation(jinja, provider_tokens, user_secrets)
+        return self.conversation_id
+
+    async def _create_v0_conversation(
+        self, jinja: Environment, provider_tokens, user_secrets
+    ) -> None:
+        """Create conversation using the legacy V0 system."""
         user_instructions, conversation_instructions = self._get_instructions(jinja)
 
         # Determine git provider from repository
@@ -214,7 +269,70 @@ class SlackNewConversationView(SlackViewInterface):
 
         self.conversation_id = agent_loop_info.conversation_id
         await self.save_slack_convo()
-        return self.conversation_id
+
+    async def _create_v1_conversation(
+        self, jinja: Environment, provider_tokens, user_secrets
+    ) -> None:
+        """Create conversation using the new V1 app conversation system."""
+
+        user_instructions, conversation_instructions = self._get_instructions(jinja)
+
+        # Generate a new conversation ID
+        self.conversation_id = str(uuid4())
+
+        # Create the initial message request
+        initial_message = SendMessageRequest(
+            role='user', content=[TextContent(text=user_instructions)]
+        )
+
+        # Create the Slack V1 callback processor
+        slack_callback_processor = self._create_slack_v1_callback_processor()
+
+        # Determine git provider from repository
+        git_provider = None
+        if self.selected_repo and provider_tokens:
+            provider_handler = ProviderHandler(provider_tokens)
+            repository = await provider_handler.verify_repo_provider(self.selected_repo)
+            git_provider = ProviderType(repository.git_provider.value)
+
+        # Get the app conversation service and start the conversation
+        injector_state = InjectorState()
+
+        # Create the V1 conversation start request with the callback processor
+        start_request = AppConversationStartRequest(
+            conversation_id=self.conversation_id,
+            system_message_suffix=conversation_instructions,
+            initial_message=initial_message,
+            selected_repository=self.selected_repo,
+            git_provider=git_provider,
+            title=f'Slack conversation from {self.slack_to_openhands_user.slack_display_name}',
+            trigger=ConversationTrigger.SLACK,
+            processors=[
+                slack_callback_processor
+            ],  # Pass the callback processor directly
+        )
+
+        # Set up the Slack user context for the V1 system
+        slack_user_context = ResolverUserContext(
+            keycloak_user_id=self.slack_to_openhands_user.keycloak_user_id,
+            git_provider_tokens=provider_tokens,
+            custom_secrets=user_secrets.custom_secrets if user_secrets else None,
+        )
+        setattr(injector_state, USER_CONTEXT_ATTR, slack_user_context)
+
+        async with get_app_conversation_service(
+            injector_state
+        ) as app_conversation_service:
+            async for task in app_conversation_service.start_app_conversation(
+                start_request
+            ):
+                if task.status == AppConversationStartTaskStatus.ERROR:
+                    logger.error(f'Failed to start V1 conversation: {task.detail}')
+                    raise RuntimeError(
+                        f'Failed to start V1 conversation: {task.detail}'
+                    )
+
+        await self.save_slack_convo()
 
     def get_callback_id(self) -> str:
         return f'slack_{self.channel_id}_{self.message_ts}'
