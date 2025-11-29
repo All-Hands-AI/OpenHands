@@ -57,6 +57,10 @@ class SetAuthCookieMiddleware:
                     await user_auth.get_user_id(),
                 )
 
+                # Note: Azure DevOps webhooks require manual setup by Project Administrators
+                # Unlike GitLab, Azure DevOps OAuth scopes for Service Hooks are "no longer public"
+                # and cannot be requested in OAuth apps. Webhooks must be created manually in Azure DevOps UI.
+
             if (
                 self._should_attach(request)
                 and not request.url.path.startswith('/api/email')
