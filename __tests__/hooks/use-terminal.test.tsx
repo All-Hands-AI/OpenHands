@@ -18,6 +18,47 @@ vi.mock("#/contexts/conversation-websocket-context", () => ({
   useConversationWebSocket: () => null,
 }));
 
+// Terminal/terminal-addon mocks must live at module scope. Vitest 4 hoists
+// vi.mock() factories above imports and emits warnings (errors in a future
+// release) for nested vi.hoisted()/vi.mock() calls, so these can't be declared
+// inside describe/beforeAll. vi.hoisted() keeps them referenceable from the
+// hoisted vi.mock() factories below.
+const mockTerminal = vi.hoisted(() => ({
+  loadAddon: vi.fn(),
+  open: vi.fn(),
+  write: vi.fn(),
+  writeln: vi.fn(),
+  dispose: vi.fn(),
+  element: document.createElement("div"),
+}));
+
+const mockFitAddon = vi.hoisted(() => ({
+  fit: vi.fn(),
+}));
+
+vi.mock("@xterm/xterm", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@xterm/xterm")>()),
+  Terminal: class {
+    loadAddon = mockTerminal.loadAddon;
+
+    open = mockTerminal.open;
+
+    write = mockTerminal.write;
+
+    writeln = mockTerminal.writeln;
+
+    dispose = mockTerminal.dispose;
+
+    element = mockTerminal.element;
+  },
+}));
+
+vi.mock("@xterm/addon-fit", () => ({
+  FitAddon: class {
+    fit = mockFitAddon.fit;
+  },
+}));
+
 function TestTerminalComponent() {
   const ref = useTerminal();
   return <div ref={ref} />;
