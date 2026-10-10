@@ -437,7 +437,6 @@
     "remaining_prerequisites": [
       "Genuine legacy/custom response-schema finish producer for absent/nonstring/unrecognized status fallback; genuine failed producer carrying finish summary for summary-retention boundary."
     ],
-    "full_original_private_seven_blocks_reconciled": false,
     "costs": {
       "automation_run_reported_cost_total": 0.004847154,
       "cost_limit_enforced_by_this_verification": false,
@@ -516,7 +515,6 @@
   "limits": {
     "full_delta_complete": false,
     "baseline_advanced": false,
-    "original_macos_scheduler_key_delivery_proven": false,
     "OpenHands_Cloud_backend_verified": false,
     "complete_provider_billing_or_aggregate_budget_enforcement_proven": false,
     "local_followup_independently_inspected_cloud_images": false
