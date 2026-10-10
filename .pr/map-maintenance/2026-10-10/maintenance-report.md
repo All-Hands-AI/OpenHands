@@ -2,6 +2,8 @@ I'm an AI agent (Codex) helping Engel Nyst (@enyst) with project work.
 
 # Delta maintenance: partial, baseline retained
 
+Follow-up reconciled 2026-10-11: the completed Codex cloud session **Fix Codex DeepSeek Key Usage** independently exercised genuine model paths on the same product revision. Its separate 45 scopes yielded **40 pass, 4 fail, 1 blocked**. See [cloud results](deepseek-cloud-results.md) and [transcribed receipts](deepseek-cloud-receipts.json). These do not replace or add to the original 82 macOS scopes below. The Linux Local Logs-dialog closure check now passes; full-delta coverage and the accepted BASE remain unchanged.
+
 BASE: 553d4519113192a80fb18376fdb6c1e39fa06387.
 TARGET: 5a8c3832154b14d2dad651801c0ab3f74c96f02e.
 
@@ -38,9 +40,9 @@ These scopes touch 60 distinct IDs across F22/F24/F26; that is not 60 complete-I
 
 ## Closure checks, prerequisites and limits
 
-All 89 genuine map references were audited in their owning repositories, including SDK and automation. Automation#551 is now verified fixed at the actual Canvas pin1.19.3 ([fix#563](https://github.com/OpenHands/automation/pull/563)). F23.run-logs-modal's closed Canvas#18173/fix#18175 still needs a genuine long-output desktop/phone Logs-dialog drive; its old expectation is retained. Open linked defects are not waived or duplicated.
+All 89 genuine map references were audited in their owning repositories, including SDK and automation. Automation#551 is now verified fixed at the actual Canvas pin1.19.3 ([fix#563](https://github.com/OpenHands/automation/pull/563)). At the end of this original macOS pass, F23.run-logs-modal's closed Canvas#18173/fix#18175 still needed a genuine long-summary-plus-metadata drive. The [subsequent independent Linux Local verification](deepseek-cloud-results.md) supplies that check at desktop, phone and short heights, so its stale Known failure note is removed. Open linked defects are not waived or duplicated.
 
-Model spend is USD0 of USD10, with zero calls, validation requests or real model-key reads. Scheduled DEEPSEEK_API_KEY is absent; a user-configured project key source was recorded in the previous run memory and was not opened or used in this run. Genuine model paths remain blocked until aggregate parent/child/title/planner/judge and automation producer costs can be bounded confidently. No provider substitution or mocked LLM response was used as live proof.
+The original macOS pass spent USD0 of USD10, with zero calls, validation requests or real model-key reads. It reported no scheduled DEEPSEEK_API_KEY; a user-configured project key source recorded in previous memory was not opened or used. Its genuine model paths were blocked on aggregate parent/child/title/planner/judge and automation producer costs. The later cloud session did have a working supplied key and exercised real DeepSeek-backed forms, prompt/plugin runs, task outcomes, exports, debug launch and long logs. This removes those prerequisite blocks only for its explicitly reported Linux Local scopes. Its partial SDK cost receipts do not establish comprehensive spend accounting or enforcement of the scheduled automation's USD10 cap, and do not establish key availability in the original macOS scheduler. Neither pass used mocked LLM responses as live proof.
 
 Cloud checks need genuine accounts/permissions: organization handback with multiple accessible organizations, enterprise setup-state/tour entitlements, a member without manage_automations and two organizations for Git Sync conflict. Native/Docker/embedded and other affected recipes not reached by these serial stacks remain unverified. F24.error-state specifically needs a genuine non-404 status failure while automation health remains healthy.
 
@@ -54,4 +56,4 @@ Map check745 IDs/27 families, coverage31 routes/29 feature directories (document
 
 All finished owned stacks were stopped with the CLI, their recorded PIDs were absent and ports were checked under host execution (sandbox EPERM is not connection-refused proof). Drafts, automations and materialized script tests were removed, Git Sync was disabled/cleared, and original media survived stop. One peer browser-tab closure recovered on a healthy doctored stack; origin is unconfirmed and no Canvas defect is inferred. Primary checkout and other agents' resources were preserved. Automatic approval review rejected the first F22 peer's UI deletion of OPENHANDS_URL because evidence that it was created by this run was insufficient. That app-origin fixture remains solely in the stopped private run home; no live service or user-shared resource remains. It was not deleted through a workaround. Private keys, homes, raw logs, snapshots and ledgers are excluded from this PR.
 
-No baseline advancement is proposed. The accepted BASE remains unchanged because the full delta, distinct entry points and F23 closure retest are unfinished.
+No baseline advancement is proposed. The accepted BASE remains unchanged because the full delta and distinct entry points are unfinished. F23's long-summary closure check now passes on the pinned Linux Local runtime; macOS and other backend/platform boundaries remain unverified by that follow-up.
