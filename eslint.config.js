@@ -402,8 +402,12 @@ export default [
   // read imported constants, so its documented narrow exceptions remain.
   // no-raw-colors starts at warn while existing palette colors are migrated
   // and checked across themes (#18004). Keep verified plugin/config tokens exempt below.
-  // Next: finish that migration before promoting to error, then define component
-  // contracts for no-restyle and audit dynamic styles for no-inline-styles.
+  // no-restyle first protects divider/toggle appearances; layout remains public,
+  // and ToggleSwitch callers can dim the control for disabled/pending states.
+  // Carets expose layout and text color; their padding/shape stay internal.
+  // Stateful carets own rotation through isOpen; generic icons retain orientation.
+  // Next: finish the color migration before promoting to error; define contracts
+  // for the remaining UI primitives and audit dynamic styles for no-inline-styles.
   // 0.2.0 also improves render-prop, destructuring, barrel-export, and custom
   // animation recognition. Vue/Svelte support adds no new rule names or parsers
   // to this React project; keep this upgrade separate from rule activation.
@@ -412,7 +416,37 @@ export default [
     plugins: { shadcn: shadcnPlugin },
     rules: {
       "shadcn/no-arbitrary-values": "warn",
-      "shadcn/no-restyle": "off",
+      "shadcn/no-restyle": [
+        "error",
+        {
+          // Adopt only primitives whose appearance contract is already settled.
+          // Typography, menus, and Pre need a separate design audit.
+          componentImports: [
+            "^#/ui/(divider|toggle-switch|combobox-caret)$",
+            // 0.2.0 needs the existing re-export path matched explicitly too.
+            "^#/components/features/automations/toggle-switch$",
+          ],
+          allow: ["layout"],
+          contracts: [
+            // The button wrapper can express caller-owned disabled/pending state.
+            // ToggleSwitchVisual still owns the track/thumb color, shape, and effects.
+            { pattern: "^ToggleSwitch$", allow: ["layout", "opacity"] },
+            {
+              pattern: "^ComboboxCaretIcon$",
+              allow: ["layout", "text-color"],
+              message:
+                "Keep caret classes to layout and text color; the SVG owns its appearance.",
+            },
+            {
+              pattern: "^ComboboxCaret(Button|Inline)$",
+              allow: ["layout", "text-color"],
+              deny: ["rotate-*"],
+              message:
+                "Use isOpen for caret rotation; keep caller classes to layout and text color.",
+            },
+          ],
+        },
+      ],
       "shadcn/no-raw-colors": [
         "warn",
         {
@@ -432,7 +466,10 @@ export default [
           ],
         },
       ],
-      "shadcn/no-inline-styles": "off",
+      // Warning-only while measured layout, portal placement, accessibility
+      // helpers and renderer interfaces are reviewed by their owners. The rule
+      // permits CSS variables itself; no broad property/color exception is needed.
+      "shadcn/no-inline-styles": "warn",
       "shadcn/require-static-classes": [
         "error",
         { componentImports: ["^#/ui(/|$)"] },
@@ -451,9 +488,18 @@ export default [
     },
   },
   {
-    // Primitive implementations own variant helpers that this rule cannot
-    // resolve. Token and unknown-class checks still apply to their definitions.
+    // Primitive implementations own appearance and variant helpers. Token and
+    // unknown-class checks still apply to their definitions.
     files: ["src/ui/**/*.{ts,tsx}"],
-    rules: { "shadcn/require-static-classes": "off" },
+    rules: {
+      "shadcn/no-restyle": "off",
+      "shadcn/require-static-classes": "off",
+    },
+  },
+  {
+    // Public embedding API: this owner must forward arbitrary caller styles.
+    // Its opaque object cannot be converted to custom-properties-only styles.
+    files: ["src/components/providers/agent-server-ui-root.tsx"],
+    rules: { "shadcn/no-inline-styles": "off" },
   },
 ];
