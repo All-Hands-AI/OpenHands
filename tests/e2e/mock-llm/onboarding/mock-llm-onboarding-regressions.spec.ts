@@ -5,7 +5,11 @@ import {
   showOnboarding,
   waitForOnboardingStep,
 } from "../../support/onboarding-helpers";
-import { routeSessionApiKey, SESSION_API_KEY } from "../utils/mock-llm-helpers";
+import {
+  BACKEND_URL,
+  routeSessionApiKey,
+  SESSION_API_KEY,
+} from "../utils/mock-llm-helpers";
 
 test.describe.configure({ mode: "serial" });
 
@@ -108,5 +112,67 @@ test.describe("onboarding recent regressions", () => {
       page.getByTestId("openhands-account-help"),
       "OpenHands account helper should be hidden for OpenAI defaults",
     ).toBeHidden();
+  });
+
+  // Re-onboarding coverage for profile-first onboarding (#18214):
+  // When an active profile has a custom Base URL and key, onboarding
+  // pre-fills both and enters All view.
+  test("re-onboarding with an active profile preserves custom base URL and key", async ({
+    page,
+    request,
+  }) => {
+    const profileName = `test-reonboard-${Date.now()}`;
+    const customBaseUrl = "http://localhost:19118/v1";
+    const customKey = "test-reonboard-key";
+
+    await request.post(`${BACKEND_URL}/api/profiles`, {
+      headers: {
+        "X-Session-API-Key": SESSION_API_KEY,
+        "Content-Type": "application/json",
+      },
+      data: {
+        name: profileName,
+        llm: {
+          model: "openai/gpt-4o-mini",
+          base_url: customBaseUrl,
+          api_key: customKey,
+        },
+        include_secrets: true,
+      },
+    });
+
+    await request.post(
+      `${BACKEND_URL}/api/profiles/${encodeURIComponent(profileName)}/activate`,
+      {
+        headers: { "X-Session-API-Key": SESSION_API_KEY },
+      },
+    );
+
+    try {
+      await showOnboarding(page, {
+        apiKey: SESSION_API_KEY,
+        beforeGoto: () => routeSessionApiKey(page),
+      });
+
+      await advanceOnboardingToLlmStep(page);
+
+      const baseUrlInput = page.getByTestId("base-url-input");
+      await expect(baseUrlInput).toHaveValue(customBaseUrl, {
+        timeout: 10_000,
+      });
+      const apiKeyInput = page.getByTestId("llm-api-key-input");
+      await expect(apiKeyInput).toHaveAttribute("placeholder", "<hidden>");
+    } finally {
+      try {
+        await request.delete(
+          `${BACKEND_URL}/api/profiles/${encodeURIComponent(profileName)}`,
+          {
+            headers: { "X-Session-API-Key": SESSION_API_KEY },
+          },
+        );
+      } catch {
+        // best-effort
+      }
+    }
   });
 });

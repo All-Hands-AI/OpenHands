@@ -218,15 +218,22 @@ export function LlmSettingsScreen({
         return schemaView;
       }
 
-      const currentModel = currentSettings.llm_model ?? "";
-      const trimmedBaseUrl = currentSettings.llm_base_url?.trim() ?? "";
+      const currentModel =
+        typeof initialValueOverrides?.["llm.model"] === "string"
+          ? initialValueOverrides["llm.model"]
+          : (currentSettings.llm_model ?? "");
+      const rawBaseUrl =
+        typeof initialValueOverrides?.["llm.base_url"] === "string"
+          ? initialValueOverrides["llm.base_url"]
+          : (currentSettings.llm_base_url ?? "");
+      const trimmedBaseUrl = rawBaseUrl.trim();
       const hasCustomBaseUrl =
         trimmedBaseUrl.length > 0 &&
         !isProviderDefaultBaseUrl(currentModel, trimmedBaseUrl);
 
       return hasCustomBaseUrl ? "all" : "basic";
     },
-    [],
+    [initialValueOverrides],
   );
 
   const buildHeader = React.useCallback(

@@ -29,7 +29,9 @@ const saveAgentProfileMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
 const getAgentProfileMock = vi.hoisted(() =>
   vi.fn().mockResolvedValue({ profile: { id: "default-profile-id" } }),
 );
-const activateAgentProfileMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
+const activateAgentProfileMock = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({}),
+);
 let captureMock: MockInstance<typeof telemetry.trackEvent>;
 
 // Both the backend status badge in the embedded edit form and the
@@ -52,7 +54,9 @@ vi.mock("@openhands/typescript-client/clients", () => ({
     return {
       saveAgentProfile: vi.fn((...args) => saveAgentProfileMock(...args)),
       getAgentProfile: vi.fn((...args) => getAgentProfileMock(...args)),
-      activateAgentProfile: vi.fn((...args) => activateAgentProfileMock(...args)),
+      activateAgentProfile: vi.fn((...args) =>
+        activateAgentProfileMock(...args),
+      ),
     };
   }),
 }));
@@ -61,6 +65,13 @@ vi.mock("#/api/cloud/organization-service.api", () => ({
   getCurrentCloudApiKey: vi.fn().mockResolvedValue({
     orgId: null,
     isLegacyKey: true,
+  }),
+}));
+
+vi.mock("#/hooks/query/use-llm-profiles", () => ({
+  useLlmProfiles: () => ({
+    data: { profiles: [], active_profile: null },
+    isLoading: false,
   }),
 }));
 
@@ -711,9 +722,9 @@ describe("OnboardingModal", () => {
     expect(llmSettingsScreenMock).toHaveBeenCalledTimes(1);
     expect(llmSettingsScreenMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        initialValueOverrides: {
+        initialValueOverrides: expect.objectContaining({
           "llm.model": ONBOARDING_DEFAULT_LLM_MODEL,
-        },
+        }),
       }),
     );
   });
@@ -729,9 +740,9 @@ describe("OnboardingModal", () => {
     expect(llmSettingsScreenMock).toHaveBeenCalledTimes(1);
     expect(llmSettingsScreenMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        initialValueOverrides: {
+        initialValueOverrides: expect.objectContaining({
           "llm.model": "openhands/gpt-5.2",
-        },
+        }),
       }),
     );
   });
@@ -1053,7 +1064,7 @@ describe("OnboardingModal", () => {
     );
     expect(
       helloInput.compareDocumentPosition(recommendations) &
-      Node.DOCUMENT_POSITION_FOLLOWING,
+        Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
       within(recommendations).getByTestId(

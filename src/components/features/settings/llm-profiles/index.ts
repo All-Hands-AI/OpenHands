@@ -6,3 +6,9 @@ export { ProfileActionsMenu } from "./profile-actions-menu";
 export { RenameProfileModal } from "./rename-profile-modal";
 export { DeleteProfileModal } from "./delete-profile-modal";
 export { ProfileNameInput } from "./profile-name-input";
+export {
+  profileToFormValues,
+  freshProfileFormValues,
+  buildProfileLlmConfig,
+  type BuildProfileLlmConfigOptions,
+} from "./profile-form-helpers";
