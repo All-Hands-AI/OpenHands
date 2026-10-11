@@ -3,6 +3,7 @@ import type { MockInstance } from "vitest";
 import { getAcpProvider as getClientAcpProvider } from "@openhands/typescript-client";
 import { CANVAS_UI_CLIENT_TOOL_NAME } from "#/constants/canvas-ui";
 import { LAUNCH_CHILD_CONVERSATION_TOOL_NAME } from "#/constants/child-conversation";
+import { AUTOMATION_FORM_UPDATE_TOOL_NAME } from "#/constants/automation-form";
 
 import {
   ACP_SERVER_TAG_KEY,
@@ -15,6 +16,7 @@ import {
   getDefaultConversationTitle,
   parseRuntimeServicesInfo,
   toAppConversation,
+  toHooksResponse,
   type DirectConversationInfo,
 } from "#/api/agent-server-adapter";
 import SettingsService from "#/api/settings-service/settings-service.api";
@@ -854,6 +856,56 @@ describe("buildStartConversationRequest", () => {
         LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
       ]);
     });
+
+    it("adds automation setup tags to local conversation requests", () => {
+      const payload = buildStartConversationRequest({
+        settings: DEFAULT_SETTINGS,
+        automationSetup: true,
+        automationSetupTags: {
+          automationdraftid: "draft-1",
+          automationmaterializeddraftid: "auto-1",
+        },
+      });
+
+      expect(payload.tags).toEqual(
+        expect.objectContaining({
+          automationsetup: "draft",
+          automationdraftid: "draft-1",
+          automationmaterializeddraftid: "auto-1",
+          clientsource: "agentcanvas",
+        }),
+      );
+    });
+
+    it.each([
+      {
+        automationSetup: false,
+        expectedTools: [
+          CANVAS_UI_CLIENT_TOOL_NAME,
+          LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
+        ],
+      },
+      {
+        automationSetup: true,
+        expectedTools: [
+          CANVAS_UI_CLIENT_TOOL_NAME,
+          LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
+          AUTOMATION_FORM_UPDATE_TOOL_NAME,
+        ],
+      },
+    ])(
+      "builds client tools for automationSetup=$automationSetup",
+      ({ automationSetup, expectedTools }) => {
+        const payload = buildStartConversationRequest({
+          settings: DEFAULT_SETTINGS,
+          automationSetup,
+        });
+
+        expect(payload.client_tools.map((tool) => tool.name)).toEqual(
+          expectedTools,
+        );
+      },
+    );
 
     it("sends the client tool when resuming a conversation", () => {
       const payload = buildStartConversationRequest({
@@ -2214,5 +2266,121 @@ describe("buildStartConversationRequestWithEncryptedSettings", () => {
     expect(
       payload.agent_settings?.agent_context?.system_message_suffix ?? "",
     ).not.toContain("ROUTE_AT_CONVERSATION_START");
+  });
+});
+
+describe("toHooksResponse", () => {
+  // Prompt and agent hooks reach Canvas over the wire with `prompt`/`system_prompt`,
+  // which the typed client's `HookDefinition` does not declare yet.
+  const wireHook = (hook: Record<string, unknown>) =>
+    hook as unknown as HookConfig["stop"][number]["hooks"][number];
+
+  it("carries a prompt hook's prompt through", () => {
+    const response = toHooksResponse(
+      makeHookConfig({
+        stop: [
+          {
+            matcher: "*",
+            hooks: [
+              wireHook({
+                type: "prompt",
+                command: "",
+                prompt: "QA_F07 prompt hook",
+                system_prompt: null,
+                timeout: 60,
+                async: false,
+              }),
+            ],
+          },
+        ],
+      }),
+    );
+
+    expect(response.hooks).toEqual([
+      {
+        event_type: "stop",
+        matchers: [
+          {
+            matcher: "*",
+            hooks: [
+              {
+                type: "prompt",
+                command: "",
+                prompt: "QA_F07 prompt hook",
+                timeout: 60,
+                async: false,
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+  });
+
+  it("carries an agent hook's system_prompt through", () => {
+    const response = toHooksResponse(
+      makeHookConfig({
+        session_start: [
+          {
+            matcher: "*",
+            hooks: [
+              wireHook({
+                type: "agent",
+                command: "",
+                prompt: null,
+                system_prompt: "QA_F07 agent hook",
+                timeout: 60,
+                async: false,
+              }),
+            ],
+          },
+        ],
+      }),
+    );
+
+    expect(response.hooks).toEqual([
+      {
+        event_type: "session_start",
+        matchers: [
+          {
+            matcher: "*",
+            hooks: [
+              {
+                type: "agent",
+                command: "",
+                system_prompt: "QA_F07 agent hook",
+                timeout: 60,
+                async: false,
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+  });
+
+  it("keeps command hooks unchanged", () => {
+    const response = toHooksResponse(
+      makeHookConfig({
+        pre_tool_use: [
+          {
+            matcher: "terminal",
+            hooks: [{ type: HookType.COMMAND, command: "true", timeout: 10 }],
+          },
+        ],
+      }),
+    );
+
+    expect(response.hooks).toEqual([
+      {
+        event_type: "pre_tool_use",
+        matchers: [
+          {
+            matcher: "terminal",
+            hooks: [{ type: HookType.COMMAND, command: "true", timeout: 10 }],
+          },
+        ],
+      },
+    ]);
   });
 });

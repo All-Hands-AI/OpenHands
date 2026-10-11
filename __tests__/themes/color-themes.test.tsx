@@ -1,6 +1,7 @@
 import { act, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { AgentServerUIRoot } from "#/components/providers/agent-server-ui-root";
+import { AGENT_SERVER_UI_DEFAULT_CSS_VARIABLES } from "#/styles/agent-server-ui-style-scope";
 import {
   AVAILABLE_COLOR_THEMES,
   COLOR_THEMES,
@@ -8,6 +9,48 @@ import {
 } from "#/themes/color-themes";
 
 describe("color themes", () => {
+  // @spec MCP-004 — Form feedback follows readable theme text roles
+  it.each(Object.entries(COLOR_THEMES))(
+    "keeps small form feedback readable on the %s modal surface",
+    (_key, theme) => {
+      // Resolve the shipped palette, including stylesheet-owned defaults.
+      const variables: Record<string, string> = {
+        ...AGENT_SERVER_UI_DEFAULT_CSS_VARIABLES,
+        ...theme.scale,
+        ...theme.tokens,
+      };
+      const resolve = (name: string): string => {
+        const value = variables[name];
+        expect(value, `Missing theme token ${name}`).toBeDefined();
+        const reference = /^var\((--[\w-]+)\)$/.exec(value);
+        return reference ? resolve(reference[1]) : value;
+      };
+      const luminance = (hex: string): number => {
+        const channels = [1, 3, 5].map((offset) => {
+          const channel =
+            Number.parseInt(hex.slice(offset, offset + 2), 16) / 255;
+          return channel <= 0.04045
+            ? channel / 12.92
+            : ((channel + 0.055) / 1.055) ** 2.4;
+        });
+        return (
+          channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722
+        );
+      };
+      const surface = luminance(resolve("--oh-color-base-secondary"));
+
+      for (const role of ["--oh-feedback-error", "--oh-feedback-success"]) {
+        const ink = luminance(resolve(role));
+        const ratio =
+          (Math.max(ink, surface) + 0.05) / (Math.min(ink, surface) + 0.05);
+        expect(
+          ratio,
+          `${role} against the modal surface`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+    },
+  );
+
   afterEach(() => {
     document
       .querySelectorAll("style[data-theme-test]")
@@ -29,6 +72,29 @@ describe("color themes", () => {
     const style = getComputedStyle(screen.getByTestId("consumer-scope"));
     expect(style.getPropertyValue("--oh-color-primary")).toBe("#123456");
     expect(style.getPropertyValue("--oh-radius")).toBe("12px");
+  });
+  // @spec MCP-004 — Form feedback follows readable theme text roles
+  it("preserves host feedback colors when the selected palette changes", () => {
+    const overrides = {
+      "--oh-feedback-error": "#672727",
+      "--oh-feedback-success": "#24542d",
+    } as const;
+    render(
+      <AgentServerUIRoot
+        data-testid="feedback-scope"
+        styleOverrides={overrides}
+      >
+        Canvas
+      </AgentServerUIRoot>,
+    );
+
+    act(() => applyColorTheme("light-plus"));
+
+    const style = getComputedStyle(screen.getByTestId("feedback-scope"));
+    for (const [token, value] of Object.entries(overrides)) {
+      expect(style.getPropertyValue(token)).toBe(value);
+    }
+    document.getElementById("oh-color-theme-override")?.remove();
   });
   it("includes OpenHands-Neo as a neutral-based theme with white button tokens", () => {
     const neo = COLOR_THEMES["openhands-neo"];
