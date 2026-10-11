@@ -40,7 +40,10 @@ candidate. Sources, roughly in order of yield:
    controls, and anything the agent can drive through client tools
    (`canvas_ui_control`).
 5. **Keyboard shortcuts**: grep `keydown`, `useHotkeys`, `metaKey`, `ctrlKey` in
-   `src/`. A shortcut is an entry point.
+   `src/`. A shortcut is an entry point. When it reads `event.repeat` (a held
+   key must not fire twice) or needs a modifier held across a click, drive it
+   with `browser key down <Key> [--repeat N]` and `browser key up <Key>`
+   (`browser press` sends one keydown and keyup).
 6. **Backends and modes**: local vs Cloud backend, public vs local auth, ACP
    agents, partial stacks (`agent-canvas --help`), Electron, Docker, and the
    embeddable library (`src/index.ts` / `build:lib`).

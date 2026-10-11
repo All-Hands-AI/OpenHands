@@ -24,6 +24,9 @@ export const AGENT_SERVER_UI_DEFAULT_CSS_VARIABLES = {
   "--oh-color-base-secondary": "var(--cool-grey-925)",
   "--oh-color-danger": "#e76a5e",
   "--oh-color-success": "#a5e75e",
+  // @spec MCP-004 — Form feedback follows readable theme text roles
+  "--oh-feedback-error": "var(--oh-color-danger)",
+  "--oh-feedback-success": "var(--oh-color-success)",
   "--oh-color-basic": "var(--cool-grey-400)",
   "--oh-color-tertiary": "var(--cool-grey-800)",
   "--oh-color-tertiary-light": "var(--cool-grey-300)",
