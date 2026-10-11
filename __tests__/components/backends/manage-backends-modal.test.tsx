@@ -887,15 +887,87 @@ const cloudBackend: Backend = {
 // these assert behavior unique to each extracted component, rendered without
 // ActiveBackendProvider so no seeded-backend health probe interferes.
 describe("BackendVersion", () => {
+  const localTestBackend: Backend = {
+    id: "backend-local-test",
+    name: "My Local",
+    host: "http://localhost:3000",
+    apiKey: "test-token",
+    kind: "local",
+  };
+
   it("renders no version badge and skips the probe for a non-local backend", () => {
     // The version probe is gated on `kind === "local"`, so a cloud backend
-    // never fetches or shows a version.
+    // never fetches or shows a version or execution mode badge.
     renderInQueryClient(<BackendVersion backend={cloudBackend} />);
 
     expect(
       screen.queryByTestId(`manage-backends-version-${cloudBackend.name}`),
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId(`manage-backends-mode-${cloudBackend.name}`),
+    ).not.toBeInTheDocument();
     expect(getServerInfoMock).not.toHaveBeenCalled();
+  });
+
+  // @spec BM-004 — Display active backend execution runtime
+  it("renders mode badge when local backend reports execution_runtime docker", async () => {
+    getServerInfoMock.mockResolvedValue({
+      version: "1.52.0",
+      execution_runtime: "docker",
+    });
+
+    renderInQueryClient(<BackendVersion backend={localTestBackend} />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId(`manage-backends-version-${localTestBackend.name}`),
+      ).toBeInTheDocument();
+    });
+
+    const modeBadge = screen.getByTestId(
+      `manage-backends-mode-${localTestBackend.name}`,
+    );
+    expect(modeBadge).toBeInTheDocument();
+  });
+
+  // @spec BM-004 — Display active backend execution runtime
+  it("renders mode badge when local backend reports execution_runtime local", async () => {
+    getServerInfoMock.mockResolvedValue({
+      version: "1.52.0",
+      execution_runtime: "local",
+    });
+
+    renderInQueryClient(<BackendVersion backend={localTestBackend} />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId(`manage-backends-version-${localTestBackend.name}`),
+      ).toBeInTheDocument();
+    });
+
+    const modeBadge = screen.getByTestId(
+      `manage-backends-mode-${localTestBackend.name}`,
+    );
+    expect(modeBadge).toBeInTheDocument();
+  });
+
+  // @spec BM-004 — Display active backend execution runtime
+  it("renders only version badge and omits mode badge when execution_runtime is not reported", async () => {
+    getServerInfoMock.mockResolvedValue({
+      version: "1.52.0",
+    });
+
+    renderInQueryClient(<BackendVersion backend={localTestBackend} />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId(`manage-backends-version-${localTestBackend.name}`),
+      ).toBeInTheDocument();
+    });
+
+    expect(
+      screen.queryByTestId(`manage-backends-mode-${localTestBackend.name}`),
+    ).not.toBeInTheDocument();
   });
 });
 

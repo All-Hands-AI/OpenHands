@@ -17,7 +17,10 @@ import {
   getAcpProvider,
   resolveEffectiveAcpModel,
 } from "#/constants/acp-providers";
-import { getAgentServerClientOptions } from "./agent-server-client-options";
+import {
+  getAgentServerClientOptions,
+  type AgentServerClientOverrides,
+} from "./agent-server-client-options";
 import {
   getCachedAgentServerInfo,
   type AgentServerInfo,
@@ -216,10 +219,12 @@ export function parseRuntimeServicesInfo(
   return parsed;
 }
 
-async function fetchBackendServerInfo(): Promise<AgentServerInfo | null> {
+async function fetchBackendServerInfo(
+  options?: AgentServerClientOverrides,
+): Promise<AgentServerInfo | null> {
   let clientOptions: ReturnType<typeof getAgentServerClientOptions>;
   try {
-    clientOptions = getAgentServerClientOptions({ timeout: 3000 });
+    clientOptions = getAgentServerClientOptions({ timeout: 3000, ...options });
   } catch {
     return null;
   }
@@ -243,10 +248,10 @@ export async function fetchBackendRuntimeServicesInfo(): Promise<RuntimeServices
   );
 }
 
-export async function fetchBackendExecutionRuntime(): Promise<
-  AgentServerInfo["execution_runtime"]
-> {
-  const serverInfo = await fetchBackendServerInfo();
+export async function fetchBackendExecutionRuntime(
+  options?: AgentServerClientOverrides,
+): Promise<AgentServerInfo["execution_runtime"]> {
+  const serverInfo = await fetchBackendServerInfo(options);
   return serverInfo?.execution_runtime;
 }
 

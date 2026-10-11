@@ -47734,5 +47734,39 @@
     "ca": "Webhook source {{source}} already exists, so this automation will use the existing source.",
     "tr": "Webhook source {{source}} already exists, so this automation will use the existing source.",
     "uk": "Webhook source {{source}} already exists, so this automation will use the existing source."
+  },
+  "BACKEND$EXECUTION_MODE_LOCAL": {
+    "en": "Local",
+    "ja": "ローカル",
+    "zh-CN": "本地",
+    "zh-TW": "本機",
+    "ko-KR": "로컬",
+    "no": "Lokal",
+    "it": "Locale",
+    "pt": "Local",
+    "es": "Local",
+    "ar": "محلي",
+    "fr": "Local",
+    "tr": "Yerel",
+    "de": "Lokal",
+    "uk": "Локальний",
+    "ca": "Local"
+  },
+  "BACKEND$EXECUTION_MODE_DOCKER": {
+    "en": "Docker",
+    "ja": "Docker",
+    "zh-CN": "Docker",
+    "zh-TW": "Docker",
+    "ko-KR": "Docker",
+    "no": "Docker",
+    "it": "Docker",
+    "pt": "Docker",
+    "es": "Docker",
+    "ar": "Docker",
+    "fr": "Docker",
+    "tr": "Docker",
+    "de": "Docker",
+    "uk": "Docker",
+    "ca": "Docker"
   }
 }
