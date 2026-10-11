@@ -11,6 +11,20 @@ import {
   fetchCloudSkills,
 } from "./cloud/skills-service.api";
 import { getAgentServerClientOptions } from "./agent-server-client-options";
+import { getSkillKey } from "#/utils/skill-scope";
+
+function deduplicateSkills(skills: SkillInfo[]): SkillInfo[] {
+  const seen = new Set<string>();
+  const result: SkillInfo[] = [];
+  for (const skill of skills) {
+    const key = getSkillKey(skill);
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(skill);
+    }
+  }
+  return result;
+}
 
 function catalogEntryToSkillInfo(entry: SkillCatalogEntry): SkillInfo {
   return {
@@ -63,7 +77,7 @@ class SkillsService {
       // unreachable; fall back to the bundled public catalog alone.
     }
 
-    return [...localSkills, ...PUBLIC_SKILLS];
+    return deduplicateSkills([...localSkills, ...PUBLIC_SKILLS]);
   }
 
   /**

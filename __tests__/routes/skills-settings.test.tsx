@@ -626,4 +626,46 @@ Full skill body.`,
       ),
     );
   });
+
+  it("renders distinct cards when local and bundled skills share the same name, and filters them without duplicates", async () => {
+    const user = userEvent.setup();
+    const localSkill = buildSkill({
+      name: "skill-creator",
+      source: "/Users/test/.agents/skills/skill-creator/SKILL.md",
+      description: "Local custom skill definition",
+    });
+    const bundledSkill = buildSkill({
+      name: "skill-creator",
+      source: "public",
+      description: "Bundled skill definition from catalog",
+    });
+
+    vi.spyOn(SkillsService, "getSkills").mockResolvedValue([
+      localSkill,
+      bundledSkill,
+    ]);
+    vi.spyOn(SettingsService, "getSettings").mockResolvedValue(buildSettings());
+
+    renderSkillsSettingsScreen();
+
+    // With no source filter, exactly two distinct cards should be displayed
+    const cards = await screen.findAllByTestId("skill-card-skill-creator");
+    expect(cards).toHaveLength(2);
+
+    expect(
+      within(cards[0]).getByText(
+        "/Users/test/.agents/skills/skill-creator/SKILL.md",
+      ),
+    ).toBeInTheDocument();
+    expect(within(cards[1]).getByText("public")).toBeInTheDocument();
+
+    // Toggle search filter
+    const searchInput = screen.getByTestId("skills-search-input");
+    await user.type(searchInput, "skill-creator");
+
+    const filteredCards = await screen.findAllByTestId(
+      "skill-card-skill-creator",
+    );
+    expect(filteredCards).toHaveLength(2);
+  });
 });
