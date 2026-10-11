@@ -25,6 +25,7 @@ import { LLM_PROFILES_QUERY_KEYS } from "#/hooks/query/use-llm-profiles";
 import { useOpenAISubscriptionModels } from "#/hooks/query/use-llm-subscription-models";
 import { useSettings } from "#/hooks/query/use-settings";
 import { useAgentSettingsSchema } from "#/hooks/query/use-agent-settings-schema";
+import { useBackendsHealth } from "#/hooks/query/use-backends-health";
 import { LlmSettingsInputsSkeleton } from "#/components/features/settings/llm-settings/llm-settings-inputs-skeleton";
 import { deriveProfileNameFromModel } from "#/utils/derive-profile-name";
 import ProfilesService, {
@@ -65,16 +66,20 @@ interface ProfileSeed {
  * agent profiles first also runs the Agent Server's one-time backfill, which
  * turns an older install's raw LLM settings into an LLM profile named
  * `default` and points the `default` agent profile at it, without activating
- * it. The active profile comes first because a home launch runs it.
+ * it. The active profile comes first because a home launch runs it. The agent
+ * profiles are best-effort, as in `useApplyOnboardingAgentProfile`: an older
+ * backend without them still gets its active profile.
  */
 async function loadOnboardingProfile(): Promise<{
   profileName: string | null;
   config: Record<string, unknown>;
 }> {
-  const agentProfiles = await AgentProfilesService.listProfiles();
+  const agentProfiles = await AgentProfilesService.listProfiles().catch(
+    () => null,
+  );
   const llmProfiles = await ProfilesService.listProfiles();
   const existing = new Set(llmProfiles.profiles.map((profile) => profile.name));
-  const defaultAgentRef = agentProfiles.profiles.find(
+  const defaultAgentRef = agentProfiles?.profiles.find(
     (profile) => profile.name === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME,
   )?.llm_profile_ref;
   const profileName =
@@ -93,9 +98,10 @@ async function loadOnboardingProfile(): Promise<{
  * The profile the local LLM step edits (see `loadOnboardingProfile`). Raw LLM
  * settings are never the source. The seed is taken once per backend, because
  * the embedded form reads its initial values only when it mounts. Onboarding
- * mounts this step before a public-mode user adds the backend, so there is no
- * seed until a backend exists. A failed read is an error to retry, not a fresh
- * profile: a fresh form would drop an endpoint the Basic view hides.
+ * mounts this step before a public-mode user adds the backend, and often while
+ * a local Agent Server is still starting, so there is no seed until a backend
+ * exists and answers. A failed read is an error to retry, not a fresh profile:
+ * a fresh form would drop an endpoint the Basic view hides.
  */
 function useOnboardingProfileSeed(isLocalBackend: boolean): {
   seed: ProfileSeed | null;
@@ -103,7 +109,10 @@ function useOnboardingProfileSeed(isLocalBackend: boolean): {
   retry: () => void;
 } {
   const { backend, orgId } = useActiveBackend();
-  const enabled = isLocalBackend && !isNoBackend(backend);
+  const hasBackend = isLocalBackend && !isNoBackend(backend);
+  const healthByBackendId = useBackendsHealth(hasBackend ? [backend] : []);
+  const enabled =
+    hasBackend && healthByBackendId[backend.id]?.isConnected === true;
   const [seedState, setSeedState] = React.useState<{
     backendId: string;
     seed: ProfileSeed;

@@ -29,6 +29,8 @@ interface ScreenProps {
 const formState = vi.hoisted(() => ({
   backendKind: "local",
   backendId: "local-backend",
+  /** Whether the active backend's health probe reports it connected. */
+  isConnected: true as boolean | null,
   /** What the user changed in the form, as the coerced `llm` payload. */
   dirtyLlm: {} as Record<string, unknown>,
   view: "all" as "basic" | "advanced" | "all",
@@ -84,6 +86,16 @@ vi.mock("#/contexts/active-backend-context", () => ({
   useActiveBackend: () => ({
     backend: { kind: formState.backendKind, id: formState.backendId },
   }),
+}));
+
+vi.mock("#/hooks/query/use-backends-health", () => ({
+  useBackendsHealth: (backends: { id: string }[]) =>
+    Object.fromEntries(
+      backends.map((backend) => [
+        backend.id,
+        { isConnected: formState.isConnected },
+      ]),
+    ),
 }));
 
 vi.mock("#/api/profiles-service/profiles-service.api", () => ({
@@ -198,6 +210,7 @@ describe("SetupLlmStep", () => {
     vi.clearAllMocks();
     formState.backendKind = "local";
     formState.backendId = "local-backend";
+    formState.isConnected = true;
     formState.dirtyLlm = {};
     formState.view = "all";
     formState.screenProps = undefined;
@@ -347,6 +360,30 @@ describe("SetupLlmStep", () => {
     });
   });
 
+  it("waits for the backend to answer before reading its profiles", async () => {
+    // The step mounts with the rest of onboarding, often while a local Agent
+    // Server is still starting. Reading then would fail and leave an error.
+    formState.isConnected = null;
+    givenActiveProfile("previous", { model: "openai/previous-model" });
+    const { rerender } = renderWithProviders(
+      <SetupLlmStep onBack={vi.fn()} onNext={vi.fn()} />,
+    );
+
+    expect(screen.queryByTestId("llm-settings-screen")).toBeNull();
+    expect(screen.queryByTestId("onboarding-llm-load-error")).toBeNull();
+    expect(screen.getByTestId("onboarding-llm-next")).toBeDisabled();
+    expect(listProfiles).not.toHaveBeenCalled();
+    expect(listAgentProfiles).not.toHaveBeenCalled();
+
+    formState.isConnected = true;
+    rerender(<SetupLlmStep onBack={vi.fn()} onNext={vi.fn()} />);
+
+    await screen.findByTestId("llm-settings-screen");
+    expect(formState.screenProps?.initialValueOverrides).toMatchObject({
+      "llm.model": "openai/previous-model",
+    });
+  });
+
   it("keeps an unchanged existing profile instead of saving a copy", async () => {
     givenActiveProfile("my-deepseek", {
       model: "deepseek/deepseek-flash",
@@ -442,6 +479,19 @@ describe("SetupLlmStep", () => {
       "llm.model": "openai/legacy-model",
       "llm.base_url": "http://legacy.example/v1",
       "llm.api_key": "encrypted:legacy-key",
+    });
+  });
+
+  it("still edits the active profile when the agent profiles can't be listed", async () => {
+    // An older backend has no `/api/agent-profiles`.
+    listAgentProfiles.mockRejectedValue(new Error("Not Found"));
+    givenActiveProfile("previous", { model: "openai/previous-model" });
+    renderWithProviders(<SetupLlmStep onBack={vi.fn()} onNext={vi.fn()} />);
+
+    await screen.findByTestId("llm-settings-screen");
+    expect(screen.queryByTestId("onboarding-llm-load-error")).toBeNull();
+    expect(formState.screenProps?.initialValueOverrides).toMatchObject({
+      "llm.model": "openai/previous-model",
     });
   });
 
