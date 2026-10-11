@@ -132,6 +132,9 @@ export function LlmSettingsLocalView() {
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [profileName, setProfileName] = useState("");
+  // Whether the user typed the current create-mode name. Until they do (or
+  // after they clear it), the name is auto-derived from the selected model.
+  const [isProfileNameUserEdited, setIsProfileNameUserEdited] = useState(false);
   const [editingProfile, setEditingProfile] = useState<EditingProfile | null>(
     null,
   );
@@ -153,24 +156,26 @@ export function LlmSettingsLocalView() {
   );
 
   // Validate profile name. The shared validator rejects any whitespace, so
-  // duplicate checks below compare the raw value directly.
-  const isNameValid = useMemo(() => {
-    if (!isProfileNameValid(profileName, { isRequired: true })) return false;
-    // In create mode, check for duplicates
-    if (viewMode === "create" && existingNames.has(profileName)) return false;
-    // In edit mode, name can match current profile name
-    if (
-      viewMode === "edit" &&
-      profileName !== editingProfile?.profile.name &&
-      existingNames.has(profileName)
-    ) {
-      return false;
-    }
-    return true;
-  }, [profileName, viewMode, existingNames, editingProfile?.profile.name]);
+  // the duplicate check below compares the raw value directly.
+  const isNameFormatValid = isProfileNameValid(profileName, {
+    isRequired: true,
+  });
+  // In edit mode, name can match current profile name
+  const isDuplicateName =
+    isNameFormatValid &&
+    existingNames.has(profileName) &&
+    (viewMode === "create" ||
+      (viewMode === "edit" && profileName !== editingProfile?.profile.name));
+  const isNameValid = isNameFormatValid && !isDuplicateName;
+
+  const handleProfileNameChange = useCallback((value: string) => {
+    setProfileName(value);
+    setIsProfileNameUserEdited(value !== "");
+  }, []);
 
   const handleAddProfile = useCallback(() => {
     setProfileName("");
+    setIsProfileNameUserEdited(false);
     setEditingProfile(null);
     setViewMode("create");
   }, []);
@@ -252,24 +257,25 @@ export function LlmSettingsLocalView() {
     (control: SdkSectionSaveControl) => {
       setSaveControl(control);
 
-      // Auto-derive profile name from model in create mode.
+      // Auto-derive profile name from model in create mode, and keep it
+      // following later model changes until the user types their own name.
       // Note: The uniqueness check uses existingNames from state, which is derived
       // from profilesData at component render time. If another client creates a
       // profile with the same derived name while this form is open, the client-side
       // check would pass but the server save would fail with a conflict error.
       // This is acceptable for the current use case; the server error is handled
       // gracefully in handleSave.
-      if (viewMode === "create" && !profileName) {
+      if (viewMode === "create" && !isProfileNameUserEdited) {
         const modelValue = control.values["llm.model"];
         if (typeof modelValue === "string" && modelValue) {
           const derived = deriveProfileNameFromModel(modelValue);
-          if (!existingNames.has(derived)) {
-            setProfileName(derived);
-          }
+          // Never auto-fill an existing profile's name; clear the previous
+          // model's name instead so it cannot be saved under the new model.
+          setProfileName(existingNames.has(derived) ? "" : derived);
         }
       }
     },
-    [viewMode, profileName, existingNames],
+    [viewMode, isProfileNameUserEdited, existingNames],
   );
 
   const handleSave = useCallback(async () => {
@@ -497,8 +503,13 @@ export function LlmSettingsLocalView() {
       <ProfileNameInput
         testId="profile-name-input"
         value={profileName}
-        onChange={setProfileName}
+        onChange={handleProfileNameChange}
         isRequired
+        error={
+          isDuplicateName
+            ? t(I18nKey.SETTINGS$META_PROFILE_NAME_TAKEN)
+            : undefined
+        }
       />
 
       {/* Profile form - key ensures form remounts when switching profiles.

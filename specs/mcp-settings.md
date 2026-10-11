@@ -32,3 +32,11 @@
       or arguments.
 - [x] Rename shall use one atomic map patch, reject collisions, and reject
       hidden-secret renames that could lose credentials.
+
+### MCP-004: Form feedback follows readable theme text roles
+
+- [x] Custom-server validation and connection feedback, and catalog-install
+      errors, use the selected theme's error/success text roles.
+- [x] Both text roles meet 4.5:1 against the modal surface in every built-in
+      palette, independently of the danger/success control colors.
+- [x] Embedded host overrides for those roles survive palette changes.

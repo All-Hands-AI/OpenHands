@@ -8,6 +8,7 @@ import { useConversationStore } from "#/stores/conversation-store";
 import { cn } from "#/utils/utils";
 import { SlashCommandItem } from "#/hooks/chat/use-slash-command";
 import { isPlanningMode } from "#/utils/conversation-mode";
+import { insertTextAtCaret } from "../utils/chat-input.utils";
 
 interface ChatInputContainerProps {
   chatContainerRef: React.RefObject<HTMLDivElement | null>;
@@ -17,9 +18,9 @@ interface ChatInputContainerProps {
   hasStartedConversation?: boolean;
   isNewConversationPending?: boolean;
   showButton: boolean;
-  placeholder?: string;
   buttonClassName: string;
   chatInputRef: React.RefObject<HTMLDivElement | null>;
+  placeholder?: string;
   handleFileIconClick: (isDisabled: boolean) => void;
   handleSubmit: () => void;
   onDragOver: (e: React.DragEvent, isDisabled: boolean) => void;
@@ -44,9 +45,9 @@ export function ChatInputContainer({
   hasStartedConversation,
   isNewConversationPending = false,
   showButton,
-  placeholder,
   buttonClassName,
   chatInputRef,
+  placeholder,
   handleFileIconClick,
   handleSubmit,
   onDragOver,
@@ -117,6 +118,10 @@ export function ChatInputContainer({
         showButton={showButton}
         buttonClassName={buttonClassName}
         handleSubmit={handleSubmit}
+        onDictationTranscript={(text) =>
+          insertTextAtCaret(chatInputRef.current, text)
+        }
+        isDictationDisabled={isNewConversationPending}
       />
     </div>
   );

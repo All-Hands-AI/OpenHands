@@ -37,6 +37,10 @@ them; changing the page background alone is not a complete theme.
   high-emphasis ink (white in dark palettes, dark in light palettes); its
   paired `contrast-foreground` is for inverse pills and tooltips. Opacity and
   state variants such as `hover:bg-contrast/10` retain their stated values.
+- Use `feedback-error` and `feedback-success` for small validation and connection
+  messages. These text roles meet 4.5:1 on the built-in modal surface and leave
+  the general danger/success control colors unchanged. Embedded hosts can
+  override `--oh-feedback-error` and `--oh-feedback-success` for their surfaces.
 - Literal white is reserved for fixed-color surfaces (for example the blue
   Plan control, an image-lightbox scrim, or a document preview). Do not globally
   redefine white or add theme-specific selectors that reinterpret utilities.
