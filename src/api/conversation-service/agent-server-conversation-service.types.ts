@@ -1,4 +1,5 @@
 import { ConversationTrigger } from "../open-hands.types";
+import type { ClientToolSpec } from "../canvas-ui-client-tool";
 import { Provider } from "#/types/settings";
 import { SuggestedTask } from "#/utils/types";
 import { ExecutionStatus } from "#/types/agent-server/core";
@@ -82,11 +83,23 @@ export interface AppConversationStartRequest {
   agent_type?: "default" | "plan";
   sandbox_id?: string | null;
   plugins?: PluginSpec[] | null; // Plugins to load when starting the conversation
+  client_tools?: ClientToolSpec[] | null; // Browser/client-handled tools registered with the runtime
+  tags?: Record<string, string> | null; // Conversation tags to persist at start
   // One-off launch from a saved AgentProfile, resolved server-side (#3727).
   // Accepted by the cloud app-server (OpenHands #15060) on
   // POST /api/v1/app-conversations; the local path uses the encrypted
   // agent_settings builder instead, which threads its own agentProfileId.
   agent_profile_id?: string | null;
+  /**
+   * Deployment context applied after agent resolution. The cloud app-server
+   * forwards `system_message_suffix_append` to the resolved agent's
+   * system-message suffix, mirroring the SDK's `AgentLaunchAdditions`. Used
+   * here to route the first message through the Model Router when the user
+   * enables "Run at conversation start".
+   */
+  agent_launch_additions?: {
+    system_message_suffix_append?: string | null;
+  } | null;
 }
 
 export type AppConversationStartTaskStatus =
@@ -240,9 +253,11 @@ export interface GetSkillsResponse {
 }
 
 export interface HookDefinition {
-  type: string; // 'command' or 'prompt'
-  command: string;
-  timeout: number;
+  type: string; // 'command', 'prompt' or 'agent'
+  command: string; // Empty for prompt and agent hooks
+  prompt?: string; // Text of a prompt hook; the server sends null when absent
+  system_prompt?: string; // Text of an agent hook; the server sends null when absent
+  timeout?: number; // Omitted when a server leaves the SDK default implicit
   async?: boolean;
 }
 

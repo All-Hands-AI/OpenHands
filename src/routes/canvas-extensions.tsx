@@ -1,7 +1,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { ExternalLink } from "lucide-react";
-import { ExtensionsNavigation } from "#/components/features/skills/extensions-navigation";
+import {
+  ExtensionsNavigation,
+  ExtensionsCompactNavigation,
+} from "#/components/features/skills/extensions-navigation";
 import { AddCanvasExtensionModal } from "#/components/features/canvas-extensions/add-canvas-extension-modal";
 import { CanvasExtensionCard } from "#/components/features/canvas-extensions/canvas-extension-card";
 import { BrandButton } from "#/components/features/settings/brand-button";
@@ -14,6 +17,7 @@ import { isNoBackend } from "#/api/backend-registry/active-store";
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import { useCanvasExtensions } from "#/hooks/query/use-canvas-extensions";
 import {
+  useRefreshCanvasExtension,
   useSetCanvasExtensionEnabled,
   useUninstallCanvasExtension,
 } from "#/hooks/mutation/use-manage-canvas-extensions";
@@ -43,13 +47,15 @@ export default function CanvasExtensionsScreen() {
   const query = useCanvasExtensions();
   const setEnabled = useSetCanvasExtensionEnabled();
   const uninstall = useUninstallCanvasExtension();
+  const refresh = useRefreshCanvasExtension();
 
   const backendCanSupportExtensions =
     !isNoBackend(backend) && backend.kind === "local";
   const unsupported =
     !backendCanSupportExtensions ||
     isCanvasExtensionsUnsupportedError(query.error);
-  const isBusy = setEnabled.isPending || uninstall.isPending;
+  const isBusy =
+    setEnabled.isPending || uninstall.isPending || refresh.isPending;
 
   const confirmAction = () => {
     if (!pendingAction) return;
@@ -86,6 +92,7 @@ export default function CanvasExtensionsScreen() {
       <ExtensionsNavigation />
       <main className={cn(settingsLikeMainScrollClassName, "h-full")}>
         <div className="mx-auto flex w-full min-w-0 max-w-200 flex-col gap-6">
+          <ExtensionsCompactNavigation />
           <div className="flex min-w-0 items-start justify-between gap-4">
             <div className="min-w-0 space-y-1">
               <h2 className="text-xl font-semibold leading-6 text-foreground">
@@ -184,6 +191,7 @@ export default function CanvasExtensionsScreen() {
                         setPendingAction({ type: "enable", extension });
                       }
                     }}
+                    onRefresh={() => refresh.mutate(extension)}
                     onUninstall={() =>
                       setPendingAction({ type: "uninstall", extension })
                     }

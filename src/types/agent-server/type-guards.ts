@@ -1,3 +1,4 @@
+import { AUTOMATION_FORM_UPDATE_TOOL_NAME } from "#/constants/automation-form";
 import {
   CANVAS_UI_CLIENT_TOOL_NAME,
   LEGACY_CANVAS_UI_TOOL_NAME,
@@ -16,6 +17,8 @@ import {
   BrowserObservation,
   BrowserNavigateAction,
   SwitchLLMObservation,
+  ClassifyAndSwitchLLMObservation,
+  AutomationFormUpdateAction,
   CanvasUIAction,
   LaunchChildConversationAction,
 } from "./core";
@@ -167,6 +170,16 @@ export const isSwitchLLMObservationEvent = (
   event.observation.kind === "SwitchLLMObservation";
 
 /**
+ * Type guard for router-driven model switches (Router/meta-profile classifier).
+ * Mirrors isSwitchLLMObservationEvent — same UI semantics, different tool.
+ */
+export const isClassifyAndSwitchLLMObservationEvent = (
+  event: OpenHandsEvent,
+): event is ObservationEvent<ClassifyAndSwitchLLMObservation> =>
+  isObservationEvent(event) &&
+  event.observation.kind === "ClassifyAndSwitchLLMObservation";
+
+/**
  * Type guard function to check if an action event is a BrowserNavigateAction
  */
 export const isBrowserNavigateActionEvent = (
@@ -186,6 +199,11 @@ export const isCanvasUIActionEvent = (
   isActionEvent(event) &&
   (event.tool_name === LEGACY_CANVAS_UI_TOOL_NAME ||
     event.tool_name === CANVAS_UI_CLIENT_TOOL_NAME);
+
+export const isAutomationFormUpdateActionEvent = (
+  event: OpenHandsEvent,
+): event is ActionEvent<AutomationFormUpdateAction> =>
+  isActionEvent(event) && event.tool_name === AUTOMATION_FORM_UPDATE_TOOL_NAME;
 
 /**
  * Type guard for launch-child-conversation tool ActionEvents.

@@ -392,20 +392,90 @@ export default [
   },
 
   // @shadcn/lint — design-system linter for Tailwind v4.
-  // Rules: https://github.com/shadcn-ui/lint#rules
+  // Rules: https://github.com/shadcn-ui/lint/blob/main/docs/rules.md
   // `no-arbitrary-values` stays at "warn": the remaining hits are one-offs
   // (raw hex, vh/vw, calc(), grid templates) with no theme-scale equivalent.
-  // The other rules need per-component contracts before they are useful here.
+  // Class existence does not need component contracts. With no remaining
+  // unknown utilities, new findings fail lint; styling policy remains opt-in.
+  // Canvas primitives use #/ui, not the plugin's default components/ui path.
+  // require-static-classes is enabled for those consumers; 0.2.0 still cannot
+  // read imported constants, so its documented narrow exceptions remain.
+  // no-raw-colors starts at warn while existing palette colors are migrated
+  // and checked across themes (#18004). Keep verified plugin/config tokens exempt below.
+  // no-restyle first protects divider/toggle appearances; layout remains public,
+  // and ToggleSwitch callers can dim the control for disabled/pending states.
+  // Next: finish the color migration before promoting to error; define contracts
+  // for the remaining UI primitives and audit dynamic styles for no-inline-styles.
+  // 0.2.0 also improves render-prop, destructuring, barrel-export, and custom
+  // animation recognition. Vue/Svelte support adds no new rule names or parsers
+  // to this React project; keep this upgrade separate from rule activation.
   {
     files: ["src/**/*.{ts,tsx}"],
     plugins: { shadcn: shadcnPlugin },
     rules: {
       "shadcn/no-arbitrary-values": "warn",
-      "shadcn/no-restyle": "off",
-      "shadcn/no-raw-colors": "off",
+      "shadcn/no-restyle": [
+        "error",
+        {
+          // Adopt only primitives whose appearance contract is already settled.
+          // Typography, menus, Pre, and caret slots need a separate design audit.
+          componentImports: [
+            "^#/ui/(divider|toggle-switch)$",
+            // 0.2.0 needs the existing re-export path matched explicitly too.
+            "^#/components/features/automations/toggle-switch$",
+          ],
+          allow: ["layout"],
+          contracts: [
+            // The button wrapper can express caller-owned disabled/pending state.
+            // ToggleSwitchVisual still owns the track/thumb color, shape, and effects.
+            { pattern: "^ToggleSwitch$", allow: ["layout", "opacity"] },
+          ],
+        },
+      ],
+      "shadcn/no-raw-colors": [
+        "warn",
+        {
+          // 0.2.0 reads CSS @theme tokens, but not these JS-config/plugin tokens.
+          // Exact classes only: do not exempt raw palettes or whole namespaces.
+          allow: [
+            // hero.ts / @heroui/theme: semantic colors and the medium font size.
+            "bg-background",
+            "bg-content1",
+            "text-primary-foreground",
+            "text-medium",
+            // tailwind.config.js: existing named tokens, pending theme migration.
+            "bg-status-fail-bg",
+            "text-status-fail-text",
+            "text-content-muted",
+            "text-modal-muted",
+          ],
+        },
+      ],
       "shadcn/no-inline-styles": "off",
+      "shadcn/require-static-classes": [
+        "error",
+        { componentImports: ["^#/ui(/|$)"] },
+      ],
+      "shadcn/no-unknown-classes": [
+        "error",
+        {
+          allow: [
+            // src/index.css owns the overlay animation outside the theme graph.
+            "environment-switch-overlay",
+            // Selector target for has-[.conversation-overview-diffs-git-action:hover].
+            "conversation-overview-diffs-git-action",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // Primitive implementations own appearance and variant helpers. Token and
+    // unknown-class checks still apply to their definitions.
+    files: ["src/ui/**/*.{ts,tsx}"],
+    rules: {
+      "shadcn/no-restyle": "off",
       "shadcn/require-static-classes": "off",
-      "shadcn/no-unknown-classes": "off",
     },
   },
 ];
