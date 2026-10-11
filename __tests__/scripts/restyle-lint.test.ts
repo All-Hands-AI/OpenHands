@@ -31,7 +31,55 @@ export function Probe() {
 }
 `;
 
-describe("Canvas divider and toggle appearance contracts", () => {
+const caretCases = [
+  { component: "Arrow", classes: "ml-2 size-4 text-muted", allowed: true },
+  { component: "Arrow", classes: "rotate-90", allowed: true },
+  { component: "StateArrow", classes: "mr-1 text-danger", allowed: true },
+  {
+    component: "Carets.ComboboxCaretButton",
+    classes: "self-center",
+    allowed: true,
+  },
+  { component: "Arrow", classes: "p-2", allowed: false },
+  { component: "StateArrow", classes: "bg-danger", allowed: false },
+  {
+    component: "Carets.ComboboxCaretButton",
+    classes: "rounded-md",
+    allowed: false,
+  },
+  { component: "StateArrow", classes: "rotate-90", allowed: false },
+  {
+    component: "Carets.ComboboxCaretButton",
+    classes: "hover:-rotate-90",
+    allowed: false,
+  },
+];
+const caretRows = caretCases.map(
+  ({ component, classes }) =>
+    `<${component} className=${JSON.stringify(classes)} />`,
+);
+const caretProbe = `import { ComboboxCaretIcon as Arrow, ComboboxCaretInline as StateArrow } from "#/ui/combobox-caret";
+import * as Carets from "#/ui/combobox-caret";
+export function CaretProbe() { return <>\n${caretRows.join("\n")}\n</>; }`;
+
+describe("Canvas UI appearance contracts", () => {
+  it("keeps caret layout and text color public while protecting appearance and state rotation", async () => {
+    const [result] = await eslint.lintText(caretProbe, {
+      filePath: "src/routes/caret-restyle-probe.tsx",
+    });
+    expect(result.fatalErrorCount).toBe(0);
+    const findings = result.messages.filter(
+      (message) => message.ruleId === "shadcn/no-restyle",
+    );
+    // Cases start on line 4. Compare behavior by row, without mirroring
+    // fixture class strings or relying on diagnostic order/per-class counts.
+    expect(new Set(findings.map(({ line }) => line - 4))).toEqual(
+      new Set(
+        caretCases.flatMap(({ allowed }, index) => (allowed ? [] : [index])),
+      ),
+    );
+    expect(findings.every(({ severity }) => severity === 2)).toBe(true);
+  });
   it("rejects restyling through aliases and re-exports while keeping allowed usage", async () => {
     // Layout and caller-owned wrapper opacity remain supported. Other Canvas
     // primitives and HTML are deliberately outside this first rollout.
@@ -58,7 +106,7 @@ describe("Canvas divider and toggle appearance contracts", () => {
   });
 
   it("allows primitive implementations to own their appearance", async () => {
-    const [result] = await eslint.lintText(probe, {
+    const [result] = await eslint.lintText(`${probe}\n${caretProbe}`, {
       filePath: "src/ui/restyle-probe.tsx",
     });
 

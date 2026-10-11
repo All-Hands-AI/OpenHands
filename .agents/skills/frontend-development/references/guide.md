@@ -9,6 +9,16 @@ Bundled catalog skills use the persisted `enabled_skills` allow-list defaulted f
 
 Local Files discovery preferences belong to `misc_settings.app_preferences.workspace_file_discovery`, keyed by working directory on the active backend. `useWorkspaceFileDiscovery` reads the settings cache and saves sparse workspace patches. Preserve default exclusions and the 2,000-file cap when no configuration exists. Fetch one extra result to distinguish truncation from an exact-size list. Cloud keeps its server-side listing contract without these controls. See `specs/workspace-file-discovery.md`.
 
+## Caret appearance contracts
+
+`shadcn/no-restyle` recognizes direct, aliased, and namespaced imports from
+`#/ui/combobox-caret`. Caret callers retain layout, icon sizing, and text-color
+utilities; padding, background, shape, and effects belong to the primitive.
+Use `isOpen` for rotation on `ComboboxCaretButton` and `ComboboxCaretInline`.
+`ComboboxCaretIcon` is the generic SVG and still permits caller orientation.
+Primitive implementations remain exempt from no-restyle. The existing narrow
+static-class exceptions do not imply that opaque values are checked by no-restyle.
+
 ## No Magic Strings
 
 Avoid inline string literals when they represent reusable user-facing copy or shared program identifiers. The `i18next/no-literal-string` rule is set to `"error"` for configured JSX text and attributes, and targeted `no-restricted-syntax` rules enforce shared translation and query-key patterns. Do not claim broader lint enforcement than `eslint.config.js` provides.

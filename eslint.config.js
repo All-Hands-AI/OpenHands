@@ -404,6 +404,8 @@ export default [
   // and checked across themes (#18004). Keep verified plugin/config tokens exempt below.
   // no-restyle first protects divider/toggle appearances; layout remains public,
   // and ToggleSwitch callers can dim the control for disabled/pending states.
+  // Carets expose layout and text color; their padding/shape stay internal.
+  // Stateful carets own rotation through isOpen; generic icons retain orientation.
   // Next: finish the color migration before promoting to error; define contracts
   // for the remaining UI primitives and audit dynamic styles for no-inline-styles.
   // 0.2.0 also improves render-prop, destructuring, barrel-export, and custom
@@ -418,9 +420,9 @@ export default [
         "error",
         {
           // Adopt only primitives whose appearance contract is already settled.
-          // Typography, menus, Pre, and caret slots need a separate design audit.
+          // Typography, menus, and Pre need a separate design audit.
           componentImports: [
-            "^#/ui/(divider|toggle-switch)$",
+            "^#/ui/(divider|toggle-switch|combobox-caret)$",
             // 0.2.0 needs the existing re-export path matched explicitly too.
             "^#/components/features/automations/toggle-switch$",
           ],
@@ -429,6 +431,19 @@ export default [
             // The button wrapper can express caller-owned disabled/pending state.
             // ToggleSwitchVisual still owns the track/thumb color, shape, and effects.
             { pattern: "^ToggleSwitch$", allow: ["layout", "opacity"] },
+            {
+              pattern: "^ComboboxCaretIcon$",
+              allow: ["layout", "text-color"],
+              message:
+                "Keep caret classes to layout and text color; the SVG owns its appearance.",
+            },
+            {
+              pattern: "^ComboboxCaret(Button|Inline)$",
+              allow: ["layout", "text-color"],
+              deny: ["rotate-*"],
+              message:
+                "Use isOpen for caret rotation; keep caller classes to layout and text color.",
+            },
           ],
         },
       ],
