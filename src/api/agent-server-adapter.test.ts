@@ -22,7 +22,7 @@ vi.mock("./secrets-service", () => ({
   SecretsService: { getSecrets: vi.fn().mockResolvedValue([]) },
 }));
 vi.mock("./agent-profiles-service/agent-profiles-service.api", () => ({
-  default: { listProfiles: vi.fn() },
+  default: { listProfiles: vi.fn(), getProfile: vi.fn() },
 }));
 vi.mock("./profiles-service/profiles-service.api", () => ({
   default: { getProfile: vi.fn() },
@@ -707,6 +707,111 @@ describe("buildStartPlanningConversationRequestWithEncryptedSettings", () => {
     expect(payload.workspace).toEqual({
       kind: "LocalWorkspace",
       working_dir: "/host/workspace/project",
+    });
+  });
+
+  describe("ACP planning agent", () => {
+    const acpSettings = {
+      agentSettings: {
+        agent_kind: "acp",
+        acp_server: "claude-code",
+        acp_command: ["npx", "-y", "@anthropic-ai/claude-code-acp"],
+        acp_model: "claude-sonnet-4-6",
+        mcp_config: {
+          github: {
+            command: "npx",
+            args: ["-y", "@modelcontextprotocol/server-github"],
+          },
+        },
+      },
+      conversationSettings: { max_iterations: 42 },
+      secretsEncrypted: false,
+      skillEnablement: { disabledSkills: [] },
+    };
+
+    it("builds an ACPAgent payload with planning instructions and plan path when agent_kind is acp", () => {
+      const payload = buildStartPlanningConversationRequest({
+        workingDir: "/workspace/my-project",
+        parentConversationId: "parent-acp-1",
+        encryptedAgentSettings: acpSettings.agentSettings,
+      });
+
+      expect(payload.agent.kind).toBe("ACPAgent");
+      expect(payload.agent.acp_server).toBe("claude-code");
+      expect(payload.agent.acp_command).toEqual([
+        "npx",
+        "-y",
+        "@anthropic-ai/claude-code-acp",
+      ]);
+      expect(payload.agent.acp_model).toBe("claude-sonnet-4-6");
+      expect(payload.agent.mcp_config).toEqual(
+        acpSettings.agentSettings.mcp_config,
+      );
+      expect(payload.agent.tools).toBeUndefined();
+      expect(payload.agent.system_prompt_filename).toBeUndefined();
+      expect(payload.agent.condenser).toBeUndefined();
+
+      const suffix = (
+        payload.agent.agent_context as { system_message_suffix?: string }
+      )?.system_message_suffix;
+      expect(suffix).toContain("IMPORTANT_PLANNING_BOUNDARIES");
+      expect(suffix).toContain("/workspace/my-project/.agents_tmp/PLAN.md");
+      expect(suffix).toContain("The plan must follow this structure exactly:");
+
+      expect(payload.tags).toEqual({
+        plannerparent: "parent-acp-1",
+        acpserver: "claude-code",
+      });
+      expect(payload.client_tools).toEqual([]);
+    });
+
+    it("resolves ACP planning agent from parent launched ACP profile", async () => {
+      vi.mocked(SettingsService.getSettingsForConversation).mockResolvedValue(
+        globallyActiveSettings,
+      );
+      vi.mocked(AgentProfilesService.listProfiles).mockResolvedValue({
+        profiles: [
+          {
+            id: "profile-acp-parent",
+            name: "claude-code-profile",
+            agent_kind: "acp",
+            revision: 1,
+            llm_profile_ref: null,
+            mcp_server_refs: null,
+          },
+        ],
+        active_agent_profile_id: "profile-other",
+      });
+      vi.mocked(AgentProfilesService.getProfile).mockResolvedValue({
+        name: "claude-code-profile",
+        profile: {
+          id: "profile-acp-parent",
+          name: "claude-code-profile",
+          agent_kind: "acp",
+          acp_server: "claude-code",
+          acp_command: "claude-agent-acp",
+          acp_model: "claude-opus-4-7",
+          acp_session_mode: "bypassPermissions",
+          acp_prompt_timeout: 600,
+          acp_args: null,
+          schema_version: 1,
+          revision: 1,
+          mcp_server_refs: null,
+        },
+      });
+
+      const payload =
+        await buildStartPlanningConversationRequestWithEncryptedSettings({
+          workingDir: "/workspace/project",
+          parentConversationId: "parent-1",
+          parentAgentProfileId: "profile-acp-parent",
+        });
+
+      expect(payload.agent.kind).toBe("ACPAgent");
+      expect(payload.agent.acp_server).toBe("claude-code");
+      expect(payload.agent.acp_command).toEqual(["claude-agent-acp"]);
+      expect(payload.agent.acp_model).toBe("claude-opus-4-7");
+      expect(payload.agent.acp_session_mode).toBe("bypassPermissions");
     });
   });
 });

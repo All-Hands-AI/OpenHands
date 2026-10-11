@@ -70,11 +70,13 @@ import { AUTOMATION_FORM_UPDATE_CLIENT_TOOL } from "./automation-form-client-too
 import {
   buildPlanPath,
   LOCAL_PLANNER_PARENT_TAG_KEY,
+  PLAN_RELATIVE_PATH,
   PLAN_STRUCTURE_TEXT,
   PLANNING_AGENT_INSTRUCTION,
   PLANNING_FILE_EDITOR_TOOL_NAME,
   PLANNING_SYSTEM_PROMPT_FILENAME,
 } from "#/utils/plan-file";
+import { parseCommand } from "#/utils/acp-command";
 
 export interface DirectConversationInfo {
   id: string;
@@ -967,6 +969,10 @@ function getAcpServerTag(settings: Settings): string | undefined {
 
 function resolveAcpCommand(agentSettings: SettingsRecord): unknown {
   const cmd = agentSettings.acp_command;
+  if (typeof cmd === "string") {
+    const parsed = parseCommand(cmd);
+    if (parsed.length > 0) return parsed;
+  }
   const isEmpty = Array.isArray(cmd) && cmd.length === 0;
   const noCommand = cmd === undefined;
   if (!isEmpty && !noCommand) {
@@ -1502,36 +1508,72 @@ export function buildStartPlanningConversationRequest(options: {
   executionRuntime?: AgentServerInfo["execution_runtime"];
 }): RawAgentStartConversationPayload {
   const agentSettings = toRecord(options.encryptedAgentSettings);
-  const llm = buildNormalizedLlmSettings(agentSettings.llm);
-  // Stream assistant tokens, matching the code agent (see
-  // buildConfiguredOpenHandsAgentSettings) — otherwise the agent-server never
-  // emits StreamingDeltaEvents for the planner and its replies would appear
-  // all at once instead of token-by-token.
-  llm.stream = true;
-
+  const isAcp = agentSettings.agent_kind === "acp";
   const planPath = buildPlanPath(options.workingDir);
-
-  // Put the planner's directive + boundaries in the system prompt (matching the
-  // OpenHands app-server's PLANNING_AGENT_INSTRUCTION), preserving any suffix
-  // buildAgentContext already set (e.g. the runtime-services block).
-  const agentContext = buildAgentContext(
-    agentSettings,
-    undefined,
-    options.skillEnablement,
-  );
-  const existingSuffix = agentContext.system_message_suffix;
-  agentContext.system_message_suffix =
-    typeof existingSuffix === "string"
-      ? `${PLANNING_AGENT_INSTRUCTION}\n\n${existingSuffix}`
-      : PLANNING_AGENT_INSTRUCTION;
-
-  // Idle planner: "Create a Plan" only switches to plan mode and provisions
-  // this conversation; the user sends the first message themselves, so nothing
-  // is injected into the chat. An explicit initialMessage is still honored.
   const initialMessage = buildInitialMessage(options.initialMessage);
 
-  const payload: RawAgentStartConversationPayload = {
-    agent: {
+  let agent: SettingsRecord;
+  if (isAcp) {
+    const acpSuffix = [
+      PLANNING_AGENT_INSTRUCTION,
+      `You must write your plan to "${planPath}" (relative: ${PLAN_RELATIVE_PATH}).`,
+      PLAN_STRUCTURE_TEXT,
+    ].join("\n\n");
+
+    const agentContext = buildAgentContext(
+      agentSettings,
+      undefined,
+      options.skillEnablement,
+    );
+    const existingSuffix = agentContext.system_message_suffix;
+    agentContext.system_message_suffix =
+      typeof existingSuffix === "string"
+        ? `${acpSuffix}\n\n${existingSuffix}`
+        : acpSuffix;
+
+    const serverKey =
+      typeof agentSettings.acp_server === "string"
+        ? agentSettings.acp_server
+        : undefined;
+    const effectiveModel = resolveEffectiveAcpModel({
+      configured: agentSettings.acp_model as string | null | undefined,
+      providerDefault: getAcpPreferredDefaultModel(serverKey),
+    });
+
+    agent = {
+      kind: "ACPAgent",
+      acp_command: resolveAcpCommand(agentSettings),
+      agent_context: agentContext,
+    };
+    if (serverKey) {
+      agent.acp_server = serverKey;
+    }
+    if (effectiveModel) {
+      agent.acp_model = effectiveModel;
+    }
+    if (agentSettings.acp_session_mode) {
+      agent.acp_session_mode = agentSettings.acp_session_mode;
+    }
+    const mcpConfig = toRecord(agentSettings.mcp_config);
+    if (Object.keys(mcpConfig).length > 0) {
+      agent.mcp_config = mcpConfig;
+    }
+  } else {
+    const llm = buildNormalizedLlmSettings(agentSettings.llm);
+    llm.stream = true;
+
+    const agentContext = buildAgentContext(
+      agentSettings,
+      undefined,
+      options.skillEnablement,
+    );
+    const existingSuffix = agentContext.system_message_suffix;
+    agentContext.system_message_suffix =
+      typeof existingSuffix === "string"
+        ? `${PLANNING_AGENT_INSTRUCTION}\n\n${existingSuffix}`
+        : PLANNING_AGENT_INSTRUCTION;
+
+    agent = {
       kind: "Agent",
       llm,
       tools: [
@@ -1563,7 +1605,18 @@ export function buildStartPlanningConversationRequest(options: {
         max_size: 100,
         keep_first: 6,
       },
-    },
+    };
+  }
+
+  const acpServerTag =
+    isAcp &&
+    typeof agentSettings.acp_server === "string" &&
+    agentSettings.acp_server.length > 0
+      ? agentSettings.acp_server
+      : undefined;
+
+  const payload: RawAgentStartConversationPayload = {
+    agent,
     workspace:
       options.executionRuntime === "docker"
         ? {
@@ -1595,11 +1648,17 @@ export function buildStartPlanningConversationRequest(options: {
     // - The tag is what hides the helper from the conversation list; it is
     //   also the only marker on agent-servers too old for the parent link.
     parent_conversation_id: options.parentConversationId,
-    tags: { [LOCAL_PLANNER_PARENT_TAG_KEY]: options.parentConversationId },
+    tags: {
+      [LOCAL_PLANNER_PARENT_TAG_KEY]: options.parentConversationId,
+      ...(acpServerTag ? { [ACP_SERVER_TAG_KEY]: acpServerTag } : {}),
+    },
     ...(initialMessage ? { initial_message: initialMessage } : {}),
   };
 
-  if (options.secretsEncrypted) {
+  if (
+    options.secretsEncrypted &&
+    (!isAcp || hasEncryptedMcpSecrets(agentSettings.mcp_config))
+  ) {
     payload.secrets_encrypted = true;
   }
 
@@ -1637,30 +1696,56 @@ async function resolveLlmProfileSettings(
 }
 
 /**
- * Resolve the encrypted LLM config the given AgentProfile launches with, as a
- * fallback for `resolveLlmProfileSettings`. AgentProfiles hold a reference
- * (`llm_profile_ref`), not credentials, so this is a two-hop lookup: profile
- * id -> llm profile name -> encrypted LLM config. Returns `null` — caller
- * falls back to global settings — for an unknown/ACP/dangling-ref profile or
- * a failed lookup, none of which should block plan creation outright.
+ * Resolve the encrypted settings the given AgentProfile launches with, as a
+ * fallback for `resolveLlmProfileSettings`. For OpenHands agents, this is a
+ * two-hop lookup: profile id -> llm profile name -> encrypted LLM config. For
+ * ACP agents, this extracts the parent ACP profile's command, server, and model.
+ * Returns `null` — caller falls back to global settings — for an unknown or
+ * dangling-ref profile or a failed lookup, none of which should block plan creation.
  */
-async function resolveAgentProfileLlmSettings(
+async function resolveParentAgentProfileSettings(
   agentProfileId: string,
-): Promise<SettingsRecord | null> {
+): Promise<{ llm?: SettingsRecord; acp?: SettingsRecord } | null> {
   try {
     const { default: AgentProfilesService } =
       await import("./agent-profiles-service/agent-profiles-service.api");
 
     const { profiles } = await AgentProfilesService.listProfiles();
-    const summary = profiles.find(
-      (profile) => profile.id === agentProfileId && profile.llm_profile_ref,
-    );
-    if (!summary?.llm_profile_ref) return null;
+    const summary = profiles.find((profile) => profile.id === agentProfileId);
+    if (!summary) return null;
 
-    return await resolveLlmProfileSettings(summary.llm_profile_ref);
+    if (summary.agent_kind === "acp") {
+      const detail = await AgentProfilesService.getProfile(summary.name).catch(
+        () => null,
+      );
+      const profile = toRecord(detail?.profile);
+      if (profile.agent_kind === "acp") {
+        return {
+          acp: {
+            agent_kind: "acp",
+            acp_server: profile.acp_server,
+            acp_command: profile.acp_command,
+            acp_model: profile.acp_model,
+            acp_session_mode: profile.acp_session_mode,
+          },
+        };
+      }
+      return {
+        acp: {
+          agent_kind: "acp",
+        },
+      };
+    }
+
+    if (summary.llm_profile_ref) {
+      const llm = await resolveLlmProfileSettings(summary.llm_profile_ref);
+      return llm ? { llm } : null;
+    }
+
+    return null;
   } catch (error) {
     console.warn(
-      `Falling back to global agent settings: could not resolve the LLM for agent profile ${agentProfileId}`,
+      `Falling back to global agent settings: could not resolve agent profile ${agentProfileId}`,
       error,
     );
     return null;
@@ -1696,16 +1781,34 @@ export async function buildStartPlanningConversationRequestWithEncryptedSettings
     SecretsService.getSecrets(),
   ]);
 
-  const profileLlm =
-    (options.parentActiveProfileName
-      ? await resolveLlmProfileSettings(options.parentActiveProfileName)
-      : null) ??
-    (options.parentAgentProfileId
-      ? await resolveAgentProfileLlmSettings(options.parentAgentProfileId)
-      : null);
-  const encryptedAgentSettings: Record<string, SettingsValue> = profileLlm
-    ? { ...settingsResult.agentSettings, llm: profileLlm as SettingsValue }
-    : settingsResult.agentSettings;
+  let encryptedAgentSettings: Record<string, SettingsValue> =
+    settingsResult.agentSettings;
+
+  const activeProfileLlm = options.parentActiveProfileName
+    ? await resolveLlmProfileSettings(options.parentActiveProfileName)
+    : null;
+
+  if (activeProfileLlm) {
+    encryptedAgentSettings = {
+      ...encryptedAgentSettings,
+      llm: activeProfileLlm as SettingsValue,
+    };
+  } else if (options.parentAgentProfileId) {
+    const parentSettings = await resolveParentAgentProfileSettings(
+      options.parentAgentProfileId,
+    );
+    if (parentSettings?.acp) {
+      encryptedAgentSettings = {
+        ...encryptedAgentSettings,
+        ...parentSettings.acp,
+      } as Record<string, SettingsValue>;
+    } else if (parentSettings?.llm) {
+      encryptedAgentSettings = {
+        ...encryptedAgentSettings,
+        llm: parentSettings.llm as SettingsValue,
+      };
+    }
+  }
 
   await assertSubscriptionAuthReady(encryptedAgentSettings);
 
