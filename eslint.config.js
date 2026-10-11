@@ -404,8 +404,11 @@ export default [
   // and checked across themes (#18004). Keep verified plugin/config tokens exempt below.
   // no-restyle first protects divider/toggle appearances; layout remains public,
   // and ToggleSwitch callers can dim the control for disabled/pending states.
+  // no-inline-styles is warning-only while measured layout, portal placement,
+  // and renderer interfaces are audited. CSS variables remain supported by
+  // the rule itself; do not broadly exempt properties or raw variable colors.
   // Next: finish the color migration before promoting to error; define contracts
-  // for the remaining UI primitives and audit dynamic styles for no-inline-styles.
+  // for the remaining UI primitives and resolve inline-style warnings by owner.
   // 0.2.0 also improves render-prop, destructuring, barrel-export, and custom
   // animation recognition. Vue/Svelte support adds no new rule names or parsers
   // to this React project; keep this upgrade separate from rule activation.
@@ -451,7 +454,7 @@ export default [
           ],
         },
       ],
-      "shadcn/no-inline-styles": "off",
+      "shadcn/no-inline-styles": "warn",
       "shadcn/require-static-classes": [
         "error",
         { componentImports: ["^#/ui(/|$)"] },
@@ -477,5 +480,11 @@ export default [
       "shadcn/no-restyle": "off",
       "shadcn/require-static-classes": "off",
     },
+  },
+  {
+    // Public embedding API: this owner must forward arbitrary caller styles.
+    // Its opaque object cannot be converted to custom-properties-only styles.
+    files: ["src/components/providers/agent-server-ui-root.tsx"],
+    rules: { "shadcn/no-inline-styles": "off" },
   },
 ];

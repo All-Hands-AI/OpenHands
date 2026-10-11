@@ -1,3 +1,16 @@
+## Inline-style rollout
+
+`shadcn/no-inline-styles` runs at warning severity across source, including UI
+primitive implementations. Numeric CSS custom properties and semantic token
+references pass; hardcoded variable colors and style elements still warn.
+Do not add a blanket property allowance or blindly replace measured dimensions,
+portal coordinates, or renderer-library styles with static classes. Review the
+value's owner before moving it to classes or CSS variables.
+
+`src/components/providers/agent-server-ui-root.tsx` is the exact exception: its
+public `style` / `styleOverrides` API forwards caller-owned styles, so the
+implementation must accept an opaque object. Other lint policies keep their scope.
+
 ## Skill Loading
 
 Public skills are loaded from the `@openhands/extensions` npm package at build time through `SKILLS_CATALOG` from `@openhands/extensions/skills`. `SkillsService` maps catalog entries to `SkillInfo` and merges them with user and project skills fetched from the Agent Server using `load_public: false`.
