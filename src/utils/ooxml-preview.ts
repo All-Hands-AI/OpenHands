@@ -5,7 +5,11 @@
  * XML reader. Rather than pull in a renderer for each format — `xlsx` (SheetJS)
  * carries ReDoS/prototype-pollution advisories and all of them are large — this
  * uses the platform's own `DecompressionStream("deflate-raw")` and `DOMParser`.
- * That keeps the feature to zero new dependencies and one lazy chunk.
+ * That keeps the feature to zero new dependencies. This module ships in the
+ * chat bundle (the file-editor visualizer imports it eagerly, with no
+ * `React.lazy` on that path); what is deferred is the *parsing*, which waits
+ * until the card scrolls into view so a long conversation does not unpack every
+ * document at once.
  *
  * The output is a plain structured outline (headings, paragraphs, sheets, rows,
  * slides) that the card renders as styled text. It is deliberately not a
