@@ -42,6 +42,7 @@ import {
 } from "./lib/testids.mjs";
 import { tmuxPathFor } from "./lib/tmux-path.mjs";
 import { browserCallLimit } from "./lib/call-limit.mjs";
+import { keyDownArguments } from "./lib/held-keys.mjs";
 import {
   DEFAULT_AGENT_PROFILE,
   agentProfileRepoint,
@@ -2853,6 +2854,28 @@ async function cmdBrowser({ positional, flags }) {
         timeout,
       });
       break;
+    case "key": {
+      const [action, key] = rest;
+      const example = "control-openhands browser key down Control";
+      if (action === "down") {
+        need(2, example);
+        let args;
+        try {
+          args = keyDownArguments(key, flags);
+        } catch (error) {
+          usage(error.message, error.hint);
+        }
+        result = await browserCall(run, "key-down", args);
+      } else if (action === "up") {
+        need(2, "control-openhands browser key up Control");
+        result = await browserCall(run, "key-up", { key });
+      } else if (action === "release-all") {
+        result = await browserCall(run, "key-release-all");
+      } else {
+        usage("browser key down|up <Key> | browser key release-all", example);
+      }
+      break;
+    }
     case "select":
       need(2, "control-openhands browser select 'testid=x' value");
       result = await browserCall(run, "select", {
@@ -3367,6 +3390,7 @@ const BROWSER_VERBS = new Set([
   "fill",
   "type",
   "press",
+  "key",
   "select",
   "upload",
   "scroll",
@@ -4201,6 +4225,10 @@ Verbs
   tooltip <sel>                          hover and return the role=tooltip text (or the title attribute)
   fill|type <sel> [<value> | --value-file F | --value-env VAR]   (prefer the file/env forms for keys)
   press <Key> [--selector S]            e.g. Escape, Enter, Control+k, Meta+k
+  key down <Key> [--repeat N [--interval-ms 30]]   press and hold; N more keydowns with event.repeat set
+  key up <Key> | key release-all          release one held key | all of them (last pressed first)
+                                         (held keys stay down across commands, and held modifiers apply
+                                          to later clicks and presses; browser reset or stop ends them)
   select <sel> <value> | upload <sel> <file...> | scroll [<sel>] [--by PX] [--x PX]
         [--observe SEL [--observe-ms 3000]]   (scroll: record what SEL shows while the effects play out, e.g. a loading row)
   upload-via <trigger-sel> <file...>     click a button/menu item and answer the real file chooser
