@@ -404,11 +404,8 @@ export default [
   // and checked across themes (#18004). Keep verified plugin/config tokens exempt below.
   // no-restyle first protects divider/toggle appearances; layout remains public,
   // and ToggleSwitch callers can dim the control for disabled/pending states.
-  // no-inline-styles is warning-only while measured layout, portal placement,
-  // and renderer interfaces are audited. CSS variables remain supported by
-  // the rule itself; do not broadly exempt properties or raw variable colors.
   // Next: finish the color migration before promoting to error; define contracts
-  // for the remaining UI primitives and resolve inline-style warnings by owner.
+  // for the remaining UI primitives and audit dynamic styles for no-inline-styles.
   // 0.2.0 also improves render-prop, destructuring, barrel-export, and custom
   // animation recognition. Vue/Svelte support adds no new rule names or parsers
   // to this React project; keep this upgrade separate from rule activation.
@@ -454,6 +451,9 @@ export default [
           ],
         },
       ],
+      // Warning-only while measured layout, portal placement, accessibility
+      // helpers and renderer interfaces are reviewed by their owners. The rule
+      // permits CSS variables itself; no broad property/color exception is needed.
       "shadcn/no-inline-styles": "warn",
       "shadcn/require-static-classes": [
         "error",
