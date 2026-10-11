@@ -10,4 +10,8 @@ export const openhandsNeutral: ColorThemeDefinition = {
   //   heroui-default-200 ← cool-grey-925 position ← neutral-900 (#202020)
   //   ...etc.
   heroui: NEUTRAL_HEROUI,
+  tokens: {
+    "--oh-feedback-error": "#F87171",
+    "--oh-feedback-success": "#4ADE80",
+  },
 };

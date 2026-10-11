@@ -58,11 +58,13 @@
   --color-semantic-danger: var(--oh-danger);
   --color-status-success: var(--oh-status-success);
   --color-status-error: var(--oh-status-error);
+  --color-feedback-error: var(--oh-feedback-error);
+  --color-feedback-success: var(--oh-feedback-success);
   --color-accent: var(--oh-accent);
   --color-warning: var(--oh-warning);
 
   /* Cool Grey scale */
-  --color-cool-grey-50:  var(--cool-grey-50);
+  --color-cool-grey-50: var(--cool-grey-50);
   --color-cool-grey-100: var(--cool-grey-100);
   --color-cool-grey-200: var(--cool-grey-200);
   --color-cool-grey-300: var(--cool-grey-300);
@@ -96,24 +98,36 @@
   --oh-contrast-foreground: #000000;
   --oh-surface: var(--cool-grey-925);
   --oh-surface-foreground: var(--cool-grey-100);
-  --oh-surface-raised: var(--cool-grey-900);  /* elevated within a panel */
-  --oh-surface-deep: var(--cool-grey-975);    /* deep inset, context menus */
+  --oh-surface-raised: var(--cool-grey-900); /* elevated within a panel */
+  --oh-surface-deep: var(--cool-grey-975); /* deep inset, context menus */
   --oh-overlay: var(--cool-grey-925);
   --oh-overlay-foreground: var(--cool-grey-100);
   --oh-modal-title-foreground: #ffffff;
   --oh-muted: var(--cool-grey-400);
-  --oh-text-secondary: var(--cool-grey-300);  /* readable secondary text */
-  --oh-text-tertiary: var(--cool-grey-200);   /* tertiary, slightly dimmer */
-  --oh-text-dim: var(--cool-grey-500);        /* placeholders, very muted */
-  --oh-text-subtle: var(--cool-grey-600);     /* subtle labels, breadcrumbs */
-  --oh-interactive-hover: var(--cool-grey-700);      /* hover on mid surfaces (800 bg) */
-  --oh-interactive-hover-low: var(--cool-grey-900);  /* hover on dark base (950 bg) */
-  --oh-interactive-active: var(--cool-grey-800);     /* selected/active on dark base */
-  --oh-interactive-selected: var(--cool-grey-600);   /* selected within a panel (on 800/925 bg) */
+  --oh-text-secondary: var(--cool-grey-300); /* readable secondary text */
+  --oh-text-tertiary: var(--cool-grey-200); /* tertiary, slightly dimmer */
+  --oh-text-dim: var(--cool-grey-500); /* placeholders, very muted */
+  --oh-text-subtle: var(--cool-grey-600); /* subtle labels, breadcrumbs */
+  --oh-interactive-hover: var(
+    --cool-grey-700
+  ); /* hover on mid surfaces (800 bg) */
+  --oh-interactive-hover-low: var(
+    --cool-grey-900
+  ); /* hover on dark base (950 bg) */
+  --oh-interactive-active: var(
+    --cool-grey-800
+  ); /* selected/active on dark base */
+  --oh-interactive-selected: var(
+    --cool-grey-600
+  ); /* selected within a panel (on 800/925 bg) */
   --oh-context-window-foreground: var(--oh-foreground);
   --oh-context-window-track-weight: 42%;
   --oh-scrollbar: color-mix(in srgb, var(--cool-grey-400) 30%, transparent);
-  --oh-scrollbar-hover: color-mix(in srgb, var(--cool-grey-400) 50%, transparent);
+  --oh-scrollbar-hover: color-mix(
+    in srgb,
+    var(--cool-grey-400) 50%,
+    transparent
+  );
   --oh-default: var(--cool-grey-800);
   --oh-default-foreground: var(--cool-grey-100);
   --oh-accent: #c9b974;
@@ -129,12 +143,18 @@
   --oh-border-width: 1px;
   --oh-field-border-width: 1px;
   --oh-border: var(--cool-grey-700);
-  --oh-border-input: var(--cool-grey-700);   /* unified with --oh-border; same stroke weight everywhere */
-  --oh-border-subtle: var(--cool-grey-800);  /* within-panel separators, list dividers */
+  --oh-border-input: var(
+    --cool-grey-700
+  ); /* unified with --oh-border; same stroke weight everywhere */
+  --oh-border-subtle: var(
+    --cool-grey-800
+  ); /* within-panel separators, list dividers */
   --oh-separator: rgba(113, 120, 136, 0.5);
   --oh-focus: #ffffff;
-  --oh-status-success: #1FBD53;
-  --oh-status-error: #FF684E;
+  --oh-status-success: #1fbd53;
+  --oh-status-error: #ff684e;
+  --oh-feedback-error: #f87171;
+  --oh-feedback-success: #4ade80;
   --oh-link: var(--cool-grey-100);
   --oh-radius: 8px;
   --oh-field-radius: 8px;
@@ -592,7 +612,11 @@ button.extension-module-card-interactive {
 }
 
 .git-external-link-icon {
-  background: linear-gradient(90deg, rgba(69, 69, 69, 0) 0.35%, var(--cool-grey-800) 41.39%);
+  background: linear-gradient(
+    90deg,
+    rgba(69, 69, 69, 0) 0.35%,
+    var(--cool-grey-800) 41.39%
+  );
 }
 
 .api-configuration-modal {

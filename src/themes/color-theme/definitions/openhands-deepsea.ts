@@ -57,4 +57,8 @@ export const openhandsDeepsea: ColorThemeDefinition = {
     "--heroui-default-foreground": "216 45.45% 97.84%",
     "--heroui-default": "222.5 17.65% 26.67%",
   },
+  tokens: {
+    "--oh-feedback-error": "#F87171",
+    "--oh-feedback-success": "#4ADE80",
+  },
 };

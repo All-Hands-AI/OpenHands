@@ -9,6 +9,8 @@ const NEO_WHITE_BUTTON_TOKENS: Partial<
   "--oh-color-primary": "#ffffff",
   "--oh-accent": "#ffffff",
   "--oh-warning": "#ffffff",
+  "--oh-feedback-error": "#F87171",
+  "--oh-feedback-success": "#4ADE80",
 };
 
 export const openhandsNeo: ColorThemeDefinition = {

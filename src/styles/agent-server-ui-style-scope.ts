@@ -73,6 +73,8 @@ export const AGENT_SERVER_UI_DEFAULT_CSS_VARIABLES = {
   "--oh-focus": "#ffffff",
   "--oh-status-success": "#1FBD53",
   "--oh-status-error": "#FF684E",
+  "--oh-feedback-error": "#F87171",
+  "--oh-feedback-success": "#4ADE80",
   "--oh-link": "var(--cool-grey-100)",
   "--oh-radius": "8px",
   "--oh-field-radius": "8px",

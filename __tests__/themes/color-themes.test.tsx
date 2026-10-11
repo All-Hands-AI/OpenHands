@@ -131,4 +131,111 @@ describe("color themes", () => {
       getComputedStyle(scopeRoot).getPropertyValue("--oh-color-primary"),
     ).toBe("#c9b974");
   });
+
+  it("defines readable feedback text tokens for all five built-in themes", () => {
+    const themes = [
+      "openhands-deepsea",
+      "openhands-neutral",
+      "openhands-neo",
+      "light-plus",
+      "solarized-light",
+    ] as const;
+
+    for (const themeKey of themes) {
+      const theme = COLOR_THEMES[themeKey];
+      expect(theme.tokens?.["--oh-feedback-error"]).toBeDefined();
+      expect(theme.tokens?.["--oh-feedback-success"]).toBeDefined();
+    }
+
+    // In light themes, feedback tokens resolve distinctly from control danger/success
+    const lightPlus = COLOR_THEMES["light-plus"];
+    expect(lightPlus.tokens?.["--oh-feedback-error"]).not.toBe(
+      lightPlus.tokens?.["--oh-color-danger"],
+    );
+    expect(lightPlus.tokens?.["--oh-feedback-success"]).not.toBe(
+      lightPlus.tokens?.["--oh-color-success"],
+    );
+
+    const solarized = COLOR_THEMES["solarized-light"];
+    expect(solarized.tokens?.["--oh-feedback-error"]).not.toBe(
+      solarized.tokens?.["--oh-color-danger"],
+    );
+    expect(solarized.tokens?.["--oh-feedback-success"]).not.toBe(
+      solarized.tokens?.["--oh-color-success"],
+    );
+  });
+
+  it("allows embedded hosts to override feedback text tokens via styleOverrides", () => {
+    render(
+      <AgentServerUIRoot
+        data-testid="overridden-scope"
+        styleOverrides={{
+          "--oh-feedback-error": "#ff0055",
+          "--oh-feedback-success": "#00ffaa",
+        }}
+      >
+        <span data-testid="error-text" className="text-feedback-error">
+          Error
+        </span>
+        <span data-testid="success-text" className="text-feedback-success">
+          Success
+        </span>
+      </AgentServerUIRoot>,
+    );
+
+    const scope = screen.getByTestId("overridden-scope");
+    expect(scope.style.getPropertyValue("--oh-feedback-error")).toBe("#ff0055");
+    expect(scope.style.getPropertyValue("--oh-feedback-success")).toBe(
+      "#00ffaa",
+    );
+  });
+
+  it("satisfies WCAG AA >= 4.5:1 contrast for feedback tokens against modal and base surfaces across all themes", () => {
+    function luminance(r: number, g: number, b: number): number {
+      const a = [r, g, b].map((v) => {
+        const c = v / 255;
+        return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
+    }
+
+    function contrast(hex1: string, hex2: string): number {
+      const toRgb = (hex: string) => {
+        const clean = hex.replace("#", "");
+        return [
+          parseInt(clean.slice(0, 2), 16),
+          parseInt(clean.slice(2, 4), 16),
+          parseInt(clean.slice(4, 6), 16),
+        ] as const;
+      };
+      const [r1, g1, b1] = toRgb(hex1);
+      const [r2, g2, b2] = toRgb(hex2);
+      const lum1 = luminance(r1, g1, b1);
+      const lum2 = luminance(r2, g2, b2);
+      const brightest = Math.max(lum1, lum2);
+      const darkest = Math.min(lum1, lum2);
+      return (brightest + 0.05) / (darkest + 0.05);
+    }
+
+    const themes = [
+      "openhands-deepsea",
+      "openhands-neutral",
+      "openhands-neo",
+      "light-plus",
+      "solarized-light",
+    ] as const;
+
+    for (const themeKey of themes) {
+      const theme = COLOR_THEMES[themeKey];
+      const errColor = theme.tokens?.["--oh-feedback-error"]!;
+      const succColor = theme.tokens?.["--oh-feedback-success"]!;
+      const modalBg = theme.scale["--cool-grey-925"];
+      const pageBg = theme.scale["--cool-grey-950"];
+
+      expect(contrast(errColor, modalBg)).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(errColor, pageBg)).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(succColor, modalBg)).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(succColor, pageBg)).toBeGreaterThanOrEqual(4.5);
+    }
+  });
 });

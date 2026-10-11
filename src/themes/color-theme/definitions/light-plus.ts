@@ -62,6 +62,8 @@ export const LIGHT_PLUS_TOKENS: Partial<
   "--oh-color-base-secondary": "#F3F3F3",
   "--oh-color-danger": "#D13438",
   "--oh-color-success": "#16825D",
+  "--oh-feedback-error": "#B91C1C",
+  "--oh-feedback-success": "#137333",
   "--oh-color-basic": "#616161",
   "--oh-color-tertiary": "#E5E5E5",
   "--oh-color-tertiary-light": "#4D4D4D",
