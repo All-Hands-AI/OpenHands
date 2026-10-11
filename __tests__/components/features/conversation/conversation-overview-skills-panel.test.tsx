@@ -19,7 +19,8 @@ function buildSkill(overrides: Partial<SkillInfo> = {}): SkillInfo {
   return {
     name: "deno",
     type: "knowledge",
-    source: "/Users/test/.openhands/cache/skills/public-skills/skills/deno/SKILL.md",
+    source:
+      "/Users/test/.openhands/cache/skills/public-skills/skills/deno/SKILL.md",
     description: "Use this skill for Deno projects.",
     triggers: ["deno"],
     version: "1.0.0",
@@ -102,5 +103,57 @@ describe("ConversationOverviewSkillsPanel", () => {
 
     expect(await screen.findByText("public-skill")).toBeInTheDocument();
     expect(screen.getByText("project-skill")).toBeInTheDocument();
+  });
+
+  it("renders same-name local and bundled skills as distinct stable cards", async () => {
+    const user = userEvent.setup();
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    vi.spyOn(SkillsService, "getSkills").mockResolvedValue([
+      buildSkill({
+        name: "skill-creator",
+        source: "/Users/test/.agents/skills/skill-creator/SKILL.md",
+        description: "Local test definition.",
+      }),
+      buildSkill({
+        name: "skill-creator",
+        source: "public",
+        description: "Bundled catalog definition.",
+      }),
+    ]);
+
+    renderPanel();
+
+    await user.click(
+      await screen.findByTestId(
+        "conversation-overview-skills-scope-option-all",
+      ),
+    );
+
+    expect(
+      (await screen.findAllByTestId("skill-card-skill-creator")).length,
+    ).toBe(2);
+    expect(screen.getByText("Local test definition.")).toBeInTheDocument();
+    expect(screen.getByText("Bundled catalog definition.")).toBeInTheDocument();
+
+    await user.type(screen.getByTestId("skills-search-input"), "Local test");
+    expect(
+      await screen.findByText("Local test definition."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Bundled catalog definition."),
+    ).not.toBeInTheDocument();
+
+    await user.clear(screen.getByTestId("skills-search-input"));
+    expect(
+      (await screen.findAllByTestId("skill-card-skill-creator")).length,
+    ).toBe(2);
+    expect(screen.getByText("Bundled catalog definition.")).toBeInTheDocument();
+
+    const duplicateKeyWarnings = consoleError.mock.calls.filter((call) =>
+      call.some((arg) => typeof arg === "string" && arg.includes("same key")),
+    );
+    expect(duplicateKeyWarnings).toHaveLength(0);
   });
 });
