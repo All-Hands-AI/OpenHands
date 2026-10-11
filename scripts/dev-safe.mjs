@@ -238,7 +238,7 @@ export async function findFreePort(preferredPort, host = "127.0.0.1") {
  * @param {string} host - The host to bind to
  * @returns {Promise<boolean>} True if the port is available
  */
-function tryPort(port, host = "127.0.0.1") {
+export function tryPort(port, host = "127.0.0.1") {
   return new Promise((resolve) => {
     const server = net.createServer();
     server.once("error", () => resolve(false));
@@ -246,6 +246,34 @@ function tryPort(port, host = "127.0.0.1") {
       server.close(() => resolve(true));
     });
   });
+}
+
+/**
+ * Probe an agent-server instance on loopback to determine if it is already
+ * running and healthy.
+ *
+ * @param {number | string} urlOrPort - Port number or full URL
+ * @param {string} [host] - Default: "127.0.0.1"
+ * @param {number} [timeoutMs] - Default: 2000
+ * @returns {Promise<boolean>}
+ */
+export async function checkAgentServerAlive(
+  urlOrPort,
+  host = "127.0.0.1",
+  timeoutMs = 2000,
+) {
+  const url =
+    typeof urlOrPort === "number"
+      ? `http://${host}:${urlOrPort}/alive`
+      : urlOrPort.endsWith("/alive")
+        ? urlOrPort
+        : `${urlOrPort.replace(/\/+$/, "")}/alive`;
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -273,10 +301,27 @@ export async function assertPortsFree(portConfigs, host = "127.0.0.1") {
   const lines = busy
     .map(({ name, port }) => `   • ${name}: port ${port}`)
     .join("\n");
+
+  const healthyAgentServerPorts = await Promise.all(
+    busy
+      .filter(({ name }) => name === "agent-server")
+      .map(async ({ port }) =>
+        (await checkAgentServerAlive(port, host)) ? port : null,
+      ),
+  ).then((ports) => ports.filter(Boolean));
+
+  let helpText =
+    `Another agent-canvas instance may already be running.\n` +
+    `Stop it first, or override the port via environment variables (e.g. PORT=<other>).`;
+
+  if (healthyAgentServerPorts.length > 0) {
+    helpText +=
+      `\n\nA healthy agent-server appears to already be running on port ${healthyAgentServerPorts.join(", ")}.\n` +
+      `To attach to it instead of failing, set OH_CANVAS_ATTACH_EXISTING_AGENT_SERVER=1 (or pass --attach-existing-agent-server).`;
+  }
+
   throw new Error(
-    `Cannot start: the following ports are already in use:\n\n${lines}\n\n` +
-      `Another agent-canvas instance may already be running.\n` +
-      `Stop it first, or override the port via environment variables (e.g. PORT=<other>).`,
+    `Cannot start: the following ports are already in use:\n\n${lines}\n\n${helpText}`,
   );
 }
 
@@ -599,17 +644,36 @@ export async function buildSafeDevConfigAsync(
     preferredBackendPort + 1,
   );
 
+  const shouldAttach =
+    env.OH_CANVAS_ATTACH_EXISTING_AGENT_SERVER === "1" ||
+    env.OH_CANVAS_ATTACH_EXISTING_AGENT_SERVER === "true";
+
+  let attachExistingAgentServer = false;
+  if (shouldAttach) {
+    const isFree = await tryPort(preferredBackendPort, "127.0.0.1");
+    if (
+      !isFree &&
+      (await checkAgentServerAlive(preferredBackendPort, "127.0.0.1"))
+    ) {
+      attachExistingAgentServer = true;
+    }
+  }
+
   // Fail fast if any required port is already in use.
   await assertPortsFree([
-    { name: "agent-server", port: preferredBackendPort },
+    ...(!attachExistingAgentServer
+      ? [{ name: "agent-server", port: preferredBackendPort }]
+      : []),
     { name: "vscode", port: preferredVscodePort },
   ]);
 
-  return buildConfigFromPorts(
+  const config = buildConfigFromPorts(
     { backendPort: preferredBackendPort, vscodePort: preferredVscodePort },
     cwd,
     env,
   );
+  config.attachExistingAgentServer = attachExistingAgentServer;
+  return config;
 }
 
 /**
@@ -629,6 +693,7 @@ export async function buildSafeDevConfigAsync(
  * @property {string} secretKey
  * @property {string} sessionApiKey
  * @property {string} canvasToolsDir
+ * @property {boolean} [attachExistingAgentServer]
  */
 
 /**
@@ -1013,28 +1078,39 @@ async function main() {
     ].join("\n"),
   );
 
-  const backend = spawnProcess(
-    agentServerCmd.command,
-    [
-      ...agentServerCmd.args,
-      "--host",
-      "127.0.0.1",
-      "--port",
-      String(config.backendPort),
-    ],
-    {
-      cwd: config.cwd,
-      env: {
-        ...process.env,
-        // Opt into prefix-mode: the Vite dev server proxies the same prefix to
-        // `config.vscodePort` (see VITE_VSCODE_TARGET below), so the advertised
-        // URL resolves on the frontend origin the browser is actually on.
-        ...buildAgentServerEnv(config, {
-          vscodeBasePath: config.vscodeBasePath,
-        }),
+  let backend = null;
+  if (config.attachExistingAgentServer) {
+    console.log(
+      `- agent-server: attached to existing healthy instance at http://127.0.0.1:${config.backendPort}`,
+    );
+    fileLog(
+      "info",
+      `Attached to existing healthy agent-server at http://127.0.0.1:${config.backendPort}`,
+    );
+  } else {
+    backend = spawnProcess(
+      agentServerCmd.command,
+      [
+        ...agentServerCmd.args,
+        "--host",
+        "127.0.0.1",
+        "--port",
+        String(config.backendPort),
+      ],
+      {
+        cwd: config.cwd,
+        env: {
+          ...process.env,
+          // Opt into prefix-mode: the Vite dev server proxies the same prefix to
+          // `config.vscodePort` (see VITE_VSCODE_TARGET below), so the advertised
+          // URL resolves on the frontend origin the browser is actually on.
+          ...buildAgentServerEnv(config, {
+            vscodeBasePath: config.vscodeBasePath,
+          }),
+        },
       },
-    },
-  );
+    );
+  }
 
   let shuttingDown = false;
   let frontend = null;
@@ -1048,13 +1124,15 @@ async function main() {
     if (frontend) {
       signalProcessTree(frontend, signal);
     }
-    signalProcessTree(backend, signal);
+    if (backend) {
+      signalProcessTree(backend, signal);
+    }
 
     setTimeout(() => {
       if (frontend && isProcessRunning(frontend)) {
         signalProcessTree(frontend, "SIGKILL");
       }
-      if (isProcessRunning(backend)) {
+      if (backend && isProcessRunning(backend)) {
         signalProcessTree(backend, "SIGKILL");
       }
       process.exit(process.exitCode ?? 0);
