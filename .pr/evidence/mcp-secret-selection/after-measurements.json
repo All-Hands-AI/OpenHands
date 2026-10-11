@@ -1,0 +1,997 @@
+[
+  {
+    "key": "openhands-deepsea",
+    "states": [
+      {
+        "checked": true,
+        "theme": "openhands-deepsea",
+        "width": 1440,
+        "label": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            44,
+            48,
+            58
+          ],
+          "contrast": 13.18
+        },
+        "code": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            53,
+            56,
+            65
+          ],
+          "contrast": 11.69
+        },
+        "help": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            44,
+            48,
+            58
+          ],
+          "contrast": 13.18
+        },
+        "trackColor": "rgb(255, 255, 255)",
+        "thumbColor": "rgb(33, 37, 47)",
+        "trackContrast": 13.18,
+        "thumbContrast": 15.32,
+        "rowInsideViewport": true,
+        "rowContentOverflow": false,
+        "focusWithin": false,
+        "outline": {
+          "style": "none",
+          "width": "3px",
+          "color": "rgb(195, 205, 220)"
+        },
+        "viewport": "desktop"
+      },
+      {
+        "checked": false,
+        "theme": "openhands-deepsea",
+        "width": 1440,
+        "label": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            43,
+            47,
+            57
+          ],
+          "contrast": 13.34
+        },
+        "code": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            43,
+            47,
+            57
+          ],
+          "contrast": 13.34
+        },
+        "help": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            43,
+            47,
+            57
+          ],
+          "contrast": 13.34
+        },
+        "trackColor": "rgb(237, 237, 239)",
+        "thumbColor": "rgb(163, 176, 196)",
+        "trackContrast": 11.41,
+        "thumbContrast": 1.88,
+        "rowInsideViewport": true,
+        "rowContentOverflow": false,
+        "focusWithin": true,
+        "outline": {
+          "style": "none",
+          "width": "3px",
+          "color": "rgb(195, 205, 220)"
+        },
+        "viewport": "desktop"
+      },
+      {
+        "checked": true,
+        "theme": "openhands-deepsea",
+        "width": 390,
+        "label": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            44,
+            48,
+            58
+          ],
+          "contrast": 13.18
+        },
+        "code": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            53,
+            56,
+            65
+          ],
+          "contrast": 11.69
+        },
+        "help": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            44,
+            48,
+            58
+          ],
+          "contrast": 13.18
+        },
+        "trackColor": "rgb(255, 255, 255)",
+        "thumbColor": "rgb(33, 37, 47)",
+        "trackContrast": 13.18,
+        "thumbContrast": 15.32,
+        "rowInsideViewport": true,
+        "rowContentOverflow": false,
+        "focusWithin": true,
+        "outline": {
+          "style": "solid",
+          "width": "2px",
+          "color": "rgb(255, 255, 255)"
+        },
+        "viewport": "phone"
+      },
+      {
+        "checked": false,
+        "theme": "openhands-deepsea",
+        "width": 390,
+        "label": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            43,
+            47,
+            57
+          ],
+          "contrast": 13.34
+        },
+        "code": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            43,
+            47,
+            57
+          ],
+          "contrast": 13.34
+        },
+        "help": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            43,
+            47,
+            57
+          ],
+          "contrast": 13.34
+        },
+        "trackColor": "rgb(237, 237, 239)",
+        "thumbColor": "rgb(163, 176, 196)",
+        "trackContrast": 11.41,
+        "thumbContrast": 1.88,
+        "rowInsideViewport": true,
+        "rowContentOverflow": false,
+        "focusWithin": true,
+        "outline": {
+          "style": "none",
+          "width": "3px",
+          "color": "rgb(244, 246, 249)"
+        },
+        "viewport": "phone"
+      }
+    ],
+    "images": [
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-openhands-deepsea-checked-desktop.png",
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-openhands-deepsea-unchecked-desktop.png",
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-openhands-deepsea-checked-phone.png",
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-openhands-deepsea-unchecked-phone.png",
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-openhands-deepsea-keyboard-focus.png"
+    ],
+    "focus": {
+      "style": "solid",
+      "width": "2px",
+      "color": "rgb(255, 255, 255)"
+    },
+    "helpLeavesChecked": true,
+    "help": "MCP credentials aren't shared with automations. Save as a secret to make this value available to automations."
+  },
+  {
+    "key": "openhands-neutral",
+    "states": [
+      {
+        "checked": true,
+        "theme": "openhands-neutral",
+        "width": 1440,
+        "label": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            43,
+            43,
+            43
+          ],
+          "contrast": 14.09
+        },
+        "code": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            52,
+            52,
+            52
+          ],
+          "contrast": 12.51
+        },
+        "help": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            43,
+            43,
+            43
+          ],
+          "contrast": 14.09
+        },
+        "trackColor": "rgb(255, 255, 255)",
+        "thumbColor": "rgb(32, 32, 32)",
+        "trackContrast": 14.09,
+        "thumbContrast": 16.29,
+        "rowInsideViewport": true,
+        "rowContentOverflow": false,
+        "focusWithin": false,
+        "outline": {
+          "style": "none",
+          "width": "3px",
+          "color": "rgb(190, 190, 190)"
+        },
+        "viewport": "desktop"
+      },
+      {
+        "checked": false,
+        "theme": "openhands-neutral",
+        "width": 1440,
+        "label": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            42,
+            42,
+            42
+          ],
+          "contrast": 14.26
+        },
+        "code": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            42,
+            42,
+            42
+          ],
+          "contrast": 14.26
+        },
+        "help": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            42,
+            42,
+            42
+          ],
+          "contrast": 14.26
+        },
+        "trackColor": "rgb(237, 237, 237)",
+        "thumbColor": "rgb(151, 151, 151)",
+        "trackContrast": 12.18,
+        "thumbContrast": 2.49,
+        "rowInsideViewport": true,
+        "rowContentOverflow": false,
+        "focusWithin": true,
+        "outline": {
+          "style": "none",
+          "width": "3px",
+          "color": "rgb(190, 190, 190)"
+        },
+        "viewport": "desktop"
+      },
+      {
+        "checked": true,
+        "theme": "openhands-neutral",
+        "width": 390,
+        "label": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            43,
+            43,
+            43
+          ],
+          "contrast": 14.09
+        },
+        "code": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            52,
+            52,
+            52
+          ],
+          "contrast": 12.51
+        },
+        "help": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            43,
+            43,
+            43
+          ],
+          "contrast": 14.09
+        },
+        "trackColor": "rgb(255, 255, 255)",
+        "thumbColor": "rgb(32, 32, 32)",
+        "trackContrast": 14.09,
+        "thumbContrast": 16.29,
+        "rowInsideViewport": true,
+        "rowContentOverflow": false,
+        "focusWithin": true,
+        "outline": {
+          "style": "solid",
+          "width": "2px",
+          "color": "rgb(255, 255, 255)"
+        },
+        "viewport": "phone"
+      },
+      {
+        "checked": false,
+        "theme": "openhands-neutral",
+        "width": 390,
+        "label": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            42,
+            42,
+            42
+          ],
+          "contrast": 14.26
+        },
+        "code": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            42,
+            42,
+            42
+          ],
+          "contrast": 14.26
+        },
+        "help": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            42,
+            42,
+            42
+          ],
+          "contrast": 14.26
+        },
+        "trackColor": "rgb(237, 237, 237)",
+        "thumbColor": "rgb(151, 151, 151)",
+        "trackContrast": 12.18,
+        "thumbContrast": 2.49,
+        "rowInsideViewport": true,
+        "rowContentOverflow": false,
+        "focusWithin": true,
+        "outline": {
+          "style": "none",
+          "width": "3px",
+          "color": "rgb(244, 244, 244)"
+        },
+        "viewport": "phone"
+      }
+    ],
+    "images": [
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-openhands-neutral-checked-desktop.png",
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-openhands-neutral-unchecked-desktop.png",
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-openhands-neutral-checked-phone.png",
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-openhands-neutral-unchecked-phone.png",
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-openhands-neutral-keyboard-focus.png"
+    ],
+    "focus": {
+      "style": "solid",
+      "width": "2px",
+      "color": "rgb(255, 255, 255)"
+    },
+    "helpLeavesChecked": true,
+    "help": "MCP credentials aren't shared with automations. Save as a secret to make this value available to automations."
+  },
+  {
+    "key": "openhands-neo",
+    "states": [
+      {
+        "checked": true,
+        "theme": "openhands-neo",
+        "width": 1440,
+        "label": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            43,
+            43,
+            43
+          ],
+          "contrast": 14.09
+        },
+        "code": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            52,
+            52,
+            52
+          ],
+          "contrast": 12.51
+        },
+        "help": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            43,
+            43,
+            43
+          ],
+          "contrast": 14.09
+        },
+        "trackColor": "rgb(255, 255, 255)",
+        "thumbColor": "rgb(32, 32, 32)",
+        "trackContrast": 14.09,
+        "thumbContrast": 16.29,
+        "rowInsideViewport": true,
+        "rowContentOverflow": false,
+        "focusWithin": false,
+        "outline": {
+          "style": "none",
+          "width": "3px",
+          "color": "rgb(190, 190, 190)"
+        },
+        "viewport": "desktop"
+      },
+      {
+        "checked": false,
+        "theme": "openhands-neo",
+        "width": 1440,
+        "label": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            42,
+            42,
+            42
+          ],
+          "contrast": 14.26
+        },
+        "code": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            42,
+            42,
+            42
+          ],
+          "contrast": 14.26
+        },
+        "help": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            42,
+            42,
+            42
+          ],
+          "contrast": 14.26
+        },
+        "trackColor": "rgb(237, 237, 237)",
+        "thumbColor": "rgb(151, 151, 151)",
+        "trackContrast": 12.18,
+        "thumbContrast": 2.49,
+        "rowInsideViewport": true,
+        "rowContentOverflow": false,
+        "focusWithin": true,
+        "outline": {
+          "style": "none",
+          "width": "3px",
+          "color": "rgb(190, 190, 190)"
+        },
+        "viewport": "desktop"
+      },
+      {
+        "checked": true,
+        "theme": "openhands-neo",
+        "width": 390,
+        "label": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            43,
+            43,
+            43
+          ],
+          "contrast": 14.09
+        },
+        "code": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            52,
+            52,
+            52
+          ],
+          "contrast": 12.51
+        },
+        "help": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            43,
+            43,
+            43
+          ],
+          "contrast": 14.09
+        },
+        "trackColor": "rgb(255, 255, 255)",
+        "thumbColor": "rgb(32, 32, 32)",
+        "trackContrast": 14.09,
+        "thumbContrast": 16.29,
+        "rowInsideViewport": true,
+        "rowContentOverflow": false,
+        "focusWithin": true,
+        "outline": {
+          "style": "solid",
+          "width": "2px",
+          "color": "rgb(255, 255, 255)"
+        },
+        "viewport": "phone"
+      },
+      {
+        "checked": false,
+        "theme": "openhands-neo",
+        "width": 390,
+        "label": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            42,
+            42,
+            42
+          ],
+          "contrast": 14.26
+        },
+        "code": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            42,
+            42,
+            42
+          ],
+          "contrast": 14.26
+        },
+        "help": {
+          "color": "rgb(255, 255, 255)",
+          "background": [
+            42,
+            42,
+            42
+          ],
+          "contrast": 14.26
+        },
+        "trackColor": "rgb(237, 237, 237)",
+        "thumbColor": "rgb(151, 151, 151)",
+        "trackContrast": 12.18,
+        "thumbContrast": 2.49,
+        "rowInsideViewport": true,
+        "rowContentOverflow": false,
+        "focusWithin": true,
+        "outline": {
+          "style": "none",
+          "width": "3px",
+          "color": "rgb(244, 244, 244)"
+        },
+        "viewport": "phone"
+      }
+    ],
+    "images": [
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-openhands-neo-checked-desktop.png",
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-openhands-neo-unchecked-desktop.png",
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-openhands-neo-checked-phone.png",
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-openhands-neo-unchecked-phone.png",
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-openhands-neo-keyboard-focus.png"
+    ],
+    "focus": {
+      "style": "solid",
+      "width": "2px",
+      "color": "rgb(255, 255, 255)"
+    },
+    "helpLeavesChecked": true,
+    "help": "MCP credentials aren't shared with automations. Save as a secret to make this value available to automations."
+  },
+  {
+    "key": "light-plus",
+    "states": [
+      {
+        "checked": true,
+        "theme": "light-plus",
+        "width": 1440,
+        "label": {
+          "color": "rgb(31, 31, 31)",
+          "background": [
+            233,
+            233,
+            233
+          ],
+          "contrast": 13.53
+        },
+        "code": {
+          "color": "rgb(31, 31, 31)",
+          "background": [
+            224,
+            224,
+            224
+          ],
+          "contrast": 12.55
+        },
+        "help": {
+          "color": "rgb(31, 31, 31)",
+          "background": [
+            233,
+            233,
+            233
+          ],
+          "contrast": 13.53
+        },
+        "trackColor": "rgb(31, 31, 31)",
+        "thumbColor": "rgb(243, 243, 243)",
+        "trackContrast": 13.53,
+        "thumbContrast": 14.85,
+        "rowInsideViewport": true,
+        "rowContentOverflow": false,
+        "focusWithin": false,
+        "outline": {
+          "style": "none",
+          "width": "3px",
+          "color": "rgb(31, 31, 31)"
+        },
+        "viewport": "desktop"
+      },
+      {
+        "checked": false,
+        "theme": "light-plus",
+        "width": 1440,
+        "label": {
+          "color": "rgb(31, 31, 31)",
+          "background": [
+            233,
+            233,
+            233
+          ],
+          "contrast": 13.52
+        },
+        "code": {
+          "color": "rgb(31, 31, 31)",
+          "background": [
+            233,
+            233,
+            233
+          ],
+          "contrast": 13.52
+        },
+        "help": {
+          "color": "rgb(31, 31, 31)",
+          "background": [
+            233,
+            233,
+            233
+          ],
+          "contrast": 13.52
+        },
+        "trackColor": "rgb(49, 49, 49)",
+        "thumbColor": "rgb(97, 97, 97)",
+        "trackContrast": 10.67,
+        "thumbContrast": 2.1,
+        "rowInsideViewport": true,
+        "rowContentOverflow": false,
+        "focusWithin": true,
+        "outline": {
+          "style": "none",
+          "width": "3px",
+          "color": "rgb(31, 31, 31)"
+        },
+        "viewport": "desktop"
+      },
+      {
+        "checked": true,
+        "theme": "light-plus",
+        "width": 390,
+        "label": {
+          "color": "rgb(31, 31, 31)",
+          "background": [
+            233,
+            233,
+            233
+          ],
+          "contrast": 13.53
+        },
+        "code": {
+          "color": "rgb(31, 31, 31)",
+          "background": [
+            224,
+            224,
+            224
+          ],
+          "contrast": 12.55
+        },
+        "help": {
+          "color": "rgb(31, 31, 31)",
+          "background": [
+            233,
+            233,
+            233
+          ],
+          "contrast": 13.53
+        },
+        "trackColor": "rgb(31, 31, 31)",
+        "thumbColor": "rgb(243, 243, 243)",
+        "trackContrast": 13.53,
+        "thumbContrast": 14.85,
+        "rowInsideViewport": true,
+        "rowContentOverflow": false,
+        "focusWithin": true,
+        "outline": {
+          "style": "solid",
+          "width": "2px",
+          "color": "rgb(0, 122, 204)"
+        },
+        "viewport": "phone"
+      },
+      {
+        "checked": false,
+        "theme": "light-plus",
+        "width": 390,
+        "label": {
+          "color": "rgb(31, 31, 31)",
+          "background": [
+            233,
+            233,
+            233
+          ],
+          "contrast": 13.52
+        },
+        "code": {
+          "color": "rgb(31, 31, 31)",
+          "background": [
+            233,
+            233,
+            233
+          ],
+          "contrast": 13.52
+        },
+        "help": {
+          "color": "rgb(31, 31, 31)",
+          "background": [
+            233,
+            233,
+            233
+          ],
+          "contrast": 13.52
+        },
+        "trackColor": "rgb(49, 49, 49)",
+        "thumbColor": "rgb(97, 97, 97)",
+        "trackContrast": 10.67,
+        "thumbContrast": 2.1,
+        "rowInsideViewport": true,
+        "rowContentOverflow": false,
+        "focusWithin": true,
+        "outline": {
+          "style": "none",
+          "width": "3px",
+          "color": "rgb(5, 106, 174)"
+        },
+        "viewport": "phone"
+      }
+    ],
+    "images": [
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-light-plus-checked-desktop.png",
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-light-plus-unchecked-desktop.png",
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-light-plus-checked-phone.png",
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-light-plus-unchecked-phone.png",
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-light-plus-keyboard-focus.png"
+    ],
+    "focus": {
+      "style": "solid",
+      "width": "2px",
+      "color": "rgb(0, 122, 204)"
+    },
+    "helpLeavesChecked": true,
+    "help": "MCP credentials aren't shared with automations. Save as a secret to make this value available to automations."
+  },
+  {
+    "key": "solarized-light",
+    "states": [
+      {
+        "checked": true,
+        "theme": "solarized-light",
+        "width": 1440,
+        "label": {
+          "color": "rgb(0, 43, 54)",
+          "background": [
+            226,
+            222,
+            205
+          ],
+          "contrast": 11.14
+        },
+        "code": {
+          "color": "rgb(0, 43, 54)",
+          "background": [
+            217,
+            215,
+            199
+          ],
+          "contrast": 10.4
+        },
+        "help": {
+          "color": "rgb(0, 43, 54)",
+          "background": [
+            226,
+            222,
+            205
+          ],
+          "contrast": 11.14
+        },
+        "trackColor": "rgb(0, 43, 54)",
+        "thumbColor": "rgb(238, 232, 213)",
+        "trackContrast": 11.14,
+        "thumbContrast": 12.25,
+        "rowInsideViewport": true,
+        "rowContentOverflow": false,
+        "focusWithin": false,
+        "outline": {
+          "style": "none",
+          "width": "3px",
+          "color": "rgb(101, 123, 131)"
+        },
+        "viewport": "desktop"
+      },
+      {
+        "checked": false,
+        "theme": "solarized-light",
+        "width": 1440,
+        "label": {
+          "color": "rgb(0, 43, 54)",
+          "background": [
+            229,
+            225,
+            207
+          ],
+          "contrast": 11.42
+        },
+        "code": {
+          "color": "rgb(0, 43, 54)",
+          "background": [
+            229,
+            225,
+            207
+          ],
+          "contrast": 11.42
+        },
+        "help": {
+          "color": "rgb(0, 43, 54)",
+          "background": [
+            229,
+            225,
+            207
+          ],
+          "contrast": 11.42
+        },
+        "trackColor": "rgb(57, 88, 92)",
+        "thumbColor": "rgb(131, 148, 150)",
+        "trackContrast": 5.86,
+        "thumbContrast": 2.44,
+        "rowInsideViewport": true,
+        "rowContentOverflow": false,
+        "focusWithin": true,
+        "outline": {
+          "style": "none",
+          "width": "3px",
+          "color": "rgb(101, 123, 131)"
+        },
+        "viewport": "desktop"
+      },
+      {
+        "checked": true,
+        "theme": "solarized-light",
+        "width": 390,
+        "label": {
+          "color": "rgb(0, 43, 54)",
+          "background": [
+            226,
+            222,
+            205
+          ],
+          "contrast": 11.14
+        },
+        "code": {
+          "color": "rgb(0, 43, 54)",
+          "background": [
+            217,
+            215,
+            199
+          ],
+          "contrast": 10.4
+        },
+        "help": {
+          "color": "rgb(0, 43, 54)",
+          "background": [
+            226,
+            222,
+            205
+          ],
+          "contrast": 11.14
+        },
+        "trackColor": "rgb(0, 43, 54)",
+        "thumbColor": "rgb(238, 232, 213)",
+        "trackContrast": 11.14,
+        "thumbContrast": 12.25,
+        "rowInsideViewport": true,
+        "rowContentOverflow": false,
+        "focusWithin": true,
+        "outline": {
+          "style": "solid",
+          "width": "2px",
+          "color": "rgb(38, 139, 210)"
+        },
+        "viewport": "phone"
+      },
+      {
+        "checked": false,
+        "theme": "solarized-light",
+        "width": 390,
+        "label": {
+          "color": "rgb(0, 43, 54)",
+          "background": [
+            229,
+            225,
+            207
+          ],
+          "contrast": 11.42
+        },
+        "code": {
+          "color": "rgb(0, 43, 54)",
+          "background": [
+            229,
+            225,
+            207
+          ],
+          "contrast": 11.42
+        },
+        "help": {
+          "color": "rgb(0, 43, 54)",
+          "background": [
+            229,
+            225,
+            207
+          ],
+          "contrast": 11.42
+        },
+        "trackColor": "rgb(57, 88, 92)",
+        "thumbColor": "rgb(131, 148, 150)",
+        "trackContrast": 5.86,
+        "thumbContrast": 2.44,
+        "rowInsideViewport": true,
+        "rowContentOverflow": false,
+        "focusWithin": true,
+        "outline": {
+          "style": "none",
+          "width": "3px",
+          "color": "rgb(67, 132, 174)"
+        },
+        "viewport": "phone"
+      }
+    ],
+    "images": [
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-solarized-light-checked-desktop.png",
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-solarized-light-unchecked-desktop.png",
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-solarized-light-checked-phone.png",
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-solarized-light-unchecked-phone.png",
+      "/var/folders/15/pyrd6jhs3tnd259qd39xsplm0000gn/T/openhands-verify/agentic-secret-colors-after/evidence/F17.save-as-secret/after-solarized-light-keyboard-focus.png"
+    ],
+    "focus": {
+      "style": "solid",
+      "width": "2px",
+      "color": "rgb(38, 139, 210)"
+    },
+    "helpLeavesChecked": true,
+    "help": "MCP credentials aren't shared with automations. Save as a secret to make this value available to automations."
+  }
+]

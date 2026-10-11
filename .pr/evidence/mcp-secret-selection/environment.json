@@ -1,0 +1,16 @@
+{
+  "baseline": "060badce585099d39c5411ef222a9bfa4da44017",
+  "proposal": "2d77d30328f1",
+  "backend": "real local Agent Server 1.54.0",
+  "frontend": "production build",
+  "browser": "Chrome",
+  "node": "24.19.0",
+  "model": "not required; no agent execution",
+  "viewports": [
+    "1440x1000",
+    "390x844"
+  ],
+  "method": "Read computed colors in the live app; convert through canvas to sRGB, composite translucent backgrounds over ancestor surfaces, then compare relative luminance. Both checkbox states in all five built-in palettes; selected thumb/track >=3:1; row text/code/help >=4.5:1.",
+  "recipe": "launch -> doctor -> onboard --skip -> node .pr/verify-secret-selection.mjs RUN before|after; use task-isolated agentic-secret-colors-* runs.",
+  "notes": "All fields are empty; no credential submission. The browser inspections are read-only; state changes use the harness browser commands."
+}
