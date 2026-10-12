@@ -25,6 +25,7 @@ import ProviderConnectionsService, {
   type ProviderConnection,
 } from "#/api/provider-connections-service/provider-connections-service.api";
 import type { SdkSectionSaveControl } from "#/components/features/settings/sdk-settings/sdk-section-page";
+import { I18nKey } from "#/i18n/declaration";
 
 vi.mock("#/hooks/query/use-llm-profiles");
 // The profile manager gates mutate controls on this hook; default to a user
@@ -340,7 +341,7 @@ describe("LlmSettingsScreen", () => {
     await waitFor(() => expect(saveControlRef.current).not.toBeNull());
 
     expect(() => saveControlRef.current?.getSavePayload()).toThrow(
-      "SETTINGS$SUBSCRIPTION_MODELS_NOT_LOADED",
+      I18nKey.SETTINGS$SUBSCRIPTION_MODELS_NOT_LOADED,
     );
   });
 
