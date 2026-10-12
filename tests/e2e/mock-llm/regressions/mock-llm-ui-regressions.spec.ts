@@ -416,6 +416,40 @@ test.describe("UI regressions", () => {
     expect(probeStyles.outsideBackground).toBe("rgba(0, 0, 0, 0)");
   });
 
+  // @spec BM-004 — Backend feedback consumes the embedding host's theme roles
+  test("backend connection feedback follows host color overrides", async ({
+    page,
+  }) => {
+    await routeSessionApiKey(page);
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    const shell = page.locator("[data-agent-server-ui]").first();
+    await expect(shell).toBeVisible();
+    await shell.evaluate((el) => {
+      const scope = el as HTMLElement;
+      scope.style.setProperty("--oh-feedback-error", "#8b1029");
+      scope.style.setProperty("--oh-feedback-success", "#17642f");
+    });
+
+    await page.getByTestId("backend-selector").click();
+    await page.getByTestId("manage-backends-menu-item").click();
+    await expect(page.getByTestId("manage-backends-status-Local")).toHaveCSS(
+      "color",
+      "rgb(23, 100, 47)",
+    );
+    await page.getByTestId("manage-backends-done").click();
+
+    await page.getByTestId("backend-selector").click();
+    await page.getByTestId("add-backend-menu-item").click();
+    await page.getByTestId("add-backend-option-agent-server").click();
+    await page.getByTestId("add-backend-name").fill("Unavailable server");
+    await page.getByTestId("add-backend-host").fill("http://127.0.0.1:9");
+    await page.getByTestId("add-backend-submit").click();
+    await expect(page.getByTestId("add-backend-error")).toHaveCSS(
+      "color",
+      "rgb(139, 16, 41)",
+    );
+  });
+
   // ── critic result rendering ──────────────────────────────────────
 
   test("renders critic results on agent messages and finish actions", async ({
