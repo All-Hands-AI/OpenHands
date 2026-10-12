@@ -2,7 +2,7 @@
 // They run with the rest of the suite (`npm test`), or alone:
 //   npx vitest run .agents/skills/verify-openhands
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import {
   existsSync,
   mkdirSync,
@@ -15,6 +15,7 @@ import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { setTimeout as delay } from "node:timers/promises";
 import { test } from "vitest";
 import { buildIdentity } from "./lib/build-id.mjs";
 import { BUILD_INPUTS } from "./lib/build-inputs.mjs";
@@ -36,6 +37,7 @@ import { routePattern } from "./lib/route-pattern.mjs";
 import { resolveTestids } from "./lib/testids.mjs";
 import { tmuxPathFor } from "./lib/tmux-path.mjs";
 import { browserCallLimit } from "./lib/call-limit.mjs";
+import { HeldKeys, keyDownArguments } from "./lib/held-keys.mjs";
 import { agentProfileRepoint } from "./lib/agent-profile-repoint.mjs";
 import {
   canvasSize,
@@ -1621,6 +1623,141 @@ test.skipIf(!findFfmpeg())(
   },
 );
 
+// A page whose keyboard records calls stands in for Playwright's; the real
+// repeat flag is checked live (see the PR that added `browser key`).
+function keyPage(name, calls, { closed = false } = {}) {
+  return {
+    keyboard: {
+      async down(key) {
+        calls.push(`${name} down ${key}`);
+      },
+      async up(key) {
+        calls.push(`${name} up ${key}`);
+        if (closed)
+          throw new Error("Target page, context or browser has been closed");
+      },
+    },
+  };
+}
+
+test("held keys stay down, repeat on request and release where they were pressed", async () => {
+  const calls = [];
+  const first = keyPage("tab0", calls);
+  const second = keyPage("tab1", calls);
+  const keys = new HeldKeys();
+  assert.deepEqual(await keys.down(first, "Control"), {
+    key: "Control",
+    repeats: 0,
+    held: ["Control"],
+  });
+  const enter = await keys.down(first, "Enter", { repeat: 3, intervalMs: 0 });
+  assert.deepEqual(enter, {
+    key: "Enter",
+    repeats: 3,
+    held: ["Control", "Enter"],
+  });
+  // Down again on a held key is a repeat, on the tab it went down on.
+  await keys.down(second, "Enter", { intervalMs: 0 });
+  await keys.down(second, "Shift");
+  assert.deepEqual(await keys.up("Enter"), {
+    key: "Enter",
+    held: ["Control", "Shift"],
+  });
+  await assert.rejects(keys.up("Enter"), (error) => {
+    assert.equal(error.message, "Enter is not held");
+    assert.match(error.hint, /Held now: Control, Shift/);
+    return true;
+  });
+  assert.deepEqual(await keys.releaseAll(), {
+    released: ["Shift", "Control"],
+    held: [],
+  });
+  assert.deepEqual(calls, [
+    "tab0 down Control",
+    "tab0 down Enter",
+    "tab0 down Enter",
+    "tab0 down Enter",
+    "tab0 down Enter",
+    "tab0 down Enter",
+    "tab1 down Shift",
+    "tab0 up Enter",
+    "tab1 up Shift",
+    "tab0 up Control",
+  ]);
+  await assert.rejects(keys.up("Control"), (error) => {
+    assert.match(error.hint, /Nothing is held/);
+    return true;
+  });
+});
+
+test("releasing a key held on a closed tab still forgets it", async () => {
+  const calls = [];
+  const keys = new HeldKeys();
+  await keys.down(keyPage("gone", calls, { closed: true }), "Shift");
+  assert.deepEqual(await keys.releaseAll(), { released: ["Shift"], held: [] });
+  assert.deepEqual(keys.held, []);
+});
+
+test("key down flags are validated before the daemon is contacted", () => {
+  assert.deepEqual(keyDownArguments("Enter"), {
+    key: "Enter",
+    repeat: undefined,
+    intervalMs: undefined,
+  });
+  assert.deepEqual(
+    keyDownArguments("Enter", { repeat: "5", "interval-ms": "50" }),
+    {
+      key: "Enter",
+      repeat: 5,
+      intervalMs: 50,
+    },
+  );
+  for (const flags of [
+    { repeat: "-1" },
+    { repeat: "1.5" },
+    { repeat: "1001" },
+    { repeat: "x" },
+    { repeat: "2", "interval-ms": "-5" },
+    { "interval-ms": "50" },
+    { repeat: "1000", "interval-ms": "100" },
+  ]) {
+    assert.throws(
+      () => keyDownArguments("Enter", flags),
+      /--repeat|--interval-ms/,
+    );
+  }
+});
+
+test("browser help documents key, and bad key commands are usage errors", () => {
+  const help = spawnSync(process.execPath, [cli, "help", "browser"], {
+    encoding: "utf8",
+  });
+  assert.equal(help.status, 0);
+  assert.match(help.stdout, /key down <Key> \[--repeat N/);
+  assert.match(help.stdout, /key up <Key> \| key release-all/);
+  // A run directory gets the command past run lookup to its own checks;
+  // each case fails as a usage error before any browser is contacted.
+  const runDir = mkdtempSync(join(tmpdir(), "cov-key-"));
+  writeFileSync(join(runDir, "run.json"), "{}\n");
+  for (const args of [
+    ["key", "down"],
+    ["key", "hold", "Enter"],
+    ["key", "down", "Enter", "--repeat", "x"],
+    ["key", "down", "Enter", "--interval-ms", "50"],
+  ]) {
+    const bad = spawnSync(
+      process.execPath,
+      [cli, "browser", ...args, "--run", runDir],
+      { encoding: "utf8" },
+    );
+    assert.equal(
+      bad.status,
+      2,
+      `${args.join(" ")}: ${bad.stdout}${bad.stderr}`,
+    );
+  }
+});
+
 test("browser help documents record", () => {
   const help = spawnSync(process.execPath, [cli, "help", "browser"], {
     encoding: "utf8",
@@ -1638,3 +1775,72 @@ test("browser help documents record", () => {
   );
   assert.notEqual(bad.status, 0);
 });
+
+test.skipIf(process.platform === "win32")(
+  "service pause and resume affect only the selected run's descendants",
+  async () => {
+    const dir = mkdtempSync(join(tmpdir(), "cov-service-"));
+    const serviceFile = join(dir, "static-server.mjs");
+    writeFileSync(
+      serviceFile,
+      `import { writeFileSync } from "node:fs"; setInterval(() => writeFileSync(process.argv[2], String(Date.now())), 20);`,
+    );
+    const ownBeat = join(dir, "own-beat");
+    const otherBeat = join(dir, "other-beat");
+    const childPidFile = join(dir, "child-pid");
+    const launcher = spawn(
+      process.execPath,
+      [
+        "--input-type=module",
+        "-e",
+        `import { spawn } from "node:child_process"; import { writeFileSync } from "node:fs"; const child = spawn(process.execPath, ${JSON.stringify([serviceFile, ownBeat])}, { detached: true, stdio: "ignore" }); writeFileSync(${JSON.stringify(childPidFile)}, String(child.pid)); setInterval(() => {}, 1000);`,
+      ],
+      { detached: true, stdio: "ignore" },
+    );
+    const unrelated = spawn(process.execPath, [serviceFile, otherBeat], {
+      detached: true,
+      stdio: "ignore",
+    });
+    let childPid;
+    try {
+      for (let attempts = 0; attempts < 50 && !existsSync(ownBeat); attempts++)
+        await delay(20);
+      childPid = Number(readFileSync(childPidFile, "utf8"));
+      assert.ok(existsSync(ownBeat) && existsSync(otherBeat));
+      writeFileSync(
+        join(dir, "run.json"),
+        JSON.stringify({
+          launcherPid: launcher.pid,
+          launcherPgid: launcher.pid,
+        }),
+      );
+      const paused = run(["service", "pause", "frontend", "--run", dir]);
+      assert.equal(paused.status, 0);
+      assert.deepEqual(paused.json.signalled, [childPid]);
+      assert.equal(paused.json.launcherAlive, true);
+      const frozen = readFileSync(ownBeat, "utf8");
+      const otherBefore = readFileSync(otherBeat, "utf8");
+      await delay(100);
+      assert.equal(readFileSync(ownBeat, "utf8"), frozen);
+      assert.notEqual(readFileSync(otherBeat, "utf8"), otherBefore);
+      const resumed = run(["service", "resume", "frontend", "--run", dir]);
+      assert.equal(resumed.status, 0);
+      assert.deepEqual(resumed.json.signalled, [childPid]);
+      await delay(100);
+      assert.notEqual(readFileSync(ownBeat, "utf8"), frozen);
+    } finally {
+      if (!childPid && existsSync(childPidFile))
+        childPid = Number(readFileSync(childPidFile, "utf8"));
+      for (const pid of [childPid, unrelated.pid, launcher.pid].filter(
+        Boolean,
+      )) {
+        try {
+          process.kill(-pid, "SIGCONT");
+          process.kill(-pid, "SIGTERM");
+        } catch {
+          /* already gone */
+        }
+      }
+    }
+  },
+);

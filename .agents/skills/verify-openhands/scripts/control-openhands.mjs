@@ -42,6 +42,7 @@ import {
 } from "./lib/testids.mjs";
 import { tmuxPathFor } from "./lib/tmux-path.mjs";
 import { browserCallLimit } from "./lib/call-limit.mjs";
+import { keyDownArguments } from "./lib/held-keys.mjs";
 import {
   DEFAULT_AGENT_PROFILE,
   agentProfileRepoint,
@@ -1061,7 +1062,7 @@ async function cmdService({ positional, flags }) {
     out({ ok: true, launcherAlive: groupAlive(run.launcherPgid), services });
     return;
   }
-  if (sub === "stop") {
+  if (["stop", "pause", "resume"].includes(sub)) {
     const pattern = SERVICES[name];
     if (!pattern) {
       usage(
@@ -1069,7 +1070,7 @@ async function cmdService({ positional, flags }) {
         "control-openhands service stop automation",
       );
     }
-    // Only processes inside this run's own process group are candidates.
+    // Only descendants of this run's launcher are candidates.
     const targets = procs.filter(
       (p) => pattern.test(p.args) && p.pid !== run.launcherPid,
     );
@@ -1082,10 +1083,22 @@ async function cmdService({ positional, flags }) {
     // Signal each service's own process group (uv and its Python child).
     for (const pgid of new Set(targets.map((t) => t.pgid))) {
       try {
-        process.kill(-pgid, "SIGTERM");
+        process.kill(
+          -pgid,
+          { stop: "SIGTERM", pause: "SIGSTOP", resume: "SIGCONT" }[sub],
+        );
       } catch {
         // already gone
       }
+    }
+    if (sub !== "stop") {
+      out({
+        ok: true,
+        action: sub,
+        signalled: targets.map((t) => t.pid),
+        launcherAlive: groupAlive(run.launcherPgid),
+      });
+      return;
     }
     await delay(2000);
     out({
@@ -1097,7 +1110,7 @@ async function cmdService({ positional, flags }) {
     return;
   }
   usage(
-    "Usage: control-openhands service status | service stop automation|agent-server|frontend",
+    "Usage: control-openhands service status | service stop|pause|resume automation|agent-server|frontend",
     "control-openhands service stop automation",
   );
 }
@@ -2853,6 +2866,28 @@ async function cmdBrowser({ positional, flags }) {
         timeout,
       });
       break;
+    case "key": {
+      const [action, key] = rest;
+      const example = "control-openhands browser key down Control";
+      if (action === "down") {
+        need(2, example);
+        let args;
+        try {
+          args = keyDownArguments(key, flags);
+        } catch (error) {
+          usage(error.message, error.hint);
+        }
+        result = await browserCall(run, "key-down", args);
+      } else if (action === "up") {
+        need(2, "control-openhands browser key up Control");
+        result = await browserCall(run, "key-up", { key });
+      } else if (action === "release-all") {
+        result = await browserCall(run, "key-release-all");
+      } else {
+        usage("browser key down|up <Key> | browser key release-all", example);
+      }
+      break;
+    }
     case "select":
       need(2, "control-openhands browser select 'testid=x' value");
       result = await browserCall(run, "select", {
@@ -3367,6 +3402,7 @@ const BROWSER_VERBS = new Set([
   "fill",
   "type",
   "press",
+  "key",
   "select",
   "upload",
   "scroll",
@@ -3981,7 +4017,10 @@ first, so the browser's stored key becomes stale (public mode then shows the
 API-key prompt again). Reload the browser afterwards.
 `,
   service: `control-openhands service status
-control-openhands service stop automation|agent-server|frontend
+control-openhands service stop|pause|resume automation|agent-server|frontend
+
+Pause queues real requests without replacing responses; resume lets the service process them.
+Always resume a paused service before stopping the run.
 
 Stops one service inside this run's own process group so unavailable/backend-down
 states can be driven through the UI. Bring everything back with restart.
@@ -4001,7 +4040,7 @@ Lifecycle
   doctor        Read-only health check; run first and after any surprise
   status        Show the current run's ports, revision and liveness
   restart       Restart this run's stack in place (same state); --rotate-key for stale-key states
-  service       status | stop automation|agent-server|frontend (drive backend-down states)
+  service       status | stop|pause|resume automation|agent-server|frontend (unavailable/slow states)
   stop          Stop this run's browser and launcher process group (keeps evidence)
   runs          List runs under $OH_VERIFY_HOME
   env           Print export lines for this run
@@ -4201,6 +4240,10 @@ Verbs
   tooltip <sel>                          hover and return the role=tooltip text (or the title attribute)
   fill|type <sel> [<value> | --value-file F | --value-env VAR]   (prefer the file/env forms for keys)
   press <Key> [--selector S]            e.g. Escape, Enter, Control+k, Meta+k
+  key down <Key> [--repeat N [--interval-ms 30]]   press and hold; N more keydowns with event.repeat set
+  key up <Key> | key release-all          release one held key | all of them (last pressed first)
+                                         (held keys stay down across commands, and held modifiers apply
+                                          to later clicks and presses; browser reset or stop ends them)
   select <sel> <value> | upload <sel> <file...> | scroll [<sel>] [--by PX] [--x PX]
         [--observe SEL [--observe-ms 3000]]   (scroll: record what SEL shows while the effects play out, e.g. a loading row)
   upload-via <trigger-sel> <file...>     click a button/menu item and answer the real file chooser

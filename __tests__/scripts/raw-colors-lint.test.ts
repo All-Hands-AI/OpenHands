@@ -26,6 +26,20 @@ export function Probe() {
 `;
 
 describe("Canvas raw color rollout", () => {
+  it("accepts SVG classes that disable paint", async () => {
+    const [result] = await eslint.lintText(
+      'export function Probe() { return <svg className="fill-none stroke-none" />; }',
+      { filePath: "src/routes/paint-probe.tsx" },
+    );
+
+    expect(result.fatalErrorCount).toBe(0);
+    expect(
+      result.messages.filter(
+        (message) => message.ruleId === "shadcn/no-raw-colors",
+      ),
+    ).toEqual([]);
+  });
+
   it.each(["src/routes/color-probe.tsx", "src/ui/color-probe.tsx"])(
     "warns on raw colors and unknown tokens while accepting verified tokens in %s",
     async (filePath) => {
