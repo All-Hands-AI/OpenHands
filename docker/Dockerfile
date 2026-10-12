@@ -142,11 +142,22 @@ COPY --from=frontend-build /build/build /opt/agent-canvas/frontend
 COPY scripts/static-server.mjs /opt/agent-canvas/static-server.mjs
 COPY scripts/bind-host.mjs /opt/agent-canvas/bind-host.mjs
 COPY scripts/proxy-utils.mjs /opt/agent-canvas/proxy-utils.mjs
+# static-server.mjs imports the DigitalOcean Managed Agents bridge (#17838).
+COPY scripts/mars-web-bridge.mjs /opt/agent-canvas/mars-web-bridge.mjs
+COPY scripts/mars-tunnel-bridge.mjs /opt/agent-canvas/mars-tunnel-bridge.mjs
+COPY scripts/mars-api.mjs /opt/agent-canvas/mars-api.mjs
+COPY scripts/mars-credentials.mjs /opt/agent-canvas/mars-credentials.mjs
+COPY scripts/mars-oauth.mjs /opt/agent-canvas/mars-oauth.mjs
+COPY scripts/mars-session.mjs /opt/agent-canvas/mars-session.mjs
+COPY scripts/http-body.mjs /opt/agent-canvas/http-body.mjs
+COPY scripts/tunnel-client.mjs /opt/agent-canvas/tunnel-client.mjs
+COPY scripts/tunnel-registry.mjs /opt/agent-canvas/tunnel-registry.mjs
 COPY --from=frontend-build /build/node_modules/httpxy /opt/agent-canvas/node_modules/httpxy
 COPY --from=frontend-build /build/node_modules/sirv /opt/agent-canvas/node_modules/sirv
 COPY --from=frontend-build /build/node_modules/@polka /opt/agent-canvas/node_modules/@polka
 COPY --from=frontend-build /build/node_modules/mrmime /opt/agent-canvas/node_modules/mrmime
 COPY --from=frontend-build /build/node_modules/totalist /opt/agent-canvas/node_modules/totalist
+COPY --from=frontend-build /build/node_modules/ws /opt/agent-canvas/node_modules/ws
 
 # Copy the runtime-services-info builder (entrypoint.sh runs it as a CLI to
 # emit the agent's <RUNTIME_SERVICES> block; same builder the dev stack uses).
