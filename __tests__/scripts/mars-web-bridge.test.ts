@@ -24,7 +24,6 @@ import { MARS_TUNNEL_IPC } from "../../scripts/mars-tunnel-bridge.mjs";
 import {
   RPC_METHODS,
   createMarsWebBridge,
-  isMarsWebEnabled,
   mountMarsWebBridge,
   rewriteAgentServerUrls,
 } from "../../scripts/mars-web-bridge.mjs";
@@ -661,20 +660,23 @@ describe("createMarsWebBridge with a session key", () => {
 });
 
 describe("mountMarsWebBridge", () => {
-  it("is off unless MARS_WEB=1", () => {
-    expect(isMarsWebEnabled({})).toBe(false);
-    expect(isMarsWebEnabled({ MARS_WEB: "0" })).toBe(false);
-    expect(isMarsWebEnabled({ MARS_WEB: "1" })).toBe(true);
-    expect(
-      mountMarsWebBridge({ env: {}, host: "127.0.0.1", log: () => {} }),
-    ).toBeNull();
+  it("mounts by default on a loopback bind, even without a key", async () => {
+    const logs: string[] = [];
+    const mounted = mountMarsWebBridge({
+      env: {},
+      host: "127.0.0.1",
+      log: (m) => logs.push(m),
+    });
+    expect(mounted).not.toBeNull();
+    expect(logs[0]).toMatch(/local callers only/);
+    await mounted!.dispose();
   });
 
   it("refuses a non-loopback bind without a key, and mounts with one", async () => {
     const logs: string[] = [];
     expect(
       mountMarsWebBridge({
-        env: { MARS_WEB: "1" },
+        env: {},
         host: "0.0.0.0",
         log: (m) => logs.push(m),
       }),
@@ -682,7 +684,7 @@ describe("mountMarsWebBridge", () => {
     expect(logs[0]).toMatch(/not loopback/);
 
     const mounted = mountMarsWebBridge({
-      env: { MARS_WEB: "1", MARS_WEB_KEY: "k" },
+      env: { MARS_WEB_KEY: "k" },
       host: "0.0.0.0",
       log: () => {},
     });

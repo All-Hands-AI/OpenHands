@@ -28,8 +28,7 @@
  * the event WebSocket, so proxied JSON has those URLs rewritten to the prefix.
  *
  * Trust model. These routes hold the DigitalOcean token and can destroy
- * sessions, so they are off unless `MARS_WEB=1`, and when on they want the
- * server's session key on every request: the renderer sends it as
+ * sessions, so they want the server's session key on every request: the renderer sends it as
  * `X-Session-API-Key` on `/mars/rpc/*` (the same key it already sends the
  * agent-server), and a request that presents it gets an `HttpOnly;
  * SameSite=Strict; Path=/mars` cookie back, which the browser then attaches
@@ -98,11 +97,6 @@ export const RPC_METHODS = new Set([
 /** Request headers that belong to the canvas origin, never to the session host. */
 const CANVAS_ONLY_HEADERS = ["cookie", AUTH_HEADER, "origin", "referer"];
 
-/** Off unless asked for: these routes hold the DO token and can destroy sessions. */
-export function isMarsWebEnabled(env = process.env) {
-  return env.MARS_WEB === "1";
-}
-
 /**
  * The key `/mars/*` requires, or null when none is configured. Explicit
  * `MARS_WEB_KEY` wins so a deployment can decouple it from the agent-server
@@ -120,9 +114,10 @@ export function resolveMarsWebKey({
 }
 
 /**
- * Mount the bridge for a server, or return null when it must not be: not
- * opted in, or no key on a non-loopback bind (the routes would be open to
- * the LAN with the DO token behind them).
+ * Mount the bridge for a server, or return null when it must not be: no key
+ * on a non-loopback bind (the routes would be open to the LAN with the DO
+ * token behind them). Always on otherwise; the desktop app never comes here,
+ * Electron's preload provides the bridge there.
  */
 export function mountMarsWebBridge({
   env = process.env,
@@ -130,11 +125,10 @@ export function mountMarsWebBridge({
   sessionApiKey = null,
   log = (message) => console.warn(`[mars-web] ${message}`),
 } = {}) {
-  if (!isMarsWebEnabled(env)) return null;
   const key = resolveMarsWebKey({ env, sessionApiKey });
   if (!key && !isLoopbackBind(host)) {
     log(
-      `MARS_WEB=1 but no key and bind host ${host} is not loopback; refusing to mount /mars/* (set MARS_WEB_KEY or --session-api-key).`,
+      `no key and bind host ${host} is not loopback; refusing to mount /mars/* (set MARS_WEB_KEY or --session-api-key).`,
     );
     return null;
   }
