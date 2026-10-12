@@ -122,7 +122,12 @@ sections, in this order:
    exemptions). The map should know every open bug. Record one on the bullet
    that reproduces it, next to the expected result, as `Known failure
    (reproduced <date>, #<issue>): <what happens>`; list it here as
-   `Known issue #<issue>: ...` only when no recipe can drive it.
+   `Known issue #<issue>: ...` only when no recipe can drive it. The completed
+   [existing-bug backfill](backfills/2026-10-12-open-bugs.md) accounts for its frozen
+   inventory; [bug-backfill.md](bug-backfill.md) defines ongoing intake and outcome
+   labels. Absence of `ready-for-dev` is not an exclusion.
+   Use full repository-qualified links for SDK and automation issues, so their
+   numbers cannot be mistaken for Canvas issue numbers.
 
 Treat commands as literal: quote selectors, keep names unique to the run (prefix
 fixtures with `QA_`), and restore shared state after mutations (delete the secret,

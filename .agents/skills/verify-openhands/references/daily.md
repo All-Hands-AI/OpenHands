@@ -73,9 +73,14 @@ cheaper than the next and catches a different kind of rot.
    pass has a second half: every bullet whose Gotchas or Known failure note
    links an issue that closed since `BASE` (check each linked issue's state)
    is re-driven too, its row recorded and its note updated. A fix that landed
-   in the Agent Server or the automation service shows up only this way. So is
-   every open `bug` issue opened since `BASE` that names a mapped feature: it
-   is reproduced and gets its note, so bugs filed outside a pass reach the map.
+   in the Agent Server or the automation service shows up only this way. Also query open `bug` issues that have no supported outcome in the map or
+   pass ledger, regardless of creation date. This catches reports opened,
+   reopened or newly labeled as bugs since the last pass. Drive actionable
+   reports and add their note or recorded not-reproduced result, so bugs filed
+   outside a pass reach the map. Include older actionable reports too: `ready-for-dev` is a priority signal,
+   not an inventory filter. Reconcile any outcome labels with their map note or
+   recorded run per [bug-backfill.md](bug-backfill.md); labels alone are not
+   reproduction evidence.
 3. **Smoke (every family, cheaply).** For each family not already driven in
    tier 2: open its first entry point, run the family's `errors --app-only`
    sweep, and drive the one bullet that proves the page's main state (a list
