@@ -62,7 +62,7 @@ contextBridge.exposeInMainWorld("marsBridge", {
     ipcRenderer.invoke("mars:listConfigSessions", configId, options),
   /** Sandbox sizes a new agent may pick, smallest first. */
   listSandboxSizes: () => ipcRenderer.invoke("mars:listSandboxSizes"),
-  /** `{name, llmApiKey?, size?}`; the main process owns the OpenHands manifest. */
+  /** `{name, size?}`; the main process owns the OpenHands manifest. */
   createOpenHandsAgent: (payload) =>
     ipcRenderer.invoke("mars:createOpenHandsAgent", payload),
   /** Resolves once the new session is READY. */

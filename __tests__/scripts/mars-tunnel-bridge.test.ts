@@ -368,7 +368,7 @@ describe("createMarsTunnelBridge", () => {
       nextPageToken: null,
     });
 
-    // Act
+    // Act — a renderer passing an LLM key gets no secret into the manifest.
     const created = await ipcMain.invoke(MARS_TUNNEL_IPC.createOpenHandsAgent, {
       name: " my-agent ",
       llmApiKey: "sk-test",
@@ -378,15 +378,9 @@ describe("createMarsTunnelBridge", () => {
     // Assert
     expect(api.createAgentConfig).toHaveBeenCalledWith(
       "my-agent",
-      [
-        "agent: openhands",
-        "template: openhands",
-        "keep_warm: false",
-        "secrets:",
-        "  OPENHANDS_LLM_API_KEY:",
-        '    value: "sk-test"',
-        "",
-      ].join("\n"),
+      ["agent: openhands", "template: openhands", "keep_warm: false", ""].join(
+        "\n",
+      ),
     );
     expect(created).toMatchObject({ id: "cfg_new", agent: "openhands" });
     expect(page).toMatchObject({

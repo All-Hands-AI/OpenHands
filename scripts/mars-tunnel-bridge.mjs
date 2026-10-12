@@ -348,20 +348,17 @@ export function createMarsTunnelBridge({
     /**
      * Create an OpenHands Agent Config. The manifest is built here rather
      * than accepted over IPC so the renderer can only ever create OpenHands
-     * agents; it contributes just the name, an optional LLM key, and an
-     * optional sandbox size slug (validated by the manifest builder).
+     * agents; it contributes just the name and an optional sandbox size slug
+     * (validated by the manifest builder).
      */
-    async createOpenHandsAgent({ name, llmApiKey, size } = {}) {
+    async createOpenHandsAgent({ name, size } = {}) {
       const trimmedName = name?.trim() ?? "";
       if (!trimmedName) {
         throw new MarsApiError("Give the agent a name.", { status: 400 });
       }
       const created = await client.createAgentConfig(
         trimmedName,
-        buildOpenHandsManifest({
-          llmApiKey: llmApiKey?.trim() || undefined,
-          size: size || undefined,
-        }),
+        buildOpenHandsManifest({ size: size || undefined }),
       );
       if (!created?.id) {
         throw new MarsApiError("DigitalOcean returned no agent.");

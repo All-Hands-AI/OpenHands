@@ -90,8 +90,6 @@ export function isOpenHandsConfig(config: MarsAgentConfig): boolean {
 
 export interface NewMarsAgentInput {
   name: string;
-  /** Stored as the agent's `OPENHANDS_LLM_API_KEY` DigitalOcean secret. */
-  llmApiKey?: string;
   /**
    * Sandbox size slug from `listSandboxSizes`, written into the agent's
    * manifest so every session of the agent gets it. Omitted = DO's default.

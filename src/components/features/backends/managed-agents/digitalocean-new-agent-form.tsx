@@ -19,7 +19,6 @@ import { cn } from "#/utils/utils";
 
 const DEFAULT_NAME_STEM = "openhands";
 const NAME_HINT_ID = "digitalocean-new-agent-name-hint";
-const LLM_KEY_HINT_ID = "digitalocean-new-agent-llm-key-hint";
 const HELPER_CLASS = "-mt-1 text-pretty text-xs text-muted";
 /** Never a valid slug, so it cannot collide with a real size. */
 const DEFAULT_SIZE_KEY = "__default__";
@@ -52,7 +51,7 @@ interface DigitalOceanNewAgentFormProps {
   onCancel: () => void;
 }
 
-/** Name and optional LLM key for a new OpenHands agent on DigitalOcean. */
+/** Name and sandbox size for a new OpenHands agent on DigitalOcean. */
 export function DigitalOceanNewAgentForm({
   isCreating,
   error,
@@ -63,7 +62,6 @@ export function DigitalOceanNewAgentForm({
   const [name, setName] = React.useState(() =>
     buildNewSessionName(DEFAULT_NAME_STEM),
   );
-  const [llmApiKey, setLlmApiKey] = React.useState("");
   const [sizeKey, setSizeKey] = React.useState(DEFAULT_SIZE_KEY);
   // A failed or pending catalog just leaves the default; it never blocks create.
   const { data: sizes } = useMarsSandboxSizes(true);
@@ -90,7 +88,6 @@ export function DigitalOceanNewAgentForm({
     if (!isNameValid || isCreating) return;
     onSubmit({
       name: trimmedName,
-      llmApiKey: llmApiKey.trim() || undefined,
       size: sizeKey === DEFAULT_SIZE_KEY ? undefined : sizeKey,
     });
   };
@@ -123,22 +120,6 @@ export function DigitalOceanNewAgentForm({
           </p>
         </div>
         <div className="flex min-w-0 flex-col gap-2">
-          <SettingsInput
-            testId="digitalocean-new-agent-llm-key"
-            name="digitalocean-new-agent-llm-key"
-            type="password"
-            label={t(I18nKey.DO_AGENTS$NEW_AGENT_LLM_KEY_LABEL)}
-            value={llmApiKey}
-            onChange={setLlmApiKey}
-            isDisabled={isCreating}
-            showOptionalTag
-            ariaDescribedBy={LLM_KEY_HINT_ID}
-          />
-          <p id={LLM_KEY_HINT_ID} className={HELPER_CLASS}>
-            {t(I18nKey.DO_AGENTS$NEW_AGENT_LLM_KEY_HINT)}
-          </p>
-        </div>
-        <div className="flex min-w-0 flex-col gap-2 sm:col-span-2">
           <SettingsDropdownInput
             testId="digitalocean-new-agent-size"
             name="digitalocean-new-agent-size"

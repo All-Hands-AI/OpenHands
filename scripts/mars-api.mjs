@@ -46,25 +46,25 @@ export function isTerminalSessionStatus(status) {
 
 export const OPENHANDS_AGENT = "openhands";
 const OPENHANDS_TEMPLATE = "openhands";
-const OPENHANDS_LLM_API_KEY_SECRET = "OPENHANDS_LLM_API_KEY";
 /** Shape of a sandbox size slug, e.g. `mars-2vcpu-4gb`. */
 const SANDBOX_SIZE_SLUG = /^[a-z0-9][a-z0-9-]{0,62}$/;
 
 /**
  * Flat agents.yaml for an OpenHands agent. `template` must stay explicit:
  * harness-api has no agent kind that derives an OpenHands sandbox template,
- * so omitting it would boot a sandbox with no agent-server on :8000. The LLM key uses the object form so a value that happens to start
- * with `oauth/` is never read as an OAuth slot reference.
+ * so omitting it would boot a sandbox with no agent-server on :8000. No LLM
+ * key goes here: the agent's LLM is configured in the session's own
+ * agent-server (Settings → LLM) once connected.
  *
  * `size` is a sandbox size slug from `listSandboxSizes()`. It lives in the
  * manifest because sessions created from a config cannot carry one; omitted,
  * DigitalOcean picks its default. It is checked against the slug shape so a
  * renderer-supplied value can never inject YAML.
  *
- * @param {{ llmApiKey?: string, size?: string }} [options]
+ * @param {{ size?: string }} [options]
  * @returns {string}
  */
-export function buildOpenHandsManifest({ llmApiKey, size } = {}) {
+export function buildOpenHandsManifest({ size } = {}) {
   const lines = [
     `agent: ${OPENHANDS_AGENT}`,
     `template: ${OPENHANDS_TEMPLATE}`,
@@ -77,13 +77,6 @@ export function buildOpenHandsManifest({ llmApiKey, size } = {}) {
       throw new MarsApiError("Unknown sandbox size.", { status: 400 });
     }
     lines.push(`size: ${size}`);
-  }
-  if (llmApiKey) {
-    lines.push(
-      "secrets:",
-      `  ${OPENHANDS_LLM_API_KEY_SECRET}:`,
-      `    value: ${JSON.stringify(llmApiKey)}`,
-    );
   }
   return `${lines.join("\n")}\n`;
 }

@@ -754,17 +754,13 @@ describe("AddBackendModal – DigitalOcean", () => {
     const nameInput = screen.getByTestId("digitalocean-new-agent-name");
     await user.clear(nameInput);
     await user.type(nameInput, "team-agent");
-    await user.type(
-      screen.getByTestId("digitalocean-new-agent-llm-key"),
-      "sk-test",
-    );
     await user.click(screen.getByTestId("digitalocean-new-agent-submit"));
 
     // Assert
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(bridge.createOpenHandsAgent).toHaveBeenCalledWith({
       name: "team-agent",
-      llmApiKey: "sk-test",
+      size: undefined,
     });
     expect(bridge.createSession).toHaveBeenCalledWith(
       "cfg_new",

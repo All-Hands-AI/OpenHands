@@ -91,7 +91,6 @@ describe("DigitalOceanNewAgentForm – sandbox size", () => {
     // Assert
     expect(onSubmit).toHaveBeenCalledWith({
       name: "team-agent",
-      llmApiKey: undefined,
       size: "mars-16vcpu-32gb",
     });
   });
