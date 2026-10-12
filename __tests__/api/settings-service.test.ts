@@ -8,6 +8,8 @@ import {
   setRegisteredBackends,
 } from "#/api/backend-registry/active-store";
 import type { Backend } from "#/api/backend-registry/types";
+import { NoBackendAvailableError } from "#/api/agent-server-client-options";
+import { DEFAULT_SETTINGS } from "#/services/settings";
 import { server } from "#/mocks/node";
 import { resetTestHandlersMockSettings } from "#/mocks/settings-handlers";
 import type { Settings } from "#/types/settings";
@@ -81,6 +83,19 @@ describe("SettingsService", () => {
     expect(settings.llm_model).toBe("openai/gpt-5.6-sol");
     expect(settings.confirmation_mode).toBe(false);
     expect(settings.security_analyzer).toBe("llm");
+  });
+
+  // @spec BM-003 — Removing the last backend leaves an explicit empty state
+  it("returns display defaults but refuses conversation settings without a backend", async () => {
+    setRegisteredBackends([]);
+
+    const settings = await SettingsService.getSettings();
+
+    expect(settings.llm_model).toBe(DEFAULT_SETTINGS.llm_model);
+    expect(settings.llm_api_key_set).toBe(false);
+    await expect(
+      SettingsService.getSettingsForConversation(),
+    ).rejects.toBeInstanceOf(NoBackendAvailableError);
   });
 
   it("saves settings via PATCH API and invalidates cache", async () => {

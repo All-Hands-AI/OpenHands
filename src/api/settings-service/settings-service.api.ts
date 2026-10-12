@@ -641,7 +641,6 @@ class SettingsService {
 
     const backend = getActiveBackend().backend;
     const connectionRevision = backend.connectionRevision ?? 0;
-    const clientOptions = getAgentServerClientOptions();
     const cached = readCachedSettings(
       backend.id,
       connectionRevision,
@@ -652,6 +651,7 @@ class SettingsService {
     }
 
     try {
+      const clientOptions = getAgentServerClientOptions();
       const response = await this.fetchSettingsFromApi(
         undefined,
         clientOptions,
