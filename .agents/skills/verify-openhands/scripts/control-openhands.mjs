@@ -42,6 +42,16 @@ import {
 } from "./lib/testids.mjs";
 import { tmuxPathFor } from "./lib/tmux-path.mjs";
 import { browserCallLimit } from "./lib/call-limit.mjs";
+import { keyDownArguments } from "./lib/held-keys.mjs";
+import {
+  DEFAULT_AGENT_PROFILE,
+  agentProfileRepoint,
+} from "./lib/agent-profile-repoint.mjs";
+import {
+  PAGE_LIMIT,
+  collectEvents,
+  countImages,
+} from "./lib/events-paging.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const skillDir = resolve(here, "..");
@@ -389,7 +399,7 @@ async function browserCall(run, cmd, args = {}, { timeout = 120_000 } = {}) {
   const result = await response.json();
   if (!result.ok) {
     throw new CliError(result.error, {
-      code: 1,
+      code: Number.isInteger(result.code) ? result.code : 1,
       hint: result.hint,
       extra: { url: result.url, failureScreenshot: result.failureScreenshot },
     });
@@ -1052,7 +1062,7 @@ async function cmdService({ positional, flags }) {
     out({ ok: true, launcherAlive: groupAlive(run.launcherPgid), services });
     return;
   }
-  if (sub === "stop") {
+  if (["stop", "pause", "resume"].includes(sub)) {
     const pattern = SERVICES[name];
     if (!pattern) {
       usage(
@@ -1060,7 +1070,7 @@ async function cmdService({ positional, flags }) {
         "control-openhands service stop automation",
       );
     }
-    // Only processes inside this run's own process group are candidates.
+    // Only descendants of this run's launcher are candidates.
     const targets = procs.filter(
       (p) => pattern.test(p.args) && p.pid !== run.launcherPid,
     );
@@ -1073,10 +1083,22 @@ async function cmdService({ positional, flags }) {
     // Signal each service's own process group (uv and its Python child).
     for (const pgid of new Set(targets.map((t) => t.pgid))) {
       try {
-        process.kill(-pgid, "SIGTERM");
+        process.kill(
+          -pgid,
+          { stop: "SIGTERM", pause: "SIGSTOP", resume: "SIGCONT" }[sub],
+        );
       } catch {
         // already gone
       }
+    }
+    if (sub !== "stop") {
+      out({
+        ok: true,
+        action: sub,
+        signalled: targets.map((t) => t.pid),
+        launcherAlive: groupAlive(run.launcherPgid),
+      });
+      return;
     }
     await delay(2000);
     out({
@@ -1088,7 +1110,7 @@ async function cmdService({ positional, flags }) {
     return;
   }
   usage(
-    "Usage: control-openhands service status | service stop automation|agent-server|frontend",
+    "Usage: control-openhands service status | service stop|pause|resume automation|agent-server|frontend",
     "control-openhands service stop automation",
   );
 }
@@ -1487,6 +1509,30 @@ async function activateProfile(run, name) {
     );
 }
 
+// Onboarding pins the `default` agent profile to the LLM profile it created;
+// `llm preset` moves it to the one it activates (see
+// lib/agent-profile-repoint.mjs). `llm set` leaves it: its throwaway profiles
+// would otherwise become `default`'s and refuse deletion.
+async function repointDefaultAgentProfile(run, target) {
+  const path = `/api/agent-profiles/${DEFAULT_AGENT_PROFILE}`;
+  const detail = await http(run, "GET", path);
+  if (detail.status === 404) return undefined;
+  if (!detail.ok)
+    throw new CliError(
+      `Reading agent profile ${DEFAULT_AGENT_PROFILE} failed: ${detail.status} ${detail.text.slice(0, 300)}`,
+    );
+  const llm = await http(run, "GET", "/api/profiles");
+  const names = (llm.json?.profiles ?? []).map((p) => p.name);
+  const plan = agentProfileRepoint(detail.json?.profile, names, target);
+  if (!plan) return undefined;
+  const saved = await http(run, "POST", path, { body: plan.body });
+  if (!saved.ok)
+    throw new CliError(
+      `Pointing agent profile ${DEFAULT_AGENT_PROFILE} at ${target} failed: ${saved.status} ${saved.text.slice(0, 300)}`,
+    );
+  return { agentProfile: DEFAULT_AGENT_PROFILE, from: plan.from, to: target };
+}
+
 const PRESETS = {
   deepseek: {
     envVar: "DEEPSEEK_API_KEY",
@@ -1566,7 +1612,11 @@ async function cmdLlm({ positional, flags }) {
       created.push(profile.name);
     }
     const active = preset.profiles.find((p) => p.activate);
-    if (active) await activateProfile(run, active.name);
+    let repointed;
+    if (active) {
+      await activateProfile(run, active.name);
+      repointed = await repointDefaultAgentProfile(run, active.name);
+    }
     const settings = await http(run, "GET", "/api/settings");
     out({
       ok: true,
@@ -1574,6 +1624,7 @@ async function cmdLlm({ positional, flags }) {
       profiles: created,
       active: active?.name,
       activeModel: settings.json?.agent_settings?.llm?.model,
+      ...(repointed ? { repointed } : {}),
     });
     return;
   }
@@ -1837,7 +1888,14 @@ function eventText(event) {
 }
 
 // The Open Workspace folder browser has no path field: walk it to PATH.
-async function openWorkspace(run, name, { stay } = {}) {
+const WORKSPACE_MODES = ["local_repo", "new_worktree"];
+
+async function openWorkspace(run, name, { stay, mode } = {}) {
+  if (mode !== undefined && !WORKSPACE_MODES.includes(String(mode)))
+    usage(
+      `Unknown workspace mode ${mode}`,
+      "control-openhands workspace open qa-repo --mode new_worktree",
+    );
   // A bare name resolves inside <run>/workspace, where fixtures live.
   const inRun = join(run.dir, "workspace", name);
   const path = !existsSync(name) && existsSync(inRun) ? inRun : name;
@@ -1863,7 +1921,28 @@ async function openWorkspace(run, name, { stay } = {}) {
     selector: "testid=workspace-launch-button",
     timeout: 30_000,
   });
-  return { workspace: want, steps: walked.steps };
+  // The mode selector (Local Repo / New Worktree) sits in the preview bar
+  // the launch click leaves behind.
+  let preview;
+  if (mode !== undefined) {
+    await browserCall(run, "click", {
+      selector: "testid=workspace-mode-selector",
+      timeout: 30_000,
+    });
+    await browserCall(run, "click", {
+      selector: `testid=workspace-mode-selector-option-${mode}`,
+    });
+    preview = (
+      await browserCall(run, "text", {
+        selector: "testid=home-git-control-bar-preview",
+      })
+    ).text;
+  }
+  return {
+    workspace: want,
+    steps: walked.steps,
+    ...(mode !== undefined ? { mode: String(mode), preview } : {}),
+  };
 }
 
 async function cmdWorkspace({ positional, flags }) {
@@ -1871,10 +1950,13 @@ async function cmdWorkspace({ positional, flags }) {
   const [sub, path] = positional;
   if (sub !== "open" || !path)
     usage(
-      "Usage: control-openhands workspace open PATH [--stay]",
+      "Usage: control-openhands workspace open PATH [--stay] [--mode local_repo|new_worktree]",
       "control-openhands workspace open qa-repo   # a name resolves in <run>/workspace",
     );
-  out({ ok: true, ...(await openWorkspace(run, path, { stay: flags.stay })) });
+  out({
+    ok: true,
+    ...(await openWorkspace(run, path, { stay: flags.stay, mode: flags.mode })),
+  });
 }
 
 async function cmdConversation({ positional, flags }) {
@@ -1892,6 +1974,7 @@ async function cmdConversation({ positional, flags }) {
     if (flags.workspace && flags.workspace !== true)
       picked = await openWorkspace(run, String(flags.workspace), {
         stay: flags.stay,
+        mode: flags.mode,
       });
     else if (!flags["stay"]) await browserCall(run, "goto", { target: "/" });
     // Home and conversation pages share the composer: a contenteditable
@@ -1961,19 +2044,6 @@ async function cmdConversation({ positional, flags }) {
   if (sub === "events") {
     if (!id) usage("conversation events <id> [--last N]");
     const last = intFlag(flags.last, 25);
-    const res = await http(
-      run,
-      "GET",
-      `/api/conversations/${encodeURIComponent(id)}/events/search?limit=100&sort_order=${flags["from-start"] ? "TIMESTAMP" : "TIMESTAMP_DESC"}`,
-    );
-    if (!res.ok)
-      throw new CliError(
-        `events: HTTP ${res.status} ${res.text.slice(0, 200)}`,
-      );
-    const fetched = res.json?.items ?? [];
-    const items = flags["from-start"]
-      ? fetched.slice(0, last)
-      : fetched.slice(0, last).reverse();
     const grep =
       flags.grep && flags.grep !== true
         ? String(flags.grep).toLowerCase()
@@ -1982,48 +2052,80 @@ async function cmdConversation({ positional, flags }) {
       flags.kinds && flags.kinds !== true
         ? String(flags.kinds).split(",")
         : null;
-    const shown = items
-      .filter((e) => !kinds || kinds.includes(e.kind))
-      .map((e) => {
-        const text = eventText(e);
-        const max = flags.full ? 4000 : 160;
-        const row = {
-          kind: e.kind,
-          source: e.source,
-          tool: e.tool_name ?? e.action?.kind,
-          text: text.slice(0, max),
-          truncated: text.length > max || undefined,
-          skills: e.activated_skills?.length ? e.activated_skills : undefined,
-          tools: Array.isArray(e.tools)
-            ? e.tools.map((tool) => tool.title || tool.name || tool.kind)
-            : undefined,
-          ts: e.timestamp,
-        };
-        if (grep) {
-          // Search the whole event (system prompt, tool args, extended
-          // content), not only the summarized text.
-          const raw = JSON.stringify(e);
-          const lower = raw.toLowerCase();
-          const excerpts = [];
-          let at = lower.indexOf(grep);
-          let matches = 0;
-          while (at >= 0) {
-            matches += 1;
-            if (excerpts.length < 3)
-              excerpts.push(
-                raw.slice(Math.max(0, at - 60), at + grep.length + 60),
-              );
-            at = lower.indexOf(grep, at + grep.length);
-          }
-          row.matches = matches;
-          row.excerpts = excerpts.length ? excerpts : undefined;
+    // --kinds and --grep filter before --last counts: `--kinds MessageEvent
+    // --last 3` is the three newest messages. The server pages at 100
+    // events; pages are read until `last` matching rows are in hand
+    // (lib/events-paging.mjs), so a grep reaches past the newest page.
+    const keep = (e) =>
+      (!kinds || kinds.includes(e.kind)) &&
+      (!grep || JSON.stringify(e).toLowerCase().includes(grep));
+    const order = flags["from-start"] ? "TIMESTAMP" : "TIMESTAMP_DESC";
+    const {
+      items: fetched,
+      more,
+      pages,
+    } = await collectEvents(
+      async (pageId) => {
+        const res = await http(
+          run,
+          "GET",
+          `/api/conversations/${encodeURIComponent(id)}/events/search?limit=${PAGE_LIMIT}&sort_order=${order}${pageId ? `&page_id=${encodeURIComponent(pageId)}` : ""}`,
+        );
+        if (!res.ok)
+          throw new CliError(
+            `events: HTTP ${res.status} ${res.text.slice(0, 200)}`,
+          );
+        return res.json ?? {};
+      },
+      last,
+      keep,
+    );
+    const selected = fetched.filter(keep).slice(0, last);
+    const items = flags["from-start"] ? selected : selected.reverse();
+    const shown = items.map((e) => {
+      const text = eventText(e);
+      const max = flags.full ? 4000 : 160;
+      const row = {
+        kind: e.kind,
+        source: e.source,
+        tool: e.tool_name ?? e.action?.kind,
+        text: text.slice(0, max),
+        truncated: text.length > max || undefined,
+        skills: e.activated_skills?.length ? e.activated_skills : undefined,
+        images:
+          countImages(e.llm_message?.content ?? e.message?.content) ||
+          undefined,
+        tools: Array.isArray(e.tools)
+          ? e.tools.map((tool) => tool.title || tool.name || tool.kind)
+          : undefined,
+        ts: e.timestamp,
+      };
+      if (grep) {
+        // Search the whole event (system prompt, tool args, extended
+        // content), not only the summarized text.
+        const raw = JSON.stringify(e);
+        const lower = raw.toLowerCase();
+        const excerpts = [];
+        let at = lower.indexOf(grep);
+        let matches = 0;
+        while (at >= 0) {
+          matches += 1;
+          if (excerpts.length < 3)
+            excerpts.push(
+              raw.slice(Math.max(0, at - 60), at + grep.length + 60),
+            );
+          at = lower.indexOf(grep, at + grep.length);
         }
-        return row;
-      })
-      .filter((row) => !grep || row.matches > 0);
+        row.matches = matches;
+        row.excerpts = excerpts.length ? excerpts : undefined;
+      }
+      return row;
+    });
     out({
       ok: true,
       total: fetched.length,
+      pages,
+      more,
       count: shown.length,
       events: shown,
     });
@@ -2081,7 +2183,12 @@ async function cmdConversation({ positional, flags }) {
       value: String(prompt),
     });
     await browserCall(run, "click", { selector: "testid=submit-button" });
-    const result = { ok: true, id, sent: String(prompt).length };
+    const result = {
+      ok: true,
+      id,
+      prompt: String(prompt).slice(0, 160),
+      chars: String(prompt).length,
+    };
     if (flags.wait)
       Object.assign(
         result,
@@ -2362,10 +2469,78 @@ async function cmdFixture({ positional, flags }) {
       path,
       `---\nname: ${skillName}\ndescription: QA fixture skill created by control-openhands.\n${trigger ? `triggers:\n- ${trigger}\n` : ""}---\n\n${body}\n`,
     );
+    // --commit records the project skill in the fixture repo, which a New
+    // Worktree conversation checks out from its commits.
+    let committed;
+    if (flags.commit) {
+      if (!flags.repo)
+        usage(
+          "fixture skill --commit needs --repo NAME (a personal skill has no repo)",
+          "control-openhands fixture skill --repo qa-repo --name qa-ping --commit",
+        );
+      const gitEnv = {
+        ...process.env,
+        GIT_AUTHOR_NAME: "QA Fixture",
+        GIT_AUTHOR_EMAIL: "qa@example.invalid",
+        GIT_COMMITTER_NAME: "QA Fixture",
+        GIT_COMMITTER_EMAIL: "qa@example.invalid",
+      };
+      const message = `Add ${skillName} skill`;
+      const head = () =>
+        execFileSync("git", ["rev-parse", "HEAD"], { cwd: root })
+          .toString()
+          .trim();
+      try {
+        execFileSync(
+          "git",
+          ["add", "-A", "--", `.agents/skills/${skillName}`],
+          {
+            cwd: root,
+            env: gitEnv,
+          },
+        );
+        const pending = execFileSync(
+          "git",
+          ["status", "--porcelain", "--", `.agents/skills/${skillName}`],
+          { cwd: root, env: gitEnv },
+        )
+          .toString()
+          .trim();
+        if (pending) {
+          // Only the skill's path: whatever else is staged in the fixture
+          // repo (F08 stages files there) stays staged.
+          execFileSync(
+            "git",
+            [
+              "commit",
+              "-q",
+              "-m",
+              message,
+              "--",
+              `.agents/skills/${skillName}`,
+            ],
+            { cwd: root, env: gitEnv },
+          );
+          committed = { sha: head(), message };
+        } else {
+          // A re-run of the recipe: the skill is already in the history.
+          committed = { sha: head(), unchanged: true };
+        }
+      } catch (error) {
+        const reason =
+          error.stderr?.toString().trim().split("\n")[0] ||
+          String(error.message).split("\n")[0];
+        throw new CliError(`Could not commit the skill in ${root}: ${reason}`, {
+          code: 1,
+          hint: "The repo must be a git checkout (control-openhands fixture git-repo --name NAME).",
+        });
+      }
+    }
     out({
       ok: true,
       path,
       scope: flags.repo ? "project" : "user",
+      committed,
       hint: "Reload the page: the skills list is cached.",
     });
     return;
@@ -2643,6 +2818,7 @@ async function cmdBrowser({ positional, flags }) {
       result = await browserCall(run, "network", {
         clear: Boolean(flags.clear),
         external: Boolean(flags.external),
+        bodies: Boolean(flags.bodies),
         last: flags.last,
         filter:
           flags.filter && flags.filter !== true ? flags.filter : undefined,
@@ -2690,6 +2866,28 @@ async function cmdBrowser({ positional, flags }) {
         timeout,
       });
       break;
+    case "key": {
+      const [action, key] = rest;
+      const example = "control-openhands browser key down Control";
+      if (action === "down") {
+        need(2, example);
+        let args;
+        try {
+          args = keyDownArguments(key, flags);
+        } catch (error) {
+          usage(error.message, error.hint);
+        }
+        result = await browserCall(run, "key-down", args);
+      } else if (action === "up") {
+        need(2, "control-openhands browser key up Control");
+        result = await browserCall(run, "key-up", { key });
+      } else if (action === "release-all") {
+        result = await browserCall(run, "key-release-all");
+      } else {
+        usage("browser key down|up <Key> | browser key release-all", example);
+      }
+      break;
+    }
     case "select":
       need(2, "control-openhands browser select 'testid=x' value");
       result = await browserCall(run, "select", {
@@ -2712,6 +2910,8 @@ async function cmdBrowser({ positional, flags }) {
         by: flags.by,
         x: flags.x,
         timeout,
+        observe: flags.observe,
+        observeMs: flags["observe-ms"],
       });
       break;
     case "wait":
@@ -2776,6 +2976,44 @@ async function cmdBrowser({ positional, flags }) {
         fullPage: Boolean(flags["full-page"]),
       });
       break;
+    case "record": {
+      const action = rest[0];
+      if (action === "start") {
+        if (!flags.feature || !flags.name)
+          usage(
+            "browser record start needs --feature <ID> and --name <label>",
+            "control-openhands browser record start --feature F05.overflow-menu --name escape",
+          );
+        result = await browserCall(run, "record-start", {
+          feature: flags.feature,
+          name: flags.name,
+          fps: flags.fps === undefined ? undefined : intFlag(flags.fps),
+          maxSeconds:
+            flags["max-seconds"] === undefined
+              ? undefined
+              : intFlag(flags["max-seconds"]),
+        });
+      } else if (action === "stop") {
+        result = await browserCall(
+          run,
+          "record-stop",
+          {
+            gif: Boolean(flags.gif),
+            keepFrames: Boolean(flags["keep-frames"]),
+            discard: Boolean(flags.discard),
+          },
+          { timeout: 600_000 },
+        );
+      } else if (["pause", "resume", "status"].includes(action)) {
+        result = await browserCall(run, `record-${action}`);
+      } else {
+        usage(
+          "browser record start|pause|resume|stop|status",
+          "control-openhands browser record start --feature F05.overflow-menu --name escape",
+        );
+      }
+      break;
+    }
     case "clock":
       if (
         !flags["offset-ms"] &&
@@ -2815,6 +3053,7 @@ async function cmdBrowser({ positional, flags }) {
       result = await browserCall(run, "wait-tab", {
         pattern: rest[0],
         timeout,
+        excludeActive: Boolean(flags.new),
       });
       break;
     case "events":
@@ -2828,8 +3067,14 @@ async function cmdBrowser({ positional, flags }) {
       result = await browserCall(run, "eval", { expression: rest[0] });
       break;
     case "tab":
-      need(1, "control-openhands browser tab 1");
-      result = await browserCall(run, "tab", { index: rest[0] });
+      need(1, "control-openhands browser tab 1 | tab new [/path]");
+      result =
+        rest[0] === "new"
+          ? await browserCall(run, "new-tab", {
+              target: rest[1],
+              allowExternal: Boolean(flags["allow-external"]),
+            })
+          : await browserCall(run, "tab", { index: rest[0] });
       break;
     case "close-tab":
       need(1, "control-openhands browser close-tab 1");
@@ -3157,6 +3402,7 @@ const BROWSER_VERBS = new Set([
   "fill",
   "type",
   "press",
+  "key",
   "select",
   "upload",
   "scroll",
@@ -3167,6 +3413,7 @@ const BROWSER_VERBS = new Set([
   "snapshot",
   "testids",
   "screenshot",
+  "record",
   "viewport",
   "clock",
   "errors",
@@ -3770,7 +4017,10 @@ first, so the browser's stored key becomes stale (public mode then shows the
 API-key prompt again). Reload the browser afterwards.
 `,
   service: `control-openhands service status
-control-openhands service stop automation|agent-server|frontend
+control-openhands service stop|pause|resume automation|agent-server|frontend
+
+Pause queues real requests without replacing responses; resume lets the service process them.
+Always resume a paused service before stopping the run.
 
 Stops one service inside this run's own process group so unavailable/backend-down
 states can be driven through the UI. Bring everything back with restart.
@@ -3790,7 +4040,7 @@ Lifecycle
   doctor        Read-only health check; run first and after any surprise
   status        Show the current run's ports, revision and liveness
   restart       Restart this run's stack in place (same state); --rotate-key for stale-key states
-  service       status | stop automation|agent-server|frontend (drive backend-down states)
+  service       status | stop|pause|resume automation|agent-server|frontend (unavailable/slow states)
   stop          Stop this run's browser and launcher process group (keeps evidence)
   runs          List runs under $OH_VERIFY_HOME
   env           Print export lines for this run
@@ -3894,6 +4144,10 @@ set/preset validate with a 1-token completion first (skip with --no-validate).
 Keys are read from an environment variable or file, never from argv.
 'preset deepseek' saves deepseek-flash (deepseek/deepseek-flash, activated) and
 deepseek-pro (deepseek/deepseek-v4-pro). Prefer flash; it is cheaper.
+'preset' also points the 'default' agent profile at deepseek-flash when it
+references another LLM profile that exists, as onboarding leaves it; the output
+then has 'repointed'. A reference to a missing profile (a fresh run's seed),
+named agent profiles and 'set' leave agent profiles as they are.
 
 Examples:
   DEEPSEEK_API_KEY=... control-openhands llm preset deepseek
@@ -3905,10 +4159,11 @@ Answers the telemetry consent form (analytics off by default) and then either
 skips the onboarding modal (--skip) or walks it: choose agent → keep current LLM
 settings → close at say-hello. Skipping is not proof that onboarding works.
 `,
-  conversation: `control-openhands conversation start --prompt TEXT [--wait] [--until STATES] [--timeout SEC] [--stay] [--workspace PATH]
+  conversation: `control-openhands conversation start --prompt TEXT [--wait] [--until STATES] [--timeout SEC] [--stay] [--workspace PATH [--mode local_repo|new_worktree]]
 control-openhands conversation wait ID [--until finished,idle] [--timeout SEC] [--fresh]
         (--fresh after sending a message: ignore the previous run's terminal status)
 control-openhands conversation send ID --prompt TEXT [--wait]   follow-up message through the composer
+        (prints the prompt it typed and its length in chars, then the wait's status with --wait)
 control-openhands conversation pause ID   arrange an interrupted conversation (API, as local Stop Runtime; not UI proof)
 control-openhands conversation status ID
 control-openhands conversation list
@@ -3916,13 +4171,18 @@ control-openhands conversation events ID [--last N] [--kinds MessageEvent,Action
         [--grep TEXT] [--from-start]
         (texts are cut at 160 chars with truncated:true; --full keeps up to 4000;
          --grep searches whole events, e.g. the SystemPromptEvent with --from-start;
-         rows show activated skills and, for the system prompt, the tool names)
+         rows show activated skills, image attachments (images: N) and, for the
+         system prompt, the tool names; --kinds and --grep filter before --last
+         counts (--kinds MessageEvent --last 3 is the three newest messages); the
+         server pages at 100 events and the verb reads pages until --last matching
+         rows are in hand: total is the number of events read, more:true says further
+         pages exist (older, or newer with --from-start))
 
 'start' types into the home composer (testid=chat-input), presses
 testid=submit-button and returns the new /conversations/<id>. --stay uses the
 current page's composer instead of navigating home first. --workspace PATH
 first picks that folder through Open Workspace (see 'workspace open'), so the
-conversation runs in it. 'wait' polls the
+conversation runs in it; --mode picks Local Repo or New Worktree there. 'wait' polls the
 conversation's execution_status until one of --until (default: any terminal).
 
 Examples:
@@ -3938,16 +4198,19 @@ control-openhands fixture folder [--name qa-folder]
 control-openhands fixture image [--name qa-image] [--width 160 --height 96]   # PNG under evidence/_fixtures
 control-openhands fixture file [--name qa-note.txt] [--content TEXT]
 control-openhands fixture tarball [--name qa-tarball]   # evidence/_fixtures/qa-tarball.tar.gz (main.py prints pong)
-control-openhands fixture skill [--name qa-hello] [--repo qa-repo] [--trigger qa-ping] [--body TEXT]
-        # SKILL.md in the run's private ~/.agents/skills, or in a fixture repo's .agents/skills
+control-openhands fixture skill [--name qa-hello] [--repo qa-repo] [--trigger qa-ping] [--body TEXT] [--commit]
+        # SKILL.md in the run's private ~/.agents/skills, or in a fixture repo's .agents/skills;
+        # --commit records it in the repo (a New Worktree conversation checks out commits only)
 `,
-  workspace: `control-openhands workspace open PATH|NAME [--stay]
+  workspace: `control-openhands workspace open PATH|NAME [--stay] [--mode local_repo|new_worktree]
 
 NAME (no slash) resolves inside <run>/workspace, where 'fixture' creates repos.
 
 Drives Home > Open Workspace > workspace dropdown > + Add Workspace, walks the
 folder browser (folder-browser-up / folder-browser-entry-<name>) to PATH,
-clicks Use and Launch. The composer then carries the workspace chip; follow
+clicks Use and Launch, then with --mode picks Local Repo or New Worktree in the
+preview bar's mode selector (printed back as mode and preview). The composer then
+carries the workspace chip; follow
 with 'conversation start --stay', or use 'conversation start --workspace PATH'.
 
 Example:
@@ -3977,7 +4240,12 @@ Verbs
   tooltip <sel>                          hover and return the role=tooltip text (or the title attribute)
   fill|type <sel> [<value> | --value-file F | --value-env VAR]   (prefer the file/env forms for keys)
   press <Key> [--selector S]            e.g. Escape, Enter, Control+k, Meta+k
+  key down <Key> [--repeat N [--interval-ms 30]]   press and hold; N more keydowns with event.repeat set
+  key up <Key> | key release-all          release one held key | all of them (last pressed first)
+                                         (held keys stay down across commands, and held modifiers apply
+                                          to later clicks and presses; browser reset or stop ends them)
   select <sel> <value> | upload <sel> <file...> | scroll [<sel>] [--by PX] [--x PX]
+        [--observe SEL [--observe-ms 3000]]   (scroll: record what SEL shows while the effects play out, e.g. a loading row)
   upload-via <trigger-sel> <file...>     click a button/menu item and answer the real file chooser
   drop-files <sel> <file...> [--stage enter|over]   files dragged in from the desktop
   paste <sel> [--text T] [--file F]...   a paste event carrying text and/or files
@@ -3990,6 +4258,12 @@ Verbs
   snapshot [<sel>] [--max-lines N] [--feature ID --name N]   ARIA tree (saved as evidence)
   testids [<sel>] [--hidden] [--filter part]                 discover on-screen data-testid handles (--hidden adds hidden/off-screen)
   screenshot [<sel>] --feature ID --name N [--full-page]     PNG under evidence/<ID>/
+  record start --feature ID --name N [--fps 10] [--max-seconds 600]   video of the active tab
+  record pause | record resume            cut a wait (the agent working) out of the video
+  record stop [--gif] [--keep-frames] [--discard] | record status
+        (MP4 under evidence/<ID>/ when ffmpeg has libx264, else WebM with Playwright's ffmpeg;
+         --gif adds a GIF at most 960 px wide; the still lead-in is cut to 1 s, the end held 1 s;
+         --max-seconds is wall time; browser stop or reset ends the daemon and the recording)
   viewport desktop|phone|narrow|tablet|WxH                    1440x1000, 390x844, 320x700, 820x1180
   clock --offset-ms N | --system ISO|+MS | --fixed ISO|+MS    skew the page's clock (install before the goto
                                          whose page should see it; the server's clock is untouched)
@@ -3997,13 +4271,18 @@ Verbs
                                          (--clear prints the list, then empties it: run it before the action)
   events [--kinds pageerror,dialog,download] [--last N]
   eval <js expression>                   read-only inspection; never mutate app state with it
-  tabs | tab <i> | close-tab <i> | dialogs [--policy accept|dismiss]
-  wait-tab <url-regex> [--timeout MS]   wait for a pop-up (window.open) whose URL matches; prints its index
+  tabs | tab <i> | tab new [/path] [--allow-external] | close-tab <i> | dialogs [--policy accept|dismiss]
+        (tab new: a plain second tab, no opener and no sessionStorage, as a user opening the app again)
+  wait-tab <url-regex> [--timeout MS] [--new]   wait for a pop-up (window.open) whose URL matches; prints its index
+        (--new ignores the tab the daemon is on, for a second tab at the current URL)
   downloads [--last N] [--inspect] [--contains TEXT]   saved files; --inspect adds a text head or zip entry names
   storage [--session] [--values]         localStorage (or sessionStorage) keys; values only on request
                                          (keys, tokens and secrets inside values are redacted)
   media [--clear]                        media playback recorded since load (sound features)
-  network [--external] [--filter REGEX] [--clear] [--last N]   requests with status and redacted query (rows under "recent")
+  network [--external] [--filter REGEX] [--clear] [--last N] [--bodies]   requests with status and redacted query (rows under "recent")
+        (--bodies adds each app-origin write's body, JSON with credential values and env/header maps
+         replaced by their length, URL userinfo and secret-named query values redacted in any string;
+         the settings API's ********** placeholder is kept as is)
                                          (privacy/telemetry checks; --clear as for errors)
   toasts [--history [--clear]]          toasts on screen now (with links); --history adds every
                                          status/alert text seen since this page loaded
