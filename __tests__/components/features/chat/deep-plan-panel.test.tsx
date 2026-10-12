@@ -218,6 +218,10 @@ describe("DeepPlanPanel", () => {
     expect(screen.getByTestId("deep-plan-restoring")).toHaveTextContent(
       "Restoring requirements.md, database-design.md… confirm once the document is loaded.",
     );
+    // The bodies are not readable yet, so every upstream citation would read as
+    // a missing document. The panel must show only the Restoring line, not a
+    // list of issues that a moment later would disappear.
+    expect(screen.queryByTestId("deep-plan-issues")).not.toBeInTheDocument();
     expect(screen.getByTestId("deep-plan-confirm")).toBeDisabled();
   });
 

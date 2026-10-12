@@ -81,6 +81,32 @@ const OWN_LABEL_HEADING = /^\[(?:Req|DB|BE|FE)\s+([0-9]+(?:\.[0-9]+)*)\]/;
 export type DeepPlanDocuments = Partial<Record<DeepPlanPhaseId, string>>;
 
 /**
+ * The section number a heading defines, or `null` when it defines none.
+ *
+ * A heading leads with its number (`## 3.1 Authentication` defines `3.1`) or
+ * spells its own label out (`## [Req 3.1] Authentication`). Only a *leading*
+ * number counts, so prose numbers (`## 3.1 Response under 200 ms` → `3.1`, not
+ * `200`) and version-like titles (`## Version 1.2` → nothing) are ignored.
+ * Shared by {@link extractDefinedSections} and the document-chain renderer so
+ * both agree on which sections exist.
+ */
+export function definedSectionOfHeading(rawTitle: string): string | null {
+  const title = stripClosedWrapper(rawTitle.trimStart());
+  const leadingNumber = LEADING_NUMBER_HEADING.exec(title);
+  if (leadingNumber) return leadingNumber[1];
+  const ownLabel = OWN_LABEL_HEADING.exec(title);
+  if (ownLabel) return ownLabel[1];
+  return null;
+}
+
+/** The section number a single line defines, or `null` when it is not a heading. */
+export function sectionHeadingOfLine(line: string): string | null {
+  const heading = HEADING_PATTERN.exec(line);
+  if (!heading) return null;
+  return definedSectionOfHeading(heading[1]);
+}
+
+/**
  * Strips leading inline Markdown delimiters so the leading-token check sees the
  * rendered heading. A delimiter is only a wrapper when it actually forms a span
  * under Markdown's closing rules: a code span closes at the next backtick, and
@@ -126,16 +152,8 @@ function stripClosedWrapper(title: string): string {
 export function extractDefinedSections(content: string): Set<string> {
   const sections = new Set<string>();
   for (const line of content.split("\n")) {
-    const heading = HEADING_PATTERN.exec(line);
-    if (!heading) continue;
-    const title = stripClosedWrapper(heading[1].trimStart());
-    const leadingNumber = LEADING_NUMBER_HEADING.exec(title);
-    if (leadingNumber) {
-      sections.add(leadingNumber[1]);
-      continue;
-    }
-    const ownLabel = OWN_LABEL_HEADING.exec(title);
-    if (ownLabel) sections.add(ownLabel[1]);
+    const section = sectionHeadingOfLine(line);
+    if (section !== null) sections.add(section);
   }
   return sections;
 }
@@ -149,6 +167,65 @@ export function extractReferences(
     refs.push({ label: match[1] as DeepPlanLabel, section: match[2] });
   }
   return refs;
+}
+
+/**
+ * Custom URL scheme for citation links. A scheme (rather than an in-page `#`
+ * fragment) keeps a citation from resolving against the host page's own URL;
+ * the renderer's anchor handler intercepts it and scrolls to the cited
+ * document in the chain.
+ */
+export const DEEP_PLAN_CITATION_SCHEME = "deep-plan-doc:";
+
+/** DOM id of a document's wrapper in the chain. */
+export const deepPlanDocumentId = (phase: DeepPlanPhaseId): string =>
+  `deep-plan-document-${phase}`;
+
+/** DOM id of a cited section heading within a phase document. */
+export const deepPlanSectionId = (
+  phase: DeepPlanPhaseId,
+  section: string,
+): string => `deep-plan-section-${phase}-${section}`;
+
+/** The `deep-plan-doc:<phase>#<section>` href a citation link carries. */
+export const deepPlanCitationHref = (
+  phase: DeepPlanPhaseId,
+  section: string,
+): string => `${DEEP_PLAN_CITATION_SCHEME}${phase}#${section}`;
+
+/** Parse a citation href back to its target; `null` when it is not one. */
+export function parseDeepPlanCitation(
+  href: string | undefined,
+): { phase: DeepPlanPhaseId; section: string } | null {
+  if (!href?.startsWith(DEEP_PLAN_CITATION_SCHEME)) return null;
+  const rest = href.slice(DEEP_PLAN_CITATION_SCHEME.length);
+  const hash = rest.indexOf("#");
+  const phase = (hash === -1 ? rest : rest.slice(0, hash)) as DeepPlanPhaseId;
+  if (!DEEP_PLAN_PHASE_IDS.includes(phase)) return null;
+  return { phase, section: hash === -1 ? "" : rest.slice(hash + 1) };
+}
+
+/**
+ * Rewrites every real citation in `content` into a Markdown link that targets
+ * the document and section that owns the cited label. A citation the validator
+ * would reject (`not-upstream`, or the document's own label, which is a
+ * self-definition rather than a dependency) is left untouched, so the chain
+ * only offers links the checkpoint agrees are valid.
+ */
+export function linkifyCitations(
+  content: string,
+  from: DeepPlanPhaseId,
+): string {
+  const upstream = new Set(upstreamPhasesOf(from));
+  return content.replace(
+    REFERENCE_PATTERN,
+    (match, label: DeepPlanLabel, section: string) => {
+      const target = DEEP_PLAN_LABEL_TO_PHASE[label];
+      if (target === from) return match;
+      if (!upstream.has(target)) return match;
+      return `[${match}](${deepPlanCitationHref(target, section)})`;
+    },
+  );
 }
 
 export function validateDocumentChain(

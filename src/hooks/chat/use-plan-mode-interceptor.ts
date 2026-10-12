@@ -12,6 +12,8 @@ import {
   CODE_COMMAND,
   DEEP_PLAN_COMMAND,
 } from "#/utils/constants";
+import { useActiveBackend } from "#/contexts/active-backend-context";
+import { isDeepPlanSupported } from "#/utils/deep-plan";
 
 const PLAN_PREFIX = `${PLAN_COMMAND} `;
 const CODE_PREFIX = `${CODE_COMMAND} `;
@@ -46,6 +48,8 @@ export const usePlanModeInterceptor = (
     hasDeepPlanPlanner,
     isCreatingConversation,
   } = useHandlePlanClick();
+  const { backend } = useActiveBackend();
+  const deepPlanSupported = isDeepPlanSupported(backend.kind);
   const isMainWebSocketConnected = useMainWebSocketStatus() === "OPEN";
   const isWebSocketConnected = useUnifiedWebSocketStatus() === "OPEN";
   const { isPlanningAgentRunning } = usePlanningAgentState();
@@ -58,7 +62,8 @@ export const usePlanModeInterceptor = (
       const isCode =
         trimmed === CODE_COMMAND || trimmed.startsWith(CODE_PREFIX);
       const isDeepPlan =
-        trimmed === DEEP_PLAN_COMMAND || trimmed.startsWith(DEEP_PLAN_PREFIX);
+        deepPlanSupported &&
+        (trimmed === DEEP_PLAN_COMMAND || trimmed.startsWith(DEEP_PLAN_PREFIX));
       if (!conversationId || (!isPlan && !isCode && !isDeepPlan)) {
         onSubmit(message);
         return;
@@ -126,6 +131,7 @@ export const usePlanModeInterceptor = (
       handlePlanClick,
       setConversationMode,
       startDeepPlan,
+      deepPlanSupported,
     ],
   );
 };

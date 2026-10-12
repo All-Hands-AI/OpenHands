@@ -59,4 +59,26 @@ describe("ChangeAgentContextMenu", () => {
     expect(onCodeClick).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it("hides the Deep Plan entry when showDeepPlan is false", () => {
+    renderWithProviders(
+      <ChangeAgentContextMenu
+        activeMode="code"
+        onClose={vi.fn()}
+        showDeepPlan={false}
+      />,
+    );
+
+    expect(screen.queryByTestId("deep-plan-option")).toBeNull();
+    expect(screen.getByTestId("code-option")).toBeInTheDocument();
+    expect(screen.getByTestId("plan-option")).toBeInTheDocument();
+  });
+
+  it("shows the Deep Plan entry by default", () => {
+    renderWithProviders(
+      <ChangeAgentContextMenu activeMode="code" onClose={vi.fn()} />,
+    );
+
+    expect(screen.getByTestId("deep-plan-option")).toBeInTheDocument();
+  });
 });

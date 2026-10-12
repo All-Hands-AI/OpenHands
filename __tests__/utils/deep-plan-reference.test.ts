@@ -4,6 +4,8 @@ import { I18nKey } from "#/i18n/declaration";
 import {
   extractDefinedSections,
   extractReferences,
+  linkifyCitations,
+  parseDeepPlanCitation,
   validateDocumentChain,
   type DeepPlanDocuments,
 } from "#/utils/deep-plan-reference";
@@ -514,6 +516,51 @@ describe("validateDocumentChain", () => {
 
     expect(validateDocumentChain(documents, "database").uncovered).toEqual([]);
     expect(validateDocumentChain(documents, "tasks").uncovered).toEqual(["1"]);
+  });
+});
+
+describe("linkifyCitations", () => {
+  it("links a citation to the upstream document section that owns the label", () => {
+    const out = linkifyCitations("## 4.2 Login endpoint [Req 3.1]", "backend");
+    expect(out).toContain("[[Req 3.1]](deep-plan-doc:requirements#3.1)");
+  });
+
+  it("links a citation whose label maps to a different upstream document", () => {
+    const out = linkifyCitations("## 1.1 Form [DB 2.1]", "frontend");
+    expect(out).toContain("[[DB 2.1]](deep-plan-doc:database#2.1)");
+  });
+
+  it("leaves a not-upstream citation as plain text", () => {
+    // A DB citation from the analysis phase is not upstream; the validator
+    // rejects it, so the renderer must not offer a link to it.
+    const out = linkifyCitations("See [DB 1.1]", "analysis");
+    expect(out).toBe("See [DB 1.1]");
+  });
+
+  it("leaves a document's own-label definition unlinked", () => {
+    const out = linkifyCitations("## [Req 3.1] Users", "requirements");
+    expect(out).toBe("## [Req 3.1] Users");
+  });
+});
+
+describe("parseDeepPlanCitation", () => {
+  it("round-trips a citation href built by linkifyCitations", () => {
+    const href = linkifyCitations("[Req 3.1]", "backend").match(
+      /\((.*)\)/,
+    )?.[1];
+    expect(parseDeepPlanCitation(href)).toEqual({
+      phase: "requirements",
+      section: "3.1",
+    });
+  });
+
+  it("returns null for a non-citation href", () => {
+    expect(parseDeepPlanCitation("https://example.com")).toBeNull();
+    expect(parseDeepPlanCitation(undefined)).toBeNull();
+  });
+
+  it("returns null for a citation that names an unknown phase", () => {
+    expect(parseDeepPlanCitation("deep-plan-doc:nope#1.1")).toBeNull();
   });
 });
 

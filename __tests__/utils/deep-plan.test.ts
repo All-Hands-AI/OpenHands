@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  isDeepPlanSupported,
   matchDeepPlanDocumentFile,
   nextDeepPlanPhase,
   upstreamPhasesOf,
@@ -33,6 +34,18 @@ describe("matchDeepPlanDocumentFile", () => {
     expect(matchDeepPlanDocumentFile("/workspace/notes.md")).toBeNull();
     expect(matchDeepPlanDocumentFile(null)).toBeNull();
     expect(matchDeepPlanDocumentFile(undefined)).toBeNull();
+  });
+});
+
+describe("isDeepPlanSupported", () => {
+  it("supports Deep Planning on a local backend", () => {
+    expect(isDeepPlanSupported("local")).toBe(true);
+  });
+
+  it("does not support Deep Planning on Cloud", () => {
+    // Cloud cannot provision the per-phase local planner the phase documents
+    // are written by, so every phase with an output file would be refused.
+    expect(isDeepPlanSupported("cloud")).toBe(false);
   });
 });
 

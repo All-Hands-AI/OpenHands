@@ -11,6 +11,8 @@ import {
   CONVERSATION_MODE_CYCLE,
   CONVERSATION_MODE_LABEL_KEYS,
 } from "#/utils/constants";
+import { isDeepPlanSupported } from "#/utils/deep-plan";
+import { useActiveBackend } from "#/contexts/active-backend-context";
 import { ChangeAgentContextMenu } from "./change-agent-context-menu";
 import { cn } from "#/utils/utils";
 import {
@@ -47,6 +49,11 @@ export function ChangeAgentButton() {
   const { curAgentState } = useAgentState();
 
   const { t } = useTranslation("openhands");
+  const { backend } = useActiveBackend();
+  // Deep Planning provisions a per-phase local planner, so it is only offered
+  // on local backends. On Cloud it is skipped in the Shift+Tab cycle and its
+  // menu entry is hidden (the context menu receives the same gate below).
+  const deepPlanSupported = isDeepPlanSupported(backend.kind);
 
   const isAgentRunning = curAgentState === AgentState.RUNNING;
 
@@ -116,8 +123,13 @@ export function ChangeAgentButton() {
         event.preventDefault();
         event.stopPropagation();
 
-        // Cycle through modes: code -> plan -> deep-plan -> code
-        const nextMode = CONVERSATION_MODE_CYCLE[conversationMode];
+        // Cycle through modes: code -> plan -> deep-plan -> code. Deep Plan is
+        // skipped on Cloud, where it cannot be provisioned.
+        const cycle = CONVERSATION_MODE_CYCLE[conversationMode];
+        const nextMode =
+          cycle === "deep-plan" && !deepPlanSupported
+            ? CONVERSATION_MODE_CYCLE["deep-plan"]
+            : cycle;
         if (nextMode === "plan") {
           handlePlanClick(event);
         } else if (nextMode === "deep-plan") {
@@ -139,6 +151,7 @@ export function ChangeAgentButton() {
     setConversationMode,
     handlePlanClick,
     startDeepPlan,
+    deepPlanSupported,
   ]);
 
   const handleButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -213,6 +226,7 @@ export function ChangeAgentButton() {
           onCodeClick={handleCodeClick}
           onPlanClick={handlePlanClick}
           onDeepPlanClick={handleDeepPlanClick}
+          showDeepPlan={deepPlanSupported}
         />
       )}
     </div>

@@ -13,6 +13,11 @@ let hasDeepPlanPlanner = false;
 let mainWebSocketStatus: WebSocketConnectionState = "OPEN";
 let unifiedWebSocketStatus: WebSocketConnectionState = "OPEN";
 let isPlanningAgentRunning = false;
+let backendKind: "local" | "cloud" = "local";
+
+vi.mock("#/contexts/active-backend-context", () => ({
+  useActiveBackend: () => ({ backend: { kind: backendKind }, orgId: null }),
+}));
 
 vi.mock("#/stores/conversation-store", () => ({
   useConversationStore: (selector: (s: unknown) => unknown) =>
@@ -56,6 +61,7 @@ describe("usePlanModeInterceptor", () => {
     mainWebSocketStatus = "OPEN";
     unifiedWebSocketStatus = "OPEN";
     isPlanningAgentRunning = false;
+    backendKind = "local";
   });
 
   it("passes a non-command message straight through to onSubmit", () => {
@@ -213,6 +219,17 @@ describe("usePlanModeInterceptor", () => {
       "deep-plan",
     );
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("passes /deep-plan through as a plain message on Cloud", () => {
+    // Cloud cannot provision the per-phase local planner, so the command must
+    // not be intercepted as a mode switch; it is sent to the agent instead.
+    backendKind = "cloud";
+    const { intercept, onSubmit } = setup(CONV);
+    intercept("/deep-plan design the schema");
+    expect(startDeepPlan).not.toHaveBeenCalled();
+    expect(handlePlanClick).not.toHaveBeenCalled();
+    expect(onSubmit).toHaveBeenCalledWith("/deep-plan design the schema");
   });
 
   it("swallows /deep-plan while a planning conversation is already being created", () => {

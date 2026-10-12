@@ -40,6 +40,7 @@ import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { useCloseOnEscape } from "#/hooks/use-close-on-escape";
 import { cn } from "#/utils/utils";
 import { CONVERSATION_MODE_LABEL_KEYS } from "#/utils/constants";
+import { isDeepPlanSupported } from "#/utils/deep-plan";
 import { useComposerDockedMinimal } from "#/context/composer-docked-context";
 import {
   chatInputIconButtonClassName,
@@ -78,6 +79,10 @@ export function ChatInputActions({
   const { conversationId } = useOptionalConversationId();
   const { backend } = useActiveBackend();
   const isCloud = backend.kind === "cloud";
+  // Deep Planning provisions a per-phase local planner, so its entry points
+  // are hidden on Cloud rather than offering a mode that can never produce
+  // its documents (see `isDeepPlanSupported`).
+  const deepPlanSupported = isDeepPlanSupported(backend.kind);
   const modelState = useChatInputModelState();
   const llmProfileState = useChatInputLlmProfileState();
   // Agent-profile switching lives in the "+" tools menu while the conversation
@@ -396,26 +401,28 @@ export function ChatInputActions({
                     text={t(I18nKey.COMMON$PLAN)}
                   />
                 </ContextMenuListItem>
-                <ContextMenuListItem
-                  testId="overflow-agent-deep-plan"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    startDeepPlan();
-                    closeOverflowMenus();
-                  }}
-                >
-                  <ToolsContextMenuIconText
-                    icon={
-                      <LessonPlanIcon
-                        width={16}
-                        height={16}
-                        color="currentColor"
-                      />
-                    }
-                    text={t(I18nKey.COMMON$DEEP_PLAN)}
-                  />
-                </ContextMenuListItem>
+                {deepPlanSupported && (
+                  <ContextMenuListItem
+                    testId="overflow-agent-deep-plan"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      startDeepPlan();
+                      closeOverflowMenus();
+                    }}
+                  >
+                    <ToolsContextMenuIconText
+                      icon={
+                        <LessonPlanIcon
+                          width={16}
+                          height={16}
+                          color="currentColor"
+                        />
+                      }
+                      text={t(I18nKey.COMMON$DEEP_PLAN)}
+                    />
+                  </ContextMenuListItem>
+                )}
               </ContextMenu>
             </div>
           )}

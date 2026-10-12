@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Lock } from "lucide-react";
+import { Check, ChevronDown, Lock } from "lucide-react";
 import { I18nKey } from "#/i18n/declaration";
 import { Typography } from "#/ui/typography";
 import { BrandButton } from "#/components/features/settings/brand-button";
@@ -23,6 +23,7 @@ import {
   type ConfirmFailure,
 } from "#/utils/deep-plan-machine";
 import { cn } from "#/utils/utils";
+import { DeepPlanDocumentChain } from "./deep-plan-document-chain";
 
 /**
  * The inputs a checkpoint validation depends on: the active phase and the
@@ -62,6 +63,10 @@ export function DeepPlanPanel() {
     revision: DeepPlanRevision;
     failure: ConfirmFailure;
   } | null>(null);
+  // The chain of produced documents renders inline so the checkpoint's
+  // "traceable document chain" criterion is met on the panel itself; it can be
+  // collapsed to keep the checkpoint in focus.
+  const [showChain, setShowChain] = useState(true);
 
   const activePhase = deepPlan.activePhase;
 
@@ -185,6 +190,29 @@ export function DeepPlanPanel() {
       </ol>
 
       <div className="flex flex-col gap-2 border-t border-border pt-3">
+        <button
+          type="button"
+          onClick={() => setShowChain((open) => !open)}
+          aria-expanded={showChain}
+          data-testid="deep-plan-chain-toggle"
+          className="flex items-center gap-1 text-xs text-muted hover:text-contrast cursor-pointer"
+        >
+          <ChevronDown
+            aria-hidden
+            width={14}
+            height={14}
+            className={cn("transition-transform", showChain && "rotate-180")}
+          />
+          {t(I18nKey.DEEP_PLAN$SHOW_CHAIN)}
+        </button>
+
+        {showChain && (
+          <DeepPlanDocumentChain
+            documents={deepPlan.documents}
+            expandedPhase={activePhase}
+          />
+        )}
+
         <Typography.Text className="text-xs text-muted">
           {phase.outputFile ?? t(I18nKey.DEEP_PLAN$PHASE_ANALYSIS)}
         </Typography.Text>
@@ -200,7 +228,7 @@ export function DeepPlanPanel() {
           </Typography.Text>
         )}
 
-        {report.issues.length > 0 && (
+        {!restoreBlocked && report.issues.length > 0 && (
           <ul className="flex flex-col gap-1" data-testid="deep-plan-issues">
             {report.issues.map((issue) => (
               <li key={`${issue.from}-${issue.ref}`} className="text-xs">
@@ -210,7 +238,7 @@ export function DeepPlanPanel() {
           </ul>
         )}
 
-        {report.uncovered.length > 0 && (
+        {!restoreBlocked && report.uncovered.length > 0 && (
           <Typography.Text className="text-xs" testId="deep-plan-uncovered">
             {t(I18nKey.COMMON$DEEP_PLAN_UNCOVERED, {
               sections: report.uncovered.join(", "),

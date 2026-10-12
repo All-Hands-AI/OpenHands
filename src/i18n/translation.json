@@ -48244,5 +48244,22 @@
     "ca": "Webhook source {{source}} already exists, so this automation will use the existing source.",
     "tr": "Webhook source {{source}} already exists, so this automation will use the existing source.",
     "uk": "Webhook source {{source}} already exists, so this automation will use the existing source."
+  },
+  "DEEP_PLAN$SHOW_CHAIN": {
+    "en": "Show document chain",
+    "ja": "ドキュメントチェーンを表示",
+    "zh-CN": "显示文档链",
+    "zh-TW": "顯示文件鏈",
+    "ko-KR": "문서 체인 표시",
+    "no": "Vis dokumentkjeden",
+    "it": "Mostra la catena di documenti",
+    "pt": "Mostrar cadeia de documentos",
+    "es": "Mostrar cadena de documentos",
+    "ar": "عرض سلسلة المستندات",
+    "fr": "Afficher la chaîne de documents",
+    "tr": "Belge zincirini göster",
+    "de": "Dokumentkette anzeigen",
+    "uk": "Показати ланцюжок документів",
+    "ca": "Mostra la cadena de documents"
   }
 }

@@ -144,3 +144,15 @@ export const nextDeepPlanPhase = (
   const index = DEEP_PLAN_PHASE_IDS.indexOf(id);
   return DEEP_PLAN_PHASE_IDS[index + 1] ?? null;
 };
+
+/**
+ * Whether Deep Planning can actually be provisioned on a backend. It relies on
+ * `createLocalPlanningConversation` (one planner per phase, pinned to that
+ * phase's document), which throws on Cloud — a Cloud conversation has no
+ * per-phase write path, so every phase with an `outputFile` would be refused
+ * `missing-output` forever. Callers hide/disable the entry points (Shift+Tab,
+ * the mode menu, the overflow submenu, `/deep-plan`) rather than offer a mode
+ * that cannot produce its documents.
+ */
+export const isDeepPlanSupported = (backendKind: "local" | "cloud"): boolean =>
+  backendKind !== "cloud";
