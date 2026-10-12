@@ -237,15 +237,24 @@ export AUTOMATION_AGENT_SERVER_API_KEY="${AUTOMATION_AGENT_SERVER_API_KEY:-${EFF
 # under existing data. Earlier versions passed the session key on every start,
 # so rotating that key silently changed the encryption key too (#18299). Pin
 # the session key in effect the first time -- the value those versions used --
-# and keep it. scripts/dev-with-automation.mjs pins to the same file.
+# and keep it. scripts/dev-with-automation.mjs pins to the same file and reads
+# it the same way: trailing line breaks are not part of the key, and a blank
+# file counts as not pinned yet.
 # Deleting the file does not rotate the KV key; it strands existing KV state.
 AUTOMATION_KV_SECRET_FILE="${STATE_DIR}/automation-kv-secret.txt"
 if [ -z "${AUTOMATION_KV_SECRET:-}" ]; then
-  if [ -s "$AUTOMATION_KV_SECRET_FILE" ]; then
-    AUTOMATION_KV_SECRET="$(cat "$AUTOMATION_KV_SECRET_FILE")" || {
+  PINNED_KV_SECRET=""
+  if [ -e "$AUTOMATION_KV_SECRET_FILE" ]; then
+    PINNED_KV_SECRET="$(cat "$AUTOMATION_KV_SECRET_FILE")" || {
       log_error "Cannot read $AUTOMATION_KV_SECRET_FILE"
       exit 1
     }
+    while [[ "$PINNED_KV_SECRET" == *[$'\r\n'] ]]; do
+      PINNED_KV_SECRET="${PINNED_KV_SECRET%?}"
+    done
+  fi
+  if [[ "$PINNED_KV_SECRET" == *[![:space:]]* ]]; then
+    AUTOMATION_KV_SECRET="$PINNED_KV_SECRET"
   else
     AUTOMATION_KV_SECRET="$EFFECTIVE_SESSION_KEY"
     mkdir -p "$(dirname "$AUTOMATION_KV_SECRET_FILE")"

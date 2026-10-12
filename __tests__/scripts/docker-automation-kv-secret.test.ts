@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -84,6 +84,47 @@ describe("Docker automation KV secret", () => {
       }),
     ).toBe("explicit-secret");
   });
+
+  it.each([
+    ["a trailing newline", "pinned-key\n", "pinned-key"],
+    ["a Windows line ending", "pinned-key\r\n", "pinned-key"],
+    ["several trailing newlines", "pinned-key\n\n", "pinned-key"],
+    ["only a newline", "\n", "session-key"],
+    ["only spaces", "   ", "session-key"],
+  ])(
+    "reads a hand-edited pin with %s the same way as the npm launcher",
+    (_, content, expected) => {
+      const dockerDir = freshStateDir();
+      const npmDir = mkdtempSync(path.join(tmpdir(), "npm-kv-secret-"));
+
+      try {
+        writeFileSync(
+          path.join(dockerDir, "automation-kv-secret.txt"),
+          content,
+        );
+        writeFileSync(path.join(npmDir, "automation-kv-secret.txt"), content);
+
+        // A blank pin is replaced on the first launch, so the second launch,
+        // with a rotated session key, must still read the same value.
+        for (const sessionKey of ["session-key", "rotated"]) {
+          expect(
+            dockerKvSecret({
+              STATE_DIR: dockerDir,
+              EFFECTIVE_SESSION_KEY: sessionKey,
+            }),
+          ).toBe(expected);
+          expect(
+            resolveAutomationKvSecret(
+              { stateDir: npmDir, sessionApiKey: sessionKey },
+              {},
+            ),
+          ).toBe(expected);
+        }
+      } finally {
+        rmSync(npmDir, { recursive: true, force: true });
+      }
+    },
+  );
 
   it("shares the pinned secret with the npm launcher", () => {
     const dockerFirst = freshStateDir();

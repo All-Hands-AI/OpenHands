@@ -950,9 +950,9 @@ function resolveAutomationKvSecret(config, env = process.env) {
 
   const filePath = join(config.stateDir, AUTOMATION_KV_SECRET_FILE);
   try {
-    // Strip only the newline written below: the value must round-trip
-    // exactly, as docker/entrypoint.sh's `$(cat ...)` does.
-    const pinned = readFileSync(filePath, "utf8").replace(/\r?\n$/, "");
+    // Read the same way as docker/entrypoint.sh: trailing line breaks are not
+    // part of the key, and a blank file counts as not pinned yet.
+    const pinned = readFileSync(filePath, "utf8").replace(/[\r\n]+$/, "");
     if (pinned.trim()) return pinned;
   } catch (error) {
     // Only a missing file means "not pinned yet". Falling back to the session
