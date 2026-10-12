@@ -92,7 +92,7 @@ prefix. For a family spread over many files, list the route modules and
 top-level component directories, not every file. Then exactly four H2
 sections, in this order:
 
-1. `## Sub-features`: one bullet per ID: `` - `F14.create`: add a dummy secret; it persists after reload. ``
+1. `## Sub-features`: one bullet per ID: ``- `F14.create`: add a dummy secret; it persists after reload.``
 2. `## How to get to it (user POV)`: every entry point, in user language: the
    sidebar link, the direct URL, the command-menu entry, the keyboard shortcut,
    the row menu. Note which entry point each recipe exercises.
@@ -116,13 +116,15 @@ sections, in this order:
    that matter, and a `browser screenshot --feature <ID> --name <label>` where the
    proof is visual. Include phone-viewport checks (`browser viewport phone`) for
    layouts that change on small screens.
+
 4. `## Gotchas`: traps that waste or invalidate a run: debounces, focus traps,
    items that only appear after the agent runs, features hidden behind a
    prerequisite, and known open issues (link them; they are repro candidates, not
-   exemptions). The map should know every open bug. Record one on the bullet
-   that reproduces it, next to the expected result, as `Known failure
-   (reproduced <date>, #<issue>): <what happens>`; list it here as
-   `Known issue #<issue>: ...` only when no recipe can drive it.
+   exemptions). The map should know every open bug (applying from the recorded
+   `Maintenance baseline` line forward, not retroactively, until the backfill of
+   earlier open bugs is complete). Record one on the bullet that reproduces it,
+   next to the expected result, as `Known failure (reproduced <date>, #<issue>): <what happens>`;
+   list it here as `Known issue #<issue>: ...` only when no recipe can drive it.
 
 Treat commands as literal: quote selectors, keep names unique to the run (prefix
 fixtures with `QA_`), and restore shared state after mutations (delete the secret,
@@ -140,7 +142,7 @@ will run them that way:
   deletes a fixture that a later bullet needs.
 - Write environment-dependent results as conditionals ("if the registry is
   reachable, `Up to date`; otherwise ...") and check them with `browser
-  network`, not from memory.
+network`, not from memory.
 - A bullet that leaves an unsaved edit ends with `browser reload`, and a
   bullet that changes a setting a later editor inherits (an LLM temperature,
   a theme) restores it or says so: later bullets inherit both.
