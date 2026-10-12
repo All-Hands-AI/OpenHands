@@ -83,6 +83,14 @@ vi.mock("#/hooks/mutation/conversation-mutation-utils", () => ({
   invalidateConversationQueries: vi.fn(),
 }));
 
+// The composer's agent switcher is disabled unless the conversation websocket
+// is OPEN; the real provider reports CLOSED without one, which would hide the
+// overflow agent submenu under test here.
+vi.mock("#/hooks/use-unified-websocket-status", () => ({
+  useUnifiedWebSocketStatus: () => "OPEN",
+  useMainWebSocketStatus: () => "OPEN",
+}));
+
 // eslint-disable-next-line import/first
 import { ChatInputActions } from "#/components/features/chat/components/chat-input-actions";
 
@@ -271,12 +279,13 @@ describe("ChatInputActions", () => {
     ).toHaveAttribute("data-testid", "submit-button");
   });
 
-  it("hides the Change Agent button on a local backend", () => {
+  it("shows the Change Agent button on a local backend", () => {
+    // The switcher is not Cloud-only: Deep Planning is provisioned only on
+    // local backends, so the mode selector has to mount there for its entry
+    // points (Shift+Tab / context menu / overflow submenu) to be reachable.
     renderWithProviders(<ChatInputActions disabled={false} />);
 
-    expect(
-      screen.queryByTestId("change-agent-button-stub"),
-    ).not.toBeInTheDocument();
+    expect(screen.getByTestId("change-agent-button-stub")).toBeInTheDocument();
   });
 
   it("shows the Change Agent button on a cloud backend", () => {
@@ -536,5 +545,36 @@ describe("ChatInputActions — More input actions overflow menu (#17925)", () =>
     expect(
       within(submenu).getByTestId("llm-profile-menu-stub"),
     ).toBeInTheDocument();
+  });
+
+  it("reaches the Deep Plan entry from the overflow submenu on a local backend", () => {
+    // The switcher mounts on local backends too, so the Deep Plan entry in
+    // the overflow submenu is reachable where Deep Planning is provisioned —
+    // not dead code behind the Cloud-only container gate (review finding).
+    renderWithProviders(<ChatInputActions disabled={false} />);
+
+    clickTrigger();
+    fireEvent.click(screen.getByTestId("overflow-agent-button"));
+
+    expect(screen.getByTestId("overflow-agent-deep-plan")).toBeInTheDocument();
+  });
+
+  it("hides the Deep Plan entry from the overflow submenu on a cloud backend", () => {
+    setRegisteredBackends([cloudBackend]);
+    setActiveSelection({ backendId: cloudBackend.id });
+
+    renderWithProviders(
+      <ActiveBackendProvider>
+        <ChatInputActions disabled={false} />
+      </ActiveBackendProvider>,
+    );
+
+    clickTrigger();
+    fireEvent.click(screen.getByTestId("overflow-agent-button"));
+
+    expect(screen.getByTestId("overflow-agent-plan")).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("overflow-agent-deep-plan"),
+    ).not.toBeInTheDocument();
   });
 });

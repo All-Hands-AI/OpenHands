@@ -78,7 +78,6 @@ export function ChatInputActions({
   const resumeConversationMutation = useResumeConversation();
   const { conversationId } = useOptionalConversationId();
   const { backend } = useActiveBackend();
-  const isCloud = backend.kind === "cloud";
   // Deep Planning provisions a per-phase local planner, so its entry points
   // are hidden on Cloud rather than offering a mode that can never produce
   // its documents (see `isDeepPlanSupported`).
@@ -97,9 +96,14 @@ export function ChatInputActions({
     isPreStart &&
     !(conversationId?.startsWith("task-") ?? false) &&
     (agentProfilesForStart.data?.profiles?.length ?? 0) > 0;
-  // Code/Plan mode switching is a cloud OpenHands feature — it doesn't apply
-  // to ACP conversations (which have no "plan" mode), so hide it when ACP.
-  const showChangeAgentButton = isCloud && !modelState.isAcpContext;
+  // Code/Plan/Deep-Plan mode switching. It does not apply to ACP
+  // conversations (which have no "plan" mode), so hide it when ACP. The
+  // switcher mounts on every non-ACP backend so Deep Planning — which is
+  // Local-only (`isDeepPlanSupported`, its planner is a local conversation) —
+  // is actually reachable through Shift+Tab / the context menu / the overflow
+  // submenu, not just `/deep-plan`. `deepPlanSupported` hides only the Deep
+  // Plan entries on Cloud, where the mode cannot be provisioned.
+  const showChangeAgentButton = !modelState.isAcpContext;
   const webSocketStatus = useUnifiedWebSocketStatus();
   const { curAgentState } = useAgentState();
   const { conversationMode, setConversationMode, startDeepPlan } =
