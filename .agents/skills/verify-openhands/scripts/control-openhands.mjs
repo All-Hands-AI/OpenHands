@@ -1062,7 +1062,7 @@ async function cmdService({ positional, flags }) {
     out({ ok: true, launcherAlive: groupAlive(run.launcherPgid), services });
     return;
   }
-  if (sub === "stop") {
+  if (["stop", "pause", "resume"].includes(sub)) {
     const pattern = SERVICES[name];
     if (!pattern) {
       usage(
@@ -1070,7 +1070,7 @@ async function cmdService({ positional, flags }) {
         "control-openhands service stop automation",
       );
     }
-    // Only processes inside this run's own process group are candidates.
+    // Only descendants of this run's launcher are candidates.
     const targets = procs.filter(
       (p) => pattern.test(p.args) && p.pid !== run.launcherPid,
     );
@@ -1083,10 +1083,22 @@ async function cmdService({ positional, flags }) {
     // Signal each service's own process group (uv and its Python child).
     for (const pgid of new Set(targets.map((t) => t.pgid))) {
       try {
-        process.kill(-pgid, "SIGTERM");
+        process.kill(
+          -pgid,
+          { stop: "SIGTERM", pause: "SIGSTOP", resume: "SIGCONT" }[sub],
+        );
       } catch {
         // already gone
       }
+    }
+    if (sub !== "stop") {
+      out({
+        ok: true,
+        action: sub,
+        signalled: targets.map((t) => t.pid),
+        launcherAlive: groupAlive(run.launcherPgid),
+      });
+      return;
     }
     await delay(2000);
     out({
@@ -1098,7 +1110,7 @@ async function cmdService({ positional, flags }) {
     return;
   }
   usage(
-    "Usage: control-openhands service status | service stop automation|agent-server|frontend",
+    "Usage: control-openhands service status | service stop|pause|resume automation|agent-server|frontend",
     "control-openhands service stop automation",
   );
 }
@@ -4005,7 +4017,10 @@ first, so the browser's stored key becomes stale (public mode then shows the
 API-key prompt again). Reload the browser afterwards.
 `,
   service: `control-openhands service status
-control-openhands service stop automation|agent-server|frontend
+control-openhands service stop|pause|resume automation|agent-server|frontend
+
+Pause queues real requests without replacing responses; resume lets the service process them.
+Always resume a paused service before stopping the run.
 
 Stops one service inside this run's own process group so unavailable/backend-down
 states can be driven through the UI. Bring everything back with restart.
@@ -4025,7 +4040,7 @@ Lifecycle
   doctor        Read-only health check; run first and after any surprise
   status        Show the current run's ports, revision and liveness
   restart       Restart this run's stack in place (same state); --rotate-key for stale-key states
-  service       status | stop automation|agent-server|frontend (drive backend-down states)
+  service       status | stop|pause|resume automation|agent-server|frontend (unavailable/slow states)
   stop          Stop this run's browser and launcher process group (keeps evidence)
   runs          List runs under $OH_VERIFY_HOME
   env           Print export lines for this run

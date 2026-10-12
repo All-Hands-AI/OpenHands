@@ -127,7 +127,14 @@ automatically a bug and a zero difference does not prove behavior.
 - **Product defect**: keep the evidence, search existing issues, then file in the
   owning repository (Canvas here; Agent Server/SDK in
   `OpenHands/software-agent-sdk`; scheduling/dispatch in `OpenHands/automation`),
-  following that repository's issue template. Keep it out of the maintenance PR.
+  following that repository's issue template. The fix stays out of the
+  maintenance PR, but the defect goes in: the same PR adds a `Known failure
+  (reproduced <date>, #<issue>)` note to the bullet that reproduces it, next to
+  the expected result, or a `Known issue #<issue>` Gotchas entry when no recipe
+  can drive it.
+- **Bugs filed outside the pass**: open `bug` issues opened since BASE that
+  name a mapped feature are repro candidates too. Reproduce each and add its
+  note; when one does not reproduce, comment on the issue with the run instead.
 - **Undocumented or contradictory change**: cite the PR and the observed
   difference; ask the maintainer instead of rewriting the expectation.
 - **Known issues** linked in Gotchas are repro candidates: retest, link fresh
