@@ -83,6 +83,7 @@ export const RPC_METHODS = new Set([
   "listSessions",
   "listAgentConfigs",
   "listConfigSessions",
+  "listSandboxSizes",
   "createOpenHandsAgent",
   "createSession",
   "pauseSession",

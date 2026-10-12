@@ -166,6 +166,9 @@ function fakeBridge(upstreamOrigin: string) {
     }),
     destroySession: vi.fn(async () => {}),
     deleteAgentConfig: vi.fn(async () => {}),
+    listSandboxSizes: vi.fn(async () => [
+      { slug: "mars-2vcpu-4gb", vcpus: 2, memory_mb: 4096 },
+    ]),
     getTunnel: vi.fn((sessionId: string) => {
       const tunnel = tunnels.get(sessionId);
       return tunnel && { sessionId, remotePort: 8000, ...tunnel };
@@ -306,6 +309,16 @@ describe("createMarsWebBridge", () => {
     expect((await fetch(`${web.origin}/mars/rpc/getAuthState`)).status).toBe(
       405,
     );
+  });
+
+  it("exposes the sandbox size catalog over RPC", async () => {
+    const { status, body } = await rpc(web.origin, "listSandboxSizes");
+
+    expect(status).toBe(200);
+    expect(body.result).toEqual([
+      { slug: "mars-2vcpu-4gb", vcpus: 2, memory_mb: 4096 },
+    ]);
+    expect(bridge.listSandboxSizes).toHaveBeenCalledTimes(1);
   });
 
   it("surfaces bridge errors with their status", async () => {

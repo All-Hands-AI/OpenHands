@@ -46,6 +46,21 @@ describe("createMarsWebBridge", () => {
     expect(page).toEqual({ sessions: [], nextPageToken: null });
   });
 
+  it("reads the sandbox size catalog over RPC", async () => {
+    const sizes = [{ slug: "mars-2vcpu-4gb", vcpus: 2, memory_mb: 4096 }];
+    const fetchImpl = vi.fn(async () => jsonResponse(200, { result: sizes }));
+    const bridge = createMarsWebBridge(
+      "",
+      fetchImpl as unknown as typeof fetch,
+    );
+
+    expect(await bridge.listSandboxSizes()).toEqual(sizes);
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "/mars/rpc/listSandboxSizes",
+      expect.objectContaining({ body: JSON.stringify({ args: [] }) }),
+    );
+  });
+
   it("raises the server's error message and status", async () => {
     const fetchImpl = vi.fn(async () =>
       jsonResponse(401, {

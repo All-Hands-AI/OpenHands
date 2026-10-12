@@ -92,6 +92,20 @@ export interface NewMarsAgentInput {
   name: string;
   /** Stored as the agent's `OPENHANDS_LLM_API_KEY` DigitalOcean secret. */
   llmApiKey?: string;
+  /**
+   * Sandbox size slug from `listSandboxSizes`, written into the agent's
+   * manifest so every session of the agent gets it. Omitted = DO's default.
+   */
+  size?: string;
+}
+
+/** One entry of DigitalOcean's sandbox size catalog. */
+export interface MarsSandboxSize {
+  slug: string;
+  vcpus: number;
+  memory_mb: number;
+  price_per_hour_usd?: number | null;
+  price_per_month_usd?: number | null;
 }
 
 /** harness-api's Agent Config name rule. */
@@ -161,6 +175,8 @@ export interface MarsBridge {
     configId: string,
     options?: ListOptions,
   ) => Promise<MarsSessionPage>;
+  /** Static catalog, smallest first; every slug is valid for a new agent. */
+  listSandboxSizes: () => Promise<MarsSandboxSize[]>;
   createOpenHandsAgent: (input: NewMarsAgentInput) => Promise<MarsAgentConfig>;
   /** Resolves once the new session is READY. */
   createSession: (configId: string, name: string) => Promise<MarsSession>;

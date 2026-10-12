@@ -116,6 +116,8 @@ export const MARS_QUERY_KEYS = {
   /** Keyed by connection so switching teams never shows another team's list. */
   agents: (connectionId: string | null) =>
     ["mars", "agents", connectionId] as const,
+  /** DigitalOcean's sandbox size catalog; the same for every team. */
+  sandboxSizes: ["mars", "sandbox-sizes"] as const,
 } as const;
 
 export const APP_UPDATE_QUERY_KEYS = {

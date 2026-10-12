@@ -2,13 +2,18 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
 
+import type { TFunction } from "i18next";
+
 import {
   buildNewSessionName,
   isValidAgentName,
+  type MarsSandboxSize,
   type NewMarsAgentInput,
 } from "#/api/mars/mars-tunnel-backend";
 import { BrandButton } from "#/components/features/settings/brand-button";
+import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
 import { SettingsInput } from "#/components/features/settings/settings-input";
+import { useMarsSandboxSizes } from "#/hooks/query/use-mars-agents";
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 
@@ -16,6 +21,29 @@ const DEFAULT_NAME_STEM = "openhands";
 const NAME_HINT_ID = "digitalocean-new-agent-name-hint";
 const LLM_KEY_HINT_ID = "digitalocean-new-agent-llm-key-hint";
 const HELPER_CLASS = "-mt-1 text-pretty text-xs text-muted";
+/** Never a valid slug, so it cannot collide with a real size. */
+const DEFAULT_SIZE_KEY = "__default__";
+const MB_PER_GB = 1024;
+
+function formatSizeLabel(
+  size: MarsSandboxSize,
+  t: TFunction,
+  language: string,
+): string {
+  const params = {
+    vcpus: size.vcpus,
+    memory: Number((size.memory_mb / MB_PER_GB).toFixed(2)),
+  };
+  if (typeof size.price_per_month_usd !== "number") {
+    return t(I18nKey.DO_AGENTS$SANDBOX_SIZE_OPTION, params);
+  }
+  const price = new Intl.NumberFormat(language, {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 2,
+  }).format(size.price_per_month_usd);
+  return t(I18nKey.DO_AGENTS$SANDBOX_SIZE_OPTION_PRICE, { ...params, price });
+}
 
 interface DigitalOceanNewAgentFormProps {
   isCreating: boolean;
@@ -31,14 +59,31 @@ export function DigitalOceanNewAgentForm({
   onSubmit,
   onCancel,
 }: DigitalOceanNewAgentFormProps) {
-  const { t } = useTranslation("openhands");
+  const { t, i18n } = useTranslation("openhands");
   const [name, setName] = React.useState(() =>
     buildNewSessionName(DEFAULT_NAME_STEM),
   );
   const [llmApiKey, setLlmApiKey] = React.useState("");
+  const [sizeKey, setSizeKey] = React.useState(DEFAULT_SIZE_KEY);
+  // A failed or pending catalog just leaves the default; it never blocks create.
+  const { data: sizes } = useMarsSandboxSizes(true);
   const trimmedName = name.trim();
   const isNameValid = isValidAgentName(trimmedName);
   const showNameError = trimmedName !== "" && !isNameValid;
+
+  const sizeItems = React.useMemo(
+    () => [
+      {
+        key: DEFAULT_SIZE_KEY,
+        label: t(I18nKey.DO_AGENTS$SANDBOX_SIZE_DEFAULT),
+      },
+      ...(sizes ?? []).map((size) => ({
+        key: size.slug,
+        label: formatSizeLabel(size, t, i18n.language),
+      })),
+    ],
+    [sizes, t, i18n.language],
+  );
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -46,6 +91,7 @@ export function DigitalOceanNewAgentForm({
     onSubmit({
       name: trimmedName,
       llmApiKey: llmApiKey.trim() || undefined,
+      size: sizeKey === DEFAULT_SIZE_KEY ? undefined : sizeKey,
     });
   };
 
@@ -90,6 +136,25 @@ export function DigitalOceanNewAgentForm({
           />
           <p id={LLM_KEY_HINT_ID} className={HELPER_CLASS}>
             {t(I18nKey.DO_AGENTS$NEW_AGENT_LLM_KEY_HINT)}
+          </p>
+        </div>
+        <div className="flex min-w-0 flex-col gap-2 sm:col-span-2">
+          <SettingsDropdownInput
+            testId="digitalocean-new-agent-size"
+            name="digitalocean-new-agent-size"
+            label={t(I18nKey.DO_AGENTS$SANDBOX_SIZE)}
+            items={sizeItems}
+            selectedKey={sizeKey}
+            onSelectionChange={(key) =>
+              setSizeKey(key === null ? DEFAULT_SIZE_KEY : String(key))
+            }
+            onInputChange={() => {}}
+            isClearable={false}
+            allowsCustomValue={false}
+            isDisabled={isCreating}
+          />
+          <p className={HELPER_CLASS}>
+            {t(I18nKey.DO_AGENTS$SANDBOX_SIZE_HINT)}
           </p>
         </div>
       </div>

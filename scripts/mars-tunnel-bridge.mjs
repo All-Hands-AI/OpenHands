@@ -51,6 +51,7 @@ export const MARS_TUNNEL_IPC = {
   listSessions: "mars:listSessions",
   listAgentConfigs: "mars:listAgentConfigs",
   listConfigSessions: "mars:listConfigSessions",
+  listSandboxSizes: "mars:listSandboxSizes",
   createOpenHandsAgent: "mars:createOpenHandsAgent",
   createSession: "mars:createSession",
   pauseSession: "mars:pauseSession",
@@ -318,6 +319,10 @@ export function createMarsTunnelBridge({
     },
     listConfigSessions: (configId, options) =>
       client.listConfigSessions(configId, options ?? {}),
+    async listSandboxSizes() {
+      requireActiveConnectionId();
+      return client.listSandboxSizes();
+    },
     pauseSession(sessionId) {
       readyAt.delete(sessionId);
       return client.pauseSession(sessionId);
@@ -343,16 +348,20 @@ export function createMarsTunnelBridge({
     /**
      * Create an OpenHands Agent Config. The manifest is built here rather
      * than accepted over IPC so the renderer can only ever create OpenHands
-     * agents; it contributes just the name and an optional LLM key.
+     * agents; it contributes just the name, an optional LLM key, and an
+     * optional sandbox size slug (validated by the manifest builder).
      */
-    async createOpenHandsAgent({ name, llmApiKey } = {}) {
+    async createOpenHandsAgent({ name, llmApiKey, size } = {}) {
       const trimmedName = name?.trim() ?? "";
       if (!trimmedName) {
         throw new MarsApiError("Give the agent a name.", { status: 400 });
       }
       const created = await client.createAgentConfig(
         trimmedName,
-        buildOpenHandsManifest({ llmApiKey: llmApiKey?.trim() || undefined }),
+        buildOpenHandsManifest({
+          llmApiKey: llmApiKey?.trim() || undefined,
+          size: size || undefined,
+        }),
       );
       if (!created?.id) {
         throw new MarsApiError("DigitalOcean returned no agent.");

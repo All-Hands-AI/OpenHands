@@ -107,6 +107,18 @@ export function useMarsAuthState() {
   });
 }
 
+/** Sandbox sizes a new agent may pick. The catalog is static. */
+export function useMarsSandboxSizes(enabled: boolean) {
+  return useQuery({
+    queryKey: MARS_QUERY_KEYS.sandboxSizes,
+    queryFn: () => requireMarsBridge().listSandboxSizes(),
+    enabled: enabled && getMarsBridge() !== null,
+    staleTime: Infinity,
+    retry: false,
+    meta: { disableToast: true },
+  });
+}
+
 /** The active connection's id while it is still usable, else null. */
 export function getUsableConnectionId(
   authState: MarsAuthState | undefined,

@@ -99,6 +99,7 @@ export function createMarsWebBridge(
     listSessions: call("listSessions"),
     listAgentConfigs: call("listAgentConfigs"),
     listConfigSessions: call("listConfigSessions"),
+    listSandboxSizes: call("listSandboxSizes"),
     createOpenHandsAgent: call("createOpenHandsAgent"),
     createSession: call("createSession"),
     pauseSession: call("pauseSession"),

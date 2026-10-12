@@ -94,6 +94,9 @@ function fakeApi() {
       sessions: [],
       nextPageToken: null,
     })),
+    listSandboxSizes: vi.fn(async () => [
+      { slug: "mars-2vcpu-4gb", vcpus: 2, memory_mb: 4096 },
+    ]),
     createAgentConfig: vi.fn(async (name: string) => ({
       id: "cfg_new",
       name,
@@ -390,6 +393,48 @@ describe("createMarsTunnelBridge", () => {
       configs: [{ id: "cfg_new", agent: "openhands" }],
     });
     expect(api.getAgentConfig).not.toHaveBeenCalled();
+  });
+
+  it("createOpenHandsAgent writes the chosen sandbox size into the manifest", async () => {
+    const { api, ipcMain } = setup();
+    await ipcMain.invoke(MARS_TUNNEL_IPC.savePat, { token: VALID_PAT });
+
+    await ipcMain.invoke(MARS_TUNNEL_IPC.createOpenHandsAgent, {
+      name: "my-agent",
+      size: "mars-16vcpu-32gb",
+    });
+
+    expect(api.createAgentConfig).toHaveBeenCalledWith(
+      "my-agent",
+      expect.stringMatching(/^size: mars-16vcpu-32gb$/m),
+    );
+  });
+
+  it("createOpenHandsAgent refuses a size that is not a slug", async () => {
+    const { api, ipcMain } = setup();
+    await ipcMain.invoke(MARS_TUNNEL_IPC.savePat, { token: VALID_PAT });
+
+    await expect(
+      ipcMain.invoke(MARS_TUNNEL_IPC.createOpenHandsAgent, {
+        name: "my-agent",
+        size: "x\nkeep_warm: true",
+      }),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(api.createAgentConfig).not.toHaveBeenCalled();
+  });
+
+  it("listSandboxSizes needs a signed-in connection", async () => {
+    const { api, ipcMain } = setup();
+
+    await expect(
+      ipcMain.invoke(MARS_TUNNEL_IPC.listSandboxSizes),
+    ).rejects.toThrow(/Sign in to DigitalOcean/);
+    expect(api.listSandboxSizes).not.toHaveBeenCalled();
+
+    await ipcMain.invoke(MARS_TUNNEL_IPC.savePat, { token: VALID_PAT });
+    expect(await ipcMain.invoke(MARS_TUNNEL_IPC.listSandboxSizes)).toEqual([
+      { slug: "mars-2vcpu-4gb", vcpus: 2, memory_mb: 4096 },
+    ]);
   });
 
   it("listAgentConfigs names each config's agent from its manifest, reading each once", async () => {
