@@ -77,6 +77,11 @@ interface InstallServerModalProps {
   existingServers: MCPServerConfig[];
   onClose: () => void;
   onSuccess?: (entry: MarketplaceEntry) => void;
+  /**
+   * When true, an entry that has an MCP option opens on its MCP form without
+   * offering the instance's native integration. Defaults to false.
+   */
+  mcpOnly?: boolean;
 }
 
 interface FieldState {
@@ -158,6 +163,7 @@ export function InstallServerModal({
   existingServers,
   onClose,
   onSuccess,
+  mcpOnly = false,
 }: InstallServerModalProps) {
   const { t } = useTranslation("openhands");
   const { mutate: addMcpServer, isPending: isAdding } = useAddMcpServer();
@@ -185,15 +191,19 @@ export function InstallServerModal({
 
   // A git entry the cloud instance can also connect natively offers that as
   // the recommended option next to the MCP server; an entry with no MCP
-  // option (Bitbucket) offers only the native one.
+  // option (Bitbucket) offers only the native one. A caller that asked for the
+  // MCP server alone skips the native option whenever the entry has an MCP one.
   const { getNativeIntegration, isLoading: isNativeIntegrationsLoading } =
     useNativeGitIntegrations();
-  const native = getNativeIntegration(entry.id);
+  const skipNative = mcpOnly && !!option;
+  const native = skipNative ? null : getNativeIntegration(entry.id);
   // Until the instance's providers are known, a git entry cannot say whether
   // it leads with the native option; showing the MCP form meanwhile would swap
   // it out from under the user once the answer arrives.
   const isResolvingNative =
-    isNativeIntegrationsLoading && isNativeGitCandidate(entry.id);
+    !skipNative &&
+    isNativeIntegrationsLoading &&
+    isNativeGitCandidate(entry.id);
   const [selectedConnection, setSelectedConnection] = React.useState<
     "native" | "mcp"
   >("native");
@@ -268,7 +278,12 @@ export function InstallServerModal({
         .then((result) => {
           if (!result.ok) {
             setGlobalError(
-              makeMcpTestErrorMessage(t, result.error_kind, result.error),
+              makeMcpTestErrorMessage(
+                t,
+                result.error_kind,
+                result.error,
+                payload.type,
+              ),
             );
             return;
           }
@@ -311,7 +326,12 @@ export function InstallServerModal({
       onSuccess: (result) => {
         if (!result.ok) {
           setGlobalError(
-            makeMcpTestErrorMessage(t, result.error_kind, result.error),
+            makeMcpTestErrorMessage(
+              t,
+              result.error_kind,
+              result.error,
+              payload.type,
+            ),
           );
           // Modal stays open — do NOT call onClose.
           return;
@@ -502,6 +522,7 @@ export function InstallServerModal({
     return handleStdioSubmit();
   };
 
+  // @spec MCP-004 — Form feedback follows readable theme text roles
   const renderFields = () => {
     if (template?.kind === "shttp" || template?.kind === "sse") {
       const oauthMode = isOAuthOption(option);
@@ -522,7 +543,7 @@ export function InstallServerModal({
             className="w-full"
           />
           {state.errors.url && (
-            <p className="text-xs text-red-500">{state.errors.url}</p>
+            <p className="text-xs text-feedback-error">{state.errors.url}</p>
           )}
           {headerFields.map((field) => (
             <div key={field.key} className="flex flex-col gap-1">
@@ -544,7 +565,7 @@ export function InstallServerModal({
                 </p>
               )}
               {state.errors[field.key] && (
-                <p className="text-xs text-red-500">
+                <p className="text-xs text-feedback-error">
                   {state.errors[field.key]}
                 </p>
               )}
@@ -595,7 +616,9 @@ export function InstallServerModal({
                 </p>
               )}
               {state.errors.api_key && (
-                <p className="text-xs text-red-500">{state.errors.api_key}</p>
+                <p className="text-xs text-feedback-error">
+                  {state.errors.api_key}
+                </p>
               )}
               {credentialSecretName && (
                 <SaveAsSecretToggle
@@ -644,7 +667,9 @@ export function InstallServerModal({
               </p>
             )}
             {state.errors[field.key] && (
-              <p className="text-xs text-red-500">{state.errors[field.key]}</p>
+              <p className="text-xs text-feedback-error">
+                {state.errors[field.key]}
+              </p>
             )}
             {field.key in state.savedAsSecret && (
               <SaveAsSecretToggle
@@ -677,7 +702,9 @@ export function InstallServerModal({
               </p>
             )}
             {state.errors[field.key] && (
-              <p className="text-xs text-red-500">{state.errors[field.key]}</p>
+              <p className="text-xs text-feedback-error">
+                {state.errors[field.key]}
+              </p>
             )}
           </div>
         ))}
@@ -785,10 +812,11 @@ export function InstallServerModal({
 
               <div className="flex flex-col gap-3">{renderFields()}</div>
 
+              {/* @spec MCP-004 — Form feedback follows readable theme text roles */}
               {globalError && (
                 <p
                   data-testid="mcp-install-modal-error"
-                  className="text-sm text-red-500 whitespace-pre-wrap"
+                  className="text-sm text-feedback-error whitespace-pre-wrap"
                 >
                   {globalError}
                 </p>
