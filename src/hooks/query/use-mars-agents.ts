@@ -108,11 +108,11 @@ export function useMarsAuthState() {
 }
 
 /** Sandbox sizes a new agent may pick. The catalog is static. */
-export function useMarsSandboxSizes(enabled: boolean) {
+export function useMarsSandboxSizes() {
   return useQuery({
     queryKey: MARS_QUERY_KEYS.sandboxSizes,
     queryFn: () => requireMarsBridge().listSandboxSizes(),
-    enabled: enabled && getMarsBridge() !== null,
+    enabled: getMarsBridge() !== null,
     staleTime: Infinity,
     retry: false,
     meta: { disableToast: true },

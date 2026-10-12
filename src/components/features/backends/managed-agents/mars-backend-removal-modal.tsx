@@ -60,6 +60,7 @@ export function MarsBackendRemovalModal({
     <ModalBackdrop
       onClose={isStopping ? undefined : onCancel}
       closeOnEscape={!isStopping}
+      aria-label={t(I18nKey.BACKEND$REMOVE)}
     >
       <div
         data-testid="mars-backend-removal-modal"

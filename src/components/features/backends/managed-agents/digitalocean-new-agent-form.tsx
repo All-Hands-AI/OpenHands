@@ -64,7 +64,7 @@ export function DigitalOceanNewAgentForm({
   );
   const [sizeKey, setSizeKey] = React.useState(DEFAULT_SIZE_KEY);
   // A failed or pending catalog just leaves the default; it never blocks create.
-  const { data: sizes } = useMarsSandboxSizes(true);
+  const { data: sizes } = useMarsSandboxSizes();
   const trimmedName = name.trim();
   const isNameValid = isValidAgentName(trimmedName);
   const showNameError = trimmedName !== "" && !isNameValid;

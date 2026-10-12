@@ -145,12 +145,16 @@ export function ManageBackendsModal({
     [lockedCloudBackend, updateBackend],
   );
 
+  // A removal confirmation on top owns Escape and outside clicks; closing this
+  // modal under it would unmount it mid-stop and swallow a refused destroy.
+  const isClosable = !recoveryMode && pendingRemoval === null;
+
   return (
     <>
       <ModalBackdrop
-        onClose={recoveryMode ? undefined : onClose}
-        closeOnEscape={!recoveryMode}
-        closeOnBackdropClick={!recoveryMode}
+        onClose={isClosable ? onClose : undefined}
+        closeOnEscape={isClosable}
+        closeOnBackdropClick={isClosable}
         aria-label={modalTitle}
       >
         <div

@@ -886,7 +886,7 @@ describe("ManageBackendsModal — removing a DigitalOcean session backend", () =
     );
   }
 
-  async function openRemovalFor(name: string) {
+  async function openRemovalFor(name: string, onClose = vi.fn()) {
     const user = userEvent.setup();
     renderWithProviders(
       <TestSeed
@@ -901,7 +901,7 @@ describe("ManageBackendsModal — removing a DigitalOcean session backend", () =
         }}
       >
         <BackendNames />
-        <ManageBackendsModal onClose={vi.fn()} />
+        <ManageBackendsModal onClose={onClose} />
       </TestSeed>,
     );
     await user.click(
@@ -909,6 +909,21 @@ describe("ManageBackendsModal — removing a DigitalOcean session backend", () =
     );
     return user;
   }
+
+  it("does not close Manage Backends on Escape while a session is being stopped", async () => {
+    // A stop that never settles, so the dialog stays mid-destroy.
+    installMarsBridge(() => new Promise<void>(() => {}));
+    const onClose = vi.fn();
+    const user = await openRemovalFor("DO session", onClose);
+
+    await user.click(await screen.findByTestId("stop-session-button"));
+    await user.keyboard("{Escape}");
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(
+      screen.getByTestId("mars-backend-removal-modal"),
+    ).toBeInTheDocument();
+  });
 
   afterEach(() => {
     delete (window as unknown as { marsBridge?: unknown }).marsBridge;

@@ -614,6 +614,7 @@ describe("AddBackendModal – DigitalOcean", () => {
         sessions: configSessions.filter((s) => s.config_id === configId),
         nextPageToken: null,
       })),
+      listSandboxSizes: vi.fn(async () => []),
       createOpenHandsAgent: vi.fn(async ({ name }: { name: string }) => {
         const config = { id: "cfg_new", name, agent: "openhands" };
         configs.push(config);
