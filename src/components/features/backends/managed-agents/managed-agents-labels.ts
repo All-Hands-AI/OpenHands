@@ -65,3 +65,9 @@ export function buildMarsBackendName(
     ? `${agentLabel(config)}${BACKEND_NAME_SEPARATOR}${sessionName}`
     : sessionName;
 }
+
+/**
+ * Plural key (`_zero` … `_other` entries in translation.json), so it is not
+ * an `I18nKey` member; pass `{ count }`.
+ */
+export const SESSION_COUNT_I18N_KEY = "DO_AGENTS$SESSION_COUNT";

@@ -4,7 +4,7 @@ import { Loader2, Plus, Trash2 } from "lucide-react";
 
 import type { MarsAgentGroup } from "#/hooks/query/use-mars-agents";
 import { I18nKey } from "#/i18n/declaration";
-import { agentLabel } from "./managed-agents-labels";
+import { agentLabel, SESSION_COUNT_I18N_KEY } from "./managed-agents-labels";
 
 /** A filtered agent group plus counts taken from its unfiltered sessions. */
 export interface VisibleAgentGroup extends MarsAgentGroup {
@@ -52,7 +52,7 @@ export function AgentGroupSection({
             {agentLabel(config)}
           </h4>
           <span className="shrink-0 text-xs text-muted">
-            {t(I18nKey.DO_AGENTS$SESSION_COUNT, { count: totalSessions })}
+            {t(SESSION_COUNT_I18N_KEY, { count: totalSessions })}
           </span>
         </div>
         <button

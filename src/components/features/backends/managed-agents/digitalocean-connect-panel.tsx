@@ -21,7 +21,11 @@ import { useMarsSignIn } from "#/hooks/use-mars-sign-in";
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import { DigitalOceanNewAgentForm } from "./digitalocean-new-agent-form";
-import { agentLabel, STAGE_LABEL_KEY } from "./managed-agents-labels";
+import {
+  agentLabel,
+  SESSION_COUNT_I18N_KEY,
+  STAGE_LABEL_KEY,
+} from "./managed-agents-labels";
 import { ManagedAgentsSignIn } from "./managed-agents-sign-in";
 import { SessionStatusDot } from "./session-status-dot";
 import {
@@ -114,10 +118,7 @@ function AgentRow({
   else if (stage) meta = t(STAGE_LABEL_KEY[stage]);
   else if (!latest) meta = t(I18nKey.DO_AGENTS$NO_SESSIONS_SHORT);
   else {
-    meta = [
-      t(I18nKey.DO_AGENTS$SESSION_COUNT, { count: sessions.length }),
-      activity,
-    ]
+    meta = [t(SESSION_COUNT_I18N_KEY, { count: sessions.length }), activity]
       .filter(Boolean)
       .join(" · ");
   }
