@@ -69,6 +69,22 @@ describe("color themes", () => {
         "--oh-contrast against the Home mode toggle pill",
       ).toBeGreaterThanOrEqual(4.5);
 
+      // @spec WN-001 — Context meter text and fills preserve contrast in each palette.
+      const contextMeterSurface = luminance(resolve("--oh-surface"));
+      const contextMeterTrack = luminance(resolve("--oh-color-tertiary"));
+      for (const role of ["--oh-feedback-error", "--oh-feedback-warning"]) {
+        expect(
+          contrast(luminance(resolve(role)), contextMeterSurface),
+          `${role} against the context meter surface`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+      for (const role of ["--oh-feedback-warning", "--oh-status-error"]) {
+        expect(
+          contrast(luminance(resolve(role)), contextMeterTrack),
+          `${role} against the context meter track`,
+        ).toBeGreaterThanOrEqual(3);
+      }
+
       const warningInk = luminance(resolve("--oh-feedback-warning"));
       const trustBackground = channels(resolve("--oh-background"));
       const warningTint = channels(resolve("--oh-warning"));
