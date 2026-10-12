@@ -37,7 +37,9 @@ import { ToolsContextMenuIconText } from "../../controls/tools-context-menu-icon
 import { ContextMenuListItem } from "../../context-menu/context-menu-list-item";
 import { ContextMenu } from "#/ui/context-menu";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
+import { useCloseOnEscape } from "#/hooks/use-close-on-escape";
 import { cn } from "#/utils/utils";
+import { useComposerDockedMinimal } from "#/context/composer-docked-context";
 import {
   chatInputIconButtonClassName,
   formControlTransitionClassName,
@@ -68,6 +70,7 @@ export function ChatInputActions({
   isDictationDisabled = false,
 }: ChatInputActionsProps) {
   const { t } = useTranslation("openhands");
+  const isComposerDockedMinimal = useComposerDockedMinimal();
   const unifiedPauseMutation = useUnifiedPauseConversation();
   const pauseConversationMutation = usePauseConversation();
   const resumeConversationMutation = useResumeConversation();
@@ -255,10 +258,21 @@ export function ChatInputActions({
     }
   }, [hasOverflowItems]);
 
+  // The trigger toggles the menu itself. The app hydrates on `document`, so
+  // its stopPropagation() can't keep the click from this document listener;
+  // without the ignore ref, the opening click immediately closes the menu.
   const overflowMenuRef = useClickOutsideElement<HTMLUListElement>(() => {
     setIsOverflowOpen(false);
     setActiveSubmenu(null);
-  });
+  }, overflowTriggerRef);
+  useCloseOnEscape(
+    isOverflowOpen,
+    () => {
+      setIsOverflowOpen(false);
+      setActiveSubmenu(null);
+    },
+    overflowTriggerRef,
+  );
 
   const isAgentSwitcherDisabled =
     curAgentState === AgentState.RUNNING ||
@@ -445,6 +459,23 @@ export function ChatInputActions({
       )}
     </ContextMenu>
   );
+
+  if (isComposerDockedMinimal) {
+    return (
+      <div
+        data-testid="chat-input-actions-minimal"
+        className="w-full min-w-0 flex items-center justify-end gap-2"
+      >
+        {showButton ? (
+          <ChatSendButton
+            buttonClassName={buttonClassName}
+            handleSubmit={handleSubmit}
+            disabled={disabled || !canSubmit}
+          />
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div

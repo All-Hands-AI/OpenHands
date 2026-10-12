@@ -11,6 +11,7 @@ import {
   isNoBackend,
 } from "#/api/backend-registry/active-store";
 import type { Backend } from "#/api/backend-registry/types";
+import { isSdkHttpError } from "#/utils/sdk-http-error";
 import defaults from "../../config/defaults.json";
 
 const AGENT_SERVER_INFO_TIMEOUT_MS = 5000;
@@ -185,14 +186,7 @@ export function getCachedAgentServerInfo(options?: {
   return cachedAgentServerInfo;
 }
 
-export function isSdkHttpError(error: unknown) {
-  return (
-    error instanceof Error &&
-    error.name === "HttpError" &&
-    "status" in error &&
-    typeof error.status === "number"
-  );
-}
+export { isSdkHttpError };
 
 /**
  * Narrows an SDK HTTP error to a specific status code.
@@ -381,6 +375,19 @@ export async function validateLocalBackend(
     }
     throw error;
   }
+}
+
+/**
+ * Whether a {@link validateLocalBackend} failure is a decided answer from the
+ * server (rejected key, too-old version) rather than a transient miss, so
+ * probing again cannot change the outcome.
+ */
+export function isDefinitiveLocalBackendError(error: unknown): boolean {
+  return (
+    (error instanceof Error &&
+      error.message === INVALID_BACKEND_API_KEY_ERROR) ||
+    isAgentServerUnsupportedVersionError(error)
+  );
 }
 
 export async function loadAgentServerInfo() {
