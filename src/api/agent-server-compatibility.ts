@@ -11,6 +11,7 @@ import {
   isNoBackend,
 } from "#/api/backend-registry/active-store";
 import type { Backend } from "#/api/backend-registry/types";
+import { isSdkHttpError } from "#/utils/sdk-http-error";
 import defaults from "../../config/defaults.json";
 
 const AGENT_SERVER_INFO_TIMEOUT_MS = 5000;
@@ -33,20 +34,12 @@ export const INVALID_BACKEND_API_KEY_ERROR = "Invalid API key";
 
 export interface AgentServerInfo extends BaseServerInfo {
   sdk_version?: string;
-  usable_tools?: string[] | null;
   runtime_services?: unknown;
   execution_runtime?: "local" | "docker";
 }
 
 let cachedAgentServerInfo: AgentServerInfo | null = null;
 let cachedAgentServerInfoHost: string | null = null;
-
-const getAdvertisedTools = (serverInfo: AgentServerInfo | null) => {
-  if (Array.isArray(serverInfo?.usable_tools)) {
-    return serverInfo.usable_tools;
-  }
-  return null;
-};
 
 export class AgentServerUnavailableError extends Error {
   readonly details: string | null;
@@ -156,22 +149,7 @@ export function getCachedAgentServerInfo(options?: {
   return cachedAgentServerInfo;
 }
 
-export function isAgentServerToolAvailable(toolName: string) {
-  const availableTools = getAdvertisedTools(cachedAgentServerInfo);
-  if (!Array.isArray(availableTools)) {
-    return true;
-  }
-  return availableTools.includes(toolName);
-}
-
-export function isSdkHttpError(error: unknown) {
-  return (
-    error instanceof Error &&
-    error.name === "HttpError" &&
-    "status" in error &&
-    typeof error.status === "number"
-  );
-}
+export { isSdkHttpError };
 
 /**
  * Narrows an SDK HTTP error to a specific status code.
@@ -360,6 +338,19 @@ export async function validateLocalBackend(
     }
     throw error;
   }
+}
+
+/**
+ * Whether a {@link validateLocalBackend} failure is a decided answer from the
+ * server (rejected key, too-old version) rather than a transient miss, so
+ * probing again cannot change the outcome.
+ */
+export function isDefinitiveLocalBackendError(error: unknown): boolean {
+  return (
+    (error instanceof Error &&
+      error.message === INVALID_BACKEND_API_KEY_ERROR) ||
+    isAgentServerUnsupportedVersionError(error)
+  );
 }
 
 export async function loadAgentServerInfo() {
