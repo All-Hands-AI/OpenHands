@@ -48,14 +48,14 @@ export function AgentProfileRow({
     >
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <span
-          className="min-w-0 max-w-full truncate text-sm font-medium text-white"
+          className="min-w-0 max-w-full truncate text-sm font-medium text-contrast"
           title={profile.name}
         >
           {profile.name}
         </span>
         {secondary ? (
           <span
-            className="min-w-0 max-w-full truncate text-sm text-[var(--oh-muted)]"
+            className="min-w-0 max-w-full truncate text-sm text-muted"
             title={secondary}
           >
             {secondary}
@@ -66,7 +66,7 @@ export function AgentProfileRow({
             className="shrink-0 whitespace-nowrap px-2.5 py-1 text-xs"
             data-testid="agent-profile-active-badge"
           >
-            {t(I18nKey.SETTINGS$PROFILE_ACTIVE)}
+            {t(I18nKey.SETTINGS$PROFILE_DEFAULT)}
           </BrandBadge>
         )}
       </div>

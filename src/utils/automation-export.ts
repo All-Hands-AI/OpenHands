@@ -1,3 +1,4 @@
+import { getImportExportSpec } from "#/manifests/automation-interface";
 import type {
   Automation,
   AutomationExportFile,
@@ -152,21 +153,26 @@ function validateTrigger(
 
 export function serializeAutomation(a: Automation): AutomationExportFile {
   const timezone = a.timezone ?? a.trigger.timezone;
+  // The file carries a single repository: the first one the automation clones.
+  const [primaryRepository] = a.repositories ?? [];
+  const repository = primaryRepository?.url ?? a.repository;
+  const branch = primaryRepository ? primaryRepository.ref : a.branch;
   const spec: AutomationSpec = {
     name: a.name,
     trigger: { ...a.trigger },
     enabled: a.enabled,
     prompt: a.prompt,
-    ...(a.repository !== undefined && { repository: a.repository }),
+    ...(repository !== undefined && { repository }),
     ...(a.model !== undefined && { model: a.model }),
     ...(a.timeout != null && { timeout: a.timeout }),
-    ...(a.branch !== undefined && { branch: a.branch }),
+    ...(branch !== undefined && { branch }),
     ...(a.plugins !== undefined && { plugins: [...a.plugins] }),
     ...(a.notification !== undefined && { notification: a.notification }),
     ...(timezone !== undefined && { timezone }),
   };
 
-  return { version: 1, kind: "automation", spec };
+  const envelope = getImportExportSpec();
+  return { version: envelope.fileVersion, kind: envelope.fileKind, spec };
 }
 
 export function getAutomationExportFilename(
@@ -177,7 +183,7 @@ export function getAutomationExportFilename(
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
-  return `${slug || automation.id}.automation.json`;
+  return `${slug || automation.id}${getImportExportSpec().filenameSuffix}`;
 }
 
 export function parseAutomationFile(json: unknown): AutomationSpec {
@@ -186,11 +192,12 @@ export function parseAutomationFile(json: unknown): AutomationSpec {
     throw new AutomationFileValidationError(["file: expected a JSON object"]);
   }
 
-  if (json.version !== 1) {
-    issues.push("version: expected 1");
+  const envelope = getImportExportSpec();
+  if (json.version !== envelope.fileVersion) {
+    issues.push(`version: expected ${envelope.fileVersion}`);
   }
-  if (json.kind !== "automation") {
-    issues.push('kind: expected "automation"');
+  if (json.kind !== envelope.fileKind) {
+    issues.push(`kind: expected "${envelope.fileKind}"`);
   }
   if (!isRecord(json.spec)) {
     issues.push("spec: expected an object");

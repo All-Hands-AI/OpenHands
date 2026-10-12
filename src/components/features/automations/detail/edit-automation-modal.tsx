@@ -1,3 +1,4 @@
+import { AutomationAgentProfileSelector } from "../agent-profile-selector";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
@@ -19,13 +20,19 @@ import {
   formatTimeOfDay,
   parseTimeOfDay,
   formatEventOn,
+  validateCronSchedule,
+  CRON_EXPRESSION_EXAMPLE,
   type SchedulePresetKind,
 } from "#/utils/automation-schedule";
 import {
   validateAutomationTimeout,
   AUTOMATION_TIMEOUT_DEFAULT_SECONDS,
-  AUTOMATION_TIMEOUT_MAX_SECONDS,
 } from "#/utils/automation-timeout";
+import { useDeploymentCapabilities } from "#/hooks/query/use-manifest-capabilities";
+import {
+  getAttributeSpec,
+  getInterfaceCopy,
+} from "#/manifests/automation-interface";
 import { cn } from "#/utils/utils";
 import {
   formControlMultilineFieldClassName,
@@ -58,6 +65,7 @@ const WEEKDAY_KEYS: I18nKey[] = [
 ];
 
 interface FormState {
+  agentProfileId: string | null;
   name: string;
   prompt: string;
   model: string;
@@ -75,6 +83,7 @@ function buildInitialState(automation: Automation): FormState {
     return {
       name: automation.name,
       prompt: automation.prompt ?? "",
+      agentProfileId: automation.agent_profile_id ?? null,
       model: automation.model ?? "",
       frequency: "custom",
       weekday: 1,
@@ -89,6 +98,7 @@ function buildInitialState(automation: Automation): FormState {
     return {
       name: automation.name,
       prompt: automation.prompt ?? "",
+      agentProfileId: automation.agent_profile_id ?? null,
       model: automation.model ?? "",
       frequency: "custom",
       weekday: 1,
@@ -104,6 +114,7 @@ function buildInitialState(automation: Automation): FormState {
   return {
     name: automation.name,
     prompt: automation.prompt ?? "",
+    agentProfileId: automation.agent_profile_id ?? null,
     model: automation.model ?? "",
     frequency: parsed.kind,
     weekday: parsed.kind === "weekly" ? (parsed.weekday ?? 1) : 1,
@@ -121,6 +132,22 @@ export function EditAutomationModal({
 }: EditAutomationModalProps) {
   const { t } = useTranslation("openhands");
   const updateMutation = useUpdateAutomation();
+  // Which attributes the dialog offers, and their copy, come from the
+  // interface manifest; absent one, the host defaults reproduce today's form.
+  const editTitle = getInterfaceCopy().editTitle;
+  const nameSpec = getAttributeSpec("name");
+  const promptSpec = getAttributeSpec("prompt");
+  const modelSpec = getAttributeSpec("model");
+  const timeoutSpec = getAttributeSpec("timeout");
+  const scheduleSpec = getAttributeSpec("schedule");
+  const { data: capabilities } = useDeploymentCapabilities();
+  const serviceTimeoutMax = capabilities?.maxAutomationTimeoutSeconds;
+  // The deployment owns the absolute ceiling. A manifest may narrow it, never
+  // expand it; without discovery, leave maximum enforcement to the service.
+  const timeoutMax =
+    serviceTimeoutMax === undefined
+      ? undefined
+      : Math.min(serviceTimeoutMax, timeoutSpec.max ?? serviceTimeoutMax);
   const { data: profilesData, isLoading: isLoadingProfiles } = useLlmProfiles();
   const profiles = profilesData?.profiles ?? [];
   const modelItems = [
@@ -132,12 +159,14 @@ export function EditAutomationModal({
   const [form, setForm] = useState<FormState>(initial);
   const [nameError, setNameError] = useState<string | null>(null);
   const [timeoutError, setTimeoutError] = useState<string | null>(null);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       setForm(initial);
       setNameError(null);
       setTimeoutError(null);
+      setScheduleError(null);
     }
   }, [isOpen, initial]);
 
@@ -171,11 +200,6 @@ export function EditAutomationModal({
     label: t(key),
   }));
 
-  const isTimeEditable =
-    !form.isCustomSchedule ||
-    parseTimeOfDay(form.timeOfDay) !== null ||
-    form.timeOfDay === "";
-
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -186,9 +210,9 @@ export function EditAutomationModal({
     }
     setNameError(null);
 
-    const timeoutResult = validateAutomationTimeout(form.timeout);
+    const timeoutResult = validateAutomationTimeout(form.timeout, timeoutMax);
     if ("errorKey" in timeoutResult) {
-      setTimeoutError(t(timeoutResult.errorKey));
+      setTimeoutError(t(timeoutResult.errorKey, { max: timeoutMax }));
       return;
     }
     setTimeoutError(null);
@@ -205,7 +229,10 @@ export function EditAutomationModal({
       body.prompt = trimmedPrompt.length === 0 ? null : trimmedPrompt;
     }
 
-    const selectedModel = form.model.trim();
+    if (form.agentProfileId !== (automation.agent_profile_id ?? null)) {
+      body.agent_profile_id = form.agentProfileId;
+    }
+    const selectedModel = form.agentProfileId ? "" : form.model.trim();
     const initialModel = automation.model ?? "";
     if (selectedModel !== initialModel) {
       body.model = selectedModel === "" ? null : selectedModel;
@@ -215,7 +242,22 @@ export function EditAutomationModal({
       body.timeout = timeoutResult.value;
     }
 
-    if (!form.isCustomSchedule && form.frequency !== "custom") {
+    if (automation.trigger.type !== "event" && form.isCustomSchedule) {
+      // An untouched schedule is the service's business, not the form's.
+      const trimmedSchedule = form.rawSchedule.trim();
+      if (trimmedSchedule !== (automation.trigger.schedule ?? "").trim()) {
+        const scheduleResult = validateCronSchedule(form.rawSchedule);
+        if ("errorKey" in scheduleResult) {
+          setScheduleError(t(scheduleResult.errorKey));
+          return;
+        }
+        body.trigger = {
+          ...automation.trigger,
+          schedule: scheduleResult.schedule,
+        };
+      }
+      setScheduleError(null);
+    } else if (!form.isCustomSchedule && form.frequency !== "custom") {
       const parsedTime = parseTimeOfDay(form.timeOfDay);
       if (parsedTime) {
         const newSchedule = buildCronSchedule({
@@ -254,110 +296,133 @@ export function EditAutomationModal({
     );
   };
 
+  // Stay open while a save is in flight: the save's error toast is the
+  // dialog's own, and it is dropped if the dialog unmounts first.
+  const dismiss = () => {
+    if (!updateMutation.isPending) onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
         className="absolute inset-0 bg-black/60"
-        onClick={onClose}
+        onClick={dismiss}
         onKeyDown={(e) => {
-          if (e.key === "Escape") onClose();
+          if (e.key === "Escape") dismiss();
         }}
         role="presentation"
       />
-      <div className="relative w-full max-w-md rounded-xl border border-[var(--oh-border)] bg-[var(--oh-surface)] p-6">
+      <div className="relative w-full max-w-md rounded-xl border border-border bg-surface p-6">
         <button
           type="button"
-          onClick={onClose}
-          className="absolute right-4 top-4 text-muted hover:text-foreground"
+          onClick={dismiss}
+          disabled={updateMutation.isPending}
+          className="absolute right-4 top-4 text-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
           aria-label={t(I18nKey.AUTOMATIONS$CANCEL)}
         >
           <XMarkIcon className="size-5" />
         </button>
 
-        <h2 className={modalTitleLgMediumClassName}>
-          {t(I18nKey.AUTOMATIONS$EDIT_TITLE)}
-        </h2>
+        <h2 className={modalTitleLgMediumClassName}>{editTitle}</h2>
 
         <form
           onSubmit={handleSubmit}
           noValidate
           className="mt-4 flex flex-col gap-4"
-          aria-label={t(I18nKey.AUTOMATIONS$EDIT_TITLE)}
+          aria-label={editTitle}
         >
-          <SettingsInput
-            testId="edit-automation-name"
-            name="name"
-            type="text"
-            label={t(I18nKey.AUTOMATIONS$NAME)}
-            value={form.name}
-            onChange={(value) => setForm((f) => ({ ...f, name: value }))}
-            error={nameError ?? undefined}
-            showRequiredTag
-          />
-
-          <label className="flex flex-col gap-2.5 w-full min-w-0">
-            <span className="text-sm">{t(I18nKey.AUTOMATIONS$PROMPT)}</span>
-            <textarea
-              data-testid="edit-automation-prompt"
-              name="prompt"
-              value={form.prompt}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, prompt: e.target.value }))
-              }
-              rows={4}
-              className={cn(
-                formControlMultilineFieldClassName,
-                "placeholder:italic",
-              )}
-            />
-            <span className="text-xs text-muted">
-              {t(I18nKey.AUTOMATIONS$EDIT_PROMPT_HINT)}
-            </span>
-          </label>
-
-          {(isLoadingProfiles || profiles.length > 0) && (
-            <SettingsDropdownInput
-              testId="edit-automation-model"
-              name="model"
-              label={t(I18nKey.AUTOMATIONS$DETAIL$MODEL)}
-              items={modelItems}
-              selectedKey={form.model || ACTIVE_PROFILE_KEY}
-              isLoading={isLoadingProfiles}
-              placeholder={t(I18nKey.COMMON$ACTIVE_PROFILE)}
-              onSelectionChange={(key) =>
-                setForm((f) => ({
-                  ...f,
-                  model: key && key !== ACTIVE_PROFILE_KEY ? String(key) : "",
-                }))
-              }
+          {nameSpec.present && (
+            <SettingsInput
+              testId="edit-automation-name"
+              name="name"
+              type="text"
+              label={nameSpec.label}
+              value={form.name}
+              onChange={(value) => setForm((f) => ({ ...f, name: value }))}
+              error={nameError ?? undefined}
+              showRequiredTag={nameSpec.required}
             />
           )}
 
-          <div className="flex flex-col gap-2.5 w-full min-w-0">
-            <SettingsInput
-              testId="edit-automation-timeout"
-              name="timeout"
-              type="number"
-              label={t(I18nKey.AUTOMATIONS$TIMEOUT)}
-              value={form.timeout}
-              onChange={(value) => setForm((f) => ({ ...f, timeout: value }))}
-              error={timeoutError ?? undefined}
-              showOptionalTag
-              min={1}
-              max={AUTOMATION_TIMEOUT_MAX_SECONDS}
-              step={1}
-              placeholder={String(AUTOMATION_TIMEOUT_DEFAULT_SECONDS)}
+          {promptSpec.present && (
+            <label className="flex flex-col gap-2.5 w-full min-w-0">
+              <span className="text-sm">{promptSpec.label}</span>
+              <textarea
+                data-testid="edit-automation-prompt"
+                name="prompt"
+                value={form.prompt}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, prompt: e.target.value }))
+                }
+                rows={4}
+                className={cn(
+                  formControlMultilineFieldClassName,
+                  "placeholder:italic",
+                )}
+              />
+              {promptSpec.help !== null && (
+                <span className="text-xs text-muted">{promptSpec.help}</span>
+              )}
+            </label>
+          )}
+
+          {capabilities?.features.includes("agentProfiles") && (
+            <AutomationAgentProfileSelector
+              value={form.agentProfileId}
+              onChange={(agentProfileId) =>
+                setForm((current) => ({ ...current, agentProfileId }))
+              }
             />
-            <span
-              data-testid="edit-automation-timeout-hint"
-              className="text-xs text-muted"
-            >
-              {t(I18nKey.AUTOMATIONS$TIMEOUT_HINT)}
-            </span>
-          </div>
+          )}
+          {!form.agentProfileId &&
+            modelSpec.present &&
+            (isLoadingProfiles || profiles.length > 0) && (
+              <SettingsDropdownInput
+                testId="edit-automation-model"
+                name="model"
+                label={modelSpec.label}
+                items={modelItems}
+                selectedKey={form.model || ACTIVE_PROFILE_KEY}
+                isLoading={isLoadingProfiles}
+                placeholder={t(I18nKey.COMMON$ACTIVE_PROFILE)}
+                onSelectionChange={(key) =>
+                  setForm((f) => ({
+                    ...f,
+                    model: key && key !== ACTIVE_PROFILE_KEY ? String(key) : "",
+                  }))
+                }
+              />
+            )}
+
+          {timeoutSpec.present && (
+            <div className="flex flex-col gap-2.5 w-full min-w-0">
+              <SettingsInput
+                testId="edit-automation-timeout"
+                name="timeout"
+                type="number"
+                label={timeoutSpec.label}
+                value={form.timeout}
+                onChange={(value) => setForm((f) => ({ ...f, timeout: value }))}
+                error={timeoutError ?? undefined}
+                showOptionalTag
+                min={timeoutSpec.min ?? 1}
+                max={timeoutMax}
+                step={1}
+                placeholder={String(AUTOMATION_TIMEOUT_DEFAULT_SECONDS)}
+              />
+              {timeoutSpec.help !== null && (
+                <span
+                  data-testid="edit-automation-timeout-hint"
+                  className="text-xs text-muted"
+                >
+                  {timeoutSpec.help}
+                </span>
+              )}
+            </div>
+          )}
 
           {automation.trigger.type === "event" ? (
-            <div className="flex flex-col gap-3 rounded-lg bg-[var(--oh-surface-raised)] p-3">
+            <div className="flex flex-col gap-3 rounded-lg bg-surface-raised p-3">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-medium text-muted">
                   {t(I18nKey.AUTOMATIONS$DETAIL$TRIGGER)}
@@ -397,12 +462,12 @@ export function EditAutomationModal({
                 </div>
               )}
             </div>
-          ) : (
+          ) : scheduleSpec.present ? (
             <>
               <SettingsDropdownInput
                 testId="edit-automation-frequency"
                 name="frequency"
-                label={t(I18nKey.AUTOMATIONS$FREQUENCY)}
+                label={scheduleSpec.label}
                 items={frequencyItems}
                 selectedKey={form.frequency}
                 isDisabled={form.isCustomSchedule}
@@ -438,10 +503,10 @@ export function EditAutomationModal({
                   onChange={(e) =>
                     setForm((f) => ({ ...f, timeOfDay: e.target.value }))
                   }
-                  disabled={form.isCustomSchedule && !isTimeEditable}
+                  disabled={form.isCustomSchedule}
                   className={cn(
                     formControlSettingsFieldClassName,
-                    "disabled:bg-[var(--oh-surface-raised)]",
+                    "disabled:bg-surface-raised",
                   )}
                 />
                 {automation.timezone && (
@@ -452,23 +517,21 @@ export function EditAutomationModal({
               </label>
 
               {form.isCustomSchedule && (
-                <p
-                  className="text-xs text-muted"
-                  data-testid="custom-schedule-hint"
-                >
-                  {t(I18nKey.AUTOMATIONS$CUSTOM_SCHEDULE_HINT)}
-                  {form.rawSchedule && (
-                    <>
-                      {" "}
-                      <code className="text-xs text-content">
-                        {form.rawSchedule}
-                      </code>
-                    </>
-                  )}
-                </p>
+                <SettingsInput
+                  testId="edit-automation-cron"
+                  name="cron"
+                  type="text"
+                  label={t(I18nKey.AUTOMATIONS$CRON_EXPRESSION)}
+                  value={form.rawSchedule}
+                  onChange={(value) =>
+                    setForm((f) => ({ ...f, rawSchedule: value }))
+                  }
+                  error={scheduleError ?? undefined}
+                  placeholder={CRON_EXPRESSION_EXAMPLE}
+                />
               )}
             </>
-          )}
+          ) : null}
 
           <div className="mt-2 flex justify-end gap-3">
             <BrandButton

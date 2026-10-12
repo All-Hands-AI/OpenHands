@@ -47,10 +47,14 @@
       "tests": ["files"]
     },
     {
-      "comment": "Automations lifecycle and preset cards",
+      "comment": "Automations lifecycle, preset cards, and the manifest setup host",
       "sources": [
         "src/components/features/automations/**",
-        "src/routes/automations*.tsx"
+        "src/components/features/manifest/**",
+        "src/manifests/**",
+        "src/mocks/automation-handlers.ts",
+        "src/routes/automations*.tsx",
+        "src/routes/automation-setup-route.tsx"
       ],
       "tests": ["automations"]
     },
@@ -96,6 +100,20 @@
         "src/mocks/mcp-handlers.ts"
       ],
       "tests": ["mcp"]
+    },
+    {
+      "comment": "Canvas Extensions install, enable, page render, disable, uninstall",
+      "sources": [
+        "src/components/features/canvas-extensions/**",
+        "src/routes/canvas-extension*.tsx",
+        "src/api/canvas-extensions-service.ts",
+        "src/extensions/**",
+        "src/hooks/mutation/use-manage-canvas-extensions.ts",
+        "src/types/canvas-extension.ts",
+        "src/fixtures/canvas-extensions/**",
+        "src/mocks/canvas-extensions-handlers.ts"
+      ],
+      "tests": ["canvas-extensions"]
     }
   ],
 

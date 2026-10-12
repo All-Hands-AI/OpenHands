@@ -8,12 +8,23 @@ import {
   setRegisteredBackends,
   subscribeActiveBackend,
 } from "#/api/backend-registry/active-store";
-import { SEEDED_DEFAULT_BACKEND_ID } from "#/api/backend-registry/default-backend";
+import {
+  LOCKED_CLOUD_BACKEND_ID,
+  SEEDED_DEFAULT_BACKEND_ID,
+} from "#/api/backend-registry/default-backend";
 import { MAX_CONSECUTIVE_FAILURES } from "#/api/backend-registry/health-storage";
 import {
   __resetHealthStoreForTests,
   recordBackendFailure,
 } from "#/api/backend-registry/health-store";
+import {
+  ACTIVE_BACKEND_STORAGE_KEY,
+  BACKENDS_STORAGE_KEY,
+} from "#/api/backend-registry/storage";
+import {
+  BACKEND_QUERY_PARAM,
+  ORG_QUERY_PARAM,
+} from "#/api/backend-registry/url-selection";
 import type { Backend } from "#/api/backend-registry/types";
 
 beforeEach(() => {
@@ -180,5 +191,138 @@ describe("active-store", () => {
     listener.mockClear();
     setActiveSelection(null);
     expect(listener).not.toHaveBeenCalled();
+  });
+});
+
+describe("backend pinned in the URL", () => {
+  function seedRegistry(backends: Backend[], selection: string) {
+    window.localStorage.setItem(BACKENDS_STORAGE_KEY, JSON.stringify(backends));
+    window.localStorage.setItem(
+      ACTIVE_BACKEND_STORAGE_KEY,
+      JSON.stringify({ backendId: selection, orgId: null }),
+    );
+  }
+
+  function bootAt(search: string) {
+    window.history.replaceState({}, "", `/conversations/abc${search}`);
+    __resetActiveStoreForTests();
+  }
+
+  afterEach(() => {
+    window.history.replaceState({}, "", "/");
+  });
+
+  it("boots on the backend named in the URL instead of the stored one", () => {
+    seedRegistry([localBackend, secondLocalBackend], localBackend.id);
+
+    bootAt(`?${BACKEND_QUERY_PARAM}=${secondLocalBackend.id}`);
+
+    expect(getActiveBackend().backend).toEqual(secondLocalBackend);
+  });
+
+  it("persists the pinned selection so later in-tab navigation keeps it", () => {
+    seedRegistry([localBackend, secondLocalBackend], localBackend.id);
+
+    bootAt(`?${BACKEND_QUERY_PARAM}=${secondLocalBackend.id}`);
+
+    expect(
+      JSON.parse(
+        window.sessionStorage.getItem(ACTIVE_BACKEND_STORAGE_KEY) ?? "null",
+      ),
+    ).toEqual({ backendId: secondLocalBackend.id, orgId: null });
+  });
+
+  it("carries the org id for a cloud backend", () => {
+    seedRegistry([localBackend, cloudBackend], localBackend.id);
+
+    bootAt(
+      `?${BACKEND_QUERY_PARAM}=${cloudBackend.id}&${ORG_QUERY_PARAM}=org-9`,
+    );
+
+    const { backend, orgId } = getActiveBackend();
+    expect(backend).toEqual(cloudBackend);
+    expect(orgId).toBe("org-9");
+  });
+
+  it("falls back to the stored selection when the URL names an unknown backend", () => {
+    seedRegistry([localBackend, secondLocalBackend], secondLocalBackend.id);
+
+    bootAt(`?${BACKEND_QUERY_PARAM}=removed-backend`);
+
+    expect(getActiveBackend().backend).toEqual(secondLocalBackend);
+  });
+
+  it("prefers the URL over a tab-scoped sessionStorage selection", () => {
+    seedRegistry([localBackend, secondLocalBackend], localBackend.id);
+    window.sessionStorage.setItem(
+      ACTIVE_BACKEND_STORAGE_KEY,
+      JSON.stringify({ backendId: localBackend.id, orgId: null }),
+    );
+
+    bootAt(`?${BACKEND_QUERY_PARAM}=${secondLocalBackend.id}`);
+
+    expect(getActiveBackend().backend).toEqual(secondLocalBackend);
+  });
+});
+
+describe("org handed back by the cloud's web app", () => {
+  function lockToThisOrigin() {
+    (
+      window as unknown as Record<string, unknown>
+    ).__AGENT_CANVAS_LOCK_TO_CLOUD__ = window.location.origin;
+  }
+
+  function bootAt(search: string) {
+    window.history.replaceState({}, "", `/${search}`);
+    __resetActiveStoreForTests();
+  }
+
+  afterEach(() => {
+    delete (window as unknown as Record<string, unknown>)
+      .__AGENT_CANVAS_LOCK_TO_CLOUD__;
+    window.history.replaceState({}, "", "/");
+  });
+
+  it("opens on the org named in ?org= instead of the one Canvas remembered", () => {
+    lockToThisOrigin();
+    window.sessionStorage.setItem(
+      ACTIVE_BACKEND_STORAGE_KEY,
+      JSON.stringify({ backendId: LOCKED_CLOUD_BACKEND_ID, orgId: "org-test" }),
+    );
+
+    bootAt(`?${ORG_QUERY_PARAM}=org-personal`);
+
+    const { backend, orgId } = getActiveBackend();
+    expect(backend.id).toBe(LOCKED_CLOUD_BACKEND_ID);
+    expect(orgId).toBe("org-personal");
+    expect(
+      JSON.parse(
+        window.sessionStorage.getItem(ACTIVE_BACKEND_STORAGE_KEY) ?? "null",
+      ),
+    ).toEqual({ backendId: LOCKED_CLOUD_BACKEND_ID, orgId: "org-personal" });
+  });
+
+  it("drops ?org= from the address bar once it is honoured", () => {
+    lockToThisOrigin();
+
+    bootAt(`?tab=files&${ORG_QUERY_PARAM}=org-personal`);
+
+    expect(window.location.search).toBe("?tab=files");
+  });
+
+  it("ignores ?org= alone when Canvas is not locked to a cloud host", () => {
+    window.localStorage.setItem(
+      BACKENDS_STORAGE_KEY,
+      JSON.stringify([localBackend, cloudBackend]),
+    );
+    window.localStorage.setItem(
+      ACTIVE_BACKEND_STORAGE_KEY,
+      JSON.stringify({ backendId: cloudBackend.id, orgId: "org-test" }),
+    );
+
+    bootAt(`?${ORG_QUERY_PARAM}=org-personal`);
+
+    expect(getActiveBackend().orgId).toBe("org-test");
+    expect(window.location.search).toBe(`?${ORG_QUERY_PARAM}=org-personal`);
   });
 });

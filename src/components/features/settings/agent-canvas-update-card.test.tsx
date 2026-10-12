@@ -6,6 +6,10 @@ import {
   AGENT_CANVAS_UPDATE_COMMANDS,
 } from "#/api/agent-canvas-updates";
 import { AGENT_CANVAS_CLIENT_VERSION } from "#/api/client-source";
+import {
+  MODAL_MAX_WIDTH_VIEWPORT,
+  MODAL_WIDTH_CLASS,
+} from "#/components/shared/modals/modal-body";
 import { AgentCanvasUpdateCard } from "./agent-canvas-update-card";
 
 const { fetchLatestVersionMock, getLockedCloudHostMock } = vi.hoisted(() => ({
@@ -90,24 +94,75 @@ describe("AgentCanvasUpdateCard", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("keeps update instructions collapsed until the header is toggled", async () => {
-    fetchLatestVersionMock.mockResolvedValue(AGENT_CANVAS_CLIENT_VERSION);
+  it("opens update instructions in a modal when the header is clicked", async () => {
+    fetchLatestVersionMock.mockResolvedValue("999.0.0");
 
     renderCard();
+    expect(
+      screen.queryByTestId("agent-canvas-update-modal"),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByTestId("agent-canvas-update-command-npm"),
     ).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId("agent-canvas-update-toggle"));
 
+    expect(screen.getByTestId("agent-canvas-update-modal")).toBeInTheDocument();
     expect(
-      screen.getByTestId("agent-canvas-update-command-npm"),
+      await screen.findByTestId("agent-canvas-update-command-npm"),
     ).toHaveTextContent(AGENT_CANVAS_UPDATE_COMMANDS.npm);
+    expect(
+      screen.queryByTestId("agent-canvas-update-command-docker"),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /docker/i }));
     expect(
       screen.getByTestId("agent-canvas-update-command-docker"),
     ).toHaveTextContent(AGENT_CANVAS_UPDATE_COMMANDS.docker);
     expect(
       screen.getByTestId("agent-canvas-update-release-notes"),
     ).toHaveAttribute("href", AGENT_CANVAS_RELEASE_NOTES_URL);
+  });
+
+  it("caps the 520px update dialog at 90vw so phone viewports cannot clip it", () => {
+    fetchLatestVersionMock.mockResolvedValue(AGENT_CANVAS_CLIENT_VERSION);
+
+    renderCard();
+    fireEvent.click(screen.getByTestId("agent-canvas-update-toggle"));
+
+    const modal = screen.getByTestId("agent-canvas-update-modal");
+    expect(modal).toHaveClass(MODAL_WIDTH_CLASS.md);
+    expect(modal).toHaveClass(MODAL_MAX_WIDTH_VIEWPORT);
+  });
+
+  it("hides install commands when the app is already up to date", async () => {
+    fetchLatestVersionMock.mockResolvedValue(AGENT_CANVAS_CLIENT_VERSION);
+
+    renderCard();
+    fireEvent.click(screen.getByTestId("agent-canvas-update-toggle"));
+
+    expect(
+      await screen.findByTestId("agent-canvas-update-release-notes"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("agent-canvas-update-command-npm"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("SETTINGS$APP_UPDATE_HOW_TO_UPDATE"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("closes the update modal from the close button", async () => {
+    fetchLatestVersionMock.mockResolvedValue(AGENT_CANVAS_CLIENT_VERSION);
+
+    renderCard();
+    fireEvent.click(screen.getByTestId("agent-canvas-update-toggle"));
+    expect(screen.getByTestId("agent-canvas-update-modal")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("close-agent-canvas-update-modal"));
+
+    expect(
+      screen.queryByTestId("agent-canvas-update-modal"),
+    ).not.toBeInTheDocument();
   });
 
   it("re-checks the registry when Check for updates is clicked", async () => {
@@ -130,12 +185,12 @@ describe("AgentCanvasUpdateCard", () => {
       value: { writeText },
       configurable: true,
     });
-    fetchLatestVersionMock.mockResolvedValue(AGENT_CANVAS_CLIENT_VERSION);
+    fetchLatestVersionMock.mockResolvedValue("999.0.0");
 
     renderCard();
     fireEvent.click(screen.getByTestId("agent-canvas-update-toggle"));
-    // First copy button belongs to the npm command row.
-    fireEvent.click(screen.getAllByTestId("copy-to-clipboard")[0]);
+    await screen.findByTestId("agent-canvas-update-command-npm");
+    fireEvent.click(screen.getByTestId("copy-to-clipboard"));
 
     expect(writeText).toHaveBeenCalledWith(AGENT_CANVAS_UPDATE_COMMANDS.npm);
   });

@@ -3,7 +3,7 @@ import { Settings } from "#/types/settings";
 export const LATEST_SETTINGS_VERSION = 5;
 
 export const DEFAULT_SETTINGS: Settings = {
-  llm_model: "openhands/minimax-m2.7",
+  llm_model: "openai/gpt-5.6-sol",
   llm_base_url: "",
   agent: "CodeActAgent",
   language: "en",
@@ -21,14 +21,11 @@ export const DEFAULT_SETTINGS: Settings = {
   user_consents_to_analytics: null,
   enable_proactive_conversation_starters: false,
   enable_solvability_analysis: false,
+  run_router_at_conversation_start: false,
   search_api_key: "",
   is_new_user: true,
   disabled_skills: [],
-  mcp_config: {
-    sse_servers: [],
-    stdio_servers: [],
-    shttp_servers: [],
-  },
+  mcp_config: {},
   max_budget_per_task: null,
   email: "",
   email_verified: true,
@@ -37,11 +34,11 @@ export const DEFAULT_SETTINGS: Settings = {
   title_llm_profile: null,
   agent_settings_schema: null,
   agent_settings: {
-    schema_version: 6,
+    schema_version: 8,
     agent_kind: "openhands",
     agent: "CodeActAgent",
     llm: {
-      model: "openhands/minimax-m2.7",
+      model: "openai/gpt-5.6-sol",
     },
     condenser: {
       enabled: true,
@@ -51,7 +48,6 @@ export const DEFAULT_SETTINGS: Settings = {
       critic_enabled: false,
       enable_iterative_refinement: false,
     },
-    enable_sub_agents: false,
     mcp_config: {},
   },
   conversation_settings_schema: null,

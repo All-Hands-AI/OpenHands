@@ -22,6 +22,7 @@ import type { Backend } from "#/api/backend-registry/types";
 vi.mock("#/api/automation-service/automation-service.api", () => ({
   default: {
     updateAutomation: vi.fn(),
+    getCapabilities: vi.fn(),
   },
 }));
 
@@ -31,10 +32,51 @@ vi.mock("#/api/profiles-service/profiles-service.api", () => ({
   },
 }));
 
+vi.mock("#/hooks/query/use-agent-profiles", () => ({
+  useAgentProfiles: () => ({
+    data: { profiles: [{ id: "review-profile", name: "Reviewer" }] },
+    isLoading: false,
+    isError: false,
+  }),
+}));
+
 vi.mock("#/utils/custom-toast-handlers", () => ({
   displaySuccessToast: vi.fn(),
   displayErrorToast: vi.fn(),
 }));
+
+// The form is the interface manifest's, so these tests run against the
+// manifest the pinned package publishes — the one a user meets.
+vi.mock("#/manifests/manifest-sources", async (importOriginal) => {
+  const extensions = await import("@openhands/extensions/automations");
+  return {
+    ...(await importOriginal<typeof import("#/manifests/manifest-sources")>()),
+    AUTOMATION_INTERFACE_CANDIDATE: (
+      extensions as { AUTOMATION_INTERFACE?: unknown }
+    ).AUTOMATION_INTERFACE,
+  };
+});
+
+// The interface seam resolves its manifest once at module load, so the
+// manifest-driven test overrides individual attribute specs here instead of
+// installing a whole manifest. Empty overrides leave the published
+// manifest's form in force for every other test.
+const specOverrides = vi.hoisted(() => ({
+  current: {} as Record<string, object>,
+}));
+vi.mock("#/manifests/automation-interface", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("#/manifests/automation-interface")>();
+  return {
+    ...actual,
+    getAttributeSpec: (
+      name: Parameters<typeof actual.getAttributeSpec>[0],
+    ) => ({
+      ...actual.getAttributeSpec(name),
+      ...specOverrides.current[name],
+    }),
+  };
+});
 
 const localBackend: Backend = {
   id: "local-1",
@@ -60,6 +102,23 @@ const customAutomation: Automation = {
   id: "auto-2",
   name: "Twice daily",
   trigger: { type: "cron", schedule: "0 9,17 * * *" },
+};
+
+// An automation whose stored schedule this form's validator rejects.
+const rejectedScheduleAutomation: Automation = {
+  ...dailyAutomation,
+  id: "auto-6",
+  name: "Legacy schedule",
+  trigger: { type: "cron", schedule: "0 0 30 2 *" },
+};
+
+// An event-triggered automation. `buildInitialState` marks these as custom
+// schedules too, so they guard the submit path against cron validation.
+const eventAutomation: Automation = {
+  ...dailyAutomation,
+  id: "auto-5",
+  name: "On PR opened",
+  trigger: { type: "event", source: "github", on: "pull_request.opened" },
 };
 
 // A schedule automation pinned to a concrete LLM profile, used to exercise
@@ -104,11 +163,7 @@ function renderModal(automation: Automation) {
   const utils = render(
     <QueryClientProvider client={queryClient}>
       <ActiveBackendProvider>
-        <EditAutomationModal
-          automation={automation}
-          isOpen
-          onClose={onClose}
-        />
+        <EditAutomationModal automation={automation} isOpen onClose={onClose} />
       </ActiveBackendProvider>
     </QueryClientProvider>,
   );
@@ -117,6 +172,7 @@ function renderModal(automation: Automation) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  specOverrides.current = {};
   __resetActiveStoreForTests();
   setRegisteredBackends([localBackend]);
   setActiveSelection({ backendId: localBackend.id });
@@ -124,6 +180,15 @@ beforeEach(() => {
   vi.mocked(ProfilesService.listProfiles).mockResolvedValue({
     profiles: [],
     active_profile: null,
+  });
+  vi.mocked(AutomationService.getCapabilities).mockResolvedValue({
+    ready: true,
+    maxAutomationTimeoutSeconds: 900,
+    triggerKinds: ["cron"],
+    eventSources: [],
+    eventTypes: [],
+    triggers: {},
+    features: [],
   });
 });
 
@@ -195,20 +260,19 @@ describe("EditAutomationModal", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders custom-schedule hint and skips schedule mutation for non-preset cron", async () => {
+  it("renders the cron field and skips schedule mutation for non-preset cron", async () => {
     // Arrange — schedule "0 9,17 * * *" is not a Daily/Weekdays/Weekly
-    // preset; the modal must treat it as read-only for frequency but
-    // still allow editing the prompt/name.
+    // preset; frequency stays read-only but the expression itself, and
+    // the prompt/name, remain editable.
     vi.mocked(AutomationService.updateAutomation).mockResolvedValue(
       customAutomation,
     );
     const user = userEvent.setup();
     renderModal(customAutomation);
 
-    // The hint surfaces so the user understands why frequency is
-    // disabled; this is the user-visible signal that we're in
-    // custom mode.
-    expect(screen.getByTestId("custom-schedule-hint")).toBeInTheDocument();
+    // The cron field is the user-visible signal that we're in custom mode.
+    expect(screen.getByTestId("edit-automation-cron")).toBeInTheDocument();
+    expect(screen.getByTestId("edit-automation-frequency")).toBeDisabled();
 
     // Act — change only the name and save.
     const nameInput = screen.getByTestId("edit-automation-name");
@@ -218,6 +282,153 @@ describe("EditAutomationModal", () => {
 
     // Assert — the PATCH body does NOT include a trigger override, so
     // the user's hand-tuned cron is preserved.
+    await waitFor(() => {
+      expect(AutomationService.updateAutomation).toHaveBeenCalledTimes(1);
+    });
+    const [, body] = vi.mocked(AutomationService.updateAutomation).mock
+      .calls[0];
+    expect(body).not.toHaveProperty("trigger");
+    expect(body).toMatchObject({ name: "Renamed" });
+  });
+
+  it("sends the edited cron expression for a custom schedule", async () => {
+    // Arrange
+    vi.mocked(AutomationService.updateAutomation).mockResolvedValue(
+      customAutomation,
+    );
+    const user = userEvent.setup();
+    renderModal(customAutomation);
+
+    // The field starts pre-filled with the automation's own expression.
+    const cronInput = screen.getByTestId("edit-automation-cron");
+    expect(cronInput).toHaveValue("0 9,17 * * *");
+
+    // Act
+    await user.clear(cronInput);
+    await user.type(cronInput, "*/5 * * * *");
+    await user.click(screen.getByTestId("edit-automation-save"));
+
+    // Assert
+    await waitFor(() => {
+      expect(AutomationService.updateAutomation).toHaveBeenCalledTimes(1);
+    });
+    const [, body] = vi.mocked(AutomationService.updateAutomation).mock
+      .calls[0];
+    expect(body).toMatchObject({
+      trigger: { type: "cron", schedule: "*/5 * * * *" },
+    });
+  });
+
+  it("blocks an invalid cron expression instead of sending it", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    renderModal(customAutomation);
+
+    // Act — 60 is out of range for the minute field.
+    const cronInput = screen.getByTestId("edit-automation-cron");
+    await user.clear(cronInput);
+    await user.type(cronInput, "60 * * * *");
+    await user.click(screen.getByTestId("edit-automation-save"));
+
+    // Assert — the error surfaces and nothing reaches the API.
+    expect(
+      await screen.findByText("AUTOMATIONS$ERROR_CRON_INVALID"),
+    ).toBeInTheDocument();
+    expect(AutomationService.updateAutomation).not.toHaveBeenCalled();
+  });
+
+  it("saves an unrelated edit without revalidating an untouched schedule", async () => {
+    // Arrange — the stored expression is one this form would reject.
+    vi.mocked(AutomationService.updateAutomation).mockResolvedValue(
+      rejectedScheduleAutomation,
+    );
+    const user = userEvent.setup();
+    renderModal(rejectedScheduleAutomation);
+
+    // Act — change only the name.
+    const nameInput = screen.getByTestId("edit-automation-name");
+    await user.clear(nameInput);
+    await user.type(nameInput, "Renamed");
+    await user.click(screen.getByTestId("edit-automation-save"));
+
+    // Assert
+    await waitFor(() => {
+      expect(AutomationService.updateAutomation).toHaveBeenCalledTimes(1);
+    });
+    const [, body] = vi.mocked(AutomationService.updateAutomation).mock
+      .calls[0];
+    expect(body).not.toHaveProperty("trigger");
+    expect(body).toMatchObject({ name: "Renamed" });
+    expect(screen.queryByText("AUTOMATIONS$ERROR_CRON_INVALID")).toBeNull();
+  });
+
+  it("sends a named-day expression the automation service accepts", async () => {
+    // Arrange — croniter takes day names.
+    vi.mocked(AutomationService.updateAutomation).mockResolvedValue(
+      customAutomation,
+    );
+    const user = userEvent.setup();
+    renderModal(customAutomation);
+
+    // Act
+    const cronInput = screen.getByTestId("edit-automation-cron");
+    await user.clear(cronInput);
+    await user.type(cronInput, "0 0 * * SUN");
+    await user.click(screen.getByTestId("edit-automation-save"));
+
+    // Assert
+    await waitFor(() => {
+      expect(AutomationService.updateAutomation).toHaveBeenCalledTimes(1);
+    });
+    const [, body] = vi.mocked(AutomationService.updateAutomation).mock
+      .calls[0];
+    expect(body).toMatchObject({
+      trigger: { type: "cron", schedule: "0 0 * * SUN" },
+    });
+  });
+
+  it("blocks a schedule that can never fire instead of sending it", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    renderModal(customAutomation);
+
+    // Act — February never has a 31st.
+    const cronInput = screen.getByTestId("edit-automation-cron");
+    await user.clear(cronInput);
+    await user.type(cronInput, "0 0 31 2 *");
+    await user.click(screen.getByTestId("edit-automation-save"));
+
+    // Assert
+    expect(
+      await screen.findByText("AUTOMATIONS$ERROR_CRON_UNREACHABLE"),
+    ).toBeInTheDocument();
+    expect(AutomationService.updateAutomation).not.toHaveBeenCalled();
+  });
+
+  it("disables the time input while the cron field owns the schedule", () => {
+    // Arrange / Act
+    renderModal(customAutomation);
+
+    // Assert — the field no longer accepts input that save would discard.
+    expect(screen.getByTestId("edit-automation-time")).toBeDisabled();
+    expect(screen.getByTestId("edit-automation-cron")).toBeEnabled();
+  });
+
+  it("saves an event-triggered automation without a cron trigger", async () => {
+    // Arrange — these have no schedule, so cron validation must not run.
+    vi.mocked(AutomationService.updateAutomation).mockResolvedValue(
+      eventAutomation,
+    );
+    const user = userEvent.setup();
+    renderModal(eventAutomation);
+
+    // Act
+    const nameInput = screen.getByTestId("edit-automation-name");
+    await user.clear(nameInput);
+    await user.type(nameInput, "Renamed");
+    await user.click(screen.getByTestId("edit-automation-save"));
+
+    // Assert
     await waitFor(() => {
       expect(AutomationService.updateAutomation).toHaveBeenCalledTimes(1);
     });
@@ -248,6 +459,49 @@ describe("EditAutomationModal", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  it("cannot be dismissed while a save is pending, so a failed save still shows its toast", async () => {
+    // Arrange — the PATCH stays in flight until the test rejects it.
+    let rejectSave: (error: Error) => void = () => {};
+    vi.mocked(AutomationService.updateAutomation).mockReturnValue(
+      new Promise((_, reject) => {
+        rejectSave = reject;
+      }),
+    );
+    const user = userEvent.setup();
+    const { container, onClose } = renderModal(dailyAutomation);
+    const timeInput = screen.getByTestId("edit-automation-time");
+    await user.clear(timeInput);
+    await user.type(timeInput, "10:30");
+    await user.click(screen.getByTestId("edit-automation-save"));
+    await waitFor(() =>
+      expect(AutomationService.updateAutomation).toHaveBeenCalledTimes(1),
+    );
+
+    // Act — try every dismiss path while the save is pending.
+    const backdrop = container.querySelector<HTMLElement>(
+      '[role="presentation"]',
+    )!;
+    // The X in the corner; the footer Cancel button shares its name.
+    const [closeButton] = screen.getAllByRole("button", {
+      name: "AUTOMATIONS$CANCEL",
+    });
+    await user.click(backdrop);
+    backdrop.focus();
+    await user.keyboard("{Escape}");
+    await user.click(closeButton);
+
+    // Assert — the dialog stays, and the failure reaches its toast.
+    expect(closeButton).toBeDisabled();
+    expect(onClose).not.toHaveBeenCalled();
+    rejectSave(new Error("backend down"));
+    await waitFor(() => {
+      expect(displayErrorToast).toHaveBeenCalledTimes(1);
+    });
+    await waitFor(() => expect(closeButton).toBeEnabled());
+    await user.click(closeButton);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it("persists the newly selected LLM profile in the update payload", async () => {
     // Arrange — automation currently runs on the "fast" profile, with a
     // second "careful" profile available to switch to.
@@ -262,13 +516,11 @@ describe("EditAutomationModal", () => {
     // The picker pre-fills with the automation's current profile once the
     // available profiles have loaded.
     await waitFor(() =>
-      expect(screen.getByLabelText("AUTOMATIONS$DETAIL$MODEL")).toHaveValue(
-        "fast",
-      ),
+      expect(screen.getByLabelText("LLM profile")).toHaveValue("fast"),
     );
 
     // Act — switch to "careful" and save.
-    await user.click(screen.getByLabelText("AUTOMATIONS$DETAIL$MODEL"));
+    await user.click(screen.getByLabelText("LLM profile"));
     await user.click(await screen.findByText("careful"));
     await user.click(screen.getByTestId("edit-automation-save"));
 
@@ -295,13 +547,11 @@ describe("EditAutomationModal", () => {
 
     // The picker pre-fills with the pinned profile once profiles have loaded.
     await waitFor(() =>
-      expect(screen.getByLabelText("AUTOMATIONS$DETAIL$MODEL")).toHaveValue(
-        "fast",
-      ),
+      expect(screen.getByLabelText("LLM profile")).toHaveValue("fast"),
     );
 
     // Act — clear the pin via the "Active profile" option, then save.
-    await user.click(screen.getByLabelText("AUTOMATIONS$DETAIL$MODEL"));
+    await user.click(screen.getByLabelText("LLM profile"));
     await user.click(await screen.findByText("COMMON$ACTIVE_PROFILE"));
     await user.click(screen.getByTestId("edit-automation-save"));
 
@@ -324,7 +574,7 @@ describe("EditAutomationModal", () => {
     renderModal(modeledAutomation);
 
     // Ensure we're on the profiles-available path before editing.
-    await screen.findByLabelText("AUTOMATIONS$DETAIL$MODEL");
+    await screen.findByLabelText("LLM profile");
 
     // Act — change only the name; leave the profile on "fast".
     const nameInput = screen.getByTestId("edit-automation-name");
@@ -348,9 +598,7 @@ describe("EditAutomationModal", () => {
 
     // Assert — once the (empty) profile list resolves, no picker is offered.
     await waitFor(() => {
-      expect(
-        screen.queryByLabelText("AUTOMATIONS$DETAIL$MODEL"),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByLabelText("LLM profile")).not.toBeInTheDocument();
     });
   });
 
@@ -358,7 +606,7 @@ describe("EditAutomationModal", () => {
     // Arrange — automation currently times out after 600s.
     vi.mocked(AutomationService.updateAutomation).mockResolvedValue({
       ...timeoutAutomation,
-      timeout: 1800,
+      timeout: 900,
     });
     const user = userEvent.setup();
     renderModal(timeoutAutomation);
@@ -369,9 +617,9 @@ describe("EditAutomationModal", () => {
     ) as HTMLInputElement;
     expect(timeoutInput.value).toBe("600");
 
-    // Act — raise the timeout to the 1800s maximum and save.
+    // Act — raise the timeout to the deployment's 900-second maximum and save.
     await user.clear(timeoutInput);
-    await user.type(timeoutInput, "1800");
+    await user.type(timeoutInput, "900");
     await user.click(screen.getByTestId("edit-automation-save"));
 
     // Assert — the PATCH carries just the new timeout.
@@ -379,7 +627,7 @@ describe("EditAutomationModal", () => {
       expect(AutomationService.updateAutomation).toHaveBeenCalledTimes(1);
     });
     expect(AutomationService.updateAutomation).toHaveBeenCalledWith("auto-4", {
-      timeout: 1800,
+      timeout: 900,
     });
   });
 
@@ -409,11 +657,17 @@ describe("EditAutomationModal", () => {
     // Arrange
     const user = userEvent.setup();
     renderModal(timeoutAutomation);
+    await waitFor(() => {
+      expect(screen.getByTestId("edit-automation-timeout")).toHaveAttribute(
+        "max",
+        "900",
+      );
+    });
 
-    // Act — enter a timeout beyond the 1800s cap and try to save.
+    // Act — enter a timeout beyond the deployment's cap and try to save.
     const timeoutInput = screen.getByTestId("edit-automation-timeout");
     await user.clear(timeoutInput);
-    await user.type(timeoutInput, "2000");
+    await user.type(timeoutInput, "901");
     await user.click(screen.getByTestId("edit-automation-save"));
 
     // Assert — no PATCH fired, inline error appears.
@@ -421,6 +675,50 @@ describe("EditAutomationModal", () => {
     expect(
       screen.getByTestId("edit-automation-timeout-error"),
     ).toBeInTheDocument();
+  });
+
+  it("never lets the manifest raise the deployment timeout ceiling", async () => {
+    // Arrange — the manifest offers 1200 seconds while the service owns 900.
+    specOverrides.current = { timeout: { max: 1200 } };
+    renderModal(timeoutAutomation);
+
+    // Assert — the service value is the effective maximum.
+    await waitFor(() => {
+      expect(screen.getByTestId("edit-automation-timeout")).toHaveAttribute(
+        "max",
+        "900",
+      );
+    });
+  });
+
+  it("lets the manifest lower the deployment timeout ceiling", async () => {
+    // Arrange — this automation surface imposes a stricter product policy.
+    specOverrides.current = { timeout: { max: 600 } };
+    renderModal(timeoutAutomation);
+
+    // Assert — the lower manifest value wins over the service maximum.
+    await waitFor(() => {
+      expect(screen.getByTestId("edit-automation-timeout")).toHaveAttribute(
+        "max",
+        "600",
+      );
+    });
+  });
+
+  it("renders only the attributes the interface manifest declares, with its copy", async () => {
+    // Arrange — an admitted manifest that omits `prompt` and relabels `name`.
+    specOverrides.current = {
+      prompt: { present: false },
+      name: { label: "Widget name" },
+    };
+    renderModal(dailyAutomation);
+
+    // Assert — the prompt control is gone and the manifest's label shows in
+    // place of the host translation.
+    expect(
+      screen.queryByTestId("edit-automation-prompt"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Widget name")).toBeInTheDocument();
   });
 
   it("omits the timeout from the payload when it is left unchanged", async () => {
@@ -445,5 +743,38 @@ describe("EditAutomationModal", () => {
       .calls[0];
     expect(body).toMatchObject({ name: "Renamed digest" });
     expect(body).not.toHaveProperty("timeout");
+  });
+
+  it("stores an optional agent profile instead of a competing model", async () => {
+    vi.mocked(AutomationService.getCapabilities).mockResolvedValue({
+      ready: true,
+      triggerKinds: ["cron"],
+      eventSources: [],
+      eventTypes: [],
+      triggers: {},
+      features: ["agentProfiles"],
+    });
+    vi.mocked(ProfilesService.listProfiles).mockResolvedValue(profilesResponse);
+    vi.mocked(AutomationService.updateAutomation).mockResolvedValue({
+      ...modeledAutomation,
+      agent_profile_id: "review-profile",
+      model: null,
+    });
+    const user = userEvent.setup();
+    renderModal(modeledAutomation);
+
+    await user.click(await screen.findByTestId("automation-agent-profile"));
+    await user.click(await screen.findByRole("option", { name: "Reviewer" }));
+    await user.click(screen.getByTestId("edit-automation-save"));
+
+    await waitFor(() =>
+      expect(AutomationService.updateAutomation).toHaveBeenCalledTimes(1),
+    );
+    expect(
+      vi.mocked(AutomationService.updateAutomation).mock.calls[0][1],
+    ).toMatchObject({
+      agent_profile_id: "review-profile",
+      model: null,
+    });
   });
 });

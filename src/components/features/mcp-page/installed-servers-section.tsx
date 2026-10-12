@@ -21,7 +21,7 @@ interface InstalledServersSectionProps {
   /** Current search query — empty string means no filter applied. */
   query?: string;
   onEdit: (server: MCPServerConfig) => void;
-  onDelete: (serverId: string) => void;
+  onToggleEnabled: (server: MCPServerConfig, enabled: boolean) => void;
 }
 
 export function InstalledServersSection({
@@ -29,7 +29,7 @@ export function InstalledServersSection({
   hasAnyInstalled,
   query = "",
   onEdit,
-  onDelete,
+  onToggleEnabled,
 }: InstalledServersSectionProps) {
   const { t } = useTranslation("openhands");
 
@@ -42,7 +42,7 @@ export function InstalledServersSection({
       return (
         <div
           data-testid="mcp-installed-empty-search"
-          className="rounded-xl border border-[var(--oh-border)] p-6 text-center"
+          className="rounded-xl border border-border p-6 text-center"
         >
           <p className="text-xs text-tertiary-light">
             {t(I18nKey.MCP$SEARCH_EMPTY)}
@@ -55,7 +55,7 @@ export function InstalledServersSection({
         data-testid="mcp-installed-empty"
         className={extensionModuleEmptyStateClassName}
       >
-        <p className="text-sm text-white">
+        <p className="text-sm text-contrast">
           {t(I18nKey.MCP$INSTALLED_EMPTY_TITLE)}
         </p>
         <p className="text-xs text-tertiary-light mt-1">
@@ -76,7 +76,7 @@ export function InstalledServersSection({
             key={server.id}
             server={server}
             onEdit={() => onEdit(server)}
-            onDelete={() => onDelete(server.id)}
+            onToggleEnabled={(enabled) => onToggleEnabled(server, enabled)}
           />
         ))}
       </div>

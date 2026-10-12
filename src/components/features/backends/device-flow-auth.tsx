@@ -28,6 +28,14 @@ interface DeviceFlowAuthProps {
   idleButtonLabel?: string;
   /** Optional visible content for the idle button. Defaults to the idle label. */
   idleButtonContent?: React.ReactNode;
+  /** Optional content shown only before authentication starts. */
+  idleDescription?: React.ReactNode;
+  /**
+   * Optional content rendered under the idle button and, like
+   * `idleDescription`, only before authentication starts — so secondary
+   * controls step aside once the flow takes over the surface.
+   */
+  idleFooter?: React.ReactNode;
   /** Optional classes for the root wrapper. */
   className?: string;
   /** Optional classes for the idle button. */
@@ -43,7 +51,7 @@ interface DeviceFlowAuthProps {
 /**
  * Device Flow authentication UI component.
  *
- * Shows a "Login with OpenHands Cloud" button that initiates OAuth 2.0 Device Flow
+ * Shows a "Connect to OpenHands" button that initiates OAuth 2.0 Device Flow
  * authentication. Displays status during the auth process and auto-opens
  * the browser for user authorization.
  */
@@ -67,6 +75,8 @@ export function DeviceFlowAuth({
   isDisabled = false,
   idleButtonLabel,
   idleButtonContent,
+  idleDescription,
+  idleFooter,
   className,
   buttonClassName,
   buttonVariant = "primary",
@@ -180,6 +190,8 @@ export function DeviceFlowAuth({
       data-testid={`${testIdRoot}-device-flow`}
       className={cn("flex flex-col gap-3", className)}
     >
+      {deviceFlow.status === "idle" ? idleDescription : null}
+
       {deviceFlow.status === "idle" && buttonVariant === "unstyled" && (
         <button
           type="button"
@@ -199,13 +211,15 @@ export function DeviceFlowAuth({
           variant={buttonVariant}
           onClick={handleStartAuth}
           testId={`${testIdRoot}-login-button`}
-          className={cn("w-full", buttonClassName)}
+          className={buttonClassName}
           isDisabled={isDisabled}
           ariaLabel={idleButtonContent ? idleLabel : undefined}
         >
           {idleButtonContent ?? idleLabel}
         </BrandButton>
       )}
+
+      {deviceFlow.status === "idle" ? idleFooter : null}
 
       {statusDisplay === "inline" ? statusContent : null}
 
@@ -218,7 +232,7 @@ export function DeviceFlowAuth({
           <ModalBody
             testID={`${testIdRoot}-auth-modal`}
             width="sm"
-            className="items-stretch border border-[var(--oh-border)]"
+            className="items-stretch border border-border"
           >
             {statusContent}
           </ModalBody>
@@ -252,13 +266,13 @@ function DeviceFlowStatusContent({
   if (status === "starting") {
     return (
       <div
-        className="flex items-center gap-2 rounded-lg bg-base-tertiary p-3"
+        className="flex items-center justify-center gap-2"
         data-testid={`${testIdRoot}-auth-starting`}
         role="status"
         aria-live="polite"
       >
         <LoadingSpinner />
-        <span className="text-sm text-[var(--oh-text-tertiary)]">
+        <span className="text-sm text-text-tertiary">
           {t(I18nKey.BACKEND$AUTH_STARTING)}
         </span>
       </div>
@@ -273,33 +287,34 @@ function DeviceFlowStatusContent({
 
     return (
       <div
-        className="flex flex-col gap-4 rounded-lg bg-base-tertiary p-4"
+        className="flex flex-col gap-4"
         data-testid={`${testIdRoot}-auth-awaiting`}
         role="status"
         aria-live="polite"
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center gap-2">
           <LoadingSpinner />
-          <span className="text-sm font-medium text-white">
+          <span className="text-sm font-medium text-contrast">
             {t(I18nKey.BACKEND$AUTH_AWAITING)}
           </span>
         </div>
-        <p className="text-sm leading-5 text-[var(--oh-text-tertiary)]">
-          {t(I18nKey.BACKEND$AUTH_BROWSER_OPENED)}
-        </p>
-        {validVerificationUrl ? (
-          <div className="flex flex-col gap-1 rounded-md border border-[var(--oh-border)] bg-[var(--oh-surface)] p-3 text-xs text-[var(--oh-muted)]">
-            <p>{t(I18nKey.BACKEND$AUTH_OPEN_MANUALLY)}</p>
+        <div className="flex flex-col gap-1">
+          <p className="text-center text-sm leading-5 text-text-tertiary">
+            {validVerificationUrl
+              ? `${t(I18nKey.BACKEND$AUTH_BROWSER_OPENED)} ${t(I18nKey.BACKEND$AUTH_OPEN_MANUALLY)}`
+              : t(I18nKey.BACKEND$AUTH_BROWSER_OPENED)}
+          </p>
+          {validVerificationUrl ? (
             <a
               href={validVerificationUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="max-h-16 overflow-auto break-all text-blue-400 hover:underline"
+              className="max-h-16 overflow-auto break-all text-center text-xs text-blue-400 hover:underline"
             >
               {validVerificationUrl}
             </a>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
         <BrandButton
           type="button"
           variant="secondary"
@@ -336,7 +351,7 @@ function DeviceFlowStatusContent({
 function LoadingSpinner() {
   return (
     <svg
-      className="animate-spin h-4 w-4 text-white"
+      className="animate-spin h-4 w-4 text-contrast"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"

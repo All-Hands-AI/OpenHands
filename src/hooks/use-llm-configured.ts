@@ -6,6 +6,7 @@ import { useActiveBackend } from "#/contexts/active-backend-context";
 import { useActiveAgentProfile } from "#/hooks/use-active-agent-profile";
 import { isSettingsPageHidden } from "#/utils/settings-utils";
 import ProfilesService from "#/api/profiles-service/profiles-service.api";
+import { WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME } from "#/api/agent-profiles-service/agent-profiles-service.api";
 import {
   CONFIG_CACHE_OPTIONS,
   LLM_PROFILES_QUERY_KEYS,
@@ -69,8 +70,15 @@ export function useLlmConfigured(): LlmConfiguredResult {
   // The LLM that will actually power the next conversation is the profile the
   // active AGENT profile references (`llm_profile_ref`) — conversations launch
   // from the agent profile, not the standalone "active LLM profile".
+  // Except the local seeded `default` profile: `useCreateConversation` launches
+  // it via `agent_settings` on the ACTIVE LLM, not the seed's ref, so gating on
+  // that ref blocks launches that would have succeeded (#16193).
   const referencedLlmProfileName =
-    activeAgentProfile?.agent_kind === "openhands"
+    activeAgentProfile?.agent_kind === "openhands" &&
+    !(
+      isLocal &&
+      activeAgentProfile.name === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME
+    )
       ? activeAgentProfile.llm_profile_ref
       : undefined;
   const referencedProfile = referencedLlmProfileName
@@ -121,16 +129,14 @@ export function useLlmConfigured(): LlmConfiguredResult {
     config?.feature_flags,
   );
 
-  // In local mode, profiles are the source of truth: a usable LLM must be
-  // backed by an active profile that still exists and is authenticated. API-key
-  // profiles use the list endpoint's api_key_set flag; subscription profiles
-  // intentionally have no key, so we inspect the active profile detail config.
-  // The raw settings key can be a stale copy left behind by a deleted profile
-  // (settings are not cleared on delete), so we don't count it here. Cloud
-  // backends don't use profiles and keep the settings-key signal.
+  // Profiles are the source of truth on local. Cloud still accepts the legacy
+  // settings-key signal, but provider-backed org profiles can be usable even
+  // when settings.llm_api_key_set is false.
   const hasUsableActiveProfile =
     hasActiveProfileApiKey || hasActiveProfileSubscription;
-  const hasUsableLlm = isLocal ? hasUsableActiveProfile : hasApiKey;
+  const hasUsableLlm = isLocal
+    ? hasUsableActiveProfile
+    : hasApiKey || hasUsableActiveProfile;
 
   // Treat a fetch failure as indeterminate (same as loading) only when it
   // leaves us with no data to decide from — otherwise a transient network
