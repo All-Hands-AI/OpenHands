@@ -54,6 +54,19 @@ export function ManagedAgentsSessionRow({
   // Anything not already over can be stopped, including a failed or stuck
   // provisioning session whose sandbox still needs tearing down.
   const canStop = phase !== "ended";
+  const stopButton = canStop ? (
+    <button
+      type="button"
+      onClick={onStop}
+      disabled={isBusy}
+      aria-label={t(I18nKey.DO_AGENTS$STOP)}
+      title={t(I18nKey.DO_AGENTS$STOP)}
+      data-testid={`managed-agents-stop-${session.session_id}`}
+      className={ICON_BUTTON_CLASS}
+    >
+      <Square className="size-4" aria-hidden />
+    </button>
+  ) : null;
 
   return (
     <li
@@ -98,15 +111,6 @@ export function ManagedAgentsSessionRow({
               <span className="rounded-full border border-primary/40 px-2 py-0.5 text-[11px] uppercase tracking-wide text-primary">
                 {t(I18nKey.DO_AGENTS$CONNECTED)}
               </span>
-              <BrandButton
-                type="button"
-                variant="secondary"
-                onClick={onOpen}
-                testId={`managed-agents-open-${session.session_id}`}
-                className="h-8"
-              >
-                {t(I18nKey.DO_AGENTS$OPEN)}
-              </BrandButton>
               <button
                 type="button"
                 onClick={onDisconnect}
@@ -118,6 +122,16 @@ export function ManagedAgentsSessionRow({
               >
                 <Unplug className="size-4" aria-hidden />
               </button>
+              {stopButton}
+              <BrandButton
+                type="button"
+                variant="secondary"
+                onClick={onOpen}
+                testId={`managed-agents-open-${session.session_id}`}
+                className="h-8"
+              >
+                {t(I18nKey.DO_AGENTS$OPEN)}
+              </BrandButton>
             </>
           ) : null}
 
@@ -136,6 +150,7 @@ export function ManagedAgentsSessionRow({
                   <Pause className="size-4" aria-hidden />
                 </button>
               ) : null}
+              {stopButton}
               <BrandButton
                 type="button"
                 variant="primary"
@@ -151,19 +166,10 @@ export function ManagedAgentsSessionRow({
             </>
           ) : null}
 
-          {!isConnecting && canStop ? (
-            <button
-              type="button"
-              onClick={onStop}
-              disabled={isBusy}
-              aria-label={t(I18nKey.DO_AGENTS$STOP)}
-              title={t(I18nKey.DO_AGENTS$STOP)}
-              data-testid={`managed-agents-stop-${session.session_id}`}
-              className={ICON_BUTTON_CLASS}
-            >
-              <Square className="size-4" aria-hidden />
-            </button>
-          ) : null}
+          {/* The main action (Open / Connect) is always rightmost, with Stop
+              just left of it (rendered above), so the destructive action is
+              never mistaken for part of it. */}
+          {!isConnecting && !isConnected && !canConnect ? stopButton : null}
         </div>
       </div>
 
