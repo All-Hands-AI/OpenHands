@@ -40,12 +40,13 @@
  *   as OPENHANDS_AUTOMATION_API_KEY, making it available to agents in conversations.
  *   Both the agent-server and automation backend use the same key value
  *   and the same `X-Session-API-Key` header for authentication.
- *   AUTOMATION_KV_SECRET is derived from the session key if not set explicitly,
- *   enabling the KV store out of the box for local development.
+ *   AUTOMATION_KV_SECRET, if not set explicitly, is pinned in
+ *   <state dir>/automation-kv-secret.txt the first time, seeded with the
+ *   session key, so rotating the session key later does not change it.
  */
 
 import { spawn, spawnSync } from "node:child_process";
-import { mkdirSync, existsSync, readFileSync } from "node:fs";
+import { mkdirSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve, dirname, isAbsolute } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { homedir } from "node:os";
@@ -277,8 +278,10 @@ SECRETS:
   The session API key is automatically seeded into agent-server secrets
   as OPENHANDS_AUTOMATION_API_KEY, making it available to agents in conversations.
   Both backends (agent-server and automation) share the same key value.
-  AUTOMATION_KV_SECRET defaults to the session key so the KV store works
-  out of the box; override with an explicit value for stronger isolation.
+  AUTOMATION_KV_SECRET encrypts automation KV state. Unless set explicitly,
+  it is pinned in <state dir>/automation-kv-secret.txt on first launch (seeded
+  with the session key) and kept from then on, so rotating the session key does
+  not change it. Deleting that file makes existing KV state unreadable.
 
 ACCESS POINTS:
   Main UI:      http://localhost:PORT/
@@ -933,6 +936,35 @@ function buildAutomationTelemetryEnv(env = process.env) {
   };
 }
 
+// AUTOMATION_KV_SECRET encrypts the automation backend's KV state (and is its
+// fallback key for stored git-sync credentials), so it must not change under
+// existing data. Launchers used to pass the session API key on every start,
+// so rotating that key silently changed the encryption key too (#18299). The
+// first launch without this file pins the session key it runs with -- the
+// value earlier versions used -- and later launches keep it.
+// docker/entrypoint.sh pins to the same file.
+const AUTOMATION_KV_SECRET_FILE = "automation-kv-secret.txt";
+
+function resolveAutomationKvSecret(config, env = process.env) {
+  if (env.AUTOMATION_KV_SECRET) return env.AUTOMATION_KV_SECRET;
+
+  const filePath = join(config.stateDir, AUTOMATION_KV_SECRET_FILE);
+  try {
+    // Strip only the newline written below: the value must round-trip
+    // exactly, as docker/entrypoint.sh's `$(cat ...)` does.
+    const pinned = readFileSync(filePath, "utf8").replace(/\r?\n$/, "");
+    if (pinned.trim()) return pinned;
+  } catch (error) {
+    // Only a missing file means "not pinned yet". Falling back to the session
+    // key past an unreadable pin could encrypt new state with the wrong key.
+    if (error?.code !== "ENOENT") throw error;
+  }
+  mkdirSync(config.stateDir, { recursive: true });
+  writeFileSync(filePath, `${config.sessionApiKey}\n`, { mode: 0o600 });
+  logService("automation", `Pinned AUTOMATION_KV_SECRET in ${filePath}`, c.dim);
+  return config.sessionApiKey;
+}
+
 function startAgentServer(config) {
   logService(
     "agent-server",
@@ -1072,12 +1104,9 @@ function startAutomationBackend(config) {
         ...buildAutomationTelemetryEnv(),
         // KV store secret — required for automations to use the built-in
         // key-value store for state persistence between runs. Used for JWT
-        // signing and value encryption.
-        // Priority:
-        //   1. AUTOMATION_KV_SECRET explicitly set in the user's env
-        //   2. sessionApiKey — convenient zero-config default for local dev
-        AUTOMATION_KV_SECRET:
-          process.env.AUTOMATION_KV_SECRET || config.sessionApiKey,
+        // signing and value encryption. Resolved in main() before any service
+        // starts; see resolveAutomationKvSecret.
+        AUTOMATION_KV_SECRET: config.automationKvSecret,
         // CORS: allow localhost origins for dev, unless explicitly overridden.
         AUTOMATION_CORS_ORIGINS:
           process.env.AUTOMATION_CORS_ORIGINS ||
@@ -1578,6 +1607,11 @@ async function main(options = {}) {
   if (typeof extraPrereqs === "function") {
     extraPrereqs(config);
   }
+  // Before any service starts, so a problem with the pinned secret stops the
+  // launch instead of leaving the agent-server running without automation.
+  if (config.launchAutomation) {
+    config.automationKvSecret = resolveAutomationKvSecret(config);
+  }
 
   if (
     config.launchFrontend &&
@@ -1742,6 +1776,7 @@ export {
   buildAutomationTelemetryEnv,
   buildConfig,
   buildRouteArgs,
+  resolveAutomationKvSecret,
   buildViteBackendEnv,
   buildViteFrontendEnv,
   getAgentServerBaseUrl,

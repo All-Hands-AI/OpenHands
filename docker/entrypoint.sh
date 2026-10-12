@@ -45,8 +45,11 @@
 #                          Setting this enables local-mode auth so the session
 #                          API key is validated internally instead of against the
 #                          OpenHands cloud API.
-#   AUTOMATION_KV_SECRET  – Signing key for scoped automation KV tokens
-#                          (defaults to the shared session API key).
+#   AUTOMATION_KV_SECRET  – Encrypts automation KV state and signs scoped KV
+#                          tokens. Unless set, it is pinned in
+#                          automation-kv-secret.txt on first start (seeded with
+#                          the session API key) and kept from then on, so
+#                          rotating the session key does not change it.
 #   FILE_STORE             – Storage backend for automation tarballs (default: local).
 #                          Without this the automation backend may fall back to
 #                          S3/GCS which fails without cloud credentials.
@@ -229,7 +232,30 @@ fi
 export OPENHANDS_AUTOMATION_API_KEY="${OPENHANDS_AUTOMATION_API_KEY:-${EFFECTIVE_SESSION_KEY}}"
 export AUTOMATION_LOCAL_API_KEY="${AUTOMATION_LOCAL_API_KEY:-${EFFECTIVE_SESSION_KEY}}"
 export AUTOMATION_AGENT_SERVER_API_KEY="${AUTOMATION_AGENT_SERVER_API_KEY:-${EFFECTIVE_SESSION_KEY}}"
-export AUTOMATION_KV_SECRET="${AUTOMATION_KV_SECRET:-${EFFECTIVE_SESSION_KEY}}"
+# >>> automation-kv-secret
+# AUTOMATION_KV_SECRET encrypts automation KV state, so it must not change
+# under existing data. Earlier versions passed the session key on every start,
+# so rotating that key silently changed the encryption key too (#18299). Pin
+# the session key in effect the first time -- the value those versions used --
+# and keep it. scripts/dev-with-automation.mjs pins to the same file.
+# Deleting the file does not rotate the KV key; it strands existing KV state.
+AUTOMATION_KV_SECRET_FILE="${STATE_DIR}/automation-kv-secret.txt"
+if [ -z "${AUTOMATION_KV_SECRET:-}" ]; then
+  if [ -s "$AUTOMATION_KV_SECRET_FILE" ]; then
+    AUTOMATION_KV_SECRET="$(cat "$AUTOMATION_KV_SECRET_FILE")" || {
+      log_error "Cannot read $AUTOMATION_KV_SECRET_FILE"
+      exit 1
+    }
+  else
+    AUTOMATION_KV_SECRET="$EFFECTIVE_SESSION_KEY"
+    mkdir -p "$(dirname "$AUTOMATION_KV_SECRET_FILE")"
+    printf '%s' "$AUTOMATION_KV_SECRET" > "$AUTOMATION_KV_SECRET_FILE"
+    chmod 600 "$AUTOMATION_KV_SECRET_FILE"
+    log "Pinned AUTOMATION_KV_SECRET (persisted to $AUTOMATION_KV_SECRET_FILE)"
+  fi
+fi
+export AUTOMATION_KV_SECRET
+# <<< automation-kv-secret
 export OPENHANDS_REMOTE_WS_READY_REQUIRED="${OPENHANDS_REMOTE_WS_READY_REQUIRED:-false}"
 if [ -z "${AUTOMATION_POSTHOG_API_KEY:-}" ]; then
   if [ -n "${VITE_POSTHOG_API_KEY:-}" ]; then
