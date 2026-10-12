@@ -217,42 +217,52 @@ export function buildPreflightRequirements(
 ): SetupPreflightRequirements {
   const integrations = Object.entries(entry.requires.integrations)
     .filter(([, requirement]) => requirement.required !== false)
-    .map(([id]) => {
+    .flatMap(([id]) => {
       const catalogEntry = getIntegrationCatalogEntry(id);
-      const alternatives = catalogEntry
-        ? getMcpConnectionOptions(catalogEntry).map((option) => {
-            const { transport, auth } = option;
-            const locator =
-              transport.kind === "stdio" ? transport.serverName : transport.url;
-            const authCredentialIsOptional =
-              auth.apiKeyOptional === true ||
-              (transport.kind !== "stdio" && transport.apiKeyOptional === true);
-            const transportSecretNames =
-              transport.kind === "stdio"
-                ? [
-                    ...requiredSecretFields(transport.envFields),
-                    ...requiredSecretFields(transport.argFields),
-                  ]
-                : requiredSecretFields(transport.headerFields);
-            const secretNames = Array.from(
-              new Set([
-                ...(!authCredentialIsOptional && auth.credentialSecretName
-                  ? [auth.credentialSecretName]
-                  : []),
-                ...transportSecretNames,
-              ]),
-            );
+      const options = catalogEntry ? getMcpConnectionOptions(catalogEntry) : [];
+      // The validator understands MCP alternatives only. Sending a subset of
+      // a mixed catalog entry would reject a valid HTTP connection; sending
+      // an empty list would reject every connection. Omit either kind and let
+      // the caller mark the resulting verdict as only partially checked.
+      if (
+        !catalogEntry ||
+        options.length === 0 ||
+        options.length !== catalogEntry.connectionOptions.length
+      ) {
+        return [];
+      }
 
-            return {
-              transport: transport.kind,
-              locator,
-              authStrategy: auth.strategy,
-              ...(secretNames.length > 0 && { secretNames }),
-            };
-          })
-        : [];
+      const alternatives = options.map((option) => {
+        const { transport, auth } = option;
+        const locator =
+          transport.kind === "stdio" ? transport.serverName : transport.url;
+        const authCredentialIsOptional =
+          auth.apiKeyOptional === true ||
+          (transport.kind !== "stdio" && transport.apiKeyOptional === true);
+        // Password argFields remain CLI arguments in the install modal;
+        // they are not entries in the deployment's secret store.
+        const transportSecretNames =
+          transport.kind === "stdio"
+            ? requiredSecretFields(transport.envFields)
+            : requiredSecretFields(transport.headerFields);
+        const secretNames = Array.from(
+          new Set([
+            ...(!authCredentialIsOptional && auth.credentialSecretName
+              ? [auth.credentialSecretName]
+              : []),
+            ...transportSecretNames,
+          ]),
+        );
 
-      return { id, alternatives };
+        return {
+          transport: transport.kind,
+          locator,
+          authStrategy: auth.strategy,
+          ...(secretNames.length > 0 && { secretNames }),
+        };
+      });
+
+      return [{ id, alternatives }];
     });
 
   return { integrations };
@@ -694,7 +704,12 @@ export function buildPreflightBody(
   values: SetupFormValues,
   selectedTrigger?: string | null,
   selectedAction?: string | null,
-): SetupRequestBody | null {
+): {
+  automationId: string;
+  endpoint: string;
+  draft: SetupRequestBody;
+  requirements: SetupPreflightRequirements;
+} | null {
   const draft = buildCreatePayload(
     entry,
     values,

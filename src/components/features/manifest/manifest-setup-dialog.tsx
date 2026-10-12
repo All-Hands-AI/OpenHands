@@ -45,6 +45,7 @@ import {
   type SetupFieldErrors,
 } from "#/manifests/manifest-local-validation";
 import {
+  hasMappedErrors,
   mapServiceErrors,
   normalizeServiceErrors,
   type MappedManifestErrors,
@@ -73,14 +74,6 @@ const NO_SERVICE_ERRORS: MappedManifestErrors = {
   formErrors: [],
   stepErrors: {},
 };
-
-function hasAnyError(errors: MappedManifestErrors): boolean {
-  return (
-    errors.formErrors.length > 0 ||
-    Object.keys(errors.fieldErrors).length > 0 ||
-    Object.values(errors.stepErrors).some((messages) => messages?.length)
-  );
-}
 
 /** Where a completed setup lands: the new automation, or the conversation. */
 function getDestination(response: Record<string, unknown>): string | null {
@@ -149,9 +142,8 @@ export function SetupDialog({ entry, onClose }: SetupDialogProps) {
     useState<MappedManifestErrors>(NO_SERVICE_ERRORS);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPreflighting, setIsPreflighting] = useState(false);
-  const [preflightStatus, setPreflightStatus] = useState<
-    "passed" | "unsupported" | null
-  >(null);
+  const [preflightOutcome, setPreflightOutcome] =
+    useState<SetupPreflightOutcome | null>(null);
 
   // Blur-triggered preflight reads the values as they are when the field is
   // left, which can be the same tick as the change that caused it.
@@ -282,7 +274,7 @@ export function SetupDialog({ entry, onClose }: SetupDialogProps) {
       window.clearTimeout(blurTimerRef.current);
       blurTimerRef.current = null;
     }
-    setPreflightStatus(null);
+    setPreflightOutcome(null);
   };
 
   const setTriggerValue = (kind: string) => {
@@ -341,7 +333,10 @@ export function SetupDialog({ entry, onClose }: SetupDialogProps) {
     valuesRef.current = { ...valuesRef.current, [name]: value };
     setValues(valuesRef.current);
     setLocalErrors(({ [name]: _removed, ...rest }) => rest);
-    setServiceErrors(NO_SERVICE_ERRORS);
+    setServiceErrors((current) => {
+      const { [name]: _removed, ...fieldErrors } = current.fieldErrors;
+      return { fieldErrors, formErrors: [], stepErrors: {} };
+    });
   };
 
   const applyPreflightOutcome = (
@@ -350,22 +345,20 @@ export function SetupDialog({ entry, onClose }: SetupDialogProps) {
   ): boolean => {
     if (!outcome) {
       // Assisted setup has no service draft to validate.
-      setPreflightStatus(null);
+      setPreflightOutcome(null);
       return true;
     }
 
     switch (outcome.status) {
       case "passed":
-        setServiceErrors(NO_SERVICE_ERRORS);
-        setPreflightStatus("passed");
-        return true;
+      case "partial":
       case "unsupported":
         setServiceErrors(NO_SERVICE_ERRORS);
-        setPreflightStatus("unsupported");
+        setPreflightOutcome(outcome);
         return true;
       case "failed":
         setServiceErrors(outcome.errors);
-        setPreflightStatus(null);
+        setPreflightOutcome(null);
         if (routeToErroredStep) {
           setStep(
             (outcome.errors.stepErrors.prerequisites?.length ?? 0) > 0
@@ -380,7 +373,7 @@ export function SetupDialog({ entry, onClose }: SetupDialogProps) {
           formErrors: [t(I18nKey.SETUP$PREFLIGHT_UNAVAILABLE)],
           stepErrors: {},
         });
-        setPreflightStatus(null);
+        setPreflightOutcome(null);
         if (routeToErroredStep) setStep("form");
         return false;
       case "stale":
@@ -403,7 +396,11 @@ export function SetupDialog({ entry, onClose }: SetupDialogProps) {
         selectedTrigger,
         selectedAction,
       ).then((outcome) => {
-        applyPreflightOutcome(outcome, false);
+        // A transient outage on background blur is not actionable yet; the
+        // explicit Continue/Confirm checks still surface it and block creation.
+        if (outcome?.status !== "unavailable") {
+          applyPreflightOutcome(outcome, false);
+        }
       });
     }, PREFLIGHT_DEBOUNCE_MS);
   };
@@ -481,7 +478,7 @@ export function SetupDialog({ entry, onClose }: SetupDialogProps) {
         normalizeServiceErrors(getApiErrorBody(error), actionPayload),
         errorMap,
       );
-      const nextErrors = hasAnyError(mapped)
+      const nextErrors = hasMappedErrors(mapped)
         ? mapped
         : {
             fieldErrors: {},
@@ -703,7 +700,7 @@ export function SetupDialog({ entry, onClose }: SetupDialogProps) {
             <SetupReviewStep
               setup={entry.setup}
               values={values}
-              preflightStatus={preflightStatus}
+              preflightOutcome={preflightOutcome}
               selectedTrigger={selectedTrigger}
               selectedAction={selectedAction}
             />

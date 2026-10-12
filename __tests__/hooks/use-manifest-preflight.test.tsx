@@ -121,6 +121,52 @@ afterEach(() => {
 });
 
 describe("useSetupPreflight", () => {
+  it("reports partial coverage when the catalog includes an HTTP connection", async () => {
+    const entry = createSetupEntry({
+      requires: {
+        integrations: {
+          gitlab: { message: "Reads merge requests." },
+          slack: { message: "Posts the report." },
+        },
+      },
+    });
+    vi.mocked(AutomationService.validateDraft).mockResolvedValue({
+      valid: true,
+      errors: [],
+    });
+    const { result } = renderHook(() => useSetupPreflight(entry));
+
+    const outcome = await result.current.runPreflight(VALUES);
+
+    expect(outcome).toEqual({
+      status: "partial",
+      integrationIds: ["gitlab"],
+    });
+    expect(AutomationService.validateDraft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requirements: expect.objectContaining({
+          integrations: [expect.objectContaining({ id: "slack" })],
+        }),
+      }),
+    );
+  });
+
+  it("keeps an HTTP integration's partial coverage blocking on service failure", async () => {
+    const entry = createSetupEntry({
+      requires: {
+        integrations: { jira: { message: "Reads issues." } },
+      },
+    });
+    vi.mocked(AutomationService.validateDraft).mockRejectedValue(
+      httpFailure(503),
+    );
+    const { result } = renderHook(() => useSetupPreflight(entry));
+
+    await expect(result.current.runPreflight(VALUES)).resolves.toEqual({
+      status: "unavailable",
+    });
+  });
+
   it("fails closed when an older interface cannot derive the selected endpoint", async () => {
     const entry = createSetupEntry({
       setup: createSetup({

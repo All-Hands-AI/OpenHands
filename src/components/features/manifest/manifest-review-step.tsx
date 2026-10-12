@@ -1,5 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
+import { getIntegrationCatalogEntry } from "@openhands/extensions/integrations";
+import type { SetupPreflightOutcome } from "#/hooks/use-manifest-preflight";
 import {
   collectFields,
   fieldValues,
@@ -9,7 +11,7 @@ import type { SetupBlock, SetupFormValues } from "#/manifests/types";
 export interface SetupReviewStepProps {
   setup: SetupBlock;
   values: SetupFormValues;
-  preflightStatus?: "passed" | "unsupported" | null;
+  preflightOutcome?: SetupPreflightOutcome | null;
   selectedTrigger?: string | null;
   selectedAction?: string | null;
 }
@@ -25,15 +27,21 @@ export interface SetupReviewStepProps {
 export function SetupReviewStep({
   setup,
   values,
-  preflightStatus = null,
+  preflightOutcome = null,
   selectedTrigger,
   selectedAction,
 }: SetupReviewStepProps) {
   const { t } = useTranslation("openhands");
+  const partialIntegrationNames =
+    preflightOutcome?.status === "partial"
+      ? preflightOutcome.integrationIds.map(
+          (id) => getIntegrationCatalogEntry(id)?.name ?? id,
+        )
+      : [];
 
   return (
     <div className="flex flex-col gap-4" data-testid="setup-review">
-      {preflightStatus === "passed" && (
+      {preflightOutcome?.status === "passed" && (
         <p
           data-testid="setup-preflight-passed"
           className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300"
@@ -41,13 +49,26 @@ export function SetupReviewStep({
           {t(I18nKey.SETUP$PREFLIGHT_PASSED)}
         </p>
       )}
-      {preflightStatus === "unsupported" && (
+      {preflightOutcome?.status === "unsupported" && (
         <p
           data-testid="setup-preflight-unsupported"
           className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200"
         >
           {t(I18nKey.SETUP$PREFLIGHT_UNSUPPORTED)}
         </p>
+      )}
+      {preflightOutcome?.status === "partial" && (
+        <div
+          data-testid="setup-preflight-partial"
+          className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200"
+        >
+          <p>{t(I18nKey.SETUP$PREFLIGHT_PARTIAL)}</p>
+          {partialIntegrationNames.length > 0 && (
+            <p data-testid="setup-preflight-partial-integrations">
+              {partialIntegrationNames.join(", ")}
+            </p>
+          )}
+        </div>
       )}
       <dl className="flex flex-col gap-3">
         {selectedAction &&

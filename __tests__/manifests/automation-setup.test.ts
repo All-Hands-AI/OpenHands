@@ -2,11 +2,13 @@ import { describe, expect, it, vi } from "vitest";
 import incidentFixture from "@openhands/extensions/testing/automations/incident-retrospective-drafter.json";
 import prReviewerFixture from "@openhands/extensions/testing/automations/github-pr-reviewer.json";
 import repoMonitorFixture from "@openhands/extensions/testing/automations/github-repo-monitor.json";
+import { INTEGRATION_CATALOG } from "@openhands/extensions/integrations";
 import {
   automationCreateEndpoint,
   buildAssistedMessage,
   buildCreatePayload,
   buildPreflightBody,
+  buildPreflightRequirements,
   deriveErrorMap,
 } from "#/manifests/automation-setup";
 import {
@@ -357,6 +359,30 @@ describe("buildCreatePayload", () => {
 });
 
 describe("buildPreflightBody", () => {
+  it("never asserts an empty or incomplete MCP alternative set from the catalog", () => {
+    for (const catalogEntry of INTEGRATION_CATALOG) {
+      const entry = createSetupEntry({
+        requires: {
+          integrations: { [catalogEntry.id]: { message: "Required." } },
+        },
+      });
+      const requirements = buildPreflightRequirements(entry).integrations;
+      const hasNonMcpOption = catalogEntry.connectionOptions.some(
+        (option) => option.provider !== "mcp",
+      );
+
+      if (hasNonMcpOption || catalogEntry.connectionOptions.length === 0) {
+        expect(requirements, catalogEntry.id).toEqual([]);
+      } else {
+        expect(requirements, catalogEntry.id).toHaveLength(1);
+        expect(requirements[0].alternatives.length).toBeGreaterThan(0);
+        expect(requirements[0].alternatives).toHaveLength(
+          catalogEntry.connectionOptions.length,
+        );
+      }
+    }
+  });
+
   it.each(PREFLIGHT_CASES)(
     "derives the $name preflight envelope its fixture pins",
     ({ automationId, formValues, body, selectedTrigger }) => {
@@ -415,6 +441,65 @@ describe("buildPreflightBody", () => {
               authStrategy: "api_key",
               secretNames: ["SLACK_BOT_TOKEN"],
             },
+          ],
+        },
+      ],
+    });
+  });
+
+  it("omits HTTP-only integrations without dropping checkable MCP requirements", () => {
+    const entry = createSetupEntry({
+      requires: {
+        integrations: {
+          jira: { message: "Reads issues." },
+          slack: { message: "Posts the report." },
+        },
+      },
+    });
+
+    const envelope = buildPreflightBody(entry, {
+      repository: "OpenHands/OpenHands",
+      widgetName: "Widgets",
+    });
+
+    expect(envelope?.requirements?.integrations.map(({ id }) => id)).toEqual([
+      "slack",
+    ]);
+  });
+
+  it("does not assert that GitLab is missing when HTTP is an uncheckable alternative", () => {
+    const entry = createSetupEntry({
+      requires: {
+        integrations: { gitlab: { message: "Reads GitLab issues." } },
+      },
+    });
+
+    const envelope = buildPreflightBody(entry, {
+      repository: "OpenHands/OpenHands",
+      widgetName: "Widgets",
+    });
+
+    expect(envelope?.requirements).toEqual({ integrations: [] });
+  });
+
+  it("does not invent a secret reference for Redis CLI arguments", () => {
+    const entry = createSetupEntry({
+      requires: {
+        integrations: { redis: { message: "Reads the cache." } },
+      },
+    });
+
+    const envelope = buildPreflightBody(entry, {
+      repository: "OpenHands/OpenHands",
+      widgetName: "Widgets",
+    });
+
+    expect(envelope?.requirements).toEqual({
+      integrations: [
+        {
+          id: "redis",
+          alternatives: [
+            { transport: "stdio", locator: "redis", authStrategy: "api_key" },
           ],
         },
       ],

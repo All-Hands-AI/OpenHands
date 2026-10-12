@@ -103,6 +103,11 @@ const NOTHING_TO_CONNECT: SetupPrerequisitesResult = {
 };
 
 const ENTRY: SetupEntry = createSetupEntry();
+const HTTP_INTEGRATION_ENTRY: SetupEntry = createSetupEntry({
+  requires: {
+    integrations: { jira: { message: "Reads Jira issues." } },
+  },
+});
 const CUSTOM_AUTOMATION_ENTRY = AUTOMATION_CATALOG.find(
   (entry) => entry.id === "custom-automation",
 ) as SetupEntry;
@@ -122,6 +127,13 @@ function requirementsSchemaFailure() {
         ],
       },
     },
+  });
+}
+
+function httpFailure(status: number) {
+  return Object.assign(new Error(`Request failed with status ${status}`), {
+    name: "HttpError",
+    status,
   });
 }
 
@@ -390,6 +402,23 @@ describe("SetupDialog", () => {
     }
   });
 
+  it("keeps a transient background preflight outage quiet while editing", async () => {
+    vi.mocked(AutomationService.validateDraft).mockRejectedValue(
+      httpFailure(503),
+    );
+    renderDialog();
+    vi.useFakeTimers();
+    try {
+      fireEvent.blur(screen.getByTestId("setup-field-widgetName"));
+      await act(async () => vi.advanceTimersByTime(401));
+
+      expect(AutomationService.validateDraft).toHaveBeenCalledTimes(1);
+      expect(screen.queryByTestId("setup-form-error")).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("offers agent profiles only for actions that accept them", async () => {
     mocks.capabilities.mockReturnValue({
       capabilities: ACTION_CAPABILITIES,
@@ -531,6 +560,14 @@ describe("SetupDialog", () => {
     );
     expect(screen.queryByTestId("setup-review")).toBeNull();
     expect(mocks.runAction).not.toHaveBeenCalled();
+
+    // Editing one field invalidates the verdict but does not hide an
+    // independent error on another field before the next preflight.
+    await user.type(screen.getByTestId("setup-field-repository"), "-updated");
+    expect(screen.queryByTestId("setup-field-repository-error")).toBeNull();
+    expect(screen.getByTestId("setup-field-schedule-error")).toHaveTextContent(
+      "Choose a schedule of at least five minutes.",
+    );
   });
 
   it("returns prerequisite failures to the step where they can be fixed", async () => {
@@ -664,6 +701,40 @@ describe("SetupDialog", () => {
         replace: true,
       },
     );
+  });
+
+  it("shows partial coverage for an HTTP integration and rechecks before creation", async () => {
+    mocks.runAction.mockResolvedValue({ response: { id: "automation-1" } });
+    const { user } = renderDialog(HTTP_INTEGRATION_ENTRY);
+    await fillForm(user);
+
+    await user.click(screen.getByTestId("setup-continue-button"));
+    expect(
+      await screen.findByTestId("setup-preflight-partial-integrations"),
+    ).toHaveTextContent("Jira");
+    expect(screen.queryByTestId("setup-preflight-passed")).toBeNull();
+    expect(mocks.runAction).not.toHaveBeenCalled();
+
+    await user.click(screen.getByTestId("setup-continue-button"));
+    await waitFor(() => expect(mocks.runAction).toHaveBeenCalledTimes(1));
+    expect(AutomationService.validateDraft).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not create after a partial verdict if confirm-time preflight fails", async () => {
+    vi.mocked(AutomationService.validateDraft)
+      .mockResolvedValueOnce({ valid: true, errors: [] })
+      .mockRejectedValueOnce(httpFailure(503));
+    const { user } = renderDialog(HTTP_INTEGRATION_ENTRY);
+    await fillForm(user);
+
+    await user.click(screen.getByTestId("setup-continue-button"));
+    expect(await screen.findByTestId("setup-preflight-partial")).toBeVisible();
+    await user.click(screen.getByTestId("setup-continue-button"));
+
+    expect(await screen.findByTestId("setup-form-error")).toHaveTextContent(
+      "SETUP$PREFLIGHT_UNAVAILABLE",
+    );
+    expect(mocks.runAction).not.toHaveBeenCalled();
   });
 
   it("creates from the derived payload and opens what was created", async () => {

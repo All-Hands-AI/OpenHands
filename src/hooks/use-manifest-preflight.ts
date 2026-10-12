@@ -4,6 +4,8 @@ import AutomationService from "#/api/automation-service/automation-service.api";
 import { isSdkHttpStatusError } from "#/api/agent-server-compatibility";
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import {
+  hasMappedErrors,
+  isRecord,
   mapServiceErrors,
   normalizeServiceErrors,
   type MappedManifestErrors,
@@ -12,6 +14,7 @@ import {
   buildPreflightBody,
   deriveErrorMap,
 } from "#/manifests/automation-setup";
+import { getApiErrorBody } from "#/utils/api-error-message";
 import type {
   SetupEntry,
   SetupFormValues,
@@ -47,28 +50,19 @@ function isPreflightUnimplemented(error: unknown): boolean {
  * 501 is the explicit legacy-deployment advisory path. An older endpoint that
  * explicitly rejects the additive `requirements` field gets one legacy-body
  * retry and is also advisory only when that retry validates the draft.
+ * A current endpoint's success is partial when the catalog contains required
+ * connections that cannot be expressed by the MCP-only requirements contract.
  * Malformed responses, transport errors, and service failures return an
  * unavailable outcome that blocks creation. Superseded requests return stale
  * so an older response can never overwrite the latest verdict.
  */
 export type SetupPreflightOutcome =
   | { status: "passed" }
+  | { status: "partial"; integrationIds: string[] }
   | { status: "failed"; errors: MappedManifestErrors }
   | { status: "unsupported" }
   | { status: "unavailable" }
   | { status: "stale" };
-
-function hasMappedErrors(errors: MappedManifestErrors): boolean {
-  return (
-    errors.formErrors.length > 0 ||
-    Object.keys(errors.fieldErrors).length > 0 ||
-    Object.values(errors.stepErrors).some((messages) => messages?.length)
-  );
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
 /**
  * Older validate endpoints reject the additive `requirements` envelope field
@@ -83,11 +77,7 @@ function isRequirementsSchemaError(error: unknown): boolean {
       : undefined;
   if (status !== 422) return false;
 
-  const body = axios.isAxiosError(error)
-    ? error.response?.data
-    : isRecord(error)
-      ? error.response
-      : undefined;
+  const body = getApiErrorBody(error);
   const detail = isRecord(body) && "detail" in body ? body.detail : body;
   if (!Array.isArray(detail)) return false;
 
@@ -192,13 +182,29 @@ export function useSetupPreflight(entry: SetupEntry) {
           Array.isArray(result.errors) &&
           result.errors.length === 0
         ) {
-          return {
-            status: usedLegacyContract ? "unsupported" : "passed",
-          };
+          if (usedLegacyContract) return { status: "unsupported" };
+          const requiredIntegrationIds = Object.entries(
+            entry.requires.integrations,
+          )
+            .filter(([, requirement]) => requirement.required !== false)
+            .map(([id]) => id);
+          const checkedIntegrationIds = new Set(
+            body.requirements.integrations.map(({ id }) => id),
+          );
+          const uncheckedIntegrationIds = requiredIntegrationIds.filter(
+            (id) => !checkedIntegrationIds.has(id),
+          );
+          if (uncheckedIntegrationIds.length > 0) {
+            return {
+              status: "partial",
+              integrationIds: uncheckedIntegrationIds,
+            };
+          }
+          return { status: "passed" };
         }
 
         const errors = mapServiceErrors(
-          normalizeServiceErrors(result, body.draft as SetupRequestBody),
+          normalizeServiceErrors(result, body.draft),
           deriveErrorMap(entry, selectedTrigger, selectedAction),
         );
         if (result?.valid === false && hasMappedErrors(errors)) {
