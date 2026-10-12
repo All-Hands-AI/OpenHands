@@ -211,7 +211,11 @@ prerequisite; never substitute a mock and call it a pass.
 - **Product bug**: the app is broken. Keep the evidence, search existing issues,
   report it separately (right repository: Canvas UI here, Agent Server/SDK in
   `OpenHands/software-agent-sdk`, scheduling/dispatch in `OpenHands/automation`).
-  Never rewrite an expected result to bless broken behavior.
+  Never rewrite an expected result to bless broken behavior. Then record it
+  in the map, which should know every open bug: a `Known failure (reproduced
+  <date>, #<issue>)` note on the bullet that reproduces it, next to the
+  expected result, or a `Known issue #<issue>` Gotchas entry when no recipe can
+  drive it. Passes re-drive these notes once the issue closes.
 - **Blocked**: name the missing prerequisite (account, entitlement, OS, binary)
   and the route you attempted. Unreachable is never a pass.
 

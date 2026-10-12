@@ -119,7 +119,10 @@ sections, in this order:
 4. `## Gotchas`: traps that waste or invalidate a run: debounces, focus traps,
    items that only appear after the agent runs, features hidden behind a
    prerequisite, and known open issues (link them; they are repro candidates, not
-   exemptions).
+   exemptions). The map should know every open bug. Record one on the bullet
+   that reproduces it, next to the expected result, as `Known failure
+   (reproduced <date>, #<issue>): <what happens>`; list it here as
+   `Known issue #<issue>: ...` only when no recipe can drive it.
 
 Treat commands as literal: quote selectors, keep names unique to the run (prefix
 fixtures with `QA_`), and restore shared state after mutations (delete the secret,
