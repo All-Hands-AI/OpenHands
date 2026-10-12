@@ -187,9 +187,10 @@ describe("ManagedAgentsView", () => {
     const stored: Backend[] = JSON.parse(
       window.localStorage.getItem(BACKENDS_STORAGE_KEY) ?? "[]",
     );
+    // Named after the session alone, so the backend menu shows just that.
     expect(
       stored.find((backend) => backend.marsSessionId === "sess_ready"),
-    ).toMatchObject({ marsConfigId: "cfg_1" });
+    ).toMatchObject({ marsConfigId: "cfg_1", name: "fix-login" });
   });
 
   it("signs out through the bridge and returns to the sign-in form", async () => {

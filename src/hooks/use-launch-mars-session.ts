@@ -64,7 +64,7 @@ export function useLaunchMarsSession() {
     (session: MarsSession, config?: MarsAgentConfig) =>
       connect({
         session,
-        name: buildMarsBackendName(session, config, t),
+        name: buildMarsBackendName(session, t),
         configId: config?.id ?? session.config_id ?? undefined,
       }),
     [connect, t],

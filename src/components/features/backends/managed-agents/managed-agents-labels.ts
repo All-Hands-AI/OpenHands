@@ -33,9 +33,6 @@ export const STAGE_LABEL_KEY: Record<MarsConnectStage, I18nKey> = {
   agent: I18nKey.DO_AGENTS$STAGE_AGENT,
 };
 
-/** Separates agent and session in a registered backend's display name. */
-const BACKEND_NAME_SEPARATOR = " · ";
-
 export function shortSessionId(session: MarsSession): string {
   return session.session_id.slice(0, SHORT_ID_LENGTH);
 }
@@ -54,16 +51,15 @@ export function getSessionDisplayName(
   );
 }
 
-/** "<agent> · <session>" so the backend selector names both. */
+/**
+ * Just the session's name: sessions launched here already carry their agent's
+ * name as a prefix, so repeating the agent only cluttered the backend menu.
+ */
 export function buildMarsBackendName(
   session: MarsSession,
-  config: MarsAgentConfig | undefined,
   t: TFunction<"openhands">,
 ): string {
-  const sessionName = getSessionDisplayName(session, t);
-  return config
-    ? `${agentLabel(config)}${BACKEND_NAME_SEPARATOR}${sessionName}`
-    : sessionName;
+  return getSessionDisplayName(session, t);
 }
 
 /**
