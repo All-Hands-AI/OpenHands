@@ -136,7 +136,7 @@ export function MermaidDiagram({
         // The SVG comes from Mermaid `securityLevel: "strict"` and is run
         // through DOMPurify's SVG profile in `mermaid-renderer.ts` before it
         // reaches this sink, so it carries no scripts, event handlers,
-        // `javascript:` URLs, or `foreignObject`.
+        // `javascript:` URLs, `foreignObject`, or external resource loads.
         <div
           className="flex justify-center [&_svg]:h-auto [&_svg]:max-w-full"
           data-testid={`${testId}-svg`}

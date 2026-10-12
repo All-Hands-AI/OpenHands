@@ -25,6 +25,19 @@ const MALICIOUS_SVG = [
   "</svg>",
 ].join("");
 
+// External resource loads: DOMPurify's SVG profile keeps `<image>`/`<a>` and
+// their http(s) `href`/`xlink:href`, and Mermaid honours agent-controlled URLs
+// (`A@{ img: "https://…" }`, `click A "https://…"`), so those must be stripped
+// by the sanitizer itself.
+const EXTERNAL_LOAD_SVG = [
+  '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">',
+  '<a href="https://evil.example/click" xlink:href="https://evil.example/click"><text>link</text></a>',
+  '<image href="https://evil.example/track.png" xlink:href="https://evil.example/track.png" />',
+  '<path marker-end="url(#arrow)" d="M0,0L10,10" />',
+  "<text>keep me</text>",
+  "</svg>",
+].join("");
+
 describe("sanitizeMermaidSvg", () => {
   it("strips scripts, event handlers, javascript: URLs and foreignObject", () => {
     const safe = sanitizeMermaidSvg(MALICIOUS_SVG);
@@ -34,6 +47,16 @@ describe("sanitizeMermaidSvg", () => {
     expect(safe.toLowerCase()).not.toContain("javascript:");
     expect(safe.toLowerCase()).not.toContain("foreignobject");
     // Legitimate diagram content survives.
+    expect(safe).toContain("keep me");
+  });
+
+  it("strips external href/xlink:href so no outbound request is made", () => {
+    const safe = sanitizeMermaidSvg(EXTERNAL_LOAD_SVG);
+
+    expect(safe).not.toContain("evil.example");
+    expect(safe).not.toContain("href");
+    // Internal `url(#…)` references that real diagrams rely on are untouched.
+    expect(safe).toContain("url(#arrow)");
     expect(safe).toContain("keep me");
   });
 });

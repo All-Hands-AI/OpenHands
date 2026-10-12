@@ -50,13 +50,31 @@ function loadMermaid(): Promise<MermaidApi> {
  * Runs Mermaid's own output through DOMPurify restricted to the SVG profile.
  * Mermaid already sanitizes in strict mode; this second pass guarantees the
  * string handed to `dangerouslySetInnerHTML` carries no `<script>`, no event
- * handler attributes, no `javascript:` URLs, and no `<foreignObject>`.
+ * handler attributes, no `javascript:` URLs, no `<foreignObject>` and no
+ * external resource loads.
+ *
+ * `href` / `xlink:href` are removed outright so the SVG cannot embed an
+ * agent-controlled `<image>`/`<a>` that points at an external origin and makes
+ * the browser issue an outbound request when the card renders (Mermaid's
+ * `A@{ img: "https://…" }` image shapes and `click A "https://…"` links do
+ * exactly that, and its strict mode does not URL-sanitize the image `href`).
+ * Mermaid's own internal references use `url(#…)` inside `marker-end` / `fill`
+ * / `filter`, not `href`, so this does not affect real diagrams. Constraining
+ * `href` to same-document fragments via `ALLOWED_URI_REGEXP` was rejected: it
+ * also strips `url(#…)` marker references and breaks arrowheads and gradients.
  */
 export function sanitizeMermaidSvg(svg: string): string {
   return DOMPurify.sanitize(svg, {
     USE_PROFILES: { svg: true, svgFilters: true },
     FORBID_TAGS: ["script", "foreignObject"],
-    FORBID_ATTR: ["onload", "onerror", "onclick", "onmouseover"],
+    FORBID_ATTR: [
+      "onload",
+      "onerror",
+      "onclick",
+      "onmouseover",
+      "href",
+      "xlink:href",
+    ],
   });
 }
 
