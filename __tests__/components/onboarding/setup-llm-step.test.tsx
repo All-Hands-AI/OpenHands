@@ -591,7 +591,7 @@ describe("SetupLlmStep", () => {
 
     await waitFor(() =>
       expect(displayErrorToast).toHaveBeenCalledWith(
-        "Subscription models are not loaded yet.",
+        "SETTINGS$SUBSCRIPTION_MODELS_NOT_LOADED",
       ),
     );
     expect(saveProfile).not.toHaveBeenCalled();

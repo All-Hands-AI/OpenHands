@@ -280,7 +280,7 @@ export function SetupLlmStep({ onBack, onNext }: SetupLlmStepProps) {
       dirtyLlm.model = String(saveControl.values["llm.model"] ?? "");
     }
     if (isSubscriptionAuth && !subscriptionModels?.length) {
-      displayErrorToast("Subscription models are not loaded yet.");
+      displayErrorToast(t(I18nKey.SETTINGS$SUBSCRIPTION_MODELS_NOT_LOADED));
       return;
     }
     const { llmConfig } = buildProfileLlmConfig({
