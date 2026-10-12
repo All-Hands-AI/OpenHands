@@ -123,7 +123,9 @@ control-openhands stop                         # stops only this run; evidence s
   backend restart: persistence and reconnection) and `restart --rotate-key`
   (stale session key). `restart` keeps the browser on its page. While a service
   is stopped, a reload replaces the page with the backend-unavailable screen, so
-  drive backend-down states on the page that was already loaded. `browser
+  drive backend-down states on the page that was already loaded.
+  `service pause automation` and `service resume automation` queue and release
+  real requests for in-flight race checks. Resume before stopping the run. `browser
   network` (with `--bodies`, what the page sent, credentials redacted),
   `browser toasts` and `browser media` observe requests by origin, toasts and
   sound without changing anything; `click --observe SEL` and `scroll
@@ -211,7 +213,11 @@ prerequisite; never substitute a mock and call it a pass.
 - **Product bug**: the app is broken. Keep the evidence, search existing issues,
   report it separately (right repository: Canvas UI here, Agent Server/SDK in
   `OpenHands/software-agent-sdk`, scheduling/dispatch in `OpenHands/automation`).
-  Never rewrite an expected result to bless broken behavior.
+  Never rewrite an expected result to bless broken behavior. Then record it
+  in the map, which should know every open bug: a `Known failure (reproduced
+  <date>, #<issue>)` note on the bullet that reproduces it, next to the
+  expected result, or a `Known issue #<issue>` Gotchas entry when no recipe can
+  drive it. Passes re-drive these notes once the issue closes.
 - **Blocked**: name the missing prerequisite (account, entitlement, OS, binary)
   and the route you attempted. Unreachable is never a pass.
 
