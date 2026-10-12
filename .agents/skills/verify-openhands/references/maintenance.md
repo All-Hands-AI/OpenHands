@@ -65,7 +65,7 @@ issue acceptance criteria, relevant review discussion and file list.
 
 Record direct commits and unresolvable PRs as unknown intent. Keep intent
 (`documented`, `undocumented`, `contradictory`) independent of runtime
-(`pass`, `fail`, `blocked`, `not-run`). A working change can still be
+(`pass`, `fail`, `blocked`, `not-run`, and `xfail`/`xpass` for known bugs). A working change can still be
 undocumented. Never edit a PR description (the `HUMAN:` section is human-only)
 to justify a change after the fact.
 
@@ -132,7 +132,23 @@ For an apparent regression, run the same minimal recipe on BASE and TARGET.
 Claim introduced-in-range only when BASE passes and TARGET fails under
 comparable conditions (same browser, viewport, fixture state, backend pins).
 Otherwise classify as reproduced-on-both, environment/harness gap, intent gap,
-or origin-unconfirmed. Use screenshots side by side; a pixel difference is not
+or origin-unconfirmed. Once the regression is a known bug with a `known-bug`
+block, the same rule is executable: `bug run <ID> --attempts 2` on each run and
+`bug proof` (introduced-in-range is the proof read the other way: BASE `xpass`
+twice, TARGET `xfail` twice).
+
+To attribute a **fix** (a PR that closes a recorded bug, or an issue closed
+since BASE), reproduce twice on the baseline and confirm twice on the fix,
+with the same recipe, viewport, entry point and backend pins:
+`control-openhands bug run <ID> --attempts 2 --label baseline --run "$BASE_RUN"`,
+the same with `--label fix --run "$FIX_RUN"`, then
+`control-openhands bug proof <ID> --baseline "$BASE_RUN" --baseline-label baseline --fix "$FIX_RUN" --fix-label fix`.
+Each attempt records its revision, backend versions, viewport, recipe hash,
+failing line and assertion in `evidence/known-bugs/attempts.jsonl`. Only
+`verified` is a fix. A baseline that reproduces fewer than two times out of
+two, or attempts under different inputs, are `inconclusive`: say so and do not
+remove the note. A setup failure, a stopped backend, a timeout or another
+symptom is a `fail`, never a reproduction. Use screenshots side by side; a pixel difference is not
 automatically a bug and a zero difference does not prove behavior.
 
 ## 5. Triage
@@ -155,7 +171,13 @@ automatically a bug and a zero difference does not prove behavior.
 - **Undocumented or contradictory change**: cite the PR and the observed
   difference; ask the maintainer instead of rewriting the expectation.
 - **Known issues** linked in Gotchas are repro candidates: retest, link fresh
-  results, never file duplicates or silently waive the check.
+  results, never file duplicates or silently waive the check. Run every
+  `known-bug` block (`control-openhands bug list`, then `bug run <ID>`): an
+  `xfail` keeps the note, with its date refreshed. An `xpass` is a map review,
+  not a pass: find what fixed it (a merged PR, a backend release), prove it
+  with `bug proof` where a baseline is at hand, then drop the note and keep the
+  block's commands as the bullet's normal steps. A `fail` is a broken recipe or
+  a new symptom: triage it like any other failure.
 
 ## 6. Report and hand off
 
