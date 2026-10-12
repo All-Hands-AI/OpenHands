@@ -22,6 +22,7 @@ import { createRequire } from "node:module";
 import { basename, dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { redactStorage } from "./lib/redact-storage.mjs";
+import { HeldKeys } from "./lib/held-keys.mjs";
 import { SECRET_KEY, SECRET_PATH, redactBody } from "./lib/network-bodies.mjs";
 import { buildLocator, toCss } from "./lib/selectors.mjs";
 import {
@@ -190,6 +191,8 @@ function redactQuery(search) {
 }
 let markIndex = 0;
 let activePage = context.pages()[0] ?? (await context.newPage());
+// Keys held with `browser key down` until `key up` or `key release-all`.
+const heldKeys = new HeldKeys();
 
 function originOf(url) {
   try {
@@ -765,6 +768,15 @@ const handlers = {
     if (selector) await locate(selector).press(key, { timeout });
     else await activePage.keyboard.press(key);
     return { url: activePage.url() };
+  },
+  async "key-down"({ key, repeat, intervalMs }) {
+    return heldKeys.down(activePage, key, { repeat, intervalMs });
+  },
+  async "key-up"({ key }) {
+    return heldKeys.up(key);
+  },
+  async "key-release-all"() {
+    return heldKeys.releaseAll();
   },
   async check({ selector, timeout }) {
     await locate(selector).check({ timeout });
