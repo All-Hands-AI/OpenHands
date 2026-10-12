@@ -651,4 +651,31 @@ test.describe("UI regressions", () => {
     await expect(dropdown).toBeEnabled({ timeout: 15_000 });
     await expect(dropdown).toHaveValue("");
   });
+  // @spec FF-001 — Validation feedback follows the embedding host's error role
+  test("profile validation feedback follows the host error role", async ({
+    page,
+  }) => {
+    await routeSessionApiKey(page);
+    // Isolate the missing-model state from profiles saved by earlier scenarios.
+    // Mock the underlying read contract, while the real editor and built CSS run.
+    await page.route("**/api/profiles", async (route, request) => {
+      if (request.method() !== "GET") return route.fallback();
+      return route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ profiles: [], active_profile: null }),
+      });
+    });
+    await page.goto("/settings/agents", { waitUntil: "domcontentloaded" });
+    await page.getByTestId("add-agent-profile").click();
+    await expect(page.getByTestId("agent-profile-no-llm")).toBeVisible();
+    await page.getByTestId("agent-profile-no-llm").evaluate((el) => {
+      const scope = el.closest("[data-agent-server-ui]");
+      if (!scope) throw new Error("Agent Server UI theme scope not found");
+      (scope as HTMLElement).style.setProperty("--oh-feedback-error", "#8b1029");
+    });
+    await expect(page.getByTestId("agent-profile-no-llm")).toHaveCSS(
+      "color",
+      "rgb(139, 16, 41)",
+    );
+  });
 });
