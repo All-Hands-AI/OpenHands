@@ -1104,6 +1104,7 @@ interface BackendOptionTabProps {
  * the center. Selection uses a bottom bar instead of recoloring the full
  * outline, preserving the group as one visual control.
  */
+// @spec TI-001 — Backend keyboard focus follows the host focus role
 function BackendOptionTab({
   value,
   selectedValue,
@@ -1129,7 +1130,7 @@ function BackendOptionTab({
       className={cn(
         "relative flex min-h-16 w-full cursor-pointer items-center gap-3 px-3 py-3 text-left transition-colors",
         "first:border-r first:border-r-border",
-        "focus-visible:z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-300",
+        "focus-visible:z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus",
         isSelected
           ? "bg-surface-raised text-contrast after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-primary"
           : "text-muted hover:bg-surface-raised hover:text-contrast",
@@ -1211,6 +1212,7 @@ function AnimatedPanelHeight({ children }: AnimatedPanelHeightProps) {
  * height animates without a fixed `max-height` guess. Content stays mounted
  * so the toggle does not remount the docs link on every expand.
  */
+// @spec TI-001 — Guidance keyboard focus follows the host focus role
 function AgentServerGuidance({ location }: { location: AgentServerLocation }) {
   const { t } = useTranslation("openhands");
   const [isExpanded, setIsExpanded] = React.useState(false);
@@ -1251,7 +1253,7 @@ function AgentServerGuidance({ location }: { location: AgentServerLocation }) {
             // fill spans the full row.
             "flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-3 py-2 text-left font-medium",
             "transition-colors hover:bg-interactive-hover",
-            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300",
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
           )}
         >
           <span className="flex min-w-0 items-center gap-2">

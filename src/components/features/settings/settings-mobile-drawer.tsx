@@ -33,9 +33,10 @@ export function SettingsMobileDrawer({
 
   return (
     <>
+      {/* @spec TI-002 — Legacy drawer scrim compiles to half opacity */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 md:hidden"
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
           onClick={onCloseMobileMenu}
         />
       )}

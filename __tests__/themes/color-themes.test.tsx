@@ -10,8 +10,9 @@ import {
 
 describe("color themes", () => {
   // @spec MCP-004 — Form feedback follows readable theme text roles
+  // @spec TI-001 — Keyboard focus stays visible on neutral and hovered surfaces
   it.each(Object.entries(COLOR_THEMES))(
-    "keeps small form feedback readable on the %s modal surface",
+    "keeps feedback and keyboard focus readable on the %s surfaces",
     (_key, theme) => {
       // Resolve the shipped palette, including stylesheet-owned defaults.
       const variables: Record<string, string> = {
@@ -37,16 +38,27 @@ describe("color themes", () => {
           channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722
         );
       };
-      const surface = luminance(resolve("--oh-color-base-secondary"));
-
-      for (const role of ["--oh-feedback-error", "--oh-feedback-success"]) {
+      const contracts = [
+        ...["--oh-feedback-error", "--oh-feedback-success"].map((role) => ({
+          role,
+          surface: "--oh-color-base-secondary",
+          minimum: 4.5,
+        })),
+        ...[
+          "--oh-color-base",
+          "--oh-color-base-secondary",
+          "--oh-surface-raised",
+          "--oh-interactive-hover",
+        ].map((surface) => ({ role: "--oh-focus", surface, minimum: 3 })),
+      ];
+      for (const { role, surface: surfaceRole, minimum } of contracts) {
+        const surface = luminance(resolve(surfaceRole));
         const ink = luminance(resolve(role));
         const ratio =
           (Math.max(ink, surface) + 0.05) / (Math.min(ink, surface) + 0.05);
-        expect(
-          ratio,
-          `${role} against the modal surface`,
-        ).toBeGreaterThanOrEqual(4.5);
+        expect(ratio, `${role} against ${surfaceRole}`).toBeGreaterThanOrEqual(
+          minimum,
+        );
       }
     },
   );
