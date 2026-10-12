@@ -38,7 +38,7 @@ export const formControlHeroUiWrapperTransitionClassName = cn(
 
 /** Transform-only transitions (e.g. combobox carets). */
 export const formControlTransformTransitionClassName = cn(
-  "transition-[transform] ease",
+  "transition-[transform]",
   formControlTransitionDurationClassName,
   formControlMotionReduceClassName,
 );

@@ -11,6 +11,7 @@ import {
 import {
   isActionEvent,
   isObservationEvent,
+  isUserRejectObservation,
   isAgentErrorEvent,
   isUserMessageEvent,
   isPlanningFileEditorObservationEvent,
@@ -34,9 +35,12 @@ import { GenericEventMessageWrapper } from "./event-message-components/generic-e
 import { ThoughtEventMessage } from "./event-message-components/thought-event-message";
 import { CollapsibleThinking } from "./event-message-components/collapsible-thinking";
 import { HookExecutionEventMessage } from "./event-message-components/hook-execution-event-message";
+import { CorrectiveNudgeMessage } from "./event-message-components/corrective-nudge-message";
 import { createSkillReadyEvent } from "./event-content-helpers/create-skill-ready-event";
+import { isCorrectiveNudge } from "./event-content-helpers/should-render-event";
 import { shouldShowPlanPreview } from "./hooks/use-plan-preview-events";
 import { getReasoningContent, splitInlineThink } from "./event-thought-helpers";
+import { useStreamedText } from "#/hooks/use-streamed-text";
 
 interface EventMessageProps {
   event: OpenHandsEvent & { isFromPlanningAgent?: boolean };
@@ -194,6 +198,13 @@ function EventMessageComponent({
   // Read isFromPlanningAgent directly from the event object
   const isFromPlanningAgent = event.isFromPlanningAgent || false;
 
+  // Streaming slots render on a clock rather than at the granularity the
+  // network delivered (#15493). Unconditional: hooks cannot be nested in the
+  // per-kind branches below, and a non-slot event has no streamed content.
+  const streamedContent = useStreamedText(
+    isStreamingDeltaEvent(event) ? (event.content ?? "") : "",
+  );
+
   // Common props for components that need them
   const commonProps = {
     isLastMessage,
@@ -209,7 +220,7 @@ function EventMessageComponent({
     isConversationStateUpdateEvent(event) &&
     isGoalConversationStateUpdateEvent(event)
   ) {
-    return <GoalStatusContent status={event.value} />;
+    return <GoalStatusContent status={event.value} eventId={event.id} />;
   }
 
   // Agent error events
@@ -234,7 +245,7 @@ function EventMessageComponent({
   if (isStreamingDeltaEvent(event)) {
     // Route an inline <think> block to the thinking section, not the bubble.
     const { reasoning: inlineThink, message } = splitInlineThink(
-      event.content ?? "",
+      streamedContent,
       { streaming: true },
     );
     const reasoningContent = [event.reasoning_content ?? "", inlineThink]
@@ -360,9 +371,38 @@ function EventMessageComponent({
     );
   }
 
+  // Rejected actions - render thought + the rejected action
+  if (isUserRejectObservation(event)) {
+    const correspondingAction = suppliedCorrespondingAction ?? undefined;
+    const reasoningContent = correspondingAction
+      ? getReasoningContent(correspondingAction)
+      : "";
+
+    return (
+      <>
+        {reasoningContent && <CollapsibleThinking content={reasoningContent} />}
+        {!suppressThought && correspondingAction && (
+          <ThoughtEventMessage
+            event={correspondingAction}
+            isFromPlanningAgent={isFromPlanningAgent}
+          />
+        )}
+        <GenericEventMessageWrapper
+          event={event}
+          isLastMessage={isLastMessage}
+          correspondingAction={correspondingAction}
+        />
+      </>
+    );
+  }
+
   // Message events (user and assistant messages)
   if (!isActionEvent(event) && !isObservationEvent(event)) {
     const messageEvent = event as MessageEvent;
+
+    if (isCorrectiveNudge(messageEvent)) {
+      return <CorrectiveNudgeMessage event={messageEvent} />;
+    }
 
     // Check if this is a user message that should display a Skill Ready event
     if (isUserMessageEvent(event) && shouldShowSkillReadyEvent(messageEvent)) {

@@ -66,6 +66,10 @@ const SOLARIZED_LIGHT_TOKENS: Partial<
   "--oh-color-danger": "#B52825",
   "--oh-color-success": "#596700",
   "--oh-color-basic": "#566A70",
+  "--oh-feedback-error": "#BB2A26",
+  "--oh-feedback-success": "#5D6A00",
+  // @spec WN-001 — Darker warning text preserves contrast on Solarized surfaces
+  "--oh-feedback-warning": "#735400",
   "--oh-color-tertiary": "#E6DFCC",
   "--oh-color-tertiary-light": "#4C6066",
   "--oh-color-content": "#3B4F56",

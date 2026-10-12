@@ -12,6 +12,7 @@ import {
   isObservationEvent,
   isACPToolCallEvent,
   isCanvasUIActionEvent,
+  isUserRejectObservation,
 } from "#/types/agent-server/type-guards";
 import { MonoComponent } from "../../../features/chat/mono-component";
 import { PathComponent } from "../../../features/chat/path-component";
@@ -238,6 +239,14 @@ const getObservationEventTitle = (
         name: event.observation.profile_name,
       };
       break;
+    case "ClassifyAndSwitchLLMObservation":
+      observationKey = event.observation.is_error
+        ? "MODEL$SWITCH_FAILED"
+        : "MODEL$SWITCHED_TO_PROFILE";
+      observationValues = {
+        name: event.observation.model,
+      };
+      break;
     case "BrowserObservation":
       observationKey = "OBSERVATION_MESSAGE$BROWSE";
       break;
@@ -334,6 +343,18 @@ export const getEventContent = (
         getCanvasUIClientObservationContent(event, correspondingAction) ??
         resolveVisualizerBody(event, correspondingAction) ??
         getObservationContent(event);
+    }
+  } else if (isUserRejectObservation(event)) {
+    // A rejected action never ran, so there is no result to show: keep the
+    // action's own title and body, and let the card mark it as rejected.
+    if (correspondingAction) {
+      title = getActionEventTitle(correspondingAction);
+      details =
+        resolveVisualizerBody(correspondingAction) ??
+        getActionContent(correspondingAction);
+    } else {
+      title = event.tool_name;
+      details = event.rejection_reason;
     }
   } else if (isACPToolCallEvent(event)) {
     // ACP sub-agent tool calls reuse the same card shape as observations:

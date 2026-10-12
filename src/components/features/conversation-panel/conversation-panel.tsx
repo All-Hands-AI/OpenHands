@@ -60,6 +60,7 @@ import {
 } from "./conversation-panel-list-helpers";
 import { useArchivedConversationsStore } from "#/stores/archived-conversations-store";
 import { usePinnedConversationsStore } from "#/stores/pinned-conversations-store";
+import { uniqueById } from "#/utils/unique-by-id";
 
 interface ConversationPanelProps {
   onClose?: () => void;
@@ -263,14 +264,7 @@ export function ConversationPanel({
     // page fetches, a later page can overlap an earlier one and surface the
     // same conversation twice. Dedupe by id (keeping the first/freshest copy)
     // so the rendered count reflects real growth and React keys stay unique.
-    const seen = new Set<string>();
-    return all.filter((conversation) => {
-      if (seen.has(conversation.id)) {
-        return false;
-      }
-      seen.add(conversation.id);
-      return true;
-    });
+    return uniqueById(all);
   }, [data]);
 
   // Grouped pagination is folder-oriented. Record the first backend page for
@@ -888,6 +882,7 @@ export function ConversationPanel({
             showLlmProfiles={showLlmProfiles}
             agentKind={conversation.agent_kind}
             acpServer={conversation.acp_server}
+            acpModels={conversation.acp_available_models}
             tags={conversation.tags}
             showTags={showTagsMetadata}
           />
@@ -991,6 +986,7 @@ export function ConversationPanel({
               showLlmProfiles={showLlmProfiles}
               agentKind={conversation.agent_kind}
               acpServer={conversation.acp_server}
+              acpModels={conversation.acp_available_models}
               tags={conversation.tags}
               showTags={showTagsMetadata}
               isArchived={isArchived}
