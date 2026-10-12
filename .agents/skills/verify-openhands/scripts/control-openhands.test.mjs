@@ -2,7 +2,7 @@
 // They run with the rest of the suite (`npm test`), or alone:
 //   npx vitest run .agents/skills/verify-openhands
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import {
   existsSync,
   mkdirSync,
@@ -15,6 +15,7 @@ import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { setTimeout as delay } from "node:timers/promises";
 import { test } from "vitest";
 import { buildIdentity } from "./lib/build-id.mjs";
 import { BUILD_INPUTS } from "./lib/build-inputs.mjs";
@@ -1638,3 +1639,72 @@ test("browser help documents record", () => {
   );
   assert.notEqual(bad.status, 0);
 });
+
+test.skipIf(process.platform === "win32")(
+  "service pause and resume affect only the selected run's descendants",
+  async () => {
+    const dir = mkdtempSync(join(tmpdir(), "cov-service-"));
+    const serviceFile = join(dir, "static-server.mjs");
+    writeFileSync(
+      serviceFile,
+      `import { writeFileSync } from "node:fs"; setInterval(() => writeFileSync(process.argv[2], String(Date.now())), 20);`,
+    );
+    const ownBeat = join(dir, "own-beat");
+    const otherBeat = join(dir, "other-beat");
+    const childPidFile = join(dir, "child-pid");
+    const launcher = spawn(
+      process.execPath,
+      [
+        "--input-type=module",
+        "-e",
+        `import { spawn } from "node:child_process"; import { writeFileSync } from "node:fs"; const child = spawn(process.execPath, ${JSON.stringify([serviceFile, ownBeat])}, { detached: true, stdio: "ignore" }); writeFileSync(${JSON.stringify(childPidFile)}, String(child.pid)); setInterval(() => {}, 1000);`,
+      ],
+      { detached: true, stdio: "ignore" },
+    );
+    const unrelated = spawn(process.execPath, [serviceFile, otherBeat], {
+      detached: true,
+      stdio: "ignore",
+    });
+    let childPid;
+    try {
+      for (let attempts = 0; attempts < 50 && !existsSync(ownBeat); attempts++)
+        await delay(20);
+      childPid = Number(readFileSync(childPidFile, "utf8"));
+      assert.ok(existsSync(ownBeat) && existsSync(otherBeat));
+      writeFileSync(
+        join(dir, "run.json"),
+        JSON.stringify({
+          launcherPid: launcher.pid,
+          launcherPgid: launcher.pid,
+        }),
+      );
+      const paused = run(["service", "pause", "frontend", "--run", dir]);
+      assert.equal(paused.status, 0);
+      assert.deepEqual(paused.json.signalled, [childPid]);
+      assert.equal(paused.json.launcherAlive, true);
+      const frozen = readFileSync(ownBeat, "utf8");
+      const otherBefore = readFileSync(otherBeat, "utf8");
+      await delay(100);
+      assert.equal(readFileSync(ownBeat, "utf8"), frozen);
+      assert.notEqual(readFileSync(otherBeat, "utf8"), otherBefore);
+      const resumed = run(["service", "resume", "frontend", "--run", dir]);
+      assert.equal(resumed.status, 0);
+      assert.deepEqual(resumed.json.signalled, [childPid]);
+      await delay(100);
+      assert.notEqual(readFileSync(ownBeat, "utf8"), frozen);
+    } finally {
+      if (!childPid && existsSync(childPidFile))
+        childPid = Number(readFileSync(childPidFile, "utf8"));
+      for (const pid of [childPid, unrelated.pid, launcher.pid].filter(
+        Boolean,
+      )) {
+        try {
+          process.kill(-pid, "SIGCONT");
+          process.kill(-pid, "SIGTERM");
+        } catch {
+          /* already gone */
+        }
+      }
+    }
+  },
+);

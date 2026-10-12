@@ -123,7 +123,9 @@ control-openhands stop                         # stops only this run; evidence s
   backend restart: persistence and reconnection) and `restart --rotate-key`
   (stale session key). `restart` keeps the browser on its page. While a service
   is stopped, a reload replaces the page with the backend-unavailable screen, so
-  drive backend-down states on the page that was already loaded. `browser
+  drive backend-down states on the page that was already loaded.
+  `service pause automation` and `service resume automation` queue and release
+  real requests for in-flight race checks. Resume before stopping the run. `browser
   network` (with `--bodies`, what the page sent, credentials redacted),
   `browser toasts` and `browser media` observe requests by origin, toasts and
   sound without changing anything; `click --observe SEL` and `scroll
