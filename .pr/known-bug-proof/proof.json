@@ -1,0 +1,21 @@
+{
+  "ok": true,
+  "id": "F25.selector-dropdown",
+  "verdict": "verified",
+  "blocks": [
+    {
+      "name": "escape-closed",
+      "sha": "c19f77926f9d31af",
+      "verdict": "verified",
+      "reasons": [],
+      "baseline": {
+        "xfail": 2
+      },
+      "fix": {
+        "xpass": 2
+      },
+      "ignored": 8
+    }
+  ],
+  "hint": "Drop the Known failure note and the block's `# bug` marker in the fix's PR: the assertion now guards the corrected behavior as a normal recipe step."
+}

@@ -1,0 +1,24 @@
+{
+  "ok": false,
+  "id": "F25.selector-dropdown",
+  "verdict": "inconclusive",
+  "blocks": [
+    {
+      "name": "escape-closed",
+      "sha": "c19f77926f9d31af",
+      "verdict": "inconclusive",
+      "reasons": [
+        "baseline reproduced the bug in 2 of 5 attempts (flaky or not reproduced)"
+      ],
+      "baseline": {
+        "xfail": 2,
+        "fail": 3
+      },
+      "fix": {
+        "xpass": 2
+      },
+      "ignored": 8
+    }
+  ],
+  "hint": "Only a verified verdict proves the fix. An inconclusive baseline never counts as fixed."
+}

@@ -1,0 +1,34 @@
+{
+  "id": "F25.selector-dropdown",
+  "name": "escape-closed",
+  "file": "references/feature-map/F25-backends-and-cloud.md",
+  "script": "control-openhands browser viewport desktop\ncontrol-openhands browser goto /\ncontrol-openhands browser hover 'testid=root-layout'\ncontrol-openhands browser reload\ncontrol-openhands browser wait 'testid=backend-selector >> role=status[name=\"Connected\"]' --timeout 15000\ncontrol-openhands assert --field value --equals Local -- browser value 'testid=backend-selector >> role=combobox'\ncontrol-openhands browser click 'testid=backend-selector'\ncontrol-openhands browser press Escape\ncontrol-openhands browser press Escape\ncontrol-openhands browser screenshot 'testid=backend-selector' --feature F25.selector-dropdown --name escape-closed\ncontrol-openhands assert --field value --equals Local --bug-shows '' -- browser value 'testid=backend-selector >> role=combobox'  # bug",
+  "exitCode": 1,
+  "timedOut": false,
+  "failedLine": 11,
+  "failedCommand": "control-openhands assert --field value --equals Local --bug-shows '' -- browser value 'testid=backend-selector >> role=combobox'",
+  "stdout": "{\n  \"ok\": true,\n  \"viewport\": {\n    \"width\": 1440,\n    \"height\": 1000\n  }\n}\n{\n  \"ok\": true,\n  \"url\": \"http://127.0.0.1:18800/\",\n  \"status\": 200\n}\n{\n  \"ok\": true\n}\n{\n  \"ok\": true,\n  \"url\": \"http://127.0.0.1:18800/\"\n}\n{\n  \"ok\": true,\n  \"state\": \"visible\"\n}\n{\n  \"ok\": true,\n  \"kind\": \"hold\",\n  \"actual\": \"Local\",\n  \"field\": \"value\",\n  \"expected\": \"Local\",\n  \"command\": \"browser value testid=backend-selector >> role=combobox\"\n}\n{\n  \"ok\": true,\n  \"url\": \"http://127.0.0.1:18800/\"\n}\n{\n  \"ok\": true,\n  \"url\": \"http://127.0.0.1:18800/\"\n}\n{\n  \"ok\": true,\n  \"url\": \"http://127.0.0.1:18800/\"\n}\n{\n  \"ok\": true,\n  \"path\": \"/tmp/openhands-verify/2026-10-12T2007-48bc2b/evidence/F25.selector-dropdown/escape-closed.png\",\n  \"url\": \"http://127.0.0.1:18800/\",\n  \"viewport\": {\n    \"width\": 1440,\n    \"height\": 1000\n  }\n}\n{\n  \"ok\": false,\n  \"kind\": \"mismatch\",\n  \"actual\": \"\",\n  \"field\": \"value\",\n  \"expected\": \"Local\",\n  \"bugShows\": \"\",\n  \"command\": \"browser value testid=backend-selector >> role=combobox\"\n}\n",
+  "stderr": "",
+  "elapsedMs": 3544,
+  "asserts": [
+    {
+      "ts": "2026-10-12T20:15:35.290Z",
+      "ok": true,
+      "kind": "hold",
+      "actual": "Local",
+      "field": "value",
+      "expected": "Local",
+      "command": "browser value testid=backend-selector >> role=combobox"
+    },
+    {
+      "ts": "2026-10-12T20:15:35.974Z",
+      "ok": false,
+      "kind": "mismatch",
+      "actual": "",
+      "field": "value",
+      "expected": "Local",
+      "bugShows": "",
+      "command": "browser value testid=backend-selector >> role=combobox"
+    }
+  ]
+}

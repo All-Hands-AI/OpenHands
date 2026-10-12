@@ -26,7 +26,7 @@ together:
    lists every user-facing behavior with stable IDs, user entry points, exact
    `control-openhands` recipes, observable results and gotchas.
 3. **Evidence**: screenshots, ARIA snapshots and a pass/fail/blocked/not-run
-   ledger that survive cleanup.
+   ledger (plus xfail/xpass for known bugs) that survive cleanup.
 
 Neither this skill nor the map authorizes external writes, paid models beyond
 the budget you were given, or product fixes the user did not ask for.
@@ -188,6 +188,19 @@ prerequisite; never substitute a mock and call it a pass.
   `src/` paths no family owns (a map gap) and non-user-facing paths. Drive every entry point those features list at
   desktop and phone viewports, and report with
   [the report contract](references/report.md).
+- **Verify a fix for a known bug** (an open PR or a merged commit that claims
+  to fix a bug the map records): launch the baseline and the fix as two runs
+  (`launch --new` from each worktree, same backend pins), then run the note's
+  known-bug block twice on each with this checkout's CLI:
+  `control-openhands bug run <ID> --attempts 2 --label baseline --run $BASE_RUN`
+  must report `xfail` both times, and `--label fix --run $FIX_RUN` `xpass` both
+  times. `control-openhands bug proof <ID> --baseline $BASE_RUN --baseline-label
+  baseline --fix $FIX_RUN --fix-label fix` gives the verdict: `verified`,
+  `not-fixed`, or `inconclusive`. A baseline that does not reproduce twice is
+  inconclusive, never "fixed". When the note has no block yet, write one first
+  ([mapping.md](references/mapping.md)) and prove it reproduces on the
+  baseline. Every attempt runs the same recipe, viewport and fixtures, and
+  screenshots or recordings stay part of the proof.
 - **Run the daily pass**: follow [references/daily.md](references/daily.md):
   static checks (`map check`, `map coverage`, `map testids`), the changed
   families since the `Maintenance baseline` line of the map index
@@ -217,7 +230,10 @@ prerequisite; never substitute a mock and call it a pass.
   in the map, which should know every open bug: a `Known failure (reproduced
   <date>, #<issue>)` note on the bullet that reproduces it, next to the
   expected result, or a `Known issue #<issue>` Gotchas entry when no recipe can
-  drive it. Passes re-drive these notes once the issue closes.
+  drive it. Make the note executable with a `known-bug` block where a recipe
+  can drive it, so `control-openhands bug run <ID>` reports it as an expected
+  failure (`xfail`) and flags it (`xpass`) the day it stops reproducing.
+  Passes re-drive these notes once the issue closes.
 - **Blocked**: name the missing prerequisite (account, entitlement, OS, binary)
   and the route you attempted. Unreachable is never a pass.
 
