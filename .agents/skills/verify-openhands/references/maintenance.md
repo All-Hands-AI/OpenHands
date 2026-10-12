@@ -80,6 +80,14 @@ summary, source entry points, likely drift with citations (or none), new
 surfaces missing from the map, and one live recipe. Readers never edit files or
 drive the browser.
 
+Reconcile before driving. Every feature file has a returned summary; re-run a
+reader that came back empty or failed instead of treating its feature as clean.
+Merge the readers' recipes into as few app states as practical (one fixture
+set, one LLM setup) so the live pass does not rebuild the same state per
+family. Spot-check each cited drift against source before you trust it; do not
+repeat the source analysis for claims a reader found clean (their live coverage
+in §4 still applies).
+
 Re-check stale harness claims whenever the CLI gained verbs: grep the map for
 `blocked`, `not run`, `harness gap`, `no verb` and `cannot be driven`, and
 re-drive any that a current verb can now reach (compare with
@@ -100,16 +108,25 @@ and drives it serially; parallel live work needs one `launch --new` per worker.
 Exercise every feature at least once and every changed behavior on all its entry
 points, at desktop and phone viewports for UI changes. Hold three invariants:
 
-1. Never drive an instance not doctored since its last surprise
-   (`control-openhands doctor`; reload or relaunch when the UI is wedged).
-2. Evidence captured so far survives every cleanup (check it after `stop`).
+1. Never drive an instance not doctored since its last surprise. Run
+   `control-openhands doctor` before the first drive, on each `launch --new`,
+   and again after any failed drive. Doctor cannot see a wedged UI on a healthy
+   stack: `browser reload`, return to a known state or relaunch rather than
+   driving on and hoping.
+2. Evidence captured so far survives every cleanup: check it at its recorded
+   path after `stop`, do not assume it.
 3. Nothing a drive started outlives its usefulness: fixtures deleted, schedules
-   disabled, runs stopped.
+   disabled, runs stopped. Clean a failed drive's leftovers too, whether the
+   run is stuck or exited. Clean only that drive's own leftovers: never touch
+   another worker's run, and leave up a run that the coordinator still uses.
 
-A doctor failure caused by skill drift is drift: fix it and retry once. A
-feature that cannot be reached is `blocked` only with the concrete prerequisite
-and the route attempted; if the map omits that prerequisite, that is drift too.
-Re-drive any CLI fix before shipping it.
+A doctor failure caused by skill drift is drift: fix it in this skill's
+directory, restart only what the fix invalidated, and retry once; a second
+failure makes the pass blocked. A feature that cannot be reached is `blocked`
+only with the concrete prerequisite and the route attempted; if the map omits
+that prerequisite, that is drift too. Re-drive any CLI fix before shipping it.
+Run the final `control-openhands stop` after the last drive of the pass,
+including those re-drives.
 
 For an apparent regression, run the same minimal recipe on BASE and TARGET.
 Claim introduced-in-range only when BASE passes and TARGET fails under
