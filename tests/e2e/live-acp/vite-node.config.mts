@@ -11,15 +11,16 @@ import { defineConfig } from "vite";
 const srcDir = fileURLToPath(new URL("../../../src", import.meta.url));
 
 const _require = createRequire(import.meta.url);
-let extensionsSkillsDir = "";
-try {
-  extensionsSkillsDir = resolve(
-    dirname(_require.resolve("@openhands/extensions/package.json")),
-    "skills",
-  );
-} catch {
-  extensionsSkillsDir = "";
-}
+const extensionsSkillsDir = (() => {
+  try {
+    return resolve(
+      dirname(_require.resolve("@openhands/extensions/package.json")),
+      "skills",
+    );
+  } catch {
+    return "";
+  }
+})();
 
 export default defineConfig({
   define: {
