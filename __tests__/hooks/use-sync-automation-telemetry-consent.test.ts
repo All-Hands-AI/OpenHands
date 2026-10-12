@@ -233,6 +233,107 @@ describe("useSyncAutomationTelemetryConsent", () => {
       await Promise.resolve();
     });
 
+    // A failed response does not prove that the older write was never applied.
+    // Reassert the current denial after that attempt settles.
+    expect(syncTelemetryConsentMock).toHaveBeenNthCalledWith(3, "denied");
+  });
+
+  it.each([
+    ["granted", "denied"],
+    ["denied", "granted"],
+  ] as const)(
+    "restores %s after a late %s acknowledgement overwrites it",
+    async (currentConsent, interveningConsent) => {
+      let serverConsent: "granted" | "denied" | undefined;
+      let acknowledgeIntervening: (() => void) | undefined;
+      const interveningRequest = new Promise<void>((resolve) => {
+        acknowledgeIntervening = () => {
+          serverConsent = interveningConsent;
+          resolve();
+        };
+      });
+      syncTelemetryConsentMock.mockImplementation((consent) => {
+        if (consent === interveningConsent) return interveningRequest;
+        serverConsent = consent;
+        return Promise.resolve();
+      });
+      state.consent = currentConsent;
+      const { rerender } = renderHook(() =>
+        useSyncAutomationTelemetryConsent(),
+      );
+      await act(async () => Promise.resolve());
+
+      act(() => {
+        state.consent = interveningConsent;
+        listeners.forEach((listener) => listener());
+      });
+      act(() => {
+        state.consent = currentConsent;
+        listeners.forEach((listener) => listener());
+      });
+      await act(async () => Promise.resolve());
+      await act(async () => {
+        acknowledgeIntervening?.();
+        await Promise.resolve();
+      });
+      rerender();
+
+      expect(serverConsent).toBe(currentConsent);
+      expect(
+        syncTelemetryConsentMock.mock.calls.map(([consent]) => consent),
+      ).toEqual([
+        currentConsent,
+        interveningConsent,
+        currentConsent,
+        currentConsent,
+      ]);
+    },
+  );
+
+  it("does not reassert consent on another backend after an old request settles", async () => {
+    let acknowledgeOldBackend: (() => void) | undefined;
+    const oldRequest = new Promise<void>((resolve) => {
+      acknowledgeOldBackend = resolve;
+    });
+    syncTelemetryConsentMock
+      .mockReturnValueOnce(oldRequest)
+      .mockResolvedValueOnce(undefined);
+    state.consent = "granted";
+    const { rerender } = renderHook(() => useSyncAutomationTelemetryConsent());
+
+    state.backendId = "local-2";
+    rerender();
+    await act(async () => Promise.resolve());
+    await act(async () => {
+      acknowledgeOldBackend?.();
+      await Promise.resolve();
+    });
+
+    expect(syncTelemetryConsentMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not reassert consent after unmount with an older write pending", async () => {
+    let acknowledgeOldWrite: (() => void) | undefined;
+    const oldRequest = new Promise<void>((resolve) => {
+      acknowledgeOldWrite = resolve;
+    });
+    syncTelemetryConsentMock
+      .mockReturnValueOnce(oldRequest)
+      .mockResolvedValueOnce(undefined);
+    state.consent = "granted";
+    const { unmount } = renderHook(() => useSyncAutomationTelemetryConsent());
+    act(() => {
+      state.consent = "denied";
+      listeners.forEach((listener) => listener());
+    });
+    await act(async () => Promise.resolve());
+
+    unmount();
+    await act(async () => {
+      acknowledgeOldWrite?.();
+      await Promise.resolve();
+    });
+
     expect(syncTelemetryConsentMock).toHaveBeenCalledTimes(2);
   });
 

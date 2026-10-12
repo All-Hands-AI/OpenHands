@@ -12,6 +12,7 @@ const MAX_RETRY_DELAY_MS = 30_000;
 
 interface DesiredConsentSync {
   key: string;
+  connectionKey: string;
   consent: "granted" | "denied";
 }
 
@@ -23,6 +24,7 @@ export function useSyncAutomationTelemetryConsent() {
     () => "pending" as const,
   );
   const desiredSyncRef = React.useRef<DesiredConsentSync | null>(null);
+  const syncCurrentRef = React.useRef<(() => void) | null>(null);
   const inFlightKeysRef = React.useRef(new Set<string>());
   const lastSuccessfulKeyRef = React.useRef<string | null>(null);
   const retryStateRef = React.useRef<{
@@ -48,6 +50,7 @@ export function useSyncAutomationTelemetryConsent() {
       (consent === "pending" && !pendingRevocationId)
     ) {
       desiredSyncRef.current = null;
+      syncCurrentRef.current = null;
       clearRetryTimer();
       retryStateRef.current = null;
       return undefined;
@@ -55,8 +58,13 @@ export function useSyncAutomationTelemetryConsent() {
 
     const resolvedConsent = consent === "granted" ? "granted" : "denied";
     const pendingActor = consent === "pending" ? pendingRevocationId : "";
-    const syncKey = `${backend.id}:${backend.connectionRevision ?? 0}:${resolvedConsent}:${pendingActor}`;
-    desiredSyncRef.current = { key: syncKey, consent: resolvedConsent };
+    const connectionKey = `${backend.id}:${backend.connectionRevision ?? 0}`;
+    const syncKey = `${connectionKey}:${resolvedConsent}:${pendingActor}`;
+    desiredSyncRef.current = {
+      key: syncKey,
+      connectionKey,
+      consent: resolvedConsent,
+    };
 
     if (retryStateRef.current?.key !== syncKey) {
       clearRetryTimer();
@@ -67,6 +75,7 @@ export function useSyncAutomationTelemetryConsent() {
       const desired = desiredSyncRef.current;
       if (
         desired?.key !== syncKey ||
+        retryTimerRef.current !== null ||
         lastSuccessfulKeyRef.current === syncKey ||
         inFlightKeysRef.current.has(syncKey)
       ) {
@@ -74,6 +83,9 @@ export function useSyncAutomationTelemetryConsent() {
       }
 
       inFlightKeysRef.current.add(syncKey);
+      // An intervening write makes the prior acknowledgement insufficient if
+      // the user returns to that value while this request is still in flight.
+      lastSuccessfulKeyRef.current = null;
 
       void AutomationService.syncTelemetryConsent(desired.consent)
         .then(() => {
@@ -102,13 +114,26 @@ export function useSyncAutomationTelemetryConsent() {
         })
         .finally(() => {
           inFlightKeysRef.current.delete(syncKey);
+          const latest = desiredSyncRef.current;
+          if (
+            latest?.connectionKey === connectionKey &&
+            latest.key !== syncKey
+          ) {
+            // The older write may have reached the server after the latest
+            // acknowledgement, even if its response failed. Reassert the
+            // current consent once it settles, scoped to this connection.
+            lastSuccessfulKeyRef.current = null;
+          }
+          syncCurrentRef.current?.();
         });
     };
 
+    syncCurrentRef.current = startSync;
     startSync();
 
     return () => {
       desiredSyncRef.current = null;
+      syncCurrentRef.current = null;
       clearRetryTimer();
     };
   }, [backend.connectionRevision, backend.id, backend.kind, consent]);
