@@ -46,9 +46,7 @@ import {
   validateLlmCredentials,
 } from "#/utils/validate-llm-credentials";
 import { FreeOpenHandsModelsNote } from "#/components/shared/free-models-note";
-
-/** Form-values key for the shared provider connection a profile links to. */
-export const LLM_PROVIDER_CONNECTION_KEY = "llm.provider_connection_id";
+import { LLM_PROVIDER_CONNECTION_KEY } from "#/constants/llm-provider-connection";
 
 /** Dropdown sentinel for "no provider connection" (an inline key is used). */
 const NO_PROVIDER_CONNECTION = "__none__";
@@ -606,7 +604,7 @@ export function LlmSettingsScreen({
           !subscriptionModels?.includes(model) &&
           !fallbackSubscriptionModel
         ) {
-          throw new Error("Subscription models are not loaded yet.");
+          throw new Error(t(I18nKey.SETTINGS$SUBSCRIPTION_MODELS_NOT_LOADED));
         }
         llm.model = subscriptionModels?.includes(model)
           ? model

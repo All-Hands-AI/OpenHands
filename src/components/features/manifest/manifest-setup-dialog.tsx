@@ -1,3 +1,4 @@
+import { AutomationAgentProfileSelector } from "#/components/features/automations/agent-profile-selector";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -11,6 +12,7 @@ import { cn } from "#/utils/utils";
 import { modalTitleLgClassName } from "#/utils/modal-classes";
 import { getApiErrorBody } from "#/utils/api-error-message";
 import { useTracking } from "#/hooks/use-tracking";
+import { notifySuperAdminSetupStep } from "#/components/features/setup-guide/super-admin-setup-step-event";
 import { useSetupCapabilities } from "#/hooks/query/use-manifest-capabilities";
 import { useSetupPrerequisites } from "#/hooks/query/use-manifest-prerequisites";
 import { useLlmProfiles } from "#/hooks/query/use-llm-profiles";
@@ -24,6 +26,7 @@ import {
   buildCreatePayload,
   deriveErrorMap,
   missingCreateEndpoints,
+  supportsAgentProfile,
 } from "#/manifests/automation-setup";
 import {
   actionKinds,
@@ -165,6 +168,16 @@ export function SetupDialog({ entry, onClose }: SetupDialogProps) {
     () => collectFields(entry.setup, selectedTrigger, selectedAction),
     [entry, selectedTrigger, selectedAction],
   );
+  const visibleFields = values.agent_profile_id
+    ? Object.fromEntries(
+        Object.entries(fields).filter(
+          ([, field]) => field.type !== "llm-profile",
+        ),
+      )
+    : fields;
+  const canSelectAgentProfile =
+    capabilities.capabilities?.features.includes("agentProfiles") === true &&
+    supportsAgentProfile(entry, selectedAction);
   const hasLlmProfileField = useMemo(
     () => Object.values(fields).some((field) => field.type === "llm-profile"),
     [fields],
@@ -261,7 +274,11 @@ export function SetupDialog({ entry, onClose }: SetupDialogProps) {
   const setActionValue = (kind: string) => {
     setSelectedAction(kind);
     const defaults = getInitialFormValues(entry.setup, selectedTrigger, kind);
-    valuesRef.current = { ...defaults, ...valuesRef.current };
+    valuesRef.current = {
+      ...defaults,
+      ...valuesRef.current,
+      ...(supportsAgentProfile(entry, kind) ? {} : { agent_profile_id: "" }),
+    };
     setValues(valuesRef.current);
     setLocalErrors({});
     setServiceErrors(NO_SERVICE_ERRORS);
@@ -365,6 +382,8 @@ export function SetupDialog({ entry, onClose }: SetupDialogProps) {
         automationId: entry.id,
         setupMode,
       });
+      // An assisted setup only starts the conversation that creates it.
+      if (setupMode === "direct") notifySuperAdminSetupStep("first-automation");
       const destination = getDestination(response);
       if (destination) navigate(destination, { replace: true });
       else onClose();
@@ -422,7 +441,7 @@ export function SetupDialog({ entry, onClose }: SetupDialogProps) {
     <ModalBackdrop onClose={onClose} aria-label={entry.name}>
       <div
         data-testid="setup-dialog"
-        className="relative flex max-h-[85vh] w-[92vw] max-w-lg flex-col rounded-xl border border-[var(--oh-border)] bg-base-secondary"
+        className="relative flex max-h-[85vh] w-[92vw] max-w-lg flex-col rounded-xl border border-border bg-base-secondary"
       >
         <ModalCloseButton
           onClose={onClose}
@@ -442,7 +461,7 @@ export function SetupDialog({ entry, onClose }: SetupDialogProps) {
 
           {!isLoading && isUnsupported && (
             <div className="flex flex-col gap-2">
-              <p className="text-sm text-[var(--oh-muted)]">
+              <p className="text-sm text-muted">
                 {t(I18nKey.SETUP$UNSUPPORTED_MESSAGE)}
               </p>
               {/* The unmet requirements are the names both sides of the
@@ -453,7 +472,7 @@ export function SetupDialog({ entry, onClose }: SetupDialogProps) {
               {unmet.length > 0 && (
                 <p
                   data-testid="setup-unmet-requirements"
-                  className="text-sm text-[var(--oh-muted)]"
+                  className="text-sm text-muted"
                 >
                   {unmet.join(", ")}
                 </p>
@@ -467,13 +486,9 @@ export function SetupDialog({ entry, onClose }: SetupDialogProps) {
 
           {!isLoading && !isUnsupported && currentStep === "form" && (
             <div className="flex flex-col gap-5">
-              <p className="text-sm text-[var(--oh-muted)]">
-                {entry.description}
-              </p>
+              <p className="text-sm text-muted">{entry.description}</p>
               {entry.setup.form.note && (
-                <p className="text-sm text-[var(--oh-muted)]">
-                  {entry.setup.form.note}
-                </p>
+                <p className="text-sm text-muted">{entry.setup.form.note}</p>
               )}
               {allActionOptions.length > 1 && actionOptions.length > 1 && (
                 <div className="flex w-full flex-col gap-2.5">
@@ -499,7 +514,7 @@ export function SetupDialog({ entry, onClose }: SetupDialogProps) {
                     entry.setup.actions?.[
                       selectedAction as keyof typeof entry.setup.actions
                     ] && (
-                      <p className="text-xs text-[var(--oh-muted)]">
+                      <p className="text-xs text-muted">
                         {
                           entry.setup.actions[
                             selectedAction as keyof typeof entry.setup.actions
@@ -526,12 +541,27 @@ export function SetupDialog({ entry, onClose }: SetupDialogProps) {
                       if (key !== null) setTriggerValue(String(key));
                     }}
                   />
-                  <p className="text-xs text-[var(--oh-muted)]">
+                  <p className="text-xs text-muted">
                     {t(I18nKey.SETUP$TRIGGER_HELP)}
                   </p>
                 </div>
               )}
-              {Object.entries(fields).map(([name, field]) => (
+              {canSelectAgentProfile && (
+                <AutomationAgentProfileSelector
+                  // The form stores "no profile" as "", but the selector only
+                  // reads null/undefined as Default; "" would render it blank.
+                  value={
+                    typeof values.agent_profile_id === "string" &&
+                    values.agent_profile_id !== ""
+                      ? values.agent_profile_id
+                      : null
+                  }
+                  onChange={(value) =>
+                    setFieldValue("agent_profile_id", value ?? "")
+                  }
+                />
+              )}
+              {Object.entries(visibleFields).map(([name, field]) => (
                 <SetupFormField
                   key={name}
                   name={name}

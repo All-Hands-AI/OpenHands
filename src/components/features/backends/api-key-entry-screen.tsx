@@ -83,11 +83,11 @@ export default function ApiKeyEntryScreen() {
   return (
     <div
       data-testid="api-key-entry-screen"
-      className="flex min-h-screen items-center justify-center bg-base px-6"
+      className="flex min-h-screen items-center justify-center bg-canvas-base px-6"
     >
       <div
         className={cn(
-          "relative rounded-xl border border-[var(--oh-border)] bg-base-secondary",
+          "relative rounded-xl border border-border bg-base-secondary",
           modalWidthClassName("md"),
           MODAL_MAX_WIDTH_VIEWPORT,
         )}
