@@ -34832,6 +34832,23 @@
     "uk": "Вхід ще не завершено. Завершіть процес у браузері й повторіть спробу.",
     "ca": "L’inici de sessió encara no s’ha completat. Acaba el flux del navegador i torna-ho a provar."
   },
+  "SETTINGS$SUBSCRIPTION_MODELS_NOT_LOADED": {
+    "en": "Subscription models are not loaded yet.",
+    "ja": "サブスクリプションモデルはまだ読み込まれていません。",
+    "zh-CN": "订阅模型尚未加载。",
+    "zh-TW": "訂閱模型尚未載入。",
+    "ko-KR": "구독 모델이 아직 로드되지 않았습니다.",
+    "no": "Abonnementsmodeller er ikke lastet inn ennå.",
+    "it": "I modelli dell’abbonamento non sono ancora stati caricati.",
+    "pt": "Os modelos de assinatura ainda não foram carregados.",
+    "es": "Los modelos de suscripción aún no se han cargado.",
+    "ar": "لم يتم تحميل نماذج الاشتراك بعد.",
+    "fr": "Les modèles d’abonnement ne sont pas encore chargés.",
+    "tr": "Abonelik modelleri henüz yüklenmedi.",
+    "de": "Abonnementmodelle sind noch nicht geladen.",
+    "uk": "Моделі підписки ще не завантажені.",
+    "ca": "Els models de subscripció encara no s’han carregat."
+  },
   "STATUS$VALIDATING": {
     "en": "Validating...",
     "ja": "検証中...",

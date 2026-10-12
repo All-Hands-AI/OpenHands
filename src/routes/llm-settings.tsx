@@ -587,7 +587,7 @@ export function LlmSettingsScreen({
           !subscriptionModels?.includes(model) &&
           !fallbackSubscriptionModel
         ) {
-          throw new Error("Subscription models are not loaded yet.");
+          throw new Error(t(I18nKey.SETTINGS$SUBSCRIPTION_MODELS_NOT_LOADED));
         }
         llm.model = subscriptionModels?.includes(model)
           ? model
@@ -617,7 +617,7 @@ export function LlmSettingsScreen({
       agentSettings.llm = llm;
       return { agent_settings_diff: agentSettings };
     },
-    [schema, subscriptionModels, isCloud],
+    [schema, subscriptionModels, isCloud, t],
   );
 
   return (
