@@ -67,10 +67,10 @@ export const MARS_TUNNEL_IPC = {
 const CREATE_SESSION_READY_TIMEOUT_MS = 300_000;
 
 /**
- * A session confirmed READY this recently is not polled again before its
- * tunnel is dialed: createSession has just waited for READY, and the
- * openTunnel that follows (or a repeat openTunnel on a live tunnel) would
- * otherwise spend another getSession round-trip asking.
+ * createSession has just waited for READY, so the openTunnel that follows
+ * within this window skips one getSession round-trip. Only that first open
+ * uses it: any later one — including reusing a live tunnel — asks again, so
+ * a session paused in the meantime (idle, or from another client) is woken.
  */
 const READY_FRESH_MS = 10_000;
 
@@ -147,7 +147,7 @@ export function createMarsTunnelBridge({
     });
   const client = api ?? clientFor(() => store.getActiveToken());
 
-  /** When each session was last seen READY; see READY_FRESH_MS. */
+  /** When createSession saw each session READY; see READY_FRESH_MS. */
   const readyAt = new Map();
   async function wake(options) {
     const session = await ensureAwake(options);
@@ -159,9 +159,11 @@ export function createMarsTunnelBridge({
     registryOverride ??
     createTunnelRegistry({
       ensureAwake: async ({ sessionId, getAccessToken }) => {
+        // Consumed by the first open after createSession, never refreshed.
         const at = readyAt.get(sessionId);
+        readyAt.delete(sessionId);
         if (at !== undefined && Date.now() - at < READY_FRESH_MS) return;
-        await wake({ api: clientFor(getAccessToken), sessionId });
+        await ensureAwake({ api: clientFor(getAccessToken), sessionId });
       },
     });
 

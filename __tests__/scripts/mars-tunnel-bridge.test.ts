@@ -343,6 +343,26 @@ describe("createMarsTunnelBridge", () => {
     }
   });
 
+  it("reusing a live tunnel right after createSession still checks the session", async () => {
+    // Only the first open after createSession skips the poll: a session
+    // paused outside this app (idle, another client) must still be woken.
+    const { ensureAwake, ipcMain, bridge } = setup({ realRegistry: true });
+    await ipcMain.invoke(MARS_TUNNEL_IPC.savePat, { token: VALID_PAT });
+
+    try {
+      await ipcMain.invoke(MARS_TUNNEL_IPC.createSession, "cfg_1", "agent-1");
+      await ipcMain.invoke(MARS_TUNNEL_IPC.openTunnel, {
+        sessionId: "sess_new",
+      });
+      await ipcMain.invoke(MARS_TUNNEL_IPC.openTunnel, {
+        sessionId: "sess_new",
+      });
+      expect(ensureAwake).toHaveBeenCalledTimes(2);
+    } finally {
+      await bridge.dispose();
+    }
+  });
+
   it("openTunnel after closeTunnel polls the session again", async () => {
     const { ensureAwake, ipcMain, bridge } = setup({ realRegistry: true });
     await ipcMain.invoke(MARS_TUNNEL_IPC.savePat, { token: VALID_PAT });
