@@ -131,7 +131,7 @@
     "@eslint/js": "9.39.4",
     "@playwright/test": "1.63.0",
     "@react-router/dev": "7.18.2",
-    "@shadcn/lint": "0.2.0",
+    "@shadcn/lint": "0.2.1",
     "@stryker-mutator/core": "9.6.1",
     "@stryker-mutator/vitest-runner": "9.6.1",
     "@tailwindcss/node": "4.3.3",
