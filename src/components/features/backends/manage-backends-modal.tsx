@@ -24,6 +24,7 @@ import { BackendFormModal } from "./backend-form-modal";
 import { BackendRow } from "./backend-row";
 import { DeviceFlowAuth } from "./device-flow-auth";
 import { ManagedAgentsView } from "./managed-agents/managed-agents-view";
+import { MarsBackendRemovalModal } from "./managed-agents/mars-backend-removal-modal";
 import { useBackendSwitchRedirect } from "./use-backend-switch-redirect";
 
 interface ManageBackendsModalProps {
@@ -42,6 +43,7 @@ export type ManageBackendsView = "backends" | "managed-agents";
 interface PendingRemoval {
   id: string;
   name: string;
+  marsSessionId?: string;
 }
 
 /**
@@ -205,6 +207,7 @@ export function ManageBackendsModal({
                             setPendingRemoval({
                               id: backend.id,
                               name: backend.name,
+                              marsSessionId: backend.marsSessionId,
                             })
                           }
                           onLogin={
@@ -275,7 +278,14 @@ export function ManageBackendsModal({
         />
       ) : null}
 
-      {pendingRemoval ? (
+      {pendingRemoval?.marsSessionId ? (
+        <MarsBackendRemovalModal
+          name={pendingRemoval.name}
+          sessionId={pendingRemoval.marsSessionId}
+          onRemove={handleConfirmRemoval}
+          onCancel={() => setPendingRemoval(null)}
+        />
+      ) : pendingRemoval ? (
         <ConfirmationModal
           text={t(I18nKey.BACKEND$REMOVE_CONFIRMATION, {
             name: pendingRemoval.name,

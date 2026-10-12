@@ -49043,5 +49043,39 @@
     "ca": "Webhook source {{source}} already exists, so this automation will use the existing source.",
     "tr": "Webhook source {{source}} already exists, so this automation will use the existing source.",
     "uk": "Webhook source {{source}} already exists, so this automation will use the existing source."
+  },
+  "BACKEND$REMOVE_MARS_CONFIRMATION": {
+    "en": "Remove \"{{name}}\"? This only disconnects it here: the DigitalOcean session keeps running (and billing) and you can reconnect it from Managed Agents. To end it and delete its sandbox, stop the session instead.",
+    "ja": "「{{name}}」を削除しますか？ここでの接続が解除されるだけです。DigitalOcean のセッションは実行（および課金）を続け、マネージドエージェントから再接続できます。終了してサンドボックスを削除するには、代わりにセッションを停止してください。",
+    "zh-CN": "移除“{{name}}”？这只会在此处断开连接：DigitalOcean 会话会继续运行（并计费），你可以在托管代理中重新连接。要结束会话并删除其沙箱，请改为停止会话。",
+    "zh-TW": "移除「{{name}}」？這只會在此處中斷連線：DigitalOcean 工作階段會繼續執行（並計費），你可以從受管代理程式重新連線。若要結束並刪除其沙箱，請改為停止工作階段。",
+    "ko-KR": "\"{{name}}\"을(를) 제거하시겠습니까? 여기서 연결만 해제됩니다. DigitalOcean 세션은 계속 실행(및 과금)되며 관리형 에이전트에서 다시 연결할 수 있습니다. 세션을 종료하고 샌드박스를 삭제하려면 대신 세션을 중지하세요.",
+    "no": "Fjerne «{{name}}»? Dette kobler den bare fra her: DigitalOcean-økten fortsetter å kjøre (og faktureres), og du kan koble til igjen fra Administrerte agenter. For å avslutte den og slette sandkassen, stopp økten i stedet.",
+    "ar": "إزالة \"{{name}}\"؟ هذا يقطع الاتصال هنا فقط: تستمر جلسة DigitalOcean في العمل (والفوترة) ويمكنك إعادة الاتصال بها من الوكلاء المُدارين. لإنهائها وحذف صندوق الحماية الخاص بها، أوقف الجلسة بدلاً من ذلك.",
+    "de": "„{{name}}“ entfernen? Dadurch wird die Verbindung nur hier getrennt: Die DigitalOcean-Sitzung läuft weiter (und wird abgerechnet) und kann über Verwaltete Agenten erneut verbunden werden. Um sie zu beenden und ihre Sandbox zu löschen, beende stattdessen die Sitzung.",
+    "fr": "Supprimer « {{name}} » ? Cela la déconnecte uniquement ici : la session DigitalOcean continue de s'exécuter (et d'être facturée) et vous pouvez vous y reconnecter depuis Agents gérés. Pour y mettre fin et supprimer son bac à sable, arrêtez plutôt la session.",
+    "it": "Rimuovere \"{{name}}\"? Viene solo disconnessa qui: la sessione DigitalOcean continua a essere eseguita (e fatturata) e puoi riconnetterla da Agenti gestiti. Per terminarla ed eliminarne la sandbox, termina invece la sessione.",
+    "pt": "Remover \"{{name}}\"? Isto apenas a desliga aqui: a sessão DigitalOcean continua em execução (e a ser faturada) e pode voltar a ligá-la a partir de Agentes geridos. Para a terminar e eliminar o seu sandbox, encerre antes a sessão.",
+    "es": "¿Quitar \"{{name}}\"? Esto solo la desconecta aquí: la sesión de DigitalOcean sigue en ejecución (y facturándose) y puedes volver a conectarla desde Agentes administrados. Para finalizarla y eliminar su sandbox, detén la sesión.",
+    "ca": "Vols treure \"{{name}}\"? Això només la desconnecta aquí: la sessió de DigitalOcean continua en execució (i facturant-se) i la pots tornar a connectar des d'Agents gestionats. Per finalitzar-la i eliminar-ne el sandbox, atura la sessió.",
+    "tr": "\"{{name}}\" kaldırılsın mı? Bu yalnızca buradaki bağlantıyı keser: DigitalOcean oturumu çalışmaya (ve faturalandırılmaya) devam eder ve Yönetilen Ajanlar'dan yeniden bağlanabilirsiniz. Oturumu sonlandırıp sandbox'ını silmek için bunun yerine oturumu durdurun.",
+    "uk": "Видалити «{{name}}»? Це лише від'єднає її тут: сесія DigitalOcean продовжить працювати (і тарифікуватися), і ви зможете повторно під'єднатися з розділу «Керовані агенти». Щоб завершити її та видалити пісочницю, натомість зупиніть сесію."
+  },
+  "BACKEND$DISCONNECT_ONLY": {
+    "en": "Disconnect only",
+    "ja": "接続解除のみ",
+    "zh-CN": "仅断开连接",
+    "zh-TW": "僅中斷連線",
+    "ko-KR": "연결만 해제",
+    "no": "Bare koble fra",
+    "ar": "قطع الاتصال فقط",
+    "de": "Nur trennen",
+    "fr": "Déconnecter uniquement",
+    "it": "Solo disconnetti",
+    "pt": "Apenas desligar",
+    "es": "Solo desconectar",
+    "ca": "Només desconnectar",
+    "tr": "Yalnızca bağlantıyı kes",
+    "uk": "Лише від'єднати"
   }
 }
