@@ -118,9 +118,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 function AgentServerBootstrapLoading() {
   return (
-    <main className="min-h-screen bg-base px-6 py-10 text-contrast">
+    <main className="min-h-screen bg-canvas-base px-6 py-10 text-contrast">
       <div className="mx-auto flex min-h-screen max-w-6xl items-center justify-center">
-        <div className="rounded-3xl border border-contrast/10 bg-base/80 px-8 py-10 shadow-2xl">
+        <div className="rounded-3xl border border-contrast/10 bg-canvas-base/80 px-8 py-10 shadow-2xl">
           <LoadingSpinner size="large" />
         </div>
       </div>
@@ -153,7 +153,7 @@ function MissingAgentServerScreen() {
   return (
     <main
       data-testid="agent-server-onboarding-screen"
-      className="min-h-screen bg-base"
+      className="min-h-screen bg-canvas-base"
     >
       <React.Suspense fallback={null}>
         <ManageBackendsModal onClose={handleClose} recoveryMode />
@@ -189,7 +189,7 @@ function FirstRunOnboardingScreen({ onClose }: { onClose: () => void }) {
     return (
       <main
         data-testid="first-run-onboarding-screen"
-        className="min-h-screen bg-base"
+        className="min-h-screen bg-canvas-base"
       >
         <React.Suspense fallback={<AgentServerBootstrapLoading />}>
           <BackendFormModal
@@ -206,7 +206,7 @@ function FirstRunOnboardingScreen({ onClose }: { onClose: () => void }) {
   return (
     <main
       data-testid="first-run-onboarding-screen"
-      className="min-h-screen bg-base"
+      className="min-h-screen bg-canvas-base"
     >
       <NavigationProvider value={navigationValue}>
         <React.Suspense fallback={<AgentServerBootstrapLoading />}>
@@ -242,10 +242,15 @@ export default function App() {
   // reload the baked key is still null, but the registry has the key.
   // So: skip the instant gate when a registered backend already carries
   // an API key — let the normal /server_info probe validate it instead.
+  const { active } = useActiveBackendContext();
   const bakedKeyMissing = isAuthRequiredAndMissing();
   const hasRegisteredKey = Boolean(getEffectiveLocalBackend()?.apiKey);
-  const authMissing = bakedKeyMissing && !hasRegisteredKey;
-  const { active } = useActiveBackendContext();
+  // When the active backend is cloud, local session-key auth is irrelevant —
+  // the cloud backend uses its own bearer token. Skip the API-key entry screen
+  // in that case so Docker/public mode doesn't block cloud-only sessions.
+  const isActiveCloudBackend = active.backend.kind === "cloud";
+  const authMissing =
+    bakedKeyMissing && !hasRegisteredKey && !isActiveCloudBackend;
   const queryClient = useQueryClient();
   // In locked-to-Cloud mode the only valid backend is a Cloud backend whose
   // host matches the configured locked Cloud host. A missing backend, a stale

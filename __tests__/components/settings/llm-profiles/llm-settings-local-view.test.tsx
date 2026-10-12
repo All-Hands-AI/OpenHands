@@ -465,6 +465,109 @@ describe("LlmSettingsLocalView", () => {
     });
   });
 
+  describe("create mode profile name auto-fill", () => {
+    const changeModel = (model: string) =>
+      fireEvent.change(screen.getByTestId("mock-basic-model-input"), {
+        target: { value: model },
+      });
+
+    it("keeps the untouched name following the selected model", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<LlmSettingsLocalView />);
+      await user.click(screen.getByTestId("add-llm-profile"));
+      const nameInput = screen.getByTestId("profile-name-input");
+      expect(nameInput).toHaveValue("gpt-5.6-sol");
+
+      changeModel("deepseek/deepseek-chat");
+      expect(nameInput).toHaveValue("deepseek-chat");
+
+      changeModel("anthropic/claude-sonnet-5");
+      expect(nameInput).toHaveValue("claude-sonnet-5");
+    });
+
+    it("stops following the model once the user types a name, and resumes after the name is cleared", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<LlmSettingsLocalView />);
+      await user.click(screen.getByTestId("add-llm-profile"));
+      const nameInput = screen.getByTestId("profile-name-input");
+
+      fireEvent.change(nameInput, { target: { value: "my-profile" } });
+      changeModel("deepseek/deepseek-chat");
+      expect(nameInput).toHaveValue("my-profile");
+
+      fireEvent.change(nameInput, { target: { value: "" } });
+      changeModel("anthropic/claude-sonnet-5");
+      expect(nameInput).toHaveValue("claude-sonnet-5");
+    });
+
+    it("clears the auto-filled name instead of using an existing profile's name", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<LlmSettingsLocalView />);
+      await user.click(screen.getByTestId("add-llm-profile"));
+      const nameInput = screen.getByTestId("profile-name-input");
+      expect(nameInput).toHaveValue("gpt-5.6-sol");
+
+      // "gpt-4-profile" is an existing profile's name.
+      changeModel("openai/gpt-4-profile");
+      expect(nameInput).toHaveValue("");
+      expect(screen.getByTestId("save-profile-btn")).toBeDisabled();
+    });
+  });
+
+  describe("duplicate profile name", () => {
+    it("tells the user a new profile's name is taken until it is unique", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<LlmSettingsLocalView />);
+      await user.click(screen.getByTestId("add-llm-profile"));
+      const nameInput = screen.getByTestId("profile-name-input");
+
+      await user.clear(nameInput);
+      await user.type(nameInput, "claude-profile");
+
+      expect(nameInput).toHaveAttribute("aria-invalid", "true");
+      expect(nameInput).toHaveAccessibleDescription(
+        "SETTINGS$META_PROFILE_NAME_TAKEN",
+      );
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "SETTINGS$META_PROFILE_NAME_TAKEN",
+      );
+      expect(screen.getByTestId("save-profile-btn")).toBeDisabled();
+
+      await user.type(nameInput, "-2");
+
+      expect(nameInput).toHaveAttribute("aria-invalid", "false");
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      expect(screen.getByTestId("save-profile-btn")).toBeEnabled();
+    });
+
+    it("flags a rename to another profile's name but not the profile's own name", async () => {
+      const user = userEvent.setup();
+      vi.mocked(ProfilesService.getProfile).mockResolvedValue({
+        name: "gpt-4-profile",
+        api_key_set: true,
+        config: { model: "openai/gpt-4" },
+      });
+
+      renderWithProviders(<LlmSettingsLocalView />);
+      await user.click(screen.getAllByTestId("profile-menu-trigger")[0]);
+      await user.click(screen.getByTestId("profile-edit"));
+      const nameInput = await screen.findByTestId("profile-name-input");
+      await waitFor(() => expect(nameInput).toHaveValue("gpt-4-profile"));
+
+      expect(nameInput).toHaveAttribute("aria-invalid", "false");
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+
+      await user.clear(nameInput);
+      await user.type(nameInput, "claude-profile");
+
+      expect(nameInput).toHaveAttribute("aria-invalid", "true");
+      expect(nameInput).toHaveAccessibleDescription(
+        "SETTINGS$META_PROFILE_NAME_TAKEN",
+      );
+      expect(screen.getByTestId("save-profile-btn")).toBeDisabled();
+    });
+  });
+
   describe("edit mode form initialization", () => {
     it("populates profile name when editing an existing profile", async () => {
       const user = userEvent.setup();
@@ -587,6 +690,10 @@ describe("LlmSettingsLocalView", () => {
       await waitFor(() => {
         expect(screen.getByTestId("save-profile-btn")).not.toBeDisabled();
       });
+      // Changing the model never renames an existing profile.
+      expect(screen.getByTestId("profile-name-input")).toHaveValue(
+        "gpt-4-profile",
+      );
     });
   });
 
