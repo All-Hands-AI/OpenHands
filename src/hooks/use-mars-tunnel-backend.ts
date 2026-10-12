@@ -1,7 +1,6 @@
 import React from "react";
 import {
   buildMarsBackendInput,
-  closeMarsTunnel,
   fetchLatestMarsConversationId,
   getMarsBackendLocalPort,
   getMarsBridge,
@@ -48,23 +47,36 @@ async function openHealthyConnection(
 }
 
 /**
- * Connect and wait for the session's agent-server to answer. A connection to
- * a session nobody can use would keep failing the health probe every tick
- * (and, over the tunnel, hold a listener), so it is closed on failure.
+ * Connect and wait for the session's agent-server to answer. With
+ * `closeOnFailure`, a connection whose agent-server never answers is closed:
+ * registering a session nobody can use would keep failing the health probe
+ * every tick (and, over the tunnel, hold a listener). Restoring leaves it
+ * open — a slow wake can still recover through the health poll, the
+ * unreachable screen can report the agent-server's own error, and the
+ * tunnel may be shared with a concurrent attach.
  */
 async function connectAndWait(
   sessionId: string,
   {
     localPort,
     onTunnelReady,
-  }: { localPort?: number; onTunnelReady?: () => void } = {},
+    closeOnFailure = false,
+  }: {
+    localPort?: number;
+    onTunnelReady?: () => void;
+    closeOnFailure?: boolean;
+  } = {},
 ): Promise<string> {
   const host = await openHealthyConnection(sessionId, localPort);
   onTunnelReady?.();
   try {
     await waitForMarsAgentServer(host, { sessionId });
   } catch (error) {
-    await closeMarsTunnel(sessionId).catch(() => {});
+    if (closeOnFailure) {
+      await getMarsBridge()
+        ?.closeTunnel(sessionId)
+        .catch(() => {});
+    }
     throw error;
   }
   return host;
@@ -94,7 +106,10 @@ export function useMarsTunnelBackend() {
       configId,
       onTunnelReady,
     }: AttachMarsSessionParams): Promise<AttachMarsSessionResult> => {
-      const host = await connectAndWait(sessionId, { onTunnelReady });
+      const host = await connectAndWait(sessionId, {
+        onTunnelReady,
+        closeOnFailure: true,
+      });
       await prepareMarsSandbox(host, sessionId);
       // Read before the registry switch below, while nothing else is
       // pointed at this host yet.
@@ -104,6 +119,9 @@ export function useMarsTunnelBackend() {
       if (existing) {
         freshlyAttached.add(existing.id);
         updateBackend(existing.id, { host, name });
+        // The restore effect is skipped for it, and `updateBackend` resets
+        // health only when the host changes (it never does in the web build).
+        resetBackendHealth(existing.id);
         setActive(existing.id);
         return {
           backend: { ...existing, host, name },

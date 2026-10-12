@@ -176,14 +176,21 @@ export function createMarsTunnelBridge({
     const getAccessToken = () => store.getToken(connectionId);
     // The guest port is fixed here rather than accepted over IPC so the
     // renderer cannot dial arbitrary ports inside the sandbox.
-    const tunnel = await registry.attach({
-      sessionId,
-      remotePort: AGENT_SERVER_GUEST_PORT,
-      getAccessToken,
-      apiUrl: config.apiBaseUrl,
-      localPort,
-      owner: connectionId,
-    });
+    let tunnel;
+    try {
+      tunnel = await registry.attach({
+        sessionId,
+        remotePort: AGENT_SERVER_GUEST_PORT,
+        getAccessToken,
+        apiUrl: config.apiBaseUrl,
+        localPort,
+        owner: connectionId,
+      });
+    } catch (error) {
+      // A failed dial may mean the session is no longer READY; ask again.
+      readyAt.delete(sessionId);
+      throw error;
+    }
     return {
       ...tunnel,
       transport: "tunnel",
@@ -291,6 +298,7 @@ export function createMarsTunnelBridge({
       const target = id ?? store.getActive()?.id;
       if (!target) return authState();
       await registry.detachOwnedBy(target);
+      readyAt.clear();
       const kind = store.list().find((c) => c.id === target)?.kind;
       if (kind === CREDENTIAL_KIND_OAUTH) {
         const token = store.getToken(target);
@@ -388,6 +396,7 @@ export function createMarsTunnelBridge({
     },
 
     closeTunnel(sessionId) {
+      readyAt.delete(sessionId);
       return registry.detach(sessionId);
     },
     getTunnel(sessionId) {

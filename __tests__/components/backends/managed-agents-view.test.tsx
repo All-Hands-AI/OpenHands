@@ -251,6 +251,49 @@ describe("ManagedAgentsView", () => {
     expect(navigate).not.toHaveBeenCalled();
   });
 
+  it("reports a failed connect after launching on the new session's row, not the agent", async () => {
+    // Arrange
+    const NEW_SESSION: MarsSession = {
+      session_id: "sess_new",
+      name: "new-session",
+      status: "SESSION_STATUS_READY",
+      config_id: "cfg_1",
+    };
+    const bridge = fakeBridge(SIGNED_IN);
+    bridge.createSession = vi.fn(async () => NEW_SESSION);
+    const sessions = { sessions: [READY_SESSION], nextPageToken: null };
+    vi.mocked(bridge.listSessions).mockImplementation(async () => sessions);
+    vi.mocked(bridge.listConfigSessions).mockImplementation(
+      async () => sessions,
+    );
+    vi.mocked(bridge.getTunnel).mockResolvedValue({
+      sessionId: "sess_new",
+      status: "connected",
+      remotePort: 8000,
+      localPort: 51000,
+      error: undefined,
+      upstreamFailure: { closeCode: 4001, httpStatus: null, message: "gone" },
+    });
+    window.marsBridge = bridge;
+    validateLocalBackend.mockRejectedValue(new Error("connection reset"));
+    const { navigate } = renderView();
+    const newSession = await screen.findByTestId(
+      "managed-agents-new-session-cfg_1",
+    );
+    sessions.sessions = [READY_SESSION, NEW_SESSION];
+
+    // Act
+    await userEvent.click(newSession);
+
+    // Assert
+    expect(
+      await screen.findByTestId("managed-agents-session-error-sess_new"),
+    ).toHaveTextContent("DO_AGENTS$ERROR_REFUSED");
+    // Not also on the agent header, where a later connect would not clear it.
+    expect(screen.getAllByText("DO_AGENTS$ERROR_REFUSED")).toHaveLength(1);
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
   it("stops a session only after the user confirms, then refreshes the list", async () => {
     const bridge = fakeBridge(SIGNED_IN);
     window.marsBridge = bridge;

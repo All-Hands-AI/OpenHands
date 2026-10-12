@@ -96,7 +96,7 @@ export function ManagedAgentsSessionRow({
           {!isConnecting && isConnected ? (
             <>
               <span className="rounded-full border border-primary/40 px-2 py-0.5 text-[11px] uppercase tracking-wide text-primary">
-                {t(I18nKey.STATUS$CONNECTED)}
+                {t(I18nKey.DO_AGENTS$CONNECTED)}
               </span>
               <BrandButton
                 type="button"

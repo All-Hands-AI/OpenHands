@@ -45899,6 +45899,23 @@
     "zh-CN": "DigitalOcean",
     "zh-TW": "DigitalOcean"
   },
+  "DO_AGENTS$CONNECTED": {
+    "ar": "متصل",
+    "ca": "Connectada",
+    "de": "Verbunden",
+    "en": "Connected",
+    "es": "Conectada",
+    "fr": "Connectée",
+    "it": "Connessa",
+    "ja": "接続済み",
+    "ko-KR": "연결됨",
+    "no": "Tilkoblet",
+    "pt": "Conectada",
+    "tr": "Bağlı",
+    "uk": "Підключено",
+    "zh-CN": "已连接",
+    "zh-TW": "已連線"
+  },
   "DO_AGENTS$CONNECTED_COUNT": {
     "ar": "{{count}} متصل",
     "ca": "{{count}} connectades",
@@ -46000,6 +46017,23 @@
     "uk": "DigitalOcean відхилив з'єднання. Увійдіть знову або перевірте, що цей обліковий запис має доступ до керованих агентів.",
     "zh-CN": "DigitalOcean 拒绝了连接。请重新登录，或检查此账号是否有权访问托管代理。",
     "zh-TW": "DigitalOcean 拒絕了連線。請重新登入，或確認此帳號有權存取受管代理。"
+  },
+  "DO_AGENTS$FILTER_ALL": {
+    "ar": "الكل",
+    "ca": "Totes",
+    "de": "Alle",
+    "en": "All",
+    "es": "Todas",
+    "fr": "Toutes",
+    "it": "Tutte",
+    "ja": "すべて",
+    "ko-KR": "전체",
+    "no": "Alle",
+    "pt": "Todas",
+    "tr": "Tümü",
+    "uk": "Усі",
+    "zh-CN": "全部",
+    "zh-TW": "全部"
   },
   "DO_AGENTS$HIDE_SESSIONS": {
     "ar": "إخفاء جلسات {{name}}",
@@ -46561,6 +46595,23 @@
     "uk": "Помилка",
     "zh-CN": "失败",
     "zh-TW": "失敗"
+  },
+  "DO_AGENTS$STATUS_PAUSED": {
+    "ar": "متوقف مؤقتًا",
+    "ca": "En pausa",
+    "de": "Pausiert",
+    "en": "Paused",
+    "es": "En pausa",
+    "fr": "En pause",
+    "it": "In pausa",
+    "ja": "一時停止中",
+    "ko-KR": "일시 중지됨",
+    "no": "Satt på pause",
+    "pt": "Pausada",
+    "tr": "Duraklatıldı",
+    "uk": "Призупинено",
+    "zh-CN": "已暂停",
+    "zh-TW": "已暫停"
   },
   "DO_AGENTS$SWITCH_AGENT": {
     "ar": "تبديل الوكيل",

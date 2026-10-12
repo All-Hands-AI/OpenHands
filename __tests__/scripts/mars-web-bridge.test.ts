@@ -20,7 +20,9 @@ import WebSocket, { WebSocketServer } from "ws";
 
 import { server as mswServer } from "#/mocks/node";
 
+import { MARS_TUNNEL_IPC } from "../../scripts/mars-tunnel-bridge.mjs";
 import {
+  RPC_METHODS,
   createMarsWebBridge,
   isMarsWebEnabled,
   mountMarsWebBridge,
@@ -82,6 +84,10 @@ async function startFakeAgentServer() {
     if (req.url === "/mars-upstream/large") {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(largeBody);
+      return;
+    }
+    if (req.url === "/mars-upstream/reset") {
+      req.socket.destroy();
       return;
     }
     if (req.url === UPSTREAM_ECHO_PATH && req.method === "POST") {
@@ -227,6 +233,15 @@ describe("rewriteAgentServerUrls", () => {
   });
 });
 
+describe("RPC_METHODS", () => {
+  it("is a subset of the desktop IPC surface and leaves OAuth out", () => {
+    for (const method of RPC_METHODS) {
+      expect(Object.keys(MARS_TUNNEL_IPC)).toContain(method);
+    }
+    expect(RPC_METHODS.has("signInWithOAuth")).toBe(false);
+  });
+});
+
 describe("createMarsWebBridge", () => {
   let upstream: Awaited<ReturnType<typeof startFakeAgentServer>>;
   let bridge: ReturnType<typeof fakeBridge>;
@@ -329,6 +344,7 @@ describe("createMarsWebBridge", () => {
     expect(seen.headers.authorization).toBeUndefined();
     expect(seen.headers.host).toBe(new URL(upstream.origin).host);
     expect(seen.headers["accept-encoding"]).toBe("identity");
+    expect(seen.headers["x-forwarded-for"]).toBeUndefined();
     const proxyBase = `${web.origin}/mars/sessions/${SESSION_ID}`;
     expect(body).toEqual({
       id: "c1",
@@ -352,6 +368,20 @@ describe("createMarsWebBridge", () => {
     );
 
     expect(await response.text()).toBe("payload");
+  });
+
+  it("answers an upstream failure with a JSON 502", async () => {
+    await rpc(web.origin, "openTunnel", [{ sessionId: SESSION_ID }]);
+
+    const response = await fetch(
+      `${web.origin}/mars/sessions/${SESSION_ID}/mars-upstream/reset`,
+    );
+
+    expect(response.status).toBe(502);
+    expect(response.headers.get("content-type")).toBe("application/json");
+    expect(await response.json()).toEqual({
+      error: { message: expect.stringMatching(/^upstream request failed: /) },
+    });
   });
 
   it("stops proxying a session once the bridge dropped its tunnel on sign-out", async () => {
@@ -475,18 +505,22 @@ describe("createMarsWebBridge", () => {
     expect(upstream.openSockets()).toBe(0);
   });
 
-  it("dispose() closes proxied WebSockets and disposes the bridge", async () => {
+  it("dispose() closes both ends of proxied WebSockets and disposes the bridge", async () => {
     await rpc(web.origin, "openTunnel", [{ sessionId: SESSION_ID }]);
     const client = new WebSocket(
       `${web.origin.replace("http:", "ws:")}/mars/sessions/${SESSION_ID}/mars-upstream/socket`,
     );
     client.on("error", () => {});
     await new Promise((resolve) => client.once("open", resolve));
+    expect(upstream.openSockets()).toBe(1);
     const closed = new Promise((resolve) => client.once("close", resolve));
 
     await marsWeb.dispose();
 
     await closed;
+    // The fake bridge's dispose() closes no tunnel, so only the proxy's own
+    // teardown can have closed the upstream end.
+    await vi.waitFor(() => expect(upstream.openSockets()).toBe(0));
     expect(bridge.dispose).toHaveBeenCalledTimes(1);
   });
 });
@@ -563,6 +597,25 @@ describe("createMarsWebBridge with a session key", () => {
     expect(response.status).toBe(200);
     const forwarded = upstream.seen.http.at(-1)!.headers;
     expect(forwarded.authorization).toBeUndefined();
+    expect(forwarded["x-session-api-key"]).toBeUndefined();
+    expect(forwarded.cookie).toBeUndefined();
+  });
+
+  it("neither the key header nor the cookie reaches the session host on the WebSocket upgrade", async () => {
+    await rpc(web.origin, "openTunnel", [{ sessionId: SESSION_ID }], {
+      headers: { "X-Session-API-Key": KEY },
+    });
+    const ws = new WebSocket(
+      `${web.origin.replace("http", "ws")}/mars/sessions/${SESSION_ID}/mars-upstream/socket`,
+      { headers: { "X-Session-API-Key": KEY, Cookie: "canvas=1" } },
+    );
+    await new Promise<void>((resolve, reject) => {
+      ws.on("open", () => resolve());
+      ws.on("error", reject);
+    });
+    ws.close();
+
+    const forwarded = upstream.seen.ws.at(-1)!.headers;
     expect(forwarded["x-session-api-key"]).toBeUndefined();
     expect(forwarded.cookie).toBeUndefined();
   });

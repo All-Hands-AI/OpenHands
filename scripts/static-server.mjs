@@ -681,14 +681,12 @@ export function startStaticServer(config) {
 
   const uninstallDiagnostics = proxy.installDiagnostics();
   // DigitalOcean Managed Agents for the browser: with MARS_WEB=1 this server
-  // hosts the MARS bridge and proxies (through this server's proxy) to
-  // sessions' tunnel listeners, behind the session key (see
-  // mars-web-bridge.mjs). The key is the one this server already injects; a
-  // LAN bind with no key refuses to mount.
+  // hosts the MARS bridge and proxies to sessions' tunnel listeners, behind
+  // the session key (see mars-web-bridge.mjs). The key is the one this server
+  // already injects; a LAN bind with no key refuses to mount.
   const marsWeb = mountMarsWebBridge({
     host: config.host,
     sessionApiKey: policy.sessionApiKey,
-    proxy,
   });
 
   const server = createServer((req, res) => {

@@ -22,6 +22,9 @@ export function useMarsSignIn({
   const queryClient = useQueryClient();
   const [error, setError] = React.useState<string | null>(null);
 
+  // A new attempt drops the previous one's error (a failed sign-out included,
+  // which would otherwise linger on the sign-in form).
+  const onMutate = () => setError(null);
   const onSuccess = () => {
     setError(null);
     void queryClient.invalidateQueries({ queryKey: MARS_QUERY_KEYS.all });
@@ -35,21 +38,25 @@ export function useMarsSignIn({
 
   const oauth = useMutation({
     mutationFn: () => requireMarsBridge().signInWithOAuth(),
+    onMutate,
     onSuccess,
     onError,
   });
   const pat = useMutation({
     mutationFn: (token: string) => requireMarsBridge().savePat({ token }),
+    onMutate,
     onSuccess,
     onError,
   });
   const switchConnection = useMutation({
     mutationFn: (id: string) => requireMarsBridge().setActiveConnection(id),
+    onMutate,
     onSuccess,
     onError,
   });
   const signOut = useMutation({
     mutationFn: () => requireMarsBridge().signOut(),
+    onMutate,
     onSuccess,
     onError,
   });

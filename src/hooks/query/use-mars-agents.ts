@@ -97,9 +97,11 @@ export function useMarsAuthState() {
     queryKey: MARS_QUERY_KEYS.authState,
     queryFn: () => requireMarsBridge().getAuthState(),
     enabled: getMarsBridge() !== null,
-    // Changes only through sign-in/out and switching connections, each of
-    // which invalidates `MARS_QUERY_KEYS.all`.
-    staleTime: Infinity,
+    // Sign-in/out and switching connections invalidate `MARS_QUERY_KEYS.all`,
+    // but token expiry (`isExpired` is computed when read) and a sign-in from
+    // another tab (the web build shares the server's state) do not, so it is
+    // re-read after a minute and on window focus.
+    staleTime: 60_000,
     retry: false,
     meta: { disableToast: true },
   });

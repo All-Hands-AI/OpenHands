@@ -231,7 +231,8 @@ export function useBackendsHealth(
       const hasMissingCloudApiKey = hasMissingBackendApiKey(b);
       // Every probe of a MARS session travels its tunnel into the sandbox;
       // polling sessions the user is not on would keep them from ever
-      // idle-pausing (and billing), so only the active one is watched.
+      // idle-pausing (and billing), so those are probed once on mount and
+      // only the active one is watched.
       const isIdleMarsSession =
         Boolean(b.marsSessionId) && b.id !== activeBackendId;
       const isDisabled = entry?.disabled === true;
@@ -243,7 +244,6 @@ export function useBackendsHealth(
         isCorsOrNetworkErrorMessage(entry?.lastError);
       const shouldProbe =
         !hasMissingCloudApiKey &&
-        !isIdleMarsSession &&
         (!isDisabled ||
           probeDisabledOnce ||
           shouldReprobeStaleCloudNetworkError);

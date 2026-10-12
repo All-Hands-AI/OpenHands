@@ -207,11 +207,6 @@ export function openMarsTunnel(
   return requireMarsBridge().openTunnel(params);
 }
 
-/** Forgets the connection for one MARS session (closing its tunnel, if any). */
-export function closeMarsTunnel(sessionId: string): Promise<void> {
-  return requireMarsBridge().closeTunnel(sessionId);
-}
-
 const IPC_ERROR_PREFIX =
   /^Error invoking remote method '[^']+': (?:\w*Error: )?/;
 

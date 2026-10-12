@@ -13,7 +13,7 @@
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
 
-import { readRequestBody } from "./proxy-utils.mjs";
+import { readRequestBody } from "./http-body.mjs";
 
 const AUTHORIZE_URL = "https://cloud.digitalocean.com/v1/oauth/authorize";
 const REVOKE_URL = "https://cloud.digitalocean.com/v1/oauth/revoke";

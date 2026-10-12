@@ -23,7 +23,10 @@ import {
   useMarsAuthState,
   type MarsAgentsSnapshot,
 } from "#/hooks/query/use-mars-agents";
-import { useLaunchMarsSession } from "#/hooks/use-launch-mars-session";
+import {
+  MarsLaunchConnectError,
+  useLaunchMarsSession,
+} from "#/hooks/use-launch-mars-session";
 import { useMarsSignIn } from "#/hooks/use-mars-sign-in";
 import { useMarsTunnelBackend } from "#/hooks/use-mars-tunnel-backend";
 import { I18nKey } from "#/i18n/declaration";
@@ -51,9 +54,9 @@ function isLiveSession(session: MarsSession): boolean {
 type StatusFilter = "all" | "ready" | "paused";
 
 const STATUS_FILTERS: { value: StatusFilter; label: I18nKey }[] = [
-  { value: "all", label: I18nKey.SETTINGS$ALL },
+  { value: "all", label: I18nKey.DO_AGENTS$FILTER_ALL },
   { value: "ready", label: I18nKey.COMMON$RUNNING },
-  { value: "paused", label: I18nKey.COMMON$PAUSED },
+  { value: "paused", label: I18nKey.DO_AGENTS$STATUS_PAUSED },
 ];
 
 interface ManagedAgentsViewProps {
@@ -190,7 +193,12 @@ export function ManagedAgentsView({ onBack, onDone }: ManagedAgentsViewProps) {
       void refreshAgents();
       onDone();
     } catch (error) {
-      setError(errorKey, launcher.describeError(error));
+      // A launch that created its session but failed to connect reports on
+      // that session's row, where a later connect clears it.
+      setError(
+        error instanceof MarsLaunchConnectError ? error.sessionId : errorKey,
+        launcher.describeError(error),
+      );
     }
   };
 

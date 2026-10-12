@@ -29,6 +29,20 @@ class MarsCreateError extends Error {
 }
 
 /**
+ * Connecting to a session `launch()` just created failed; the error belongs to
+ * that session, not to its agent.
+ */
+export class MarsLaunchConnectError extends Error {
+  constructor(
+    readonly original: unknown,
+    readonly sessionId: string,
+  ) {
+    super(original instanceof Error ? original.message : String(original));
+    this.name = "MarsLaunchConnectError";
+  }
+}
+
+/**
  * Open, launch, and resume Managed Agents sessions, landing the user in the
  * session's latest conversation each time. Every method rejects on failure;
  * pass the error to `describeError` for copy.
@@ -76,7 +90,11 @@ export function useLaunchMarsSession() {
       void queryClient.invalidateQueries({
         queryKey: MARS_QUERY_KEYS.allAgents,
       });
-      return open(session, config);
+      try {
+        return await open(session, config);
+      } catch (error) {
+        throw new MarsLaunchConnectError(error, session.session_id);
+      }
     },
     [open, queryClient],
   );
@@ -113,10 +131,14 @@ export function useLaunchMarsSession() {
   );
 
   const describeError = React.useCallback(
-    (error: unknown) =>
-      error instanceof MarsCreateError
-        ? error.message || t(error.fallbackKey)
-        : describeConnectError(error),
+    (error: unknown) => {
+      if (error instanceof MarsCreateError) {
+        return error.message || t(error.fallbackKey);
+      }
+      return describeConnectError(
+        error instanceof MarsLaunchConnectError ? error.original : error,
+      );
+    },
     [describeConnectError, t],
   );
 

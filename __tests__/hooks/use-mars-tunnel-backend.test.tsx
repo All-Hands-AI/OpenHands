@@ -32,7 +32,11 @@ vi.mock("@openhands/typescript-client/clients", async (importOriginal) => ({
 
 import { INVALID_BACKEND_API_KEY_ERROR } from "#/api/agent-server-compatibility";
 import { __resetActiveStoreForTests } from "#/api/backend-registry/active-store";
-import { __resetHealthStoreForTests } from "#/api/backend-registry/health-store";
+import {
+  __resetHealthStoreForTests,
+  getBackendHealthEntry,
+  recordBackendFailure,
+} from "#/api/backend-registry/health-store";
 import {
   ACTIVE_BACKEND_STORAGE_KEY,
   BACKENDS_STORAGE_KEY,
@@ -158,6 +162,24 @@ describe("useMarsTunnelBackend", () => {
       result.current.active.backends.find((b) => b.marsSessionId === "sess_abc")
         ?.host,
     ).toBe("http://127.0.0.1:52000");
+  });
+
+  it("attach() re-arms the health of the session's existing backend even when its host is unchanged", async () => {
+    const { result } = renderHook(useCombined, { wrapper: makeWrapper() });
+    let backend: Backend;
+    await act(async () => {
+      ({ backend } = await result.current.tunnel.attach(SESSION));
+    });
+    for (let i = 0; i < 5; i += 1) {
+      recordBackendFailure(backend!.id, new Error("offline"));
+    }
+    expect(getBackendHealthEntry(backend!.id)?.disabled).toBe(true);
+
+    await act(async () => {
+      await result.current.tunnel.attach(SESSION);
+    });
+
+    expect(getBackendHealthEntry(backend!.id)).toBeNull();
   });
 
   it("attach() throws and registers nothing when the tunnel fails to open", async () => {
@@ -383,7 +405,9 @@ describe("useRestoreMarsTunnels", () => {
     expect(validateLocalBackend).toHaveBeenCalledTimes(1);
   });
 
-  it("closes the restored tunnel when the agent-server behind it never answers", async () => {
+  it("leaves the restored tunnel open when the agent-server behind it does not answer yet", async () => {
+    // A slow cold wake can still recover through the health poll, and the
+    // tunnel may be shared with a concurrent attach().
     window.localStorage.setItem(
       BACKENDS_STORAGE_KEY,
       JSON.stringify([
@@ -412,6 +436,6 @@ describe("useRestoreMarsTunnels", () => {
     });
 
     await waitFor(() => expect(result.current).toBe(false));
-    expect(window.marsBridge!.closeTunnel).toHaveBeenCalledWith("sess_abc");
+    expect(window.marsBridge!.closeTunnel).not.toHaveBeenCalled();
   });
 });

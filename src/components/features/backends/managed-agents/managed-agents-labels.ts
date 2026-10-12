@@ -11,7 +11,8 @@ import { I18nKey } from "#/i18n/declaration";
 const SHORT_ID_LENGTH = 8;
 
 export const PHASE_DOT_CLASS: Record<MarsSessionPhase, string> = {
-  ready: "bg-status-success ring-3 ring-status-success/22",
+  ready:
+    "bg-status-success shadow-[0_0_0_3px_color-mix(in_srgb,var(--oh-status-success)_22%,transparent)]",
   paused: "bg-warning",
   starting: "bg-interactive-selected animate-pulse",
   failed: "bg-status-error",
@@ -20,7 +21,7 @@ export const PHASE_DOT_CLASS: Record<MarsSessionPhase, string> = {
 
 export const PHASE_LABEL_KEY: Record<MarsSessionPhase, I18nKey> = {
   ready: I18nKey.COMMON$RUNNING,
-  paused: I18nKey.COMMON$PAUSED,
+  paused: I18nKey.DO_AGENTS$STATUS_PAUSED,
   starting: I18nKey.COMMON$STARTING,
   failed: I18nKey.DO_AGENTS$STATUS_FAILED,
   ended: I18nKey.DO_AGENTS$STATUS_ENDED,

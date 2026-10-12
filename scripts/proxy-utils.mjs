@@ -62,36 +62,6 @@ function writeInvalidBackendUrlResponse(req, res) {
   }
 }
 
-/**
- * Read a request body of at most `limit` bytes. Rejects, and destroys the
- * request, once it grows past the limit; rejects rather than hanging when
- * the client goes away mid-body.
- *
- * @param {import("node:http").IncomingMessage} req
- * @param {number} limit
- * @returns {Promise<Buffer>}
- */
-export function readRequestBody(req, limit) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    let size = 0;
-    req.on("data", (chunk) => {
-      size += chunk.length;
-      if (size > limit) {
-        reject(new Error("request body too large"));
-        req.destroy();
-        return;
-      }
-      chunks.push(chunk);
-    });
-    req.on("end", () => resolve(Buffer.concat(chunks)));
-    req.on("error", reject);
-    req.on("close", () => {
-      if (!req.complete) reject(new Error("request aborted"));
-    });
-  });
-}
-
 export function isServerInfoRequest(req) {
   const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
   return pathname === SERVER_INFO_PATH;
@@ -284,28 +254,51 @@ function once(fn) {
   };
 }
 
-function writeProxyError(res, message) {
+function textErrorBody(message) {
+  return {
+    contentType: "text/plain; charset=utf-8",
+    body: `Bad Gateway: ${message}`,
+  };
+}
+
+function writeProxyError(res, message, errorBody) {
   if (res.destroyed) return;
   if (!res.headersSent) {
-    res.writeHead(502, { "Content-Type": "text/plain; charset=utf-8" });
-    res.end(`Bad Gateway: ${message}`);
+    const { contentType, body } = errorBody(message);
+    res.writeHead(502, { "Content-Type": contentType });
+    res.end(body);
     return;
   }
   res.destroy();
 }
 
+/**
+ * @param {object} [options]
+ * @param {string} [options.label] Prefix for log lines and metrics
+ * @param {number} [options.timeout] Client socket idle timeout in ms; 0 = none
+ * @param {number} [options.proxyTimeout] Upstream response timeout in ms; 0 = none
+ * @param {boolean} [options.xfwd] Add X-Forwarded-* headers upstream
+ * @param {(message: string) => { contentType: string, body: string }} [options.errorBody]
+ *   The 502 written when the upstream fails before a response started
+ * @param {(proxySocket: import("node:net").Socket) => void} [options.onProxySocket]
+ *   Called with each upstream socket of an established WebSocket proxy
+ */
 export function createProxyHandlers({
   label = "proxy",
   timeout = DEFAULT_PROXY_TIMEOUT_MS,
   proxyTimeout = DEFAULT_PROXY_TIMEOUT_MS,
+  xfwd = true,
+  errorBody = textErrorBody,
+  onProxySocket,
 } = {}) {
   const proxy = createProxyServer({
     ws: true,
     changeOrigin: true,
-    xfwd: true,
+    xfwd,
     timeout,
     proxyTimeout,
   });
+  if (onProxySocket) proxy.on("proxySocket", onProxySocket);
   const metrics = {
     activeHttpRequests: 0,
     activeWebSockets: 0,
@@ -327,7 +320,7 @@ export function createProxyHandlers({
       console.error(`[${label}] Proxy error${targetText}: ${err.message}`);
     }
     if (resOrSocket && typeof resOrSocket.writeHead === "function") {
-      writeProxyError(resOrSocket, err.message);
+      writeProxyError(resOrSocket, err.message, errorBody);
     } else if (resOrSocket && typeof resOrSocket.destroy === "function") {
       resOrSocket.destroy();
     }
@@ -361,7 +354,11 @@ export function createProxyHandlers({
           err,
         );
       }
-      writeProxyError(res, err instanceof Error ? err.message : String(err));
+      writeProxyError(
+        res,
+        err instanceof Error ? err.message : String(err),
+        errorBody,
+      );
       finish();
     };
 

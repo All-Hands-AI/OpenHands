@@ -47,16 +47,12 @@
 import { randomBytes, timingSafeEqual } from "node:crypto";
 
 import { DEFAULT_BIND_HOST, isLoopbackBind } from "./bind-host.mjs";
+import { readRequestBody } from "./http-body.mjs";
 import {
-  MARS_TUNNEL_IPC,
   buildTunnelHost,
   createMarsTunnelBridge,
 } from "./mars-tunnel-bridge.mjs";
-import {
-  createProxyHandlers,
-  readRequestBody,
-  rewriteJsonResponse,
-} from "./proxy-utils.mjs";
+import { createProxyHandlers, rewriteJsonResponse } from "./proxy-utils.mjs";
 
 export const MARS_WEB_PREFIX = "/mars";
 const HEALTH_PATH = `${MARS_WEB_PREFIX}/health`;
@@ -74,12 +70,29 @@ const AUTH_COOKIE = "mars_web_auth";
 const URL_FIELDS = new Set(["conversation_url"]);
 
 /**
- * Bridge methods a browser may call: the desktop IPC surface minus OAuth,
- * whose implicit-grant flow needs a loopback redirect in a trusted process.
+ * Bridge methods a browser may call — an explicit allow-list, so a method
+ * added to the desktop IPC surface is not exposed here until listed. OAuth is
+ * left out: its implicit-grant flow needs a loopback redirect in a trusted
+ * process.
  */
-const RPC_METHODS = new Set(
-  Object.keys(MARS_TUNNEL_IPC).filter((method) => method !== "signInWithOAuth"),
-);
+export const RPC_METHODS = new Set([
+  "getAuthState",
+  "savePat",
+  "setActiveConnection",
+  "signOut",
+  "listSessions",
+  "listAgentConfigs",
+  "listConfigSessions",
+  "createOpenHandsAgent",
+  "createSession",
+  "pauseSession",
+  "resumeSession",
+  "destroySession",
+  "deleteAgentConfig",
+  "openTunnel",
+  "closeTunnel",
+  "getTunnel",
+]);
 
 /** Request headers that belong to the canvas origin, never to the session host. */
 const CANVAS_ONLY_HEADERS = ["cookie", AUTH_HEADER, "origin", "referer"];
@@ -114,7 +127,6 @@ export function mountMarsWebBridge({
   env = process.env,
   host = DEFAULT_BIND_HOST,
   sessionApiKey = null,
-  proxy,
   log = (message) => console.warn(`[mars-web] ${message}`),
 } = {}) {
   if (!isMarsWebEnabled(env)) return null;
@@ -126,7 +138,7 @@ export function mountMarsWebBridge({
     return null;
   }
   if (!key) log("no key configured; /mars/* is open to local callers only");
-  return createMarsWebBridge({ env, host, key, proxy });
+  return createMarsWebBridge({ env, host, key });
 }
 
 function safeEqual(a, b) {
@@ -279,7 +291,6 @@ function toUpstreamRequest(req, path) {
  * @param {Record<string, string | undefined>} [options.env]
  * @param {string} [options.host] The server's bind host; loopback gets the Host check
  * @param {string | null} [options.key] Session key every request must present; null = open (loopback dev only — see mountMarsWebBridge)
- * @param {ReturnType<typeof createProxyHandlers>} [options.proxy] The hosting server's proxy, else a new one
  * @param {(message: string, error?: unknown) => void} [options.log]
  */
 export function createMarsWebBridge({
@@ -287,15 +298,35 @@ export function createMarsWebBridge({
   env = process.env,
   host = DEFAULT_BIND_HOST,
   key = null,
-  proxy = createProxyHandlers({ label: "mars-web" }),
   log = (message, error) => console.warn(`[mars-web] ${message}`, error ?? ""),
 } = {}) {
   // No userDataPath: credentials stay in this process's memory.
   const bridge =
     bridgeOverride ?? createMarsTunnelBridge({ userDataPath: null, env });
 
-  /** Upgraded client sockets, so dispose() can close them. */
+  /** Both ends of proxied WebSockets, so dispose() can close them. */
   const sockets = new Set();
+  function track(socket) {
+    sockets.add(socket);
+    socket.once("close", () => sockets.delete(socket));
+  }
+  // Its own proxy rather than the hosting server's: agent-server calls can
+  // stay silent far longer than a static backend's timeout, the session host
+  // has no use for X-Forwarded-* from the canvas, and errors answer in the
+  // same JSON shape as the rest of /mars/*.
+  const proxy = createProxyHandlers({
+    label: "mars-web",
+    timeout: 0,
+    proxyTimeout: 0,
+    xfwd: false,
+    errorBody: (message) => ({
+      contentType: "application/json",
+      body: JSON.stringify({
+        error: { message: `upstream request failed: ${message}` },
+      }),
+    }),
+    onProxySocket: track,
+  });
   /** Per-process cookie value handed to requests that presented the key. */
   const cookieToken = randomBytes(32).toString("hex");
 
@@ -416,8 +447,7 @@ export function createMarsWebBridge({
       return;
     }
     toUpstreamRequest(req, path);
-    sockets.add(socket);
-    socket.once("close", () => sockets.delete(socket));
+    track(socket);
     proxy.proxyWebSocket(req, socket, head, target);
   }
 

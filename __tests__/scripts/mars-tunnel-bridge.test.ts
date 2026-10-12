@@ -340,6 +340,22 @@ describe("createMarsTunnelBridge", () => {
     }
   });
 
+  it("openTunnel after closeTunnel polls the session again", async () => {
+    const { ensureAwake, ipcMain, bridge } = setup({ realRegistry: true });
+    await ipcMain.invoke(MARS_TUNNEL_IPC.savePat, { token: VALID_PAT });
+
+    try {
+      await ipcMain.invoke(MARS_TUNNEL_IPC.createSession, "cfg_1", "agent-1");
+      await ipcMain.invoke(MARS_TUNNEL_IPC.closeTunnel, "sess_new");
+      await ipcMain.invoke(MARS_TUNNEL_IPC.openTunnel, {
+        sessionId: "sess_new",
+      });
+      expect(ensureAwake).toHaveBeenCalledTimes(2);
+    } finally {
+      await bridge.dispose();
+    }
+  });
+
   it("createOpenHandsAgent creates a config from the OpenHands manifest and lists it without re-reading", async () => {
     // Arrange
     const { api, ipcMain } = setup();
