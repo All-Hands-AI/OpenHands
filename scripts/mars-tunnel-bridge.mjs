@@ -65,6 +65,14 @@ export const MARS_TUNNEL_IPC = {
  */
 const CREATE_SESSION_READY_TIMEOUT_MS = 300_000;
 
+/**
+ * A session confirmed READY this recently is not polled again before its
+ * tunnel is dialed: createSession has just waited for READY, and the
+ * openTunnel that follows (or a repeat openTunnel on a live tunnel) would
+ * otherwise spend another getSession round-trip asking.
+ */
+const READY_FRESH_MS = 10_000;
+
 export function buildTunnelHost(localPort) {
   return `http://127.0.0.1:${localPort}`;
 }
@@ -137,11 +145,23 @@ export function createMarsTunnelBridge({
       getToken: async () => getToken(),
     });
   const client = api ?? clientFor(() => store.getActiveToken());
+
+  /** When each session was last seen READY; see READY_FRESH_MS. */
+  const readyAt = new Map();
+  async function wake(options) {
+    const session = await ensureAwake(options);
+    readyAt.set(options.sessionId, Date.now());
+    return session;
+  }
+
   const registry =
     registryOverride ??
     createTunnelRegistry({
-      ensureAwake: ({ sessionId, getAccessToken }) =>
-        ensureAwake({ api: clientFor(getAccessToken), sessionId }),
+      ensureAwake: async ({ sessionId, getAccessToken }) => {
+        const at = readyAt.get(sessionId);
+        if (at !== undefined && Date.now() - at < READY_FRESH_MS) return;
+        await wake({ api: clientFor(getAccessToken), sessionId });
+      },
     });
 
   /** Configs are immutable, so a config's agent never needs re-reading. */
@@ -290,7 +310,10 @@ export function createMarsTunnelBridge({
     },
     listConfigSessions: (configId, options) =>
       client.listConfigSessions(configId, options ?? {}),
-    pauseSession: (sessionId) => client.pauseSession(sessionId),
+    pauseSession(sessionId) {
+      readyAt.delete(sessionId);
+      return client.pauseSession(sessionId);
+    },
     resumeSession: (sessionId) => client.resumeSession(sessionId),
 
     /**
@@ -301,9 +324,13 @@ export function createMarsTunnelBridge({
      */
     async destroySession(sessionId) {
       await client.destroySession(sessionId);
+      readyAt.delete(sessionId);
       await registry.detach(sessionId);
     },
-    deleteAgentConfig: (configId) => client.deleteAgentConfig(configId),
+    async deleteAgentConfig(configId) {
+      await client.deleteAgentConfig(configId);
+      agentByConfigId.delete(configId);
+    },
 
     /**
      * Create an OpenHands Agent Config. The manifest is built here rather
@@ -343,7 +370,7 @@ export function createMarsTunnelBridge({
       if (!sessionId) {
         throw new MarsApiError("DigitalOcean returned no session.");
       }
-      return ensureAwake({
+      return wake({
         api: client,
         sessionId,
         timeoutMs: CREATE_SESSION_READY_TIMEOUT_MS,
@@ -369,49 +396,9 @@ export function createMarsTunnelBridge({
 
     /** @param {import("electron").IpcMain} ipcMain */
     registerIpc(ipcMain) {
-      const handle = (channel, fn) =>
-        ipcMain.handle(channel, (_event, ...args) => fn(...args));
-      handle(MARS_TUNNEL_IPC.openTunnel, (params) => this.openTunnel(params));
-      handle(MARS_TUNNEL_IPC.closeTunnel, (sessionId) =>
-        this.closeTunnel(sessionId),
-      );
-      handle(MARS_TUNNEL_IPC.getTunnel, (sessionId) =>
-        this.getTunnel(sessionId),
-      );
-      handle(MARS_TUNNEL_IPC.getAuthState, () => this.getAuthState());
-      handle(MARS_TUNNEL_IPC.signInWithOAuth, () => this.signInWithOAuth());
-      handle(MARS_TUNNEL_IPC.savePat, (payload) => this.savePat(payload));
-      handle(MARS_TUNNEL_IPC.setActiveConnection, (id) =>
-        this.setActiveConnection(id),
-      );
-      handle(MARS_TUNNEL_IPC.signOut, (id) => this.signOut(id));
-      handle(MARS_TUNNEL_IPC.listSessions, (options) =>
-        this.listSessions(options),
-      );
-      handle(MARS_TUNNEL_IPC.listAgentConfigs, (options) =>
-        this.listAgentConfigs(options),
-      );
-      handle(MARS_TUNNEL_IPC.listConfigSessions, (configId, options) =>
-        this.listConfigSessions(configId, options),
-      );
-      handle(MARS_TUNNEL_IPC.createOpenHandsAgent, (payload) =>
-        this.createOpenHandsAgent(payload),
-      );
-      handle(MARS_TUNNEL_IPC.createSession, (configId, name) =>
-        this.createSession(configId, name),
-      );
-      handle(MARS_TUNNEL_IPC.pauseSession, (sessionId) =>
-        this.pauseSession(sessionId),
-      );
-      handle(MARS_TUNNEL_IPC.resumeSession, (sessionId) =>
-        this.resumeSession(sessionId),
-      );
-      handle(MARS_TUNNEL_IPC.destroySession, (sessionId) =>
-        this.destroySession(sessionId),
-      );
-      handle(MARS_TUNNEL_IPC.deleteAgentConfig, (configId) =>
-        this.deleteAgentConfig(configId),
-      );
+      for (const [method, channel] of Object.entries(MARS_TUNNEL_IPC)) {
+        ipcMain.handle(channel, (_event, ...args) => this[method](...args));
+      }
     },
 
     /** Tear down every tunnel — on quit. */

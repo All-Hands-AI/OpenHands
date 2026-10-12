@@ -19,7 +19,7 @@ export const DEFAULT_MARS_API_BASE_URL = "https://api.digitalocean.com";
  */
 export const AGENT_SERVER_GUEST_PORT = 8000;
 
-const SESSIONS_PATH = "/v2/agents/sessions";
+export const SESSIONS_PATH = "/v2/agents/sessions";
 const CONFIGS_PATH = "/v2/agents/configs";
 const CONFIG_SESSIONS_SUBPATH = "/sessions";
 const DEVICE_ID_HEADER = "X-Device-UUID";

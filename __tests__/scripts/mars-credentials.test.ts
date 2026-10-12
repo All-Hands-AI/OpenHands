@@ -126,6 +126,49 @@ describe("createCredentialStore", () => {
     expect(store.isPersistent).toBe(false);
   });
 
+  it("decrypts each token once, not on every use", () => {
+    let decrypts = 0;
+    const { userDataPath, store } = newStore();
+    store.save({
+      kind: CREDENTIAL_KIND_PAT,
+      token: "8".repeat(64),
+      label: "Cached",
+    });
+    const reopened = createCredentialStore({
+      userDataPath,
+      safeStorage: {
+        ...fakeSafeStorage,
+        decryptString: (buffer: Buffer) => {
+          decrypts += 1;
+          return fakeSafeStorage.decryptString(buffer);
+        },
+      },
+    });
+
+    expect(reopened.getActiveToken()).toBe("8".repeat(64));
+    expect(reopened.getActiveToken()).toBe("8".repeat(64));
+    expect(decrypts).toBe(1);
+
+    reopened.remove(reopened.getActive()!.id);
+    expect(reopened.getActiveToken()).toBeNull();
+  });
+
+  it("keeps everything in memory without a userDataPath", () => {
+    const store = createCredentialStore({
+      userDataPath: null,
+      safeStorage: fakeSafeStorage,
+    });
+
+    store.save({
+      kind: CREDENTIAL_KIND_PAT,
+      token: "9".repeat(64),
+      label: "Web",
+    });
+
+    expect(store.getActiveToken()).toBe("9".repeat(64));
+    expect(store.isPersistent).toBe(false);
+  });
+
   it("falls back to another connection when the active one is removed", () => {
     const { store } = newStore();
     const first = store.save({

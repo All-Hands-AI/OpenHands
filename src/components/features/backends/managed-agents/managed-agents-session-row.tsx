@@ -2,45 +2,19 @@ import { useTranslation } from "react-i18next";
 import { Loader2, Pause, Square, Unplug } from "lucide-react";
 
 import {
-  getSessionPhase,
+  isConnectableSession,
   type MarsSession,
-  type MarsSessionPhase,
 } from "#/api/mars/mars-tunnel-backend";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import type { MarsConnectStage } from "#/hooks/use-connect-mars-session";
 import { I18nKey } from "#/i18n/declaration";
-import {
-  formatRelativeTime,
-  isInvalidTimestamp,
-} from "#/utils/format-relative-time";
 import { cn } from "#/utils/utils";
-import { getSessionDisplayName, shortSessionId } from "./managed-agents-labels";
-
-export const PHASE_DOT_CLASS: Record<MarsSessionPhase, string> = {
-  ready:
-    "bg-[var(--oh-status-success)] shadow-[0_0_0_3px_color-mix(in_srgb,var(--oh-status-success)_22%,transparent)]",
-  paused: "bg-[var(--oh-warning)]",
-  starting: "bg-[var(--oh-interactive-selected)] animate-pulse",
-  failed: "bg-[var(--oh-status-error)]",
-  ended: "bg-[var(--oh-text-tertiary)]",
-};
-
-export const PHASE_LABEL_KEY: Record<MarsSessionPhase, I18nKey> = {
-  ready: I18nKey.DO_AGENTS$STATUS_READY,
-  paused: I18nKey.DO_AGENTS$STATUS_PAUSED,
-  starting: I18nKey.DO_AGENTS$STATUS_STARTING,
-  failed: I18nKey.DO_AGENTS$STATUS_FAILED,
-  ended: I18nKey.DO_AGENTS$STATUS_ENDED,
-};
-
-export const STAGE_LABEL_KEY: Record<MarsConnectStage, I18nKey> = {
-  waking: I18nKey.DO_AGENTS$STAGE_WAKING,
-  tunnel: I18nKey.DO_AGENTS$STAGE_TUNNEL,
-  agent: I18nKey.DO_AGENTS$STAGE_AGENT,
-};
+import { shortSessionId } from "./managed-agents-labels";
+import { SessionStatusDot } from "./session-status-dot";
+import { useSessionMeta } from "./use-session-meta";
 
 const ICON_BUTTON_CLASS =
-  "inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-[var(--oh-muted)] transition-colors hover:bg-[var(--oh-interactive-hover)] hover:text-white disabled:cursor-not-allowed disabled:opacity-40";
+  "inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-muted transition-colors hover:bg-interactive-hover hover:text-white disabled:cursor-not-allowed disabled:opacity-40";
 
 interface ManagedAgentsSessionRowProps {
   session: MarsSession;
@@ -70,18 +44,13 @@ export function ManagedAgentsSessionRow({
   onPause,
   onStop,
 }: ManagedAgentsSessionRowProps) {
-  const { t, i18n } = useTranslation("openhands");
-  const phase = getSessionPhase(session.status);
-  const name = getSessionDisplayName(session, t);
-  const lastActivity = session.last_event_at ?? session.created_at;
-  const meta = [
-    t(PHASE_LABEL_KEY[phase]),
-    isInvalidTimestamp(lastActivity)
-      ? null
-      : formatRelativeTime(lastActivity!, i18n.language, t),
-  ].filter(Boolean);
+  const { t } = useTranslation("openhands");
+  const { name, phase, meta, stageLabel } = useSessionMeta(
+    session,
+    connectStage,
+  );
   const isConnecting = connectStage !== null;
-  const canConnect = phase === "ready" || phase === "paused";
+  const canConnect = isConnectableSession(session);
   // Anything not already over can be stopped, including a failed or stuck
   // provisioning session whose sandbox still needs tearing down.
   const canStop = phase !== "ended";
@@ -95,20 +64,17 @@ export function ManagedAgentsSessionRow({
       )}
     >
       <div className="flex items-center gap-3">
-        <span
-          aria-hidden
-          className={cn("size-2 shrink-0 rounded-full", PHASE_DOT_CLASS[phase])}
-        />
+        <SessionStatusDot phase={phase} />
         <div className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-sm text-white" title={name}>
             {name}
           </span>
           <span
-            className="truncate text-xs text-[var(--oh-muted)]"
+            className="truncate text-xs text-muted"
             data-testid={`managed-agents-session-status-${session.session_id}`}
           >
-            {meta.join(" · ")}
-            <span className="ml-2 font-mono text-[11px] text-[var(--oh-text-tertiary)]">
+            {meta}
+            <span className="ml-2 font-mono text-[11px] text-text-tertiary">
               {shortSessionId(session)}
             </span>
           </span>
@@ -120,17 +86,17 @@ export function ManagedAgentsSessionRow({
               role="status"
               aria-live="polite"
               data-testid={`managed-agents-connecting-${session.session_id}`}
-              className="flex items-center gap-2 text-xs text-[var(--oh-muted)]"
+              className="flex items-center gap-2 text-xs text-muted"
             >
               <Loader2 className="size-4 animate-spin" aria-hidden />
-              {t(STAGE_LABEL_KEY[connectStage])}
+              {stageLabel}
             </span>
           ) : null}
 
           {!isConnecting && isConnected ? (
             <>
               <span className="rounded-full border border-primary/40 px-2 py-0.5 text-[11px] uppercase tracking-wide text-primary">
-                {t(I18nKey.DO_AGENTS$CONNECTED)}
+                {t(I18nKey.STATUS$CONNECTED)}
               </span>
               <BrandButton
                 type="button"
@@ -145,8 +111,8 @@ export function ManagedAgentsSessionRow({
                 type="button"
                 onClick={onDisconnect}
                 disabled={isBusy}
-                aria-label={t(I18nKey.DO_AGENTS$DISCONNECT)}
-                title={t(I18nKey.DO_AGENTS$DISCONNECT)}
+                aria-label={t(I18nKey.BUTTON$DISCONNECT)}
+                title={t(I18nKey.BUTTON$DISCONNECT)}
                 data-testid={`managed-agents-disconnect-${session.session_id}`}
                 className={ICON_BUTTON_CLASS}
               >
@@ -180,7 +146,7 @@ export function ManagedAgentsSessionRow({
               >
                 {phase === "paused"
                   ? t(I18nKey.DO_AGENTS$RESUME_AND_CONNECT)
-                  : t(I18nKey.DO_AGENTS$CONNECT)}
+                  : t(I18nKey.BACKEND$CONNECT)}
               </BrandButton>
             </>
           ) : null}
@@ -205,7 +171,7 @@ export function ManagedAgentsSessionRow({
         <p
           role="alert"
           data-testid={`managed-agents-session-error-${session.session_id}`}
-          className="pl-5 text-xs text-[var(--oh-status-error)] whitespace-pre-wrap break-words"
+          className="pl-5 text-xs text-status-error whitespace-pre-wrap break-words"
         >
           {error}
         </p>

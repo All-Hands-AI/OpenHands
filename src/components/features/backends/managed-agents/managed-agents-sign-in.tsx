@@ -5,6 +5,7 @@ import { ExternalLink, Loader2 } from "lucide-react";
 import DigitalOceanLogo from "#/assets/branding/digitalocean-logo.svg?react";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { SettingsInput } from "#/components/features/settings/settings-input";
+import { ErrorAlert } from "#/components/shared/error-alert";
 import { I18nKey } from "#/i18n/declaration";
 
 export const DO_CREATE_TOKEN_URL =
@@ -54,7 +55,7 @@ export function ManagedAgentsSignIn({
       className="mx-auto flex w-full max-w-sm flex-col items-center gap-4 py-6"
     >
       {showBranding ? (
-        <div className="flex size-14 items-center justify-center rounded-2xl border border-[var(--oh-border)] bg-[var(--oh-surface-raised)]">
+        <div className="flex size-14 items-center justify-center rounded-2xl border border-border bg-surface-raised">
           <DigitalOceanLogo width={32} height={32} aria-hidden />
         </div>
       ) : null}
@@ -62,7 +63,7 @@ export function ManagedAgentsSignIn({
         <h3 className="text-balance text-base font-medium text-white">
           {t(I18nKey.DO_AGENTS$SIGN_IN_TITLE)}
         </h3>
-        <p className="text-pretty text-sm leading-relaxed text-[var(--oh-muted)]">
+        <p className="text-pretty text-sm leading-relaxed text-muted">
           {t(I18nKey.DO_AGENTS$SIGN_IN_DESCRIPTION)}
         </p>
       </div>
@@ -70,7 +71,7 @@ export function ManagedAgentsSignIn({
       {isExpired ? (
         <p
           data-testid="managed-agents-expired"
-          className="w-full rounded-md border border-[var(--oh-warning)]/40 bg-[var(--oh-warning)]/10 p-2.5 text-center text-xs text-[var(--oh-warning)]"
+          className="w-full rounded-md border border-warning/40 bg-warning/10 p-2.5 text-center text-xs text-warning"
         >
           {t(I18nKey.BACKEND$DIGITALOCEAN_EXPIRED)}
         </p>
@@ -107,7 +108,7 @@ export function ManagedAgentsSignIn({
           placeholder=""
           className="w-full"
         />
-        <p className="text-xs leading-relaxed text-[var(--oh-muted)]">
+        <p className="text-xs leading-relaxed text-muted">
           {t(I18nKey.BACKEND$DIGITALOCEAN_TOKEN_HINT)}{" "}
           <a
             href={DO_CREATE_TOKEN_URL}
@@ -136,13 +137,9 @@ export function ManagedAgentsSignIn({
       </form>
 
       {error ? (
-        <div
-          role="alert"
-          data-testid="managed-agents-auth-error"
-          className="w-full rounded-md border border-[var(--oh-status-error)]/40 bg-[var(--oh-status-error)]/10 p-3 text-sm text-[var(--oh-status-error)] whitespace-pre-wrap break-words"
-        >
+        <ErrorAlert testId="managed-agents-auth-error" className="w-full">
           {error}
-        </div>
+        </ErrorAlert>
       ) : null}
 
       {onCancel ? (
@@ -150,7 +147,7 @@ export function ManagedAgentsSignIn({
           type="button"
           onClick={onCancel}
           data-testid="managed-agents-sign-in-cancel"
-          className="cursor-pointer text-xs text-[var(--oh-muted)] hover:text-white"
+          className="cursor-pointer text-xs text-muted hover:text-white"
         >
           {t(I18nKey.BUTTON$CANCEL)}
         </button>

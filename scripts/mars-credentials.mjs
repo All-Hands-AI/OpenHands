@@ -68,22 +68,36 @@ function isExpired(connection) {
 
 /**
  * @param {object} options
- * @param {string} options.userDataPath
+ * @param {string | null} [options.userDataPath] Where the store file lives;
+ *   null keeps everything in memory for this process (the web bridge).
  * @param {Pick<import("electron").SafeStorage, "isEncryptionAvailable" | "encryptString" | "decryptString"> | null} [options.safeStorage]
  *   Omitted in tests, which exercise the unencrypted in-memory path.
  */
-export function createCredentialStore({ userDataPath, safeStorage = null }) {
-  const filePath = path.join(userDataPath, STORE_FILENAME);
+export function createCredentialStore({
+  userDataPath = null,
+  safeStorage = null,
+} = {}) {
+  const filePath = userDataPath
+    ? path.join(userDataPath, STORE_FILENAME)
+    : null;
 
   // When the OS keychain is unavailable (common on bare Linux desktops),
   // credentials live only for this process rather than being written to disk
   // in the clear.
-  const canEncrypt = Boolean(safeStorage?.isEncryptionAvailable?.());
+  const canEncrypt = Boolean(
+    filePath && safeStorage?.isEncryptionAvailable?.(),
+  );
+  /**
+   * Plaintext token per connection id. The only copy when nothing is
+   * encrypted; otherwise a cache, so the keychain is not hit on every dial.
+   * Ids are never reused, so remove() is the only invalidation needed.
+   */
   const memoryTokens = new Map();
 
   let state = load();
 
   function load() {
+    if (!filePath) return emptyState();
     try {
       const parsed = JSON.parse(readFileSync(filePath, "utf8"));
       if (parsed?.version !== STORE_VERSION) return emptyState();
@@ -101,6 +115,7 @@ export function createCredentialStore({ userDataPath, safeStorage = null }) {
   }
 
   function persist() {
+    if (!filePath) return;
     mkdirSync(path.dirname(filePath), { recursive: true });
     const serializable = {
       ...state,
@@ -121,10 +136,15 @@ export function createCredentialStore({ userDataPath, safeStorage = null }) {
   }
 
   function decrypt(connection) {
-    if (!canEncrypt) return memoryTokens.get(connection.id) ?? null;
-    if (!connection.token) return null;
+    const cached = memoryTokens.get(connection.id);
+    if (cached !== undefined) return cached;
+    if (!canEncrypt || !connection.token) return null;
     try {
-      return safeStorage.decryptString(Buffer.from(connection.token, "base64"));
+      const token = safeStorage.decryptString(
+        Buffer.from(connection.token, "base64"),
+      );
+      memoryTokens.set(connection.id, token);
+      return token;
     } catch {
       // Keychain rotated or the profile moved between machines.
       return null;
@@ -183,7 +203,7 @@ export function createCredentialStore({ userDataPath, safeStorage = null }) {
         expiresAt,
         token: encrypt(token),
       };
-      if (!canEncrypt) memoryTokens.set(id, token);
+      memoryTokens.set(id, token);
 
       state.connections = [...state.connections, connection];
       state.activeConnectionId = id;

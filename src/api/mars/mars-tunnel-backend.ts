@@ -17,7 +17,10 @@
 import { ConversationSortOrder } from "@openhands/typescript-client";
 import { ConversationClient } from "@openhands/typescript-client/clients";
 import { getAgentServerClientOptions } from "#/api/agent-server-client-options";
-import { validateLocalBackend } from "#/api/agent-server-compatibility";
+import {
+  isDefinitiveLocalBackendError,
+  validateLocalBackend,
+} from "#/api/agent-server-compatibility";
 import type { Backend } from "#/api/backend-registry/types";
 
 export type MarsCredentialKind = "oauth" | "pat";
@@ -183,7 +186,7 @@ export function getMarsBridge(): MarsBridge | null {
   return window.marsBridge ?? null;
 }
 
-function requireMarsBridge(): MarsBridge {
+export function requireMarsBridge(): MarsBridge {
   const bridge = getMarsBridge();
   if (!bridge) {
     throw new Error(
@@ -223,12 +226,18 @@ export function getMarsErrorMessage(error: unknown): string | null {
 
 export const SESSION_STATUS_READY = "SESSION_STATUS_READY";
 export const SESSION_STATUS_PAUSED = "SESSION_STATUS_PAUSED";
+export const SESSION_STATUS_DESTROYING = "SESSION_STATUS_DESTROYING";
+export const SESSION_STATUS_DESTROYED = "SESSION_STATUS_DESTROYED";
+export const SESSION_STATUS_FAILED = "SESSION_STATUS_FAILED";
+
+/** Where a freshly connected MARS session lands. */
+export const NEW_CHAT_PATH = "/conversations";
 
 /** Statuses a session can never come back from. */
 const TERMINAL_SESSION_STATUSES = new Set([
-  "SESSION_STATUS_DESTROYING",
-  "SESSION_STATUS_DESTROYED",
-  "SESSION_STATUS_FAILED",
+  SESSION_STATUS_DESTROYING,
+  SESSION_STATUS_DESTROYED,
+  SESSION_STATUS_FAILED,
 ]);
 
 export type MarsSessionPhase =
@@ -248,7 +257,7 @@ export function getSessionPhase(
 ): MarsSessionPhase {
   if (status === SESSION_STATUS_READY) return "ready";
   if (status === SESSION_STATUS_PAUSED) return "paused";
-  if (status === "SESSION_STATUS_FAILED") return "failed";
+  if (status === SESSION_STATUS_FAILED) return "failed";
   if (TERMINAL_SESSION_STATUSES.has(status ?? "")) return "ended";
   return "starting";
 }
@@ -343,7 +352,8 @@ async function readUpstreamFailure(
  * Poll a freshly opened tunnel until the agent-server behind it answers.
  * When `sessionId` is given, the tunnel's own upstream failures cut the wait
  * short with a {@link MarsAttachError}; otherwise the last probe failure is
- * rethrown so the user sees why it never came up.
+ * rethrown so the user sees why it never came up. A definitive probe failure
+ * (rejected key, unsupported version) is rethrown at once.
  */
 export async function waitForMarsAgentServer(
   host: string,
@@ -362,6 +372,8 @@ export async function waitForMarsAgentServer(
         AGENT_SERVER_PROBE_TIMEOUT_MS,
       );
     } catch (error) {
+      // A rejected key or too-old server will not change by waiting.
+      if (isDefinitiveLocalBackendError(error)) throw error;
       const failure = await readUpstreamFailure(sessionId);
       if (failure && isRefusal(failure)) {
         throw new MarsAttachError("refused", failure.message);

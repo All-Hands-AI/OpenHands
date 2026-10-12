@@ -86,6 +86,32 @@ describe("signInWithDigitalOcean", () => {
     expect(openExternal).toHaveBeenCalledOnce();
   });
 
+  it("cuts off an oversized relay body and still accepts the real one", async () => {
+    let oversized: unknown = null;
+    const openExternal = vi.fn(async (authorizeUrl) => {
+      const state = new URL(authorizeUrl).searchParams.get("state");
+      const relay = `http://127.0.0.1:${OAUTH_REDIRECT_PORT}/callback-token`;
+
+      // The reader drops the connection rather than buffering it all.
+      oversized = await fetch(relay, {
+        method: "POST",
+        body: "x".repeat(64 * 1024),
+      }).catch((error: unknown) => error);
+      await fetch(relay, {
+        method: "POST",
+        body: `access_token=tok-3&token_type=bearer&state=${state}`,
+      });
+    });
+
+    const grant = await signInWithDigitalOcean({
+      clientId: "client-1",
+      openExternal,
+    });
+
+    expect(oversized).toBeInstanceOf(Error);
+    expect(grant.accessToken).toBe("tok-3");
+  });
+
   it("explains a busy redirect port and leaves no rejection behind", async () => {
     // Arrange
     const blocker = createServer();

@@ -71,7 +71,6 @@ function fakeRegistry() {
     detachAll: vi.fn(async () => {}),
     detachOwnedBy: vi.fn(async () => {}),
     get: vi.fn(() => undefined),
-    list: vi.fn(() => []),
   };
 }
 
@@ -111,7 +110,11 @@ function fakeApi() {
   };
 }
 
-function setup() {
+/**
+ * `realRegistry` keeps the bridge's own tunnel registry, whose listeners bind
+ * loopback without dialing anything until a client connects.
+ */
+function setup({ realRegistry = false } = {}) {
   const registry = fakeRegistry();
   const api = fakeApi();
   const credentials = createCredentialStore({
@@ -122,7 +125,7 @@ function setup() {
     status: "SESSION_STATUS_READY",
   }));
   const bridge = createMarsTunnelBridge({
-    registry,
+    registry: realRegistry ? undefined : registry,
     api,
     credentials,
     ensureAwake,
@@ -315,6 +318,28 @@ describe("createMarsTunnelBridge", () => {
     expect(session).toMatchObject({ status: "SESSION_STATUS_READY" });
   });
 
+  it("openTunnel right after createSession does not poll the session again, but does once it was paused", async () => {
+    const { ensureAwake, ipcMain, bridge } = setup({ realRegistry: true });
+    await ipcMain.invoke(MARS_TUNNEL_IPC.savePat, { token: VALID_PAT });
+
+    try {
+      await ipcMain.invoke(MARS_TUNNEL_IPC.createSession, "cfg_1", "agent-1");
+      const tunnel = await ipcMain.invoke(MARS_TUNNEL_IPC.openTunnel, {
+        sessionId: "sess_new",
+      });
+      expect(tunnel).toMatchObject({ status: "connected" });
+      expect(ensureAwake).toHaveBeenCalledTimes(1);
+
+      await ipcMain.invoke(MARS_TUNNEL_IPC.pauseSession, "sess_new");
+      await ipcMain.invoke(MARS_TUNNEL_IPC.openTunnel, {
+        sessionId: "sess_new",
+      });
+      expect(ensureAwake).toHaveBeenCalledTimes(2);
+    } finally {
+      await bridge.dispose();
+    }
+  });
+
   it("createOpenHandsAgent creates a config from the OpenHands manifest and lists it without re-reading", async () => {
     // Arrange
     const { api, ipcMain } = setup();
@@ -401,13 +426,20 @@ describe("createMarsTunnelBridge", () => {
     );
   });
 
-  it("deleteAgentConfig is a plain pass-through", async () => {
+  it("deleteAgentConfig deletes the config and forgets its cached agent", async () => {
     const { api, ipcMain } = setup();
     await ipcMain.invoke(MARS_TUNNEL_IPC.savePat, { token: VALID_PAT });
+    api.listAgentConfigs.mockResolvedValue({
+      configs: [{ id: "cfg_1" }],
+      nextPageToken: null,
+    });
+    await ipcMain.invoke(MARS_TUNNEL_IPC.listAgentConfigs);
 
     await ipcMain.invoke(MARS_TUNNEL_IPC.deleteAgentConfig, "cfg_1");
+    await ipcMain.invoke(MARS_TUNNEL_IPC.listAgentConfigs);
 
     expect(api.deleteAgentConfig).toHaveBeenCalledWith("cfg_1");
+    expect(api.getAgentConfig).toHaveBeenCalledTimes(2);
   });
 
   it("destroySession keeps the connection when harness-api refuses (409/423)", async () => {

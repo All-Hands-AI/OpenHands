@@ -30,6 +30,7 @@ vi.mock("@openhands/typescript-client/clients", async (importOriginal) => ({
   }),
 }));
 
+import { INVALID_BACKEND_API_KEY_ERROR } from "#/api/agent-server-compatibility";
 import { __resetActiveStoreForTests } from "#/api/backend-registry/active-store";
 import { __resetHealthStoreForTests } from "#/api/backend-registry/health-store";
 import {
@@ -190,6 +191,20 @@ describe("useMarsTunnelBackend", () => {
     expect(result.current.active.backends).toHaveLength(countBefore);
   });
 
+  it("attach() gives up at once when the agent-server rejects the key", async () => {
+    validateLocalBackend.mockRejectedValue(
+      new Error(INVALID_BACKEND_API_KEY_ERROR),
+    );
+    const { result } = renderHook(useCombined, { wrapper: makeWrapper() });
+
+    await expect(
+      act(() => result.current.tunnel.attach(SESSION)),
+    ).rejects.toThrow(INVALID_BACKEND_API_KEY_ERROR);
+
+    expect(validateLocalBackend).toHaveBeenCalledTimes(1);
+    expect(window.marsBridge!.closeTunnel).toHaveBeenCalledWith("sess_abc");
+  });
+
   it("attach() reports the session's most recent conversation so the caller can land in it", async () => {
     searchConversations.mockResolvedValueOnce({
       items: [{ id: "conv_latest" }],
@@ -244,23 +259,18 @@ describe("useMarsTunnelBackend", () => {
     ).toBeUndefined();
   });
 
-  it("detach() keeps the Backend if closing the tunnel fails", async () => {
+  it("detach() closes the tunnel only once, through removing the Backend", async () => {
     const { result } = renderHook(useCombined, { wrapper: makeWrapper() });
     let backend: Backend;
     await act(async () => {
       ({ backend } = await result.current.tunnel.attach(SESSION));
     });
-    window.marsBridge!.closeTunnel = vi.fn(async () => {
-      throw new Error("IPC failure");
+
+    await act(async () => {
+      await result.current.tunnel.detach(backend!);
     });
 
-    await expect(
-      act(() => result.current.tunnel.detach(backend!)),
-    ).rejects.toThrow(/IPC failure/);
-
-    expect(
-      result.current.active.backends.find((b) => b.id === backend!.id),
-    ).toBeDefined();
+    expect(window.marsBridge!.closeTunnel).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -354,5 +364,54 @@ describe("useRestoreMarsTunnels", () => {
     // Assert
     expect(pendingWhileBooting).toBe(true);
     await waitFor(() => expect(result.current).toBe(false));
+  });
+
+  it("does not reconnect a session attach() just connected", async () => {
+    const { result } = renderHook(
+      () => {
+        useRestoreMarsTunnels();
+        return useMarsTunnelBackend();
+      },
+      { wrapper: makeWrapper() },
+    );
+
+    await act(async () => {
+      await result.current.attach(SESSION);
+    });
+
+    expect(window.marsBridge!.openTunnel).toHaveBeenCalledTimes(1);
+    expect(validateLocalBackend).toHaveBeenCalledTimes(1);
+  });
+
+  it("closes the restored tunnel when the agent-server behind it never answers", async () => {
+    window.localStorage.setItem(
+      BACKENDS_STORAGE_KEY,
+      JSON.stringify([
+        {
+          id: "mars-1",
+          name: "Agent · sess-1",
+          host: "http://127.0.0.1:51000",
+          apiKey: "",
+          kind: "local",
+          marsSessionId: "sess_abc",
+        },
+      ]),
+    );
+    window.localStorage.setItem(
+      ACTIVE_BACKEND_STORAGE_KEY,
+      JSON.stringify({ backendId: "mars-1", orgId: null }),
+    );
+    __resetActiveStoreForTests();
+    validateLocalBackend.mockRejectedValue(new Error("connection refused"));
+    vi.spyOn(Date, "now")
+      .mockReturnValueOnce(0)
+      .mockReturnValue(Number.MAX_SAFE_INTEGER);
+
+    const { result } = renderHook(() => useRestoreMarsTunnels(), {
+      wrapper: makeWrapper(),
+    });
+
+    await waitFor(() => expect(result.current).toBe(false));
+    expect(window.marsBridge!.closeTunnel).toHaveBeenCalledWith("sess_abc");
   });
 });

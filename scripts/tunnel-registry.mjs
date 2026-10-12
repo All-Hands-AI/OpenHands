@@ -23,9 +23,10 @@
  *   - Concurrent-attach dedup: two attach() calls for the same session
  *     firing before either has resolved share one in-flight attempt rather
  *     than racing to open two tunnels.
- *   - Waking a paused session before dialing it, via mars-session.mjs's
- *     ensureSessionAwake() — MARS auto-pauses idle sessions, and a tunnel
- *     that isn't open yet has generated no activity to have prevented that.
+ *   - Waking a paused session before dialing it, via the injected
+ *     ensureAwake (mars-session.mjs's ensureSessionAwake()) — MARS
+ *     auto-pauses idle sessions, and a tunnel that isn't open yet has
+ *     generated no activity to have prevented that.
  *
  * Explicitly NOT this module's job:
  *   - Reconnect-after-app-restart detection. Because tunnels here run
@@ -49,21 +50,6 @@
  */
 
 import { startPortForwardTunnel } from "./tunnel-client.mjs";
-import { ensureSessionAwake } from "./mars-session.mjs";
-import { createMarsApiClient } from "./mars-api.mjs";
-
-/**
- * @param {{ sessionId: string, apiUrl?: string, getAccessToken: () => string | null }} options
- */
-function wakeSession({ sessionId, apiUrl, getAccessToken }) {
-  return ensureSessionAwake({
-    api: createMarsApiClient({
-      baseUrl: apiUrl,
-      getToken: async () => getAccessToken(),
-    }),
-    sessionId,
-  });
-}
 
 /**
  * @typedef {{
@@ -77,16 +63,20 @@ function wakeSession({ sessionId, apiUrl, getAccessToken }) {
  */
 
 /**
- * @param {object} [options]
+ * @param {object} options
  * @param {typeof startPortForwardTunnel} [options.startTunnel] Override for tests
- * @param {(options: { sessionId: string, apiUrl?: string, getAccessToken: () => string | null }) => Promise<unknown>} [options.ensureAwake]
- *   Resolves once the session is READY. Defaults to ensureSessionAwake over
- *   a client authenticated with the tunnel's own token.
+ * @param {(options: { sessionId: string, apiUrl?: string, getAccessToken: () => string | null }) => Promise<unknown>} options.ensureAwake
+ *   Resolves once the session is READY (mars-session.mjs's
+ *   ensureSessionAwake over a client authenticated with the tunnel's own
+ *   token, in the bridge).
  */
 export function createTunnelRegistry({
   startTunnel = startPortForwardTunnel,
-  ensureAwake = wakeSession,
-} = {}) {
+  ensureAwake,
+}) {
+  if (typeof ensureAwake !== "function") {
+    throw new Error("ensureAwake is required");
+  }
   /** @type {Map<string, { status: "connecting" | "connected" | "error", remotePort: number, apiUrl: string | undefined, getAccessToken: () => string | null, owner: string | undefined, tunnel: object | null, error: Error | null, promise: Promise<void> | null }>} */
   const entries = new Map();
 
@@ -204,11 +194,6 @@ export function createTunnelRegistry({
     return snapshot(sessionId);
   }
 
-  /** @returns {TunnelEntrySnapshot[]} */
-  function list() {
-    return [...entries.keys()].map(snapshot);
-  }
-
   /** Tear down one session's tunnel, if any, without affecting others. */
   async function detach(sessionId) {
     const entry = entries.get(sessionId);
@@ -237,5 +222,5 @@ export function createTunnelRegistry({
     );
   }
 
-  return { attach, get, list, detach, detachAll, detachOwnedBy };
+  return { attach, get, detach, detachAll, detachOwnedBy };
 }

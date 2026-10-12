@@ -32,6 +32,8 @@ vi.mock("@openhands/typescript-client/clients", async (importOriginal) => ({
 
 import { __resetActiveStoreForTests } from "#/api/backend-registry/active-store";
 import { __resetHealthStoreForTests } from "#/api/backend-registry/health-store";
+import { BACKENDS_STORAGE_KEY } from "#/api/backend-registry/storage";
+import type { Backend } from "#/api/backend-registry/types";
 import type {
   MarsAuthState,
   MarsBridge,
@@ -96,6 +98,7 @@ function fakeBridge(authState: MarsAuthState) {
     getTunnel: vi.fn(async () => undefined),
     destroySession: vi.fn(async () => {}),
     deleteAgentConfig: vi.fn(async () => {}),
+    signOut: vi.fn(async () => SIGNED_OUT),
   } as unknown as MarsBridge;
 }
 
@@ -159,6 +162,48 @@ describe("ManagedAgentsView", () => {
     expect(navigate).toHaveBeenCalledWith(
       expect.stringMatching(/^\/conversations\/conv_42\?/),
     );
+  });
+
+  it("keeps the agent of a session listed under Other sessions when connecting", async () => {
+    // Arrange: the session is missing from its config's own listing.
+    const bridge = fakeBridge(SIGNED_IN);
+    vi.mocked(bridge.listConfigSessions).mockResolvedValue({
+      sessions: [],
+      nextPageToken: null,
+    });
+    window.marsBridge = bridge;
+    const { onDone } = renderView();
+    expect(
+      await screen.findByTestId("managed-agents-other-sessions"),
+    ).toBeInTheDocument();
+
+    // Act
+    await userEvent.click(
+      screen.getByTestId("managed-agents-connect-sess_ready"),
+    );
+
+    // Assert
+    await waitFor(() => expect(onDone).toHaveBeenCalled());
+    const stored: Backend[] = JSON.parse(
+      window.localStorage.getItem(BACKENDS_STORAGE_KEY) ?? "[]",
+    );
+    expect(
+      stored.find((backend) => backend.marsSessionId === "sess_ready"),
+    ).toMatchObject({ marsConfigId: "cfg_1" });
+  });
+
+  it("signs out through the bridge and returns to the sign-in form", async () => {
+    const bridge = fakeBridge(SIGNED_IN);
+    window.marsBridge = bridge;
+    renderView();
+
+    vi.mocked(bridge.getAuthState).mockResolvedValue(SIGNED_OUT);
+    await userEvent.click(await screen.findByTestId("managed-agents-sign-out"));
+
+    expect(bridge.signOut).toHaveBeenCalledOnce();
+    expect(
+      await screen.findByTestId("managed-agents-sign-in"),
+    ).toBeInTheDocument();
   });
 
   it("blocks other connects and launches while a new session is being created", async () => {

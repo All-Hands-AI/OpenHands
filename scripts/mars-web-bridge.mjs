@@ -16,10 +16,9 @@
  *                                    (src/api/mars/mars-web-bridge.ts) calls
  *                                    this exactly as the preload calls IPC.
  *   ANY  /mars/sessions/<id>/...   — reverse proxy (HTTP + WebSocket) to that
- *                                    session's tunnel listener on loopback,
- *                                    with the upstream WebSocket pinged
- *                                    every 30 s so an idle stream is not
- *                                    reaped along the way.
+ *                                    session's tunnel listener on loopback
+ *                                    (the tunnel pings its own upstream
+ *                                    socket, see tunnel-client.mjs).
  *   GET  /mars/health              — lets the renderer detect this server.
  *
  * `openTunnel` therefore answers with `host` = `<origin>/mars/sessions/<id>`,
@@ -41,28 +40,29 @@
  * page from reaching it (cookies are host-scoped, so with a key in play
  * rebinding cannot carry one). Cross-origin requests are refused outright;
  * JSON POSTs preflight and this server sends no CORS headers. Credentials
- * are in-memory only (no OS keychain here); `MARS_TOKEN` seeds one at
- * startup.
+ * are in-memory only (no OS keychain here, nothing written to disk);
+ * `MARS_TOKEN` seeds one at startup.
  */
 
 import { randomBytes, timingSafeEqual } from "node:crypto";
-import { mkdtempSync } from "node:fs";
-import { request as httpRequest } from "node:http";
-import { request as httpsRequest } from "node:https";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import WebSocket, { WebSocketServer } from "ws";
 
 import { DEFAULT_BIND_HOST, isLoopbackBind } from "./bind-host.mjs";
-import { createMarsTunnelBridge } from "./mars-tunnel-bridge.mjs";
+import {
+  MARS_TUNNEL_IPC,
+  buildTunnelHost,
+  createMarsTunnelBridge,
+} from "./mars-tunnel-bridge.mjs";
+import {
+  createProxyHandlers,
+  readRequestBody,
+  rewriteJsonResponse,
+} from "./proxy-utils.mjs";
 
 export const MARS_WEB_PREFIX = "/mars";
 const HEALTH_PATH = `${MARS_WEB_PREFIX}/health`;
 const RPC_PREFIX = `${MARS_WEB_PREFIX}/rpc/`;
 const SESSIONS_PREFIX = `${MARS_WEB_PREFIX}/sessions/`;
 
-/** Keep an idle upstream socket warm so intermediaries do not reap it. */
-export const UPSTREAM_PING_INTERVAL_MS = 30_000;
 const RPC_BODY_LIMIT_BYTES = 64 * 1024;
 /** Past this a JSON body streams through untouched rather than being rewritten. */
 const JSON_REWRITE_LIMIT_BYTES = 8 * 1024 * 1024;
@@ -73,45 +73,16 @@ const AUTH_COOKIE = "mars_web_auth";
 /** Response fields whose agent-server URL the renderer follows. */
 const URL_FIELDS = new Set(["conversation_url"]);
 
-/** Bridge methods a browser may call. Mirrors MARS_TUNNEL_IPC. */
-const RPC_METHODS = new Set([
-  "getAuthState",
-  "savePat",
-  "setActiveConnection",
-  "signOut",
-  "listSessions",
-  "listAgentConfigs",
-  "listConfigSessions",
-  "createOpenHandsAgent",
-  "createSession",
-  "pauseSession",
-  "resumeSession",
-  "destroySession",
-  "deleteAgentConfig",
-  "openTunnel",
-  "closeTunnel",
-  "getTunnel",
-]);
+/**
+ * Bridge methods a browser may call: the desktop IPC surface minus OAuth,
+ * whose implicit-grant flow needs a loopback redirect in a trusted process.
+ */
+const RPC_METHODS = new Set(
+  Object.keys(MARS_TUNNEL_IPC).filter((method) => method !== "signInWithOAuth"),
+);
 
-/** Headers that describe one hop and must not be forwarded. */
-const HOP_BY_HOP_HEADERS = new Set([
-  "connection",
-  "keep-alive",
-  "proxy-authenticate",
-  "proxy-authorization",
-  "proxy-connection",
-  "te",
-  "trailer",
-  "transfer-encoding",
-  "upgrade",
-  "host",
-  "origin",
-  "referer",
-  "accept-encoding",
-  // Belong to the canvas origin, never to the session host.
-  "cookie",
-  AUTH_HEADER,
-]);
+/** Request headers that belong to the canvas origin, never to the session host. */
+const CANVAS_ONLY_HEADERS = ["cookie", AUTH_HEADER, "origin", "referer"];
 
 /** Off unless asked for: these routes hold the DO token and can destroy sessions. */
 export function isMarsWebEnabled(env = process.env) {
@@ -143,6 +114,7 @@ export function mountMarsWebBridge({
   env = process.env,
   host = DEFAULT_BIND_HOST,
   sessionApiKey = null,
+  proxy,
   log = (message) => console.warn(`[mars-web] ${message}`),
 } = {}) {
   if (!isMarsWebEnabled(env)) return null;
@@ -154,7 +126,7 @@ export function mountMarsWebBridge({
     return null;
   }
   if (!key) log("no key configured; /mars/* is open to local callers only");
-  return createMarsWebBridge({ env, host, key });
+  return createMarsWebBridge({ env, host, key, proxy });
 }
 
 function safeEqual(a, b) {
@@ -231,32 +203,14 @@ function writeJson(res, status, body) {
   res.end(payload);
 }
 
-function readJsonBody(req, limit) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    let size = 0;
-    req.on("data", (chunk) => {
-      size += chunk.length;
-      if (size > limit) {
-        reject(new Error("request body too large"));
-        req.destroy();
-        return;
-      }
-      chunks.push(chunk);
-    });
-    req.on("end", () => {
-      if (chunks.length === 0) {
-        resolve({});
-        return;
-      }
-      try {
-        resolve(JSON.parse(Buffer.concat(chunks).toString("utf8")));
-      } catch (error) {
-        reject(new Error("request body is not valid JSON"));
-      }
-    });
-    req.on("error", reject);
-  });
+async function readJsonBody(req, limit) {
+  const body = await readRequestBody(req, limit);
+  if (body.length === 0) return {};
+  try {
+    return JSON.parse(body.toString("utf8"));
+  } catch {
+    throw new Error("request body is not valid JSON");
+  }
 }
 
 const CONVERSATION_URL_RE =
@@ -313,18 +267,10 @@ function parseSessionPath(url) {
   return { sessionId, path: tail.startsWith("/") ? tail : `/${tail}` };
 }
 
-function forwardHeaders(req, upstream) {
-  const headers = {};
-  for (const [name, value] of Object.entries(req.headers)) {
-    if (!HOP_BY_HOP_HEADERS.has(name) && value !== undefined) {
-      headers[name] = value;
-    }
-  }
-  headers.host = upstream.host;
-  // Responses are read as UTF-8 for the URL rewrite; a compressed body
-  // would have to be inflated first.
-  headers["accept-encoding"] = "identity";
-  return headers;
+/** Rewrite the request to what the session host should see. */
+function toUpstreamRequest(req, path) {
+  for (const name of CANVAS_ONLY_HEADERS) delete req.headers[name];
+  req.url = path;
 }
 
 /**
@@ -333,7 +279,7 @@ function forwardHeaders(req, upstream) {
  * @param {Record<string, string | undefined>} [options.env]
  * @param {string} [options.host] The server's bind host; loopback gets the Host check
  * @param {string | null} [options.key] Session key every request must present; null = open (loopback dev only — see mountMarsWebBridge)
- * @param {number} [options.pingIntervalMs]
+ * @param {ReturnType<typeof createProxyHandlers>} [options.proxy] The hosting server's proxy, else a new one
  * @param {(message: string, error?: unknown) => void} [options.log]
  */
 export function createMarsWebBridge({
@@ -341,21 +287,14 @@ export function createMarsWebBridge({
   env = process.env,
   host = DEFAULT_BIND_HOST,
   key = null,
-  pingIntervalMs = UPSTREAM_PING_INTERVAL_MS,
+  proxy = createProxyHandlers({ label: "mars-web" }),
   log = (message, error) => console.warn(`[mars-web] ${message}`, error ?? ""),
 } = {}) {
+  // No userDataPath: credentials stay in this process's memory.
   const bridge =
-    bridgeOverride ??
-    createMarsTunnelBridge({
-      // Fresh per process: tokens are in-memory anyway (no keychain here),
-      // and a surviving connection record with no token would only confuse.
-      userDataPath: mkdtempSync(join(tmpdir(), "agent-canvas-mars-")),
-      env,
-    });
+    bridgeOverride ?? createMarsTunnelBridge({ userDataPath: null, env });
 
-  /** Connected sessions: id → the real upstream base (the tunnel listener). */
-  const upstreams = new Map();
-  /** Live WebSocket pairs, so dispose() can close them. */
+  /** Upgraded client sockets, so dispose() can close them. */
   const sockets = new Set();
   /** Per-process cookie value handed to requests that presented the key. */
   const cookieToken = randomBytes(32).toString("hex");
@@ -381,57 +320,28 @@ export function createMarsWebBridge({
     return `${AUTH_COOKIE}=${cookieToken}; HttpOnly; SameSite=Strict; Path=${MARS_WEB_PREFIX}`;
   }
 
-  const wss = new WebSocketServer({ noServer: true, perMessageDeflate: false });
-
   if (env.MARS_TOKEN) {
     bridge
       .savePat({ token: env.MARS_TOKEN, label: "MARS_TOKEN" })
       .catch((error) => log("MARS_TOKEN was not accepted", error));
   }
 
-  function rewriteStatus(req, status) {
-    if (!status?.host) return status;
-    upstreams.set(status.sessionId, status.host);
-    return { ...status, host: sessionProxyBase(req, status.sessionId) };
-  }
-
-  /** The bridge surface as the browser sees it. */
-  const rpc = {
-    async getAuthState() {
-      // The implicit-grant flow needs a loopback redirect in a trusted
-      // process; the web build takes personal access tokens only.
+  /**
+   * Methods that differ from the bridge's own, called with the request
+   * first; every other RPC_METHODS entry is `bridge[method](...args)`.
+   */
+  const overrides = {
+    getAuthState() {
+      // The web build takes personal access tokens only.
       return { ...bridge.getAuthState(), canUseOAuth: false };
     },
-    savePat: (payload) => bridge.savePat(payload),
-    setActiveConnection: (id) => bridge.setActiveConnection(id),
-    signOut: (id) => bridge.signOut(id),
-    listSessions: (options) => bridge.listSessions(options),
-    listAgentConfigs: (options) => bridge.listAgentConfigs(options),
-    listConfigSessions: (configId, options) =>
-      bridge.listConfigSessions(configId, options),
-    createOpenHandsAgent: (payload) => bridge.createOpenHandsAgent(payload),
-    createSession: (configId, name) => bridge.createSession(configId, name),
-    pauseSession: (sessionId) => bridge.pauseSession(sessionId),
-    resumeSession: (sessionId) => bridge.resumeSession(sessionId),
-    async destroySession(sessionId) {
-      // Only forget the upstream once harness-api agreed: on a 409/423 the
-      // session is still running and the user must keep their connection.
-      await bridge.destroySession(sessionId);
-      upstreams.delete(sessionId);
-    },
-    deleteAgentConfig: (configId) => bridge.deleteAgentConfig(configId),
     async openTunnel(req, params) {
-      return rewriteStatus(req, await bridge.openTunnel(params));
-    },
-    async closeTunnel(_req, sessionId) {
-      upstreams.delete(sessionId);
-      return bridge.closeTunnel(sessionId);
-    },
-    getTunnel(req, sessionId) {
-      return rewriteStatus(req, bridge.getTunnel(sessionId));
+      const status = await bridge.openTunnel(params);
+      return status?.host
+        ? { ...status, host: sessionProxyBase(req, status.sessionId) }
+        : status;
     },
   };
-  const REQUEST_AWARE = new Set(["openTunnel", "closeTunnel", "getTunnel"]);
 
   async function handleRpc(req, res, method) {
     if (req.method !== "POST") {
@@ -451,9 +361,9 @@ export function createMarsWebBridge({
       return;
     }
     try {
-      const result = REQUEST_AWARE.has(method)
-        ? await rpc[method](req, ...args)
-        : await rpc[method](...args);
+      const result = Object.hasOwn(overrides, method)
+        ? await overrides[method](req, ...args)
+        : await bridge[method](...args);
       writeJson(res, 200, { result: result ?? null });
     } catch (error) {
       const status =
@@ -466,206 +376,49 @@ export function createMarsWebBridge({
     }
   }
 
-  function resolveUpstream(sessionId) {
-    const base = upstreams.get(sessionId);
-    if (!base) return null;
-    return { upstream: new URL(base) };
+  /**
+   * The session's tunnel listener, read from the bridge on every request so
+   * a tunnel it dropped (closeTunnel, destroySession, sign-out) is never
+   * proxied to after its port was freed.
+   */
+  function upstreamFor(sessionId) {
+    const tunnel = bridge.getTunnel(sessionId);
+    return tunnel?.status === "connected" && tunnel.localPort !== undefined
+      ? buildTunnelHost(tunnel.localPort)
+      : null;
   }
 
   function proxyHttp(req, res, { sessionId, path }) {
-    const target = resolveUpstream(sessionId);
+    const target = upstreamFor(sessionId);
     if (!target) {
       writeJson(res, 409, {
         error: { message: `session ${sessionId} is not connected` },
       });
       return;
     }
-    const { upstream } = target;
     const proxyBase = sessionProxyBase(req, sessionId);
-    const isTls = upstream.protocol === "https:";
-    const upstreamReq = (isTls ? httpsRequest : httpRequest)(
-      {
-        protocol: upstream.protocol,
-        hostname: upstream.hostname,
-        port: upstream.port || (isTls ? 443 : 80),
-        method: req.method,
-        path: `${upstream.pathname.replace(/\/$/, "")}${path}`,
-        headers: forwardHeaders(req, upstream),
-      },
-      (upstreamRes) => {
-        const headers = { ...upstreamRes.headers };
-        delete headers["content-encoding"];
-        const isJson = /\bapplication\/json\b/i.test(
-          upstreamRes.headers["content-type"] ?? "",
-        );
-        if (!isJson) {
-          res.writeHead(upstreamRes.statusCode ?? 502, headers);
-          upstreamRes.pipe(res);
-          return;
-        }
-        // Buffer for the URL rewrite up to the limit; past it, hand the
-        // response over untouched (what was buffered first, then the rest
-        // piped) rather than truncating it into broken JSON.
-        const chunks = [];
-        let size = 0;
-        let streaming = false;
-        upstreamRes.on("data", (chunk) => {
-          if (streaming) return;
-          size += chunk.length;
-          if (size <= JSON_REWRITE_LIMIT_BYTES) {
-            chunks.push(chunk);
-            return;
-          }
-          streaming = true;
-          res.writeHead(upstreamRes.statusCode ?? 502, headers);
-          for (const buffered of chunks.splice(0)) res.write(buffered);
-          res.write(chunk);
-          upstreamRes.pipe(res);
-        });
-        upstreamRes.on("end", () => {
-          if (streaming) return;
-          let body = Buffer.concat(chunks);
-          try {
-            body = Buffer.from(
-              JSON.stringify(
-                rewriteAgentServerUrls(
-                  JSON.parse(body.toString("utf8")),
-                  proxyBase,
-                ),
-              ),
-            );
-          } catch {
-            // Not JSON after all; pass it through as received.
-          }
-          delete headers["transfer-encoding"];
-          headers["content-length"] = String(body.length);
-          res.writeHead(upstreamRes.statusCode ?? 502, headers);
-          res.end(body);
-        });
-        upstreamRes.on("error", () => res.destroy());
-      },
-    );
-    upstreamReq.on("error", (error) => {
-      if (!res.headersSent) {
-        writeJson(res, 502, {
-          error: { message: `upstream request failed: ${error.message}` },
-        });
-      } else {
-        res.destroy();
-      }
+    toUpstreamRequest(req, path);
+    proxy.proxyHttp(req, res, target, {
+      // Responses are read as UTF-8 for the URL rewrite; a compressed body
+      // would have to be inflated first.
+      headers: { "accept-encoding": "identity" },
+      onResponse: rewriteJsonResponse(
+        (body) => rewriteAgentServerUrls(body, proxyBase),
+        { limit: JSON_REWRITE_LIMIT_BYTES },
+      ),
     });
-    req.pipe(upstreamReq);
   }
 
   function proxyWebSocket(req, socket, head, { sessionId, path }) {
-    const target = resolveUpstream(sessionId);
+    const target = upstreamFor(sessionId);
     if (!target) {
       socket.end("HTTP/1.1 409 Conflict\r\n\r\n");
       return;
     }
-    const { upstream } = target;
-    const wsUrl = new URL(
-      `${upstream.pathname.replace(/\/$/, "")}${path}`,
-      upstream,
-    );
-    wsUrl.protocol = upstream.protocol === "https:" ? "wss:" : "ws:";
-    const protocols = req.headers["sec-websocket-protocol"]
-      ?.split(",")
-      .map((p) => p.trim())
-      .filter(Boolean);
-    const upstreamSocket = new WebSocket(wsUrl, protocols, {
-      perMessageDeflate: false,
-    });
-
-    let client = null;
-    const pending = [];
-    const pingTimer = setInterval(() => {
-      if (upstreamSocket.readyState === WebSocket.OPEN) upstreamSocket.ping();
-    }, pingIntervalMs);
-    const teardown = () => {
-      clearInterval(pingTimer);
-      sockets.delete(pair);
-    };
-    const pair = {
-      upstreamSocket,
-      get client() {
-        return client;
-      },
-    };
-    sockets.add(pair);
-
-    const closeClient = (code, reason) => {
-      if (!client) {
-        socket.destroy();
-        return;
-      }
-      // 1005/1006 are reserved for the receiver and cannot be sent.
-      if (code === 1005 || code === 1006 || code === undefined) client.close();
-      else client.close(code, reason);
-    };
-
-    // Until the upstream handshake completes the browser's socket is still
-    // raw; if it goes away first, nothing else would notice and the upstream
-    // would open anyway and be pinged forever (holding the sandbox awake).
-    const abandonBeforeOpen = () => {
-      if (client) return;
-      teardown();
-      upstreamSocket.terminate();
-    };
-    socket.on("close", abandonBeforeOpen);
-    socket.on("error", abandonBeforeOpen);
-
-    upstreamSocket.on("unexpected-response", (upstreamReq, res) => {
-      teardown();
-      upstreamReq.destroy();
-      socket.end(
-        `HTTP/1.1 ${res.statusCode} ${res.statusMessage ?? ""}\r\n\r\n`,
-      );
-    });
-    upstreamSocket.on("error", (error) => {
-      teardown();
-      if (!client) {
-        socket.destroy();
-      } else {
-        log(`upstream websocket error for ${sessionId}`, error);
-        closeClient(1011, "upstream error");
-      }
-    });
-    upstreamSocket.on("close", (code, reason) => {
-      teardown();
-      closeClient(code, reason);
-    });
-    upstreamSocket.on("message", (data, isBinary) => {
-      if (client && client.readyState === WebSocket.OPEN) {
-        client.send(data, { binary: isBinary });
-      } else {
-        pending.push([data, isBinary]);
-      }
-    });
-    upstreamSocket.on("open", () => {
-      wss.handleUpgrade(req, socket, head, (ws) => {
-        client = ws;
-        for (const [data, isBinary] of pending.splice(0)) {
-          ws.send(data, { binary: isBinary });
-        }
-        ws.on("message", (data, isBinary) => {
-          if (upstreamSocket.readyState === WebSocket.OPEN) {
-            upstreamSocket.send(data, { binary: isBinary });
-          }
-        });
-        ws.on("close", (code, reason) => {
-          teardown();
-          if (upstreamSocket.readyState === WebSocket.OPEN) {
-            if (code === 1005 || code === 1006) upstreamSocket.close();
-            else upstreamSocket.close(code, reason);
-          }
-        });
-        ws.on("error", () => {
-          teardown();
-          upstreamSocket.terminate();
-        });
-      });
-    });
+    toUpstreamRequest(req, path);
+    sockets.add(socket);
+    socket.once("close", () => sockets.delete(socket));
+    proxy.proxyWebSocket(req, socket, head, target);
   }
 
   return {
@@ -743,12 +496,8 @@ export function createMarsWebBridge({
     },
 
     async dispose() {
-      for (const pair of sockets) {
-        pair.upstreamSocket.terminate();
-        pair.client?.terminate();
-      }
+      for (const socket of sockets) socket.destroy();
       sockets.clear();
-      upstreams.clear();
       await bridge.dispose();
     },
   };

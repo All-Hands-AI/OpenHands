@@ -1,10 +1,8 @@
 import React from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { ChevronRight, Loader2, Plus, RefreshCw } from "lucide-react";
 
 import {
-  getMarsBridge,
   getMarsErrorMessage,
   getSessionPhase,
   isConnectableSession,
@@ -12,7 +10,6 @@ import {
   type MarsSession,
   type NewMarsAgentInput,
 } from "#/api/mars/mars-tunnel-backend";
-import { MARS_QUERY_KEYS } from "#/hooks/query/query-keys";
 import {
   getUsableConnectionId,
   useMarsAgents,
@@ -22,34 +19,23 @@ import {
 import { useLaunchMarsSession } from "#/hooks/use-launch-mars-session";
 import { useMarsSignIn } from "#/hooks/use-mars-sign-in";
 import { I18nKey } from "#/i18n/declaration";
-import {
-  formatRelativeTime,
-  isInvalidTimestamp,
-} from "#/utils/format-relative-time";
 import { cn } from "#/utils/utils";
 import { DigitalOceanNewAgentForm } from "./digitalocean-new-agent-form";
-import { agentLabel, getSessionDisplayName } from "./managed-agents-labels";
+import { agentLabel, STAGE_LABEL_KEY } from "./managed-agents-labels";
 import { ManagedAgentsSignIn } from "./managed-agents-sign-in";
+import { SessionStatusDot } from "./session-status-dot";
 import {
-  PHASE_DOT_CLASS,
-  PHASE_LABEL_KEY,
-  STAGE_LABEL_KEY,
-} from "./managed-agents-session-row";
+  getConnectStage,
+  useSessionActivityLabel,
+  useSessionMeta,
+} from "./use-session-meta";
 
 const PANEL_CLASS =
-  "flex min-h-[13.5rem] w-full flex-col rounded-xl border border-[var(--oh-border)]";
+  "flex min-h-[13.5rem] w-full flex-col rounded-xl border border-border";
 const ICON_BUTTON_CLASS =
-  "inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-[var(--oh-muted)] hover:bg-[var(--oh-interactive-hover)] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300 disabled:cursor-not-allowed disabled:opacity-40";
+  "inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted hover:bg-interactive-hover hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300 disabled:cursor-not-allowed disabled:opacity-40";
 
 type Launcher = ReturnType<typeof useLaunchMarsSession>;
-
-function useActivityLabel(session: MarsSession | undefined) {
-  const { t, i18n } = useTranslation("openhands");
-  const at = session?.last_event_at ?? session?.created_at;
-  return isInvalidTimestamp(at)
-    ? null
-    : formatRelativeTime(at!, i18n.language, t);
-}
 
 interface SessionChildRowProps {
   session: MarsSession;
@@ -59,16 +45,8 @@ interface SessionChildRowProps {
 
 function SessionChildRow({ session, launcher, onOpen }: SessionChildRowProps) {
   const { t } = useTranslation("openhands");
-  const name = getSessionDisplayName(session, t);
-  const phase = getSessionPhase(session.status);
-  const activity = useActivityLabel(session);
-  const stage =
-    launcher.connecting?.sessionId === session.session_id
-      ? launcher.connecting.stage
-      : null;
-  const meta = stage
-    ? t(STAGE_LABEL_KEY[stage])
-    : [t(PHASE_LABEL_KEY[phase]), activity].filter(Boolean).join(" · ");
+  const stage = getConnectStage(launcher.connecting, session);
+  const { name, phase, meta, stageLabel } = useSessionMeta(session, stage);
 
   return (
     <li>
@@ -78,24 +56,18 @@ function SessionChildRow({ session, launcher, onOpen }: SessionChildRowProps) {
         disabled={launcher.isBusy || !isConnectableSession(session)}
         aria-label={t(I18nKey.DO_AGENTS$OPEN_AGENT, { name })}
         data-testid={`digitalocean-session-${session.session_id}`}
-        className="flex w-full min-w-0 cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-left hover:bg-[var(--oh-surface-raised)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-300 disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex w-full min-w-0 cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-left hover:bg-surface-raised focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-300 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <span
-          aria-hidden
-          className={cn(
-            "size-1.5 shrink-0 rounded-full",
-            PHASE_DOT_CLASS[phase],
-          )}
-        />
+        <SessionStatusDot phase={phase} className="size-1.5" />
         <span className="min-w-0 flex-1 truncate text-xs text-white">
           {name}
         </span>
-        <span className="shrink-0 truncate text-xs tabular-nums text-[var(--oh-muted)]">
-          {meta}
+        <span className="shrink-0 truncate text-xs tabular-nums text-muted">
+          {stageLabel ?? meta}
         </span>
         {stage ? (
           <Loader2
-            className="size-3.5 shrink-0 animate-spin text-[var(--oh-muted)]"
+            className="size-3.5 shrink-0 animate-spin text-muted"
             aria-hidden
           />
         ) : null}
@@ -127,7 +99,7 @@ function AgentRow({
   const { config, sessions } = group;
   const name = agentLabel(config);
   const latest = sessions[0];
-  const activity = useActivityLabel(latest);
+  const activity = useSessionActivityLabel(latest);
   const sessionIds = new Set(sessions.map((s) => s.session_id));
   const stage =
     launcher.connecting && sessionIds.has(launcher.connecting.sessionId)
@@ -181,31 +153,29 @@ function AgentRow({
           disabled={launcher.isBusy}
           aria-label={t(I18nKey.DO_AGENTS$OPEN_AGENT, { name })}
           data-testid={`digitalocean-agent-open-${config.id}`}
-          className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-lg px-2 py-2.5 text-left hover:bg-[var(--oh-surface-raised)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-300 disabled:cursor-not-allowed"
+          className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-lg px-2 py-2.5 text-left hover:bg-surface-raised focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-300 disabled:cursor-not-allowed"
         >
           <span
             aria-hidden
-            className="relative flex size-8 shrink-0 items-center justify-center rounded-md bg-[var(--oh-surface-raised)] text-sm font-medium text-white"
+            className="relative flex size-8 shrink-0 items-center justify-center rounded-md bg-surface-raised text-sm font-medium text-white"
           >
             {name.charAt(0).toUpperCase()}
             {latest ? (
-              <span
-                className={cn(
-                  "absolute -bottom-0.5 -right-0.5 size-2 rounded-full ring-2 ring-[var(--oh-surface)]",
-                  PHASE_DOT_CLASS[getSessionPhase(latest.status)],
-                )}
+              <SessionStatusDot
+                phase={getSessionPhase(latest.status)}
+                className="absolute -bottom-0.5 -right-0.5 ring-2 ring-surface"
               />
             ) : null}
           </span>
           <span className="flex min-w-0 flex-1 flex-col">
             <span className="truncate text-sm text-white">{name}</span>
-            <span className="truncate text-xs tabular-nums text-[var(--oh-muted)]">
+            <span className="truncate text-xs tabular-nums text-muted">
               {meta}
             </span>
           </span>
           {isWorking ? (
             <Loader2
-              className="size-4 shrink-0 animate-spin text-[var(--oh-muted)]"
+              className="size-4 shrink-0 animate-spin text-muted"
               aria-hidden
             />
           ) : null}
@@ -226,7 +196,7 @@ function AgentRow({
         <p
           role="alert"
           data-testid={`digitalocean-agent-error-${config.id}`}
-          className="mx-3 mb-2 text-pretty text-xs text-[var(--oh-status-error)]"
+          className="mx-3 mb-2 text-pretty text-xs text-status-error"
         >
           {error}
         </p>
@@ -234,10 +204,10 @@ function AgentRow({
       {isExpanded ? (
         <ul
           id={sessionsId}
-          className="mb-1 ml-14 mr-2 flex flex-col border-l border-[var(--oh-border)] pl-2"
+          className="mb-1 ml-14 mr-2 flex flex-col border-l border-border pl-2"
         >
           {sessions.length === 0 ? (
-            <li className="px-2 py-1.5 text-xs text-[var(--oh-muted)]">
+            <li className="px-2 py-1.5 text-xs text-muted">
               {t(I18nKey.DO_AGENTS$NO_SESSIONS_SHORT)}
             </li>
           ) : (
@@ -271,7 +241,6 @@ export function DigitalOceanConnectPanel({
   onConnected,
 }: DigitalOceanConnectPanelProps) {
   const { t } = useTranslation("openhands");
-  const queryClient = useQueryClient();
   const authQuery = useMarsAuthState();
   const authState = authQuery.data;
   const connectionId = getUsableConnectionId(authState);
@@ -284,12 +253,6 @@ export function DigitalOceanConnectPanel({
   } | null>(null);
   const [isNewAgentOpen, setIsNewAgentOpen] = React.useState(false);
   const [newAgentError, setNewAgentError] = React.useState<string | null>(null);
-
-  const signOut = useMutation({
-    mutationFn: () => getMarsBridge()!.signOut(),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: MARS_QUERY_KEYS.all }),
-  });
 
   const run = async (configId: string, action: () => Promise<unknown>) => {
     setFailure(null);
@@ -322,10 +285,7 @@ export function DigitalOceanConnectPanel({
   if (authQuery.isPending) {
     return (
       <div className={cn(PANEL_CLASS, "items-center justify-center")}>
-        <Loader2
-          className="size-5 animate-spin text-[var(--oh-muted)]"
-          aria-hidden
-        />
+        <Loader2 className="size-5 animate-spin text-muted" aria-hidden />
       </div>
     );
   }
@@ -368,8 +328,8 @@ export function DigitalOceanConnectPanel({
           aria-expanded={isNewAgentOpen}
           data-testid="digitalocean-new-agent"
           className={cn(
-            "inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-[var(--oh-muted)] hover:bg-[var(--oh-interactive-hover)] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300 disabled:cursor-not-allowed disabled:opacity-40",
-            isNewAgentOpen && "bg-[var(--oh-interactive-hover)] text-white",
+            "inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-muted hover:bg-interactive-hover hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300 disabled:cursor-not-allowed disabled:opacity-40",
+            isNewAgentOpen && "bg-interactive-hover text-white",
           )}
         >
           <Plus className="size-4" aria-hidden />
@@ -401,14 +361,14 @@ export function DigitalOceanConnectPanel({
 
       <div className="max-h-72 min-h-0 flex-1 overflow-y-auto px-1 custom-scrollbar-always">
         {agentsQuery.isPending ? (
-          <p className="px-3 py-6 text-center text-sm text-[var(--oh-muted)]">
+          <p className="px-3 py-6 text-center text-sm text-muted">
             {t(I18nKey.BACKEND$DIGITALOCEAN_AGENTS_LOADING)}
           </p>
         ) : null}
         {agentsQuery.error ? (
           <p
             role="alert"
-            className="mx-3 my-2 text-pretty text-sm text-[var(--oh-status-error)]"
+            className="mx-3 my-2 text-pretty text-sm text-status-error"
           >
             {getMarsErrorMessage(agentsQuery.error) ??
               t(I18nKey.BACKEND$DIGITALOCEAN_AGENTS_FAILED)}
@@ -417,7 +377,7 @@ export function DigitalOceanConnectPanel({
         {agentsQuery.data && groups.length === 0 && !isNewAgentOpen ? (
           <p
             data-testid="digitalocean-agents-empty"
-            className="mx-auto max-w-sm px-3 py-6 text-center text-pretty text-sm text-[var(--oh-muted)]"
+            className="mx-auto max-w-sm px-3 py-6 text-center text-pretty text-sm text-muted"
           >
             {t(I18nKey.DO_AGENTS$NO_OPENHANDS_AGENTS)}
           </p>
@@ -449,23 +409,23 @@ export function DigitalOceanConnectPanel({
         ) : null}
       </div>
 
-      <div className="mt-2 flex items-center gap-3 border-t border-[var(--oh-border)] px-4 py-2.5 text-xs">
+      <div className="mt-2 flex items-center gap-3 border-t border-border px-4 py-2.5 text-xs">
         <span
           aria-hidden
-          className="size-1.5 shrink-0 rounded-full bg-[var(--oh-status-success)]"
+          className="size-1.5 shrink-0 rounded-full bg-status-success"
         />
         <span
           data-testid="digitalocean-account"
-          className="min-w-0 flex-1 truncate text-[var(--oh-muted)]"
+          className="min-w-0 flex-1 truncate text-muted"
         >
           {active?.teamName ?? active?.label}
         </span>
         <button
           type="button"
-          onClick={() => signOut.mutate()}
-          disabled={signOut.isPending}
+          onClick={signIn.signOut}
+          disabled={signIn.isSigningOut}
           data-testid="digitalocean-sign-out"
-          className="shrink-0 cursor-pointer text-[var(--oh-muted)] hover:text-white disabled:cursor-not-allowed"
+          className="shrink-0 cursor-pointer text-muted hover:text-white disabled:cursor-not-allowed"
         >
           {t(I18nKey.BACKEND$DIGITALOCEAN_SIGN_OUT)}
         </button>

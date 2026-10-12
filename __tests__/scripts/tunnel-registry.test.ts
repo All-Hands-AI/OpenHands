@@ -134,12 +134,8 @@ describe("createTunnelRegistry", () => {
 
     expect(a.localPort).not.toBe(b.localPort);
     expect(fn).toHaveBeenCalledTimes(2);
-    expect(
-      registry
-        .list()
-        .map((e) => e.sessionId)
-        .sort(),
-    ).toEqual(["sess_a", "sess_b"]);
+    expect(registry.get("sess_a")).toMatchObject({ status: "connected" });
+    expect(registry.get("sess_b")).toMatchObject({ status: "connected" });
   });
 
   it("detach() tears down only the targeted session", async () => {
@@ -188,7 +184,8 @@ describe("createTunnelRegistry", () => {
 
     await registry.detachAll();
 
-    expect(registry.list()).toEqual([]);
+    expect(registry.get("sess_a")).toBeUndefined();
+    expect(registry.get("sess_b")).toBeUndefined();
     for (const result of fn.mock.results) {
       const tunnel = await result.value;
       expect(tunnel.stop).toHaveBeenCalledTimes(1);
@@ -310,7 +307,13 @@ describe("createTunnelRegistry", () => {
 
     await registry.detachOwnedBy("conn_a");
 
-    expect(registry.list().map((e) => e.sessionId)).toEqual(["sess_b"]);
+    expect(registry.get("sess_a")).toBeUndefined();
+    expect(registry.get("sess_b")).toMatchObject({ status: "connected" });
+  });
+
+  it("requires an ensureAwake to wake sessions with", () => {
+    // @ts-expect-error deliberately omitting a required field to test runtime validation
+    expect(() => createTunnelRegistry({})).toThrow(/ensureAwake/);
   });
 
   it("rejects when sessionId is missing", async () => {
@@ -450,6 +453,7 @@ describe("createTunnelRegistry (real tunnel client)", () => {
     const harnessB = await startFakeHarness("sess_b", 8000, "token-b");
     const registry = createTunnelRegistry({
       startTunnel: startPortForwardTunnel,
+      ensureAwake: noopEnsureAwake,
     });
 
     try {

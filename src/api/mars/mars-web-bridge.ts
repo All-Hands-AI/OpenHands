@@ -19,7 +19,7 @@
  * itself on the proxied REST calls and the WebSocket upgrade.
  */
 
-import { getAgentServerSessionApiKey } from "#/api/agent-server-config";
+import { getAgentServerHeaders } from "#/api/agent-server-config";
 import type { MarsBridge } from "./mars-tunnel-backend";
 
 export const MARS_WEB_HEALTH_PATH = "/mars/health";
@@ -48,12 +48,11 @@ async function rpc<T>(
   args: unknown[],
   fetchImpl: typeof fetch,
 ): Promise<T> {
-  const sessionApiKey = getAgentServerSessionApiKey();
   const response = await fetchImpl(`${baseUrl}${RPC_PREFIX}${method}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(sessionApiKey ? { "X-Session-API-Key": sessionApiKey } : {}),
+      ...getAgentServerHeaders(),
     },
     body: JSON.stringify({ args }),
   });

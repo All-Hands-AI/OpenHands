@@ -15,7 +15,7 @@ import { cn } from "#/utils/utils";
 const DEFAULT_NAME_STEM = "openhands";
 const NAME_HINT_ID = "digitalocean-new-agent-name-hint";
 const LLM_KEY_HINT_ID = "digitalocean-new-agent-llm-key-hint";
-const HELPER_CLASS = "-mt-1 text-pretty text-xs text-[var(--oh-muted)]";
+const HELPER_CLASS = "-mt-1 text-pretty text-xs text-muted";
 
 interface DigitalOceanNewAgentFormProps {
   isCreating: boolean;
@@ -53,7 +53,7 @@ export function DigitalOceanNewAgentForm({
     <form
       onSubmit={submit}
       data-testid="digitalocean-new-agent-form"
-      className="flex flex-col gap-4 border-b border-[var(--oh-border)] px-4 pb-4 pt-1"
+      className="flex flex-col gap-4 border-b border-border px-4 pb-4 pt-1"
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex min-w-0 flex-col gap-2">
@@ -67,11 +67,11 @@ export function DigitalOceanNewAgentForm({
             isDisabled={isCreating}
             ariaInvalid={showNameError}
             ariaDescribedBy={NAME_HINT_ID}
-            inputClassName={cn(showNameError && "border-red-500")}
+            inputClassName={cn(showNameError && "border-danger")}
           />
           <p
             id={NAME_HINT_ID}
-            className={cn(HELPER_CLASS, showNameError && "text-red-400")}
+            className={cn(HELPER_CLASS, showNameError && "text-feedback-error")}
           >
             {t(I18nKey.DO_AGENTS$NEW_AGENT_NAME_HINT)}
           </p>
@@ -98,7 +98,7 @@ export function DigitalOceanNewAgentForm({
         <p
           role={error ? "alert" : undefined}
           data-testid={error ? "digitalocean-new-agent-error" : undefined}
-          className="min-w-0 flex-1 text-pretty text-xs text-[var(--oh-status-error)]"
+          className="min-w-0 flex-1 text-pretty text-xs text-status-error"
         >
           {error}
         </p>

@@ -7,6 +7,7 @@ import {
   getMarsErrorMessage,
   getSessionPhase,
   MarsAttachError,
+  NEW_CHAT_PATH,
   type MarsSession,
 } from "#/api/mars/mars-tunnel-backend";
 import { useNavigation } from "#/context/navigation-context";
@@ -26,8 +27,6 @@ export interface ConnectMarsSessionParams {
   name: string;
   configId?: string;
 }
-
-const NEW_CHAT_PATH = "/conversations";
 
 const ATTACH_FAILURE_MESSAGE_KEY = {
   "not-openhands": I18nKey.DO_AGENTS$ERROR_NOT_OPENHANDS,

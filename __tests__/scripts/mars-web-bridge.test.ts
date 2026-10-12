@@ -6,8 +6,19 @@ import {
   type Server,
 } from "node:http";
 import net from "node:net";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import WebSocket, { WebSocketServer } from "ws";
+
+import { server as mswServer } from "#/mocks/node";
 
 import {
   createMarsWebBridge,
@@ -17,6 +28,12 @@ import {
 } from "../../scripts/mars-web-bridge.mjs";
 
 const SESSION_ID = "sess_a";
+
+// The proxy (httpxy) streams a request body once its upstream socket
+// connects, which MSW's interceptor never signals for a request it bypasses.
+// Everything here talks to real loopback servers, so take MSW out of the way.
+beforeAll(() => mswServer.close());
+afterAll(() => mswServer.listen({ onUnhandledRequest: "bypass" }));
 
 function listen(server: Server): Promise<string> {
   return new Promise((resolve) => {
@@ -35,14 +52,7 @@ function closeServer(server: Server): void {
 /**
  * Stands in for the Agent Server behind a tunnel listener: records what it was
  * sent, answers JSON with its own origin in `conversation_url`, and echoes on
- * its WebSocket (recording pings).
- *
- * Its paths deliberately sit outside the agent-server API surface: this
- * project runs with the MSW mock server from vitest.setup.ts, whose
- * `*\/api/conversations/:id` handler matches any host and would answer both
- * the browser-side request and the proxy's upstream request before either
- * reached a real socket. The URL rewrite under test is about response
- * bodies, not request paths, so nothing is lost.
+ * its WebSocket.
  */
 const UPSTREAM_CONVERSATION_PATH = "/mars-upstream/conversation";
 const UPSTREAM_ECHO_PATH = "/mars-upstream/echo";
@@ -52,7 +62,6 @@ async function startFakeAgentServer() {
     http: [],
     ws: [],
   };
-  const pings: number[] = [];
   let origin = "";
   let largeBody = "{}";
   const state = { delayUpgradeMs: 0 };
@@ -91,7 +100,6 @@ async function startFakeAgentServer() {
     seen.ws.push(req);
     const accept = () =>
       wss.handleUpgrade(req, socket, head, (ws) => {
-        ws.on("ping", () => pings.push(Date.now()));
         ws.on("message", (data, isBinary) =>
           ws.send(`echo:${data.toString()}`, { binary: isBinary }),
         );
@@ -103,7 +111,6 @@ async function startFakeAgentServer() {
   return {
     origin,
     seen,
-    pings,
     setLargeBody: (body: string) => {
       largeBody = body;
     },
@@ -116,7 +123,14 @@ async function startFakeAgentServer() {
   };
 }
 
+/**
+ * The tunnel bridge, minus harness-api: openTunnel "connects" a session to the
+ * fake agent server's port, and getTunnel reports it the way the registry
+ * does (no `host`), until closeTunnel or signOut drops it.
+ */
 function fakeBridge(upstreamOrigin: string) {
+  const localPort = Number(new URL(upstreamOrigin).port);
+  const tunnels = new Map<string, { status: string; localPort: number }>();
   return {
     getAuthState: vi.fn(() => ({
       connections: [],
@@ -125,22 +139,31 @@ function fakeBridge(upstreamOrigin: string) {
       canUseOAuth: true,
     })),
     savePat: vi.fn(async () => ({})),
-    openTunnel: vi.fn(async ({ sessionId }: { sessionId: string }) => ({
-      sessionId,
-      status: "connected",
-      transport: "tunnel",
-      host: upstreamOrigin,
-      remotePort: 8000,
-      localPort: new URL(upstreamOrigin).port
-        ? Number(new URL(upstreamOrigin).port)
-        : undefined,
-      error: undefined,
-      upstreamFailure: null,
-    })),
-    closeTunnel: vi.fn(async () => {}),
+    signOut: vi.fn(async () => {
+      tunnels.clear();
+    }),
+    openTunnel: vi.fn(async ({ sessionId }: { sessionId: string }) => {
+      tunnels.set(sessionId, { status: "connected", localPort });
+      return {
+        sessionId,
+        status: "connected",
+        transport: "tunnel",
+        host: upstreamOrigin,
+        remotePort: 8000,
+        localPort,
+        error: undefined,
+        upstreamFailure: null,
+      };
+    }),
+    closeTunnel: vi.fn(async (sessionId: string) => {
+      tunnels.delete(sessionId);
+    }),
     destroySession: vi.fn(async () => {}),
     deleteAgentConfig: vi.fn(async () => {}),
-    getTunnel: vi.fn(() => undefined),
+    getTunnel: vi.fn((sessionId: string) => {
+      const tunnel = tunnels.get(sessionId);
+      return tunnel && { sessionId, remotePort: 8000, ...tunnel };
+    }),
     dispose: vi.fn(async () => {}),
   };
 }
@@ -216,7 +239,6 @@ describe("createMarsWebBridge", () => {
     marsWeb = createMarsWebBridge({
       bridge: bridge as never,
       env: {},
-      pingIntervalMs: 20,
       log: () => {},
     });
     web = await startWebServer(marsWeb);
@@ -233,8 +255,8 @@ describe("createMarsWebBridge", () => {
       ok: true,
       authRequired: false,
     });
-    expect((await fetch(`${web.origin}/api/other`)).status).toBe(404);
-    expect(await (await fetch(`${web.origin}/api/other`)).text()).toBe(
+    expect((await fetch(`${web.origin}/elsewhere`)).status).toBe(404);
+    expect(await (await fetch(`${web.origin}/elsewhere`)).text()).toBe(
       "fallthrough",
     );
   });
@@ -332,6 +354,16 @@ describe("createMarsWebBridge", () => {
     expect(await response.text()).toBe("payload");
   });
 
+  it("stops proxying a session once the bridge dropped its tunnel on sign-out", async () => {
+    await rpc(web.origin, "openTunnel", [{ sessionId: SESSION_ID }]);
+    const url = `${web.origin}/mars/sessions/${SESSION_ID}${UPSTREAM_CONVERSATION_PATH}`;
+    expect((await fetch(url)).status).toBe(200);
+
+    await rpc(web.origin, "signOut");
+
+    expect((await fetch(url)).status).toBe(409);
+  });
+
   it("answers 409 for a session that is not connected, and after closeTunnel", async () => {
     expect(
       (
@@ -353,7 +385,7 @@ describe("createMarsWebBridge", () => {
     expect(bridge.closeTunnel).toHaveBeenCalledWith(SESSION_ID);
   });
 
-  it("proxies the WebSocket, relays both ways, and pings upstream", async () => {
+  it("proxies the WebSocket and relays both ways", async () => {
     await rpc(web.origin, "openTunnel", [{ sessionId: SESSION_ID }]);
     const wsUrl = `${web.origin.replace("http:", "ws:")}/mars/sessions/${SESSION_ID}/sockets/session/c1?after_seq=0`;
     const client = new WebSocket(wsUrl);
@@ -366,9 +398,6 @@ describe("createMarsWebBridge", () => {
 
     client.send("hello");
     await vi.waitFor(() => expect(messages).toEqual(["echo:hello"]));
-    await vi.waitFor(() => expect(upstream.pings.length).toBeGreaterThan(0), {
-      timeout: 1_000,
-    });
 
     const seen = upstream.seen.ws[0];
     expect(seen.url).toBe("/sockets/session/c1?after_seq=0");
@@ -446,19 +475,19 @@ describe("createMarsWebBridge", () => {
     expect(upstream.openSockets()).toBe(0);
   });
 
-  it("dispose() forgets connections and disposes the bridge", async () => {
+  it("dispose() closes proxied WebSockets and disposes the bridge", async () => {
     await rpc(web.origin, "openTunnel", [{ sessionId: SESSION_ID }]);
+    const client = new WebSocket(
+      `${web.origin.replace("http:", "ws:")}/mars/sessions/${SESSION_ID}/mars-upstream/socket`,
+    );
+    client.on("error", () => {});
+    await new Promise((resolve) => client.once("open", resolve));
+    const closed = new Promise((resolve) => client.once("close", resolve));
 
     await marsWeb.dispose();
 
+    await closed;
     expect(bridge.dispose).toHaveBeenCalledTimes(1);
-    expect(
-      (
-        await fetch(
-          `${web.origin}/mars/sessions/${SESSION_ID}${UPSTREAM_CONVERSATION_PATH}`,
-        )
-      ).status,
-    ).toBe(409);
   });
 });
 
@@ -476,7 +505,6 @@ describe("createMarsWebBridge with a session key", () => {
       bridge: bridge as never,
       env: {},
       key: KEY,
-      pingIntervalMs: 20,
       log: () => {},
     });
     web = await startWebServer(marsWeb);

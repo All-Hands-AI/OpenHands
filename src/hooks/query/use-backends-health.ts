@@ -7,11 +7,12 @@ import {
   getCurrentCloudApiKey,
 } from "#/api/cloud/organization-service.api";
 import {
+  isDefinitiveLocalBackendError,
   validateLocalBackend,
   INVALID_BACKEND_API_KEY_ERROR,
 } from "#/api/agent-server-compatibility";
 import type { Backend } from "#/api/backend-registry/types";
-import { getActiveBackend } from "#/api/backend-registry/active-store";
+import { useActiveBackend } from "#/contexts/active-backend-context";
 import {
   isCorsOrNetworkError,
   isCorsOrNetworkErrorMessage,
@@ -142,14 +143,15 @@ const PROBE_RETRY_DELAY_MS = 300;
  * Retrying at the query level instead would call `recordBackendFailure` on
  * every internal attempt and reach the disabled cap several times too fast.
  *
- * Definitive auth failures (logged out, invalid/missing key) are NOT retried:
- * they are a decided server response, not a transient miss, so retrying only
- * delays surfacing the correct "disconnected" state (and the recovery UI).
+ * Definitive failures (logged out, invalid/missing key, unsupported version)
+ * are NOT retried: they are a decided server response, not a transient miss,
+ * so retrying only delays surfacing the correct "disconnected" state (and the
+ * recovery UI).
  */
 function isRetryableProbeError(error: unknown): boolean {
   if (!(error instanceof Error)) return true;
   return (
-    error.message !== INVALID_BACKEND_API_KEY_ERROR &&
+    !isDefinitiveLocalBackendError(error) &&
     error.message !== MISSING_BACKEND_API_KEY_ERROR &&
     error.message !== CLOUD_BACKEND_LOGGED_OUT_ERROR
   );
@@ -221,7 +223,7 @@ export function useBackendsHealth(
     getHealthSnapshot,
   );
 
-  const activeBackendId = getActiveBackend().backend.id;
+  const activeBackendId = useActiveBackend().backend.id;
 
   const results = useQueries({
     queries: backends.map((b) => {
@@ -241,6 +243,7 @@ export function useBackendsHealth(
         isCorsOrNetworkErrorMessage(entry?.lastError);
       const shouldProbe =
         !hasMissingCloudApiKey &&
+        !isIdleMarsSession &&
         (!isDisabled ||
           probeDisabledOnce ||
           shouldReprobeStaleCloudNetworkError);

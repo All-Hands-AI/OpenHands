@@ -35,7 +35,19 @@
 import { createServer } from "node:net";
 import WebSocket from "ws";
 
+import {
+  DEFAULT_MARS_API_BASE_URL,
+  SESSIONS_PATH,
+  buildMarsUrl,
+} from "./mars-api.mjs";
+
 const REJECTION_BODY_MAX = 300;
+
+/**
+ * Keep an idle upstream socket warm so intermediaries between here and
+ * harness-api do not reap it.
+ */
+export const TUNNEL_PING_INTERVAL_MS = 30_000;
 
 /**
  * Application close codes harness-api uses on the port-forward socket.
@@ -54,14 +66,16 @@ const RECORDED_CLOSE_CODES = new Set([
 ]);
 
 function buildTunnelWsUrl(apiUrl, sessionId, remotePort) {
-  const url = new URL(apiUrl);
+  const url = new URL(
+    buildMarsUrl(
+      apiUrl,
+      `${SESSIONS_PATH}/${sessionId}/port-forward/${remotePort}`,
+    ),
+  );
   if (url.protocol !== "http:" && url.protocol !== "https:") {
     throw new Error(`Unsupported API URL scheme: ${url.protocol}`);
   }
   url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
-  url.pathname =
-    url.pathname.replace(/\/$/, "") +
-    `/v2/agents/sessions/${sessionId}/port-forward/${remotePort}`;
   return url.toString();
 }
 
@@ -80,6 +94,7 @@ function buildTunnelWsUrl(apiUrl, sessionId, remotePort) {
  * @param {number} [options.localPort] Local port to listen on (0 lets the OS pick one)
  * @param {string} [options.address] Local bind address
  * @param {(message: string) => void} [options.log]
+ * @param {number} [options.pingIntervalMs] Keepalive ping period for each upstream socket
  * @param {typeof WebSocket} [options.WebSocketImpl] Override for tests
  * @returns {Promise<{sessionId: string, remotePort: number, localPort: number, getLastUpstreamFailure: () => UpstreamFailure | null, stop: () => void}>}
  */
@@ -88,10 +103,11 @@ export async function startPortForwardTunnel({
   remotePort,
   accessToken,
   getAccessToken,
-  apiUrl = "https://api.digitalocean.com/",
+  apiUrl = DEFAULT_MARS_API_BASE_URL,
   localPort = 0,
   address = "127.0.0.1",
   log = (message) => console.error(`[mars-tunnel] ${message}`),
+  pingIntervalMs = TUNNEL_PING_INTERVAL_MS,
   WebSocketImpl = WebSocket,
 } = {}) {
   if (!sessionId) {
@@ -164,8 +180,12 @@ export async function startPortForwardTunnel({
     // source until the sink reports it drained), so a fast producer and a
     // slow consumer on either side can't make this process buffer an
     // unbounded amount of the stream in memory.
+    let keepalive = null;
     ws.on("open", () => {
       lastUpstreamFailure = null;
+      keepalive = setInterval(() => {
+        if (ws.readyState === WebSocketImpl.OPEN) ws.ping();
+      }, pingIntervalMs);
       localSocket.on("data", (chunk) => {
         localSocket.pause();
         ws.send(chunk, (err) => {
@@ -186,6 +206,7 @@ export async function startPortForwardTunnel({
     });
 
     ws.on("close", (code, reason) => {
+      clearInterval(keepalive);
       if (RECORDED_CLOSE_CODES.has(code)) {
         lastUpstreamFailure = {
           closeCode: code,

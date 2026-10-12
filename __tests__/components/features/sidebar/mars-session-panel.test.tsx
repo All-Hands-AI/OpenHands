@@ -144,6 +144,48 @@ describe("MarsSessionPanel", () => {
     );
   });
 
+  it("shows no age for a session whose timestamps are unset", async () => {
+    // Arrange: harness-api leaves unset datetimes at the epoch.
+    const bridge = fakeBridge();
+    vi.mocked(bridge.listConfigSessions).mockResolvedValue({
+      sessions: [
+        CURRENT,
+        { ...SIBLING, created_at: "1970-01-01T00:00:00Z", last_event_at: null },
+      ],
+      nextPageToken: null,
+    });
+    window.marsBridge = bridge;
+    renderPanel();
+
+    // Act
+    const sibling = await screen.findByTestId("mars-session-sess_sibling");
+
+    // Assert
+    expect(sibling.querySelector("time")).toBeNull();
+  });
+
+  it("closes the agent menu on Escape and on a click outside it", async () => {
+    window.marsBridge = fakeBridge();
+    renderPanel();
+    const trigger = await screen.findByTestId("mars-session-panel-agent");
+
+    await userEvent.click(trigger);
+    expect(
+      screen.getByTestId("mars-session-panel-agent-menu"),
+    ).toBeInTheDocument();
+    await userEvent.keyboard("{Escape}");
+    expect(
+      screen.queryByTestId("mars-session-panel-agent-menu"),
+    ).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+
+    await userEvent.click(trigger);
+    await userEvent.click(document.body);
+    expect(
+      screen.queryByTestId("mars-session-panel-agent-menu"),
+    ).not.toBeInTheDocument();
+  });
+
   it("launches a new session for the current agent and connects to it", async () => {
     const bridge = fakeBridge();
     window.marsBridge = bridge;

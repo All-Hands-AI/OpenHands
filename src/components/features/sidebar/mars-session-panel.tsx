@@ -6,23 +6,21 @@ import DigitalOceanLogo from "#/assets/branding/digitalocean-logo.svg?react";
 import type { Backend } from "#/api/backend-registry/types";
 import type { AppConversation } from "#/api/conversation-service/agent-server-conversation-service.types";
 import {
-  getSessionPhase,
   isConnectableSession,
+  NEW_CHAT_PATH,
   SESSION_STATUS_READY,
   type MarsAgentConfig,
   type MarsSession,
 } from "#/api/mars/mars-tunnel-backend";
+import { agentLabel } from "#/components/features/backends/managed-agents/managed-agents-labels";
+import { SessionStatusDot } from "#/components/features/backends/managed-agents/session-status-dot";
 import {
-  agentLabel,
-  getSessionDisplayName,
-} from "#/components/features/backends/managed-agents/managed-agents-labels";
-import {
-  PHASE_DOT_CLASS,
-  PHASE_LABEL_KEY,
-  STAGE_LABEL_KEY,
-} from "#/components/features/backends/managed-agents/managed-agents-session-row";
+  getConnectStage,
+  useSessionMeta,
+} from "#/components/features/backends/managed-agents/use-session-meta";
 import { ConversationStatusDot } from "#/components/features/conversation-panel/conversation-status-dot";
 import { NEW_CONVERSATION_DROPDOWN_SURFACE } from "#/components/features/conversation-panel/new-conversation-dropdown-styles";
+import { ErrorAlert } from "#/components/shared/error-alert";
 import { NavigationLink } from "#/components/shared/navigation-link";
 import { useNavigation } from "#/context/navigation-context";
 import {
@@ -33,6 +31,8 @@ import {
 } from "#/hooks/query/use-mars-agents";
 import { usePaginatedConversations } from "#/hooks/query/use-paginated-conversations";
 import { useBackendScopedPath } from "#/hooks/use-backend-scoped-path";
+import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
+import { useCloseOnEscape } from "#/hooks/use-close-on-escape";
 import { useLaunchMarsSession } from "#/hooks/use-launch-mars-session";
 import { I18nKey } from "#/i18n/declaration";
 import { Divider } from "#/ui/divider";
@@ -51,10 +51,9 @@ const ManageBackendsModal = React.lazy(() =>
 
 /** Listing sessions is a harness-api read; it never wakes a sandbox. */
 const SESSIONS_REFETCH_MS = 30_000;
-const NEW_CHAT_PATH = "/conversations";
 
 const ICON_BUTTON_CLASS =
-  "inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-[var(--oh-muted)] hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--oh-border)] disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-border disabled:cursor-not-allowed disabled:opacity-50";
 
 interface SessionContext {
   config: MarsAgentConfig | undefined;
@@ -119,8 +118,8 @@ function SessionConversations({
             to={backendScopedPath(`/conversations/${conversation.id}`)}
             data-testid={`mars-session-conversation-${conversation.id}`}
             className={cn(
-              "flex h-8 min-w-0 items-center gap-2 rounded-md pl-6 pr-2 text-sm text-white hover:bg-[var(--oh-surface)]",
-              conversation.id === conversationId && "bg-[var(--oh-surface)]",
+              "flex h-8 min-w-0 items-center gap-2 rounded-md pl-6 pr-2 text-sm text-white hover:bg-surface",
+              conversation.id === conversationId && "bg-surface",
             )}
           >
             <ConversationStatusDot
@@ -131,7 +130,7 @@ function SessionConversations({
             <span className="min-w-0 flex-1 truncate">
               {conversation.title || t(I18nKey.CONVERSATION$UNTITLED)}
             </span>
-            <time className="shrink-0 text-xs tabular-nums text-[var(--oh-muted)]">
+            <time className="shrink-0 text-xs tabular-nums text-muted">
               {formatTimeDelta(
                 conversation.updated_at ?? conversation.created_at,
               )}
@@ -140,6 +139,91 @@ function SessionConversations({
         </li>
       ))}
     </ul>
+  );
+}
+
+type Launcher = ReturnType<typeof useLaunchMarsSession>;
+
+interface MarsSessionRowProps {
+  session: MarsSession;
+  isCurrent: boolean;
+  launcher: Launcher;
+  conversations: AppConversation[];
+  /** Go to the current session's latest conversation, or a new chat. */
+  onOpenCurrent: () => void;
+  onOpen: () => void;
+  onNewChat: () => void;
+}
+
+/** One session, read like a thread folder; the current one lists its chats. */
+function MarsSessionRow({
+  session,
+  isCurrent,
+  launcher,
+  conversations,
+  onOpenCurrent,
+  onOpen,
+  onNewChat,
+}: MarsSessionRowProps) {
+  const { t } = useTranslation("openhands");
+  const stage = getConnectStage(launcher.connecting, session);
+  const { name, phase, phaseLabel, stageLabel, lastActivityAt } =
+    useSessionMeta(session, stage);
+
+  let trailing: React.ReactNode = null;
+  if (stage) {
+    trailing = (
+      <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden />
+    );
+  } else if (!isCurrent && lastActivityAt) {
+    trailing = (
+      <time className="shrink-0 text-xs tabular-nums">
+        {formatTimeDelta(lastActivityAt)}
+      </time>
+    );
+  }
+
+  return (
+    <li data-testid={`mars-session-${session.session_id}`}>
+      <div
+        className={cn(
+          "group flex h-8 w-full min-w-0 items-center gap-0.5 rounded-md pl-2 pr-1 text-sm hover:bg-surface-raised",
+          isCurrent ? "text-white" : "text-muted hover:text-white",
+        )}
+      >
+        <button
+          type="button"
+          disabled={
+            launcher.isBusy || (!isCurrent && !isConnectableSession(session))
+          }
+          aria-current={isCurrent ? "true" : undefined}
+          title={stageLabel ?? phaseLabel}
+          onClick={isCurrent ? onOpenCurrent : onOpen}
+          data-testid={`mars-session-open-${session.session_id}`}
+          className="flex min-h-8 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md py-1 text-left text-inherit outline-none focus-visible:ring-1 focus-visible:ring-border disabled:cursor-not-allowed"
+        >
+          <SessionStatusDot phase={phase} />
+          <span className="min-w-0 flex-1 truncate">{name}</span>
+          {stageLabel ? <span className="sr-only">{stageLabel}</span> : null}
+          {trailing}
+        </button>
+        {isCurrent ? (
+          <button
+            type="button"
+            onClick={onNewChat}
+            aria-label={t(I18nKey.DO_AGENTS$NEW_CHAT_IN_SESSION, { name })}
+            title={t(I18nKey.DO_AGENTS$NEW_CHAT_IN_SESSION, { name })}
+            data-testid="mars-session-new-chat"
+            className={ICON_BUTTON_CLASS}
+          >
+            <Plus className="size-3.5" aria-hidden strokeWidth={2} />
+          </button>
+        ) : null}
+      </div>
+      {isCurrent ? (
+        <SessionConversations conversations={conversations} />
+      ) : null}
+    </li>
   );
 }
 
@@ -163,7 +247,10 @@ export function MarsSessionPanel({ backend }: MarsSessionPanelProps) {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [manageOpen, setManageOpen] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const menuRef = React.useRef<HTMLDivElement>(null);
+  const closeMenu = () => setMenuOpen(false);
+  const menuRef = useClickOutsideElement<HTMLDivElement>(closeMenu);
+  const menuTriggerRef = React.useRef<HTMLButtonElement>(null);
+  useCloseOnEscape(menuOpen, closeMenu, menuTriggerRef);
 
   const authQuery = useMarsAuthState();
   const agentsQuery = useMarsAgents(getUsableConnectionId(authQuery.data), {
@@ -177,22 +264,6 @@ export function MarsSessionPanel({ backend }: MarsSessionPanelProps) {
   const conversations =
     conversationPages?.pages.flatMap((page) => page.items) ?? [];
   const latestConversationId = conversations[0]?.id;
-
-  React.useEffect(() => {
-    if (!menuOpen) return undefined;
-    const onPointerDown = (event: MouseEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false);
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setMenuOpen(false);
-    };
-    document.addEventListener("mousedown", onPointerDown);
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [menuOpen]);
 
   const run = async (action: () => Promise<unknown>) => {
     setError(null);
@@ -215,13 +286,14 @@ export function MarsSessionPanel({ backend }: MarsSessionPanelProps) {
         <div className="flex min-w-0 flex-nowrap items-center gap-x-1 py-2 pl-2.5 pr-2.5">
           <div ref={menuRef} className="relative min-w-0 flex-1">
             <button
+              ref={menuTriggerRef}
               type="button"
               onClick={() => setMenuOpen((open) => !open)}
               aria-expanded={menuOpen}
               aria-haspopup="menu"
               aria-label={t(I18nKey.DO_AGENTS$SWITCH_AGENT)}
               data-testid="mars-session-panel-agent"
-              className="flex h-7 max-w-full cursor-pointer items-center gap-2 rounded-md px-1.5 text-sm font-medium text-[var(--oh-muted)] hover:bg-[var(--oh-surface-raised)] hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--oh-border)]"
+              className="flex h-7 max-w-full cursor-pointer items-center gap-2 rounded-md px-1.5 text-sm font-medium text-muted hover:bg-surface-raised hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-border"
             >
               <DigitalOceanLogo
                 width={14}
@@ -242,7 +314,7 @@ export function MarsSessionPanel({ backend }: MarsSessionPanelProps) {
                   "absolute left-0 top-full z-20 mt-1 w-64",
                 )}
               >
-                <p className="px-2 pb-1 pt-1.5 text-xs text-[var(--oh-text-tertiary)]">
+                <p className="px-2 pb-1 pt-1.5 text-xs text-text-tertiary">
                   {t(I18nKey.DO_AGENTS$AGENTS_HEADING)}
                 </p>
                 <div
@@ -323,7 +395,7 @@ export function MarsSessionPanel({ backend }: MarsSessionPanelProps) {
         {isLaunching ? (
           <p
             data-testid="mars-session-panel-launching"
-            className="flex h-8 items-center gap-2 pl-2 text-sm text-[var(--oh-muted)]"
+            className="flex h-8 items-center gap-2 pl-2 text-sm text-muted"
           >
             <Loader2 className="size-3.5 animate-spin" aria-hidden />
             {t(I18nKey.BACKEND$DIGITALOCEAN_CREATING_SESSION)}
@@ -331,121 +403,41 @@ export function MarsSessionPanel({ backend }: MarsSessionPanelProps) {
         ) : null}
 
         {error ? (
-          <p
-            role="alert"
-            data-testid="mars-session-panel-error"
-            className="mx-1 my-1 text-pretty rounded-md bg-[var(--oh-status-error)]/10 p-2 text-xs text-[var(--oh-status-error)]"
+          <ErrorAlert
+            testId="mars-session-panel-error"
+            className="mx-1 my-1 p-2 text-xs text-pretty"
           >
             {error}
-          </p>
+          </ErrorAlert>
         ) : null}
 
         {agentsQuery.data && sessions.length === 0 ? (
-          <p className="px-2 py-2 text-xs text-[var(--oh-muted)]">
+          <p className="px-2 py-2 text-xs text-muted">
             {t(I18nKey.DO_AGENTS$NO_SESSIONS)}
           </p>
         ) : null}
 
         <ul className="flex flex-col gap-0.5">
-          {sessions.map((session) => {
-            const isCurrent = session.session_id === backend.marsSessionId;
-            const phase = getSessionPhase(session.status);
-            const stage =
-              launcher.connecting?.sessionId === session.session_id
-                ? launcher.connecting.stage
-                : null;
-            const name = getSessionDisplayName(session, t);
-            const lastActivity = session.last_event_at ?? session.created_at;
-            let trailing: React.ReactNode = null;
-            if (stage) {
-              trailing = (
-                <Loader2
-                  className="size-3.5 shrink-0 animate-spin"
-                  aria-hidden
-                />
-              );
-            } else if (!isCurrent && lastActivity) {
-              trailing = (
-                <time className="shrink-0 text-xs tabular-nums">
-                  {formatTimeDelta(lastActivity)}
-                </time>
-              );
-            }
-            return (
-              <li
-                key={session.session_id}
-                data-testid={`mars-session-${session.session_id}`}
-              >
-                <div
-                  className={cn(
-                    "group flex h-8 w-full min-w-0 items-center gap-0.5 rounded-md pl-2 pr-1 text-sm hover:bg-[var(--oh-surface-raised)]",
-                    isCurrent
-                      ? "text-white"
-                      : "text-[var(--oh-muted)] hover:text-white",
-                  )}
-                >
-                  <button
-                    type="button"
-                    disabled={
-                      launcher.isBusy ||
-                      (!isCurrent && !isConnectableSession(session))
-                    }
-                    aria-current={isCurrent ? "true" : undefined}
-                    title={
-                      stage
-                        ? t(STAGE_LABEL_KEY[stage])
-                        : t(PHASE_LABEL_KEY[phase])
-                    }
-                    onClick={() =>
-                      isCurrent
-                        ? navigate(
-                            backendScopedPath(
-                              latestConversationId
-                                ? `/conversations/${latestConversationId}`
-                                : NEW_CHAT_PATH,
-                            ),
-                          )
-                        : void run(() => launcher.open(session, config))
-                    }
-                    data-testid={`mars-session-open-${session.session_id}`}
-                    className="flex min-h-8 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md py-1 text-left text-inherit outline-none focus-visible:ring-1 focus-visible:ring-[var(--oh-border)] disabled:cursor-not-allowed"
-                  >
-                    <span
-                      aria-hidden
-                      className={cn(
-                        "size-2 shrink-0 rounded-full",
-                        PHASE_DOT_CLASS[phase],
-                      )}
-                    />
-                    <span className="min-w-0 flex-1 truncate">{name}</span>
-                    {stage ? (
-                      <span className="sr-only">
-                        {t(STAGE_LABEL_KEY[stage])}
-                      </span>
-                    ) : null}
-                    {trailing}
-                  </button>
-                  {isCurrent ? (
-                    <button
-                      type="button"
-                      onClick={() => navigate(backendScopedPath(NEW_CHAT_PATH))}
-                      aria-label={t(I18nKey.DO_AGENTS$NEW_CHAT_IN_SESSION, {
-                        name,
-                      })}
-                      title={t(I18nKey.DO_AGENTS$NEW_CHAT_IN_SESSION, { name })}
-                      data-testid="mars-session-new-chat"
-                      className={ICON_BUTTON_CLASS}
-                    >
-                      <Plus className="size-3.5" aria-hidden strokeWidth={2} />
-                    </button>
-                  ) : null}
-                </div>
-                {isCurrent ? (
-                  <SessionConversations conversations={conversations} />
-                ) : null}
-              </li>
-            );
-          })}
+          {sessions.map((session) => (
+            <MarsSessionRow
+              key={session.session_id}
+              session={session}
+              isCurrent={session.session_id === backend.marsSessionId}
+              launcher={launcher}
+              conversations={conversations}
+              onOpenCurrent={() =>
+                navigate(
+                  backendScopedPath(
+                    latestConversationId
+                      ? `/conversations/${latestConversationId}`
+                      : NEW_CHAT_PATH,
+                  ),
+                )
+              }
+              onOpen={() => void run(() => launcher.open(session, config))}
+              onNewChat={() => navigate(backendScopedPath(NEW_CHAT_PATH))}
+            />
+          ))}
         </ul>
       </div>
 

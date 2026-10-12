@@ -331,7 +331,7 @@ describe("useBackendsHealth", () => {
     });
   });
 
-  it("keeps polling ordinary backends but stops re-probing MARS sessions the user is not on", async () => {
+  it("keeps polling ordinary backends but never probes MARS sessions the user is not on", async () => {
     // Arrange — every probe of a MARS session tunnels into its sandbox, so
     // polling an idle one would keep it from auto-pausing.
     vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -351,10 +351,7 @@ describe("useBackendsHealth", () => {
     renderHook(() => useBackendsHealth([localBackend, idleMarsBackend]), {
       wrapper,
     });
-    await waitFor(() => {
-      expect(probesOf(localBackend.host)).toBe(1);
-      expect(probesOf(idleMarsBackend.host)).toBe(1);
-    });
+    await waitFor(() => expect(probesOf(localBackend.host)).toBe(1));
 
     // Act
     await act(async () => {
@@ -363,7 +360,7 @@ describe("useBackendsHealth", () => {
 
     // Assert
     expect(probesOf(localBackend.host)).toBeGreaterThan(1);
-    expect(probesOf(idleMarsBackend.host)).toBe(1);
+    expect(probesOf(idleMarsBackend.host)).toBe(0);
   });
 
   it("does not probe a backend whose disabled state was persisted before the GUI mounted (refresh case)", async () => {

@@ -2,7 +2,6 @@ import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
-  ArrowLeft,
   ChevronDown,
   ChevronRight,
   CloudCog,
@@ -15,6 +14,7 @@ import OpenHandsLogoWhite from "#/assets/branding/openhands-logo-white.svg?react
 import DigitalOceanLogo from "#/assets/branding/digitalocean-logo.svg?react";
 import { getMarsBridge } from "#/api/mars/mars-tunnel-backend";
 import { DigitalOceanConnectPanel } from "./managed-agents/digitalocean-connect-panel";
+import { BackNavButton } from "#/components/shared/buttons/back-nav-button";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import {
   MODAL_MAX_WIDTH_VIEWPORT,
@@ -1600,17 +1600,15 @@ function AddBackendAddModeBody({
 }) {
   const { t } = useTranslation("openhands");
   const [providerOpen, setProviderOpen] = React.useState(false);
-  const backRef = React.useRef<HTMLButtonElement>(null);
   const railRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
-    if (providerOpen) backRef.current?.focus();
-    else
-      railRef.current
-        ?.querySelector<HTMLButtonElement>(
-          '[data-testid="add-backend-provider-digitalocean"]',
-        )
-        ?.focus();
+    const focusTarget = providerOpen
+      ? "add-backend-providers-back"
+      : "add-backend-provider-digitalocean";
+    railRef.current
+      ?.querySelector<HTMLButtonElement>(`[data-testid="${focusTarget}"]`)
+      ?.focus();
   }, [providerOpen]);
 
   const goBack = () => setProviderOpen(false);
@@ -1678,16 +1676,12 @@ function AddBackendAddModeBody({
         >
           {providerOpen ? (
             <div className="flex flex-col gap-4">
-              <button
-                ref={backRef}
-                type="button"
+              <BackNavButton
                 onClick={goBack}
-                data-testid="add-backend-providers-back"
-                className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-md py-1 text-sm text-muted hover:text-contrast focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300"
+                testId="add-backend-providers-back"
               >
-                <ArrowLeft className="size-4" aria-hidden />
                 {t(I18nKey.BUTTON$BACK)}
-              </button>
+              </BackNavButton>
               <div className="flex min-w-0 items-center gap-3 pr-8">
                 <span
                   className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface-raised"

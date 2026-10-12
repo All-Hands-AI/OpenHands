@@ -4,9 +4,9 @@ import { useTranslation } from "react-i18next";
 
 import {
   buildNewSessionName,
-  getMarsBridge,
   getMarsErrorMessage,
   isConnectableSession,
+  requireMarsBridge,
   type MarsAgentConfig,
   type MarsSession,
   type NewMarsAgentInput,
@@ -61,7 +61,7 @@ export function useLaunchMarsSession() {
       setLaunchingConfigId(config.id);
       let session: MarsSession;
       try {
-        session = await getMarsBridge()!.createSession(
+        session = await requireMarsBridge().createSession(
           config.id,
           buildNewSessionName(config.name),
         );
@@ -89,7 +89,7 @@ export function useLaunchMarsSession() {
     async (input: NewMarsAgentInput) => {
       setIsCreatingAgent(true);
       try {
-        const config = await getMarsBridge()!.createOpenHandsAgent(input);
+        const config = await requireMarsBridge().createOpenHandsAgent(input);
         await queryClient.invalidateQueries({
           queryKey: MARS_QUERY_KEYS.allAgents,
         });

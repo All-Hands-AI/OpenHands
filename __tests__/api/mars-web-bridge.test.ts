@@ -9,7 +9,8 @@ import {
 
 const sessionApiKey = vi.hoisted(() => ({ value: null as string | null }));
 vi.mock("#/api/agent-server-config", () => ({
-  getAgentServerSessionApiKey: () => sessionApiKey.value,
+  getAgentServerHeaders: (): Record<string, string> =>
+    sessionApiKey.value ? { "X-Session-API-Key": sessionApiKey.value } : {},
 }));
 
 function jsonResponse(status: number, body: unknown): Response {

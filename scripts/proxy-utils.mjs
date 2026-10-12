@@ -45,7 +45,8 @@ function parseBackendUrl(backendUrl) {
   }
   return {
     hostname: url.hostname,
-    port: Number.parseInt(url.port, 10) || (url.protocol === "https:" ? 443 : 80),
+    port:
+      Number.parseInt(url.port, 10) || (url.protocol === "https:" ? 443 : 80),
     protocol: url.protocol,
   };
 }
@@ -59,6 +60,36 @@ function writeInvalidBackendUrlResponse(req, res) {
   } else {
     res.destroy();
   }
+}
+
+/**
+ * Read a request body of at most `limit` bytes. Rejects, and destroys the
+ * request, once it grows past the limit; rejects rather than hanging when
+ * the client goes away mid-body.
+ *
+ * @param {import("node:http").IncomingMessage} req
+ * @param {number} limit
+ * @returns {Promise<Buffer>}
+ */
+export function readRequestBody(req, limit) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    req.on("data", (chunk) => {
+      size += chunk.length;
+      if (size > limit) {
+        reject(new Error("request body too large"));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on("end", () => resolve(Buffer.concat(chunks)));
+    req.on("error", reject);
+    req.on("close", () => {
+      if (!req.complete) reject(new Error("request aborted"));
+    });
+  });
 }
 
 export function isServerInfoRequest(req) {
@@ -184,6 +215,66 @@ export function proxyServerInfoRequest(
   req.pipe(proxyReq, { end: true });
 }
 
+/**
+ * An `onResponse` for createProxyHandlers' proxyHttp that rewrites a JSON
+ * body through `transform` — buffered, re-serialized, and sent with a fixed
+ * Content-Length, as proxyServerInfoRequest does. Any other response, an
+ * encoded one, and a JSON body past `limit` bytes stream through untouched
+ * (what was buffered first, then the rest), never truncated into broken
+ * JSON.
+ *
+ * @param {(body: unknown) => unknown} transform
+ * @param {{ limit: number }} options
+ */
+export function rewriteJsonResponse(transform, { limit }) {
+  return (proxyRes, req, res) => {
+    const status = proxyRes.statusCode ?? 502;
+    const headers = { ...proxyRes.headers };
+    const encoding = headers["content-encoding"];
+    const isJson = /\bapplication\/json\b/i.test(headers["content-type"] ?? "");
+    if (
+      !isJson ||
+      req.method === "HEAD" ||
+      (encoding && encoding !== "identity")
+    ) {
+      res.writeHead(status, headers);
+      proxyRes.pipe(res);
+      return;
+    }
+    const chunks = [];
+    let size = 0;
+    let streaming = false;
+    proxyRes.on("data", (chunk) => {
+      if (streaming) return;
+      size += chunk.length;
+      if (size <= limit) {
+        chunks.push(chunk);
+        return;
+      }
+      streaming = true;
+      res.writeHead(status, headers);
+      for (const buffered of chunks.splice(0)) res.write(buffered);
+      res.write(chunk);
+      proxyRes.pipe(res);
+    });
+    proxyRes.on("end", () => {
+      if (streaming) return;
+      let body = Buffer.concat(chunks);
+      try {
+        body = Buffer.from(
+          JSON.stringify(transform(JSON.parse(body.toString("utf8")))),
+        );
+      } catch {
+        // Not JSON after all; pass it through as received.
+      }
+      delete headers["transfer-encoding"];
+      headers["content-length"] = String(body.length);
+      res.writeHead(status, headers);
+      res.end(body);
+    });
+  };
+}
+
 function once(fn) {
   let called = false;
   return (...args) => {
@@ -223,6 +314,12 @@ export function createProxyHandlers({
     totalErrors: 0,
   };
 
+  /** Per-request `onResponse` handlers; see proxyHttp. */
+  const responseHandlers = new WeakMap();
+  proxy.on("proxyRes", (proxyRes, req, res) => {
+    responseHandlers.get(req)?.(proxyRes, req, res);
+  });
+
   proxy.on("error", (err, _req, resOrSocket, target) => {
     metrics.totalErrors += 1;
     const targetText = target ? ` -> ${target}` : "";
@@ -236,7 +333,17 @@ export function createProxyHandlers({
     }
   });
 
-  function proxyHttp(req, res, target) {
+  /**
+   * @param {import("node:http").IncomingMessage} req
+   * @param {import("node:http").ServerResponse} res
+   * @param {string} target
+   * @param {object} [options]
+   * @param {Record<string, string>} [options.headers] Set on the upstream request
+   * @param {(proxyRes: import("node:http").IncomingMessage, req: import("node:http").IncomingMessage, res: import("node:http").ServerResponse) => void} [options.onResponse]
+   *   Writes the response itself instead of it being piped through (e.g.
+   *   rewriteJsonResponse).
+   */
+  function proxyHttp(req, res, target, { headers, onResponse } = {}) {
     metrics.activeHttpRequests += 1;
     metrics.totalHttpRequests += 1;
     const finish = once(() => {
@@ -258,8 +365,13 @@ export function createProxyHandlers({
       finish();
     };
 
+    const options = { target, headers };
+    if (onResponse) {
+      responseHandlers.set(req, onResponse);
+      options.selfHandleResponse = true;
+    }
     try {
-      proxy.web(req, res, { target }).catch(handleProxyError);
+      proxy.web(req, res, options).catch(handleProxyError);
     } catch (err) {
       handleProxyError(err);
     }

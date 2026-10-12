@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import {
   getMarsBridge,
   isOpenHandsConfig,
+  requireMarsBridge,
+  SESSION_STATUS_DESTROYED,
   type MarsAgentConfig,
   type MarsAuthState,
   type MarsSession,
@@ -23,8 +25,6 @@ export interface MarsAgentsSnapshot {
   otherSessions: MarsSession[];
 }
 
-const DESTROYED = "SESSION_STATUS_DESTROYED";
-
 function byRecentActivity(a: MarsSession, b: MarsSession): number {
   const at = (s: MarsSession) =>
     Date.parse(s.last_event_at ?? s.created_at ?? "") || 0;
@@ -33,7 +33,9 @@ function byRecentActivity(a: MarsSession, b: MarsSession): number {
 
 /** Destroyed sessions are gone for good; listing them is only noise. */
 function visibleSessions(sessions: MarsSession[]): MarsSession[] {
-  return sessions.filter((s) => s.status !== DESTROYED).sort(byRecentActivity);
+  return sessions
+    .filter((s) => s.status !== SESSION_STATUS_DESTROYED)
+    .sort(byRecentActivity);
 }
 
 async function fetchMarsAgents(): Promise<MarsAgentsSnapshot> {
@@ -83,6 +85,7 @@ export function useMarsAgents(
     queryFn: fetchMarsAgents,
     enabled: connectionId !== null && getMarsBridge() !== null,
     refetchInterval: refetchIntervalMs,
+    staleTime: refetchIntervalMs,
     retry: false,
     meta: { disableToast: true },
   });
@@ -90,11 +93,13 @@ export function useMarsAgents(
 
 /** Stored DigitalOcean connections; tokens never leave the main process. */
 export function useMarsAuthState() {
-  const bridge = getMarsBridge();
   return useQuery({
     queryKey: MARS_QUERY_KEYS.authState,
-    queryFn: () => bridge!.getAuthState(),
-    enabled: bridge !== null,
+    queryFn: () => requireMarsBridge().getAuthState(),
+    enabled: getMarsBridge() !== null,
+    // Changes only through sign-in/out and switching connections, each of
+    // which invalidates `MARS_QUERY_KEYS.all`.
+    staleTime: Infinity,
     retry: false,
     meta: { disableToast: true },
   });

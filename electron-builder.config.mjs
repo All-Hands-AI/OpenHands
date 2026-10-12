@@ -17,7 +17,8 @@
  *   Almost none of those packages are imported at desktop runtime — main.mjs
  *   and the launcher (dev-with-automation.mjs) use only Node built-ins. The
  *   exception is the two child-process servers: static-server.mjs imports
- *   `sirv` and ingress.mjs (via proxy-utils.mjs) imports `httpxy`. Node
+ *   `sirv` and ingress.mjs (via proxy-utils.mjs) imports `httpxy` — which
+ *   main.mjs also loads, via mars-oauth.mjs → proxy-utils.mjs. Node
  *   resolves those bare specifiers by walking UP from the script's own path,
  *   so an app tested from dist-electron/ inside a repo checkout accidentally
  *   resolves them against the repo's node_modules and works — while the same
@@ -75,7 +76,8 @@ const isUniversal = ELECTRON_ARCH === "universal";
 // npm packages imported at runtime by code that isn't bundled through Vite
 // (main.mjs itself, and the child-process scripts it spawns):
 //   scripts/static-server.mjs  → sirv
-//   scripts/proxy-utils.mjs    → httpxy   (imported by ingress.mjs)
+//   scripts/proxy-utils.mjs    → httpxy   (imported by ingress.mjs, and by
+//                                          main.mjs via mars-oauth.mjs)
 //   scripts/tunnel-client.mjs  → ws       (imported directly by main.mjs,
 //                                          not spawned — the MARS
 //                                          port-forward tunnel client)

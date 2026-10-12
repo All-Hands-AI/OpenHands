@@ -48,11 +48,40 @@ async function openHealthyConnection(
 }
 
 /**
+ * Connect and wait for the session's agent-server to answer. A connection to
+ * a session nobody can use would keep failing the health probe every tick
+ * (and, over the tunnel, hold a listener), so it is closed on failure.
+ */
+async function connectAndWait(
+  sessionId: string,
+  {
+    localPort,
+    onTunnelReady,
+  }: { localPort?: number; onTunnelReady?: () => void } = {},
+): Promise<string> {
+  const host = await openHealthyConnection(sessionId, localPort);
+  onTunnelReady?.();
+  try {
+    await waitForMarsAgentServer(host, { sessionId });
+  } catch (error) {
+    await closeMarsTunnel(sessionId).catch(() => {});
+    throw error;
+  }
+  return host;
+}
+
+/**
+ * Backend ids `attach()` has just connected, so the restore effect that sees
+ * them become active does not connect (and wait for) them all over again.
+ */
+const freshlyAttached = new Set<string>();
+
+/**
  * Registration/lifecycle wiring between MARS sessions and the backend
  * registry. `attach()` connects to the session, waits for its agent-server
  * to answer, and registers it as an ordinary local `Backend` (or re-points
- * the existing one for that session), making it active. `detach()` forgets
- * the connection and removes the Backend again.
+ * the existing one for that session), making it active. `detach()` removes
+ * the Backend again, which forgets the connection.
  */
 export function useMarsTunnelBackend() {
   const { backends, addBackend, removeBackend, updateBackend, setActive } =
@@ -65,16 +94,7 @@ export function useMarsTunnelBackend() {
       configId,
       onTunnelReady,
     }: AttachMarsSessionParams): Promise<AttachMarsSessionResult> => {
-      const host = await openHealthyConnection(sessionId);
-      onTunnelReady?.();
-      try {
-        await waitForMarsAgentServer(host, { sessionId });
-      } catch (error) {
-        // A connection to a session nobody can use would keep failing the
-        // health probe every tick (and, over the tunnel, hold a listener).
-        await closeMarsTunnel(sessionId).catch(() => {});
-        throw error;
-      }
+      const host = await connectAndWait(sessionId, { onTunnelReady });
       await prepareMarsSandbox(host, sessionId);
       // Read before the registry switch below, while nothing else is
       // pointed at this host yet.
@@ -82,6 +102,7 @@ export function useMarsTunnelBackend() {
 
       const existing = backends.find((b) => b.marsSessionId === sessionId);
       if (existing) {
+        freshlyAttached.add(existing.id);
         updateBackend(existing.id, { host, name });
         setActive(existing.id);
         return {
@@ -89,24 +110,19 @@ export function useMarsTunnelBackend() {
           latestConversationId,
         };
       }
-      return {
-        backend: addBackend(
-          buildMarsBackendInput({ name, host, sessionId, configId }),
-        ),
-        latestConversationId,
-      };
+      const backend = addBackend(
+        buildMarsBackendInput({ name, host, sessionId, configId }),
+      );
+      freshlyAttached.add(backend.id);
+      return { backend, latestConversationId };
     },
     [addBackend, backends, setActive, updateBackend],
   );
 
+  // Removing the Backend also closes its session's tunnel (see
+  // `removeBackend`), so every removal path forgets the connection.
   const detach = React.useCallback(
     async (backend: Backend): Promise<void> => {
-      // Forget the connection before removing the Backend entry: if that
-      // fails, the (now stale but still visible) Backend is a better failure
-      // mode than silently leaking a tunnel listener behind a vanished one.
-      if (backend.marsSessionId) {
-        await closeMarsTunnel(backend.marsSessionId);
-      }
       removeBackend(backend.id);
     },
     [removeBackend],
@@ -141,16 +157,21 @@ export function useRestoreMarsTunnels(): boolean {
 
   React.useEffect(() => {
     const sessionId = backend.marsSessionId;
-    if (!getMarsBridge() || !sessionId || attempted.current.has(backend.id)) {
+    if (!getMarsBridge() || !sessionId) return;
+    // attach() already connected it and waited for its agent-server.
+    if (freshlyAttached.delete(backend.id)) {
+      attempted.current.add(backend.id);
       return;
     }
+    if (attempted.current.has(backend.id)) return;
     attempted.current.add(backend.id);
 
-    void openHealthyConnection(sessionId, getMarsBackendLocalPort(backend))
-      .then(async (host) => {
-        // A paused sandbox is woken by the connect; its agent-server
-        // answers only once booted.
-        await waitForMarsAgentServer(host, { sessionId });
+    // A paused sandbox is woken by the connect; its agent-server answers
+    // only once booted.
+    void connectAndWait(sessionId, {
+      localPort: getMarsBackendLocalPort(backend),
+    })
+      .then((host) => {
         if (host === backend.host) {
           resetBackendHealth(backend.id);
         } else {

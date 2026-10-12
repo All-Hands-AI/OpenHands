@@ -2,7 +2,7 @@
 import { createServer } from "node:http";
 import net from "node:net";
 import { WebSocketServer } from "ws";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { startPortForwardTunnel } from "../../scripts/tunnel-client.mjs";
 
@@ -17,6 +17,7 @@ const expectedPath = `/v2/agents/sessions/${sessionId}/port-forward/${remotePort
  * enough to prove bytes really flow both ways through the tunnel.
  */
 function startFakeHarness({ expectToken = "test-token" } = {}) {
+  const pings: number[] = [];
   const httpServer = createServer((_req, res) => {
     res.writeHead(404).end("not found\n");
   });
@@ -37,24 +38,28 @@ function startFakeHarness({ expectToken = "test-token" } = {}) {
       return;
     }
     wss.handleUpgrade(req, socket, head, (ws) => {
+      ws.on("ping", () => pings.push(Date.now()));
       ws.on("message", (data) =>
         ws.send(Buffer.concat([Buffer.from("echo:"), data as Buffer])),
       );
     });
   });
 
-  return new Promise<{ port: number; close: () => void }>((resolve) => {
-    httpServer.listen(0, "127.0.0.1", () => {
-      const { port } = httpServer.address() as net.AddressInfo;
-      resolve({
-        port,
-        close: () => {
-          wss.close();
-          httpServer.close();
-        },
+  return new Promise<{ port: number; pings: number[]; close: () => void }>(
+    (resolve) => {
+      httpServer.listen(0, "127.0.0.1", () => {
+        const { port } = httpServer.address() as net.AddressInfo;
+        resolve({
+          port,
+          pings,
+          close: () => {
+            wss.close();
+            httpServer.close();
+          },
+        });
       });
-    });
-  });
+    },
+  );
 }
 
 describe("startPortForwardTunnel", () => {
@@ -287,6 +292,27 @@ describe("startPortForwardTunnel", () => {
       httpStatus: null,
       message: "guest dial failed",
     });
+  });
+
+  it("pings an open upstream socket so an idle tunnel is not reaped", async () => {
+    const fake = await startFakeHarness({ expectToken: "test-token" });
+    harness = fake;
+    tunnel = await startPortForwardTunnel({
+      sessionId,
+      remotePort,
+      accessToken: "test-token",
+      apiUrl: `http://127.0.0.1:${fake.port}`,
+      pingIntervalMs: 20,
+    });
+
+    const socket = net.connect({ port: tunnel.localPort, host: "127.0.0.1" });
+    socket.on("error", () => {});
+    await new Promise((resolve) => socket.once("connect", resolve));
+
+    await vi.waitFor(() => expect(fake.pings.length).toBeGreaterThan(0), {
+      timeout: 1_000,
+    });
+    socket.destroy();
   });
 
   it("closes active connections and stops accepting new ones on stop()", async () => {

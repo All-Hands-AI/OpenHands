@@ -128,9 +128,11 @@ function makeConversation(
 // `renderConversation` starts a fresh one, like a real remount.
 let queryClient: QueryClient;
 
-function conversationTree(conversationId: string) {
+function conversationTree(conversationId: string, search = "") {
   return (
-    <MemoryRouter initialEntries={[`/conversations/${conversationId}`]}>
+    <MemoryRouter
+      initialEntries={[`/conversations/${conversationId}${search}`]}
+    >
       <QueryClientProvider client={queryClient}>
         <ActiveBackendProvider>
           <NavigationProvider
@@ -149,11 +151,11 @@ function conversationTree(conversationId: string) {
   );
 }
 
-function renderConversation() {
+function renderConversation(search = "") {
   queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  return render(conversationTree(CLOUD_CONVERSATION_ID));
+  return render(conversationTree(CLOUD_CONVERSATION_ID, search));
 }
 
 function makeSharedConversation(id: string): SharedConversation {
@@ -249,6 +251,21 @@ describe("conversation route — backend switch", () => {
     // Assert — the subtree unmounts instead of rendering the cloud
     // conversation under the local backend, so its per-conversation queries
     // cannot fire against a backend the id is foreign to.
+    await waitFor(() => {
+      expect(screen.queryByTestId("conversation-main")).not.toBeInTheDocument();
+    });
+  });
+
+  it("tears down the view when the org changes away from the one the URL pins", async () => {
+    // Arrange — the link pins the conversation to org-a of the cloud backend.
+    setActiveSelection({ backendId: cloudBackend.id, orgId: "org-a" });
+    renderConversation(`?backend=${cloudBackend.id}&org=org-a`);
+    expect(await screen.findByTestId("conversation-main")).toBeInTheDocument();
+
+    // Act — same backend, another org.
+    setActiveSelection({ backendId: cloudBackend.id, orgId: "org-b" });
+
+    // Assert
     await waitFor(() => {
       expect(screen.queryByTestId("conversation-main")).not.toBeInTheDocument();
     });

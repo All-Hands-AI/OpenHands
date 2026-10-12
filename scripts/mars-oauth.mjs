@@ -13,6 +13,8 @@
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
 
+import { readRequestBody } from "./proxy-utils.mjs";
+
 const AUTHORIZE_URL = "https://cloud.digitalocean.com/v1/oauth/authorize";
 const REVOKE_URL = "https://cloud.digitalocean.com/v1/oauth/revoke";
 
@@ -33,6 +35,8 @@ export const OAUTH_SCOPES = [
 const CALLBACK_PATH = "/callback";
 const RELAY_PATH = "/callback-token";
 const SIGN_IN_TIMEOUT_MS = 5 * 60 * 1000;
+/** The relayed fragment is a token plus a few params; anything larger is not one. */
+const RELAY_BODY_LIMIT_BYTES = 16 * 1024;
 
 /**
  * Served at the redirect URI.
@@ -132,16 +136,6 @@ export function parseImplicitGrant(fragment, expectedState) {
   };
 }
 
-function readBody(req) {
-  return new Promise((resolve) => {
-    let body = "";
-    req.on("data", (chunk) => {
-      body += chunk;
-    });
-    req.on("end", () => resolve(body));
-  });
-}
-
 /**
  * Run the full sign-in: open the system browser, wait for the relayed grant.
  *
@@ -179,7 +173,15 @@ export async function signInWithDigitalOcean({
       }
 
       if (req.method === "POST" && pathname === RELAY_PATH) {
-        const fragment = await readBody(req);
+        let fragment;
+        try {
+          fragment = (
+            await readRequestBody(req, RELAY_BODY_LIMIT_BYTES)
+          ).toString("utf8");
+        } catch {
+          res.writeHead(400).end();
+          return;
+        }
         try {
           const parsed = parseImplicitGrant(fragment, state);
           res.writeHead(204).end();
