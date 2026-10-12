@@ -37,7 +37,6 @@ import {
   AUTOMATION_CATALOG,
   type RecommendedAutomation,
 } from "@openhands/extensions/automations";
-import { INTEGRATION_CATALOG } from "@openhands/extensions/integrations";
 
 const {
   mockCreateConversationMutate,
@@ -481,29 +480,6 @@ describe("recommended automations", () => {
     };
     return () => {
       mutable.requires.integrations = original;
-    };
-  }
-
-  /**
-   * Takes Bitbucket's MCP connection option away again.
-   *
-   * Bitbucket only had its native connection until @openhands/extensions 0.30.0
-   * added one through the Atlassian Rovo MCP server, and no catalog entry is
-   * native-only any more. The native-only case below is about such an entry, so,
-   * like `requireNonMcpIntegration`, the property is restored for its duration.
-   *
-   * @returns the restore function, which the caller must run in a `finally`.
-   */
-  function removeBitbucketMcpOption(): () => void {
-    const bitbucket = INTEGRATION_CATALOG.find(
-      (entry) => entry.id === "bitbucket",
-    )!;
-    const original = bitbucket.connectionOptions;
-    bitbucket.connectionOptions = original.filter(
-      (option) => option.provider !== "mcp",
-    );
-    return () => {
-      bitbucket.connectionOptions = original;
     };
   }
 
@@ -1075,38 +1051,38 @@ describe("recommended automations", () => {
     expect(screen.queryByTestId("mcp-install-modal")).not.toBeInTheDocument();
   });
 
-  it("asks to connect native Bitbucket on cloud when the instance enables it", async () => {
-    // Arrange: Atlassian Rovo, which the template asks for first, is connected.
-    const restoreBitbucket = removeBitbucketMcpOption();
-    try {
-      await activateCloudBackend({
-        providersConfigured: ["bitbucket"],
-        settings: settingsWithMcpConfig({
-          "atlassian-rovo": { url: "https://mcp.atlassian.com/v2/mcp" },
-        }),
-      });
-      renderLauncher({ withBackendProvider: true });
-      await within(
-        await screen.findByTestId(
-          "recommended-automation-pills-jira-issue-to-bitbucket-pr-wrap",
-        ),
-      ).findByText("RECOMMENDED_AUTOMATIONS$MISSING_CONNECT:1");
+  it("asks to connect Bitbucket through its Atlassian MCP server on cloud", async () => {
+    // Arrange: Linear is already connected, so Bitbucket is the only gap.
+    await activateCloudBackend({
+      providersConfigured: ["bitbucket"],
+      settings: settingsWithMcpConfig({
+        linear: { url: "https://mcp.linear.app/mcp" },
+      }),
+    });
+    renderLauncher({ withBackendProvider: true });
+    await within(
+      await screen.findByTestId(
+        "recommended-automation-pills-linear-issue-to-bitbucket-pr-wrap",
+      ),
+    ).findByText("RECOMMENDED_AUTOMATIONS$MISSING_CONNECT:1");
 
-      // Act
-      fireEvent.click(
-        screen.getByTestId(
-          "recommended-automation-card-jira-issue-to-bitbucket-pr",
-        ),
-      );
+    // Act
+    fireEvent.click(
+      screen.getByTestId(
+        "recommended-automation-card-linear-issue-to-bitbucket-pr",
+      ),
+    );
 
-      // Assert
-      const modal = await screen.findByTestId("mcp-install-modal");
-      expect(modal).toHaveAttribute("data-marketplace-id", "bitbucket");
-      expect(within(modal).getByTestId("mcp-native-panel")).toBeInTheDocument();
-      expect(mockCreateConversationMutate).not.toHaveBeenCalled();
-    } finally {
-      restoreBitbucket();
-    }
+    // Assert
+    const modal = await screen.findByTestId("mcp-install-modal");
+    expect(modal).toHaveAttribute("data-marketplace-id", "bitbucket");
+    expect(
+      within(modal).getByTestId("mcp-install-oauth-info"),
+    ).toBeInTheDocument();
+    expect(
+      within(modal).queryByTestId("mcp-native-panel"),
+    ).not.toBeInTheDocument();
+    expect(mockCreateConversationMutate).not.toHaveBeenCalled();
   });
 
   it.each([
