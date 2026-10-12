@@ -82,7 +82,7 @@ function DiscoveryForm({
               onChange={(event) => setPatterns(event.target.value)}
               rows={5}
               disabled={isSaving}
-              className="rounded-md border border-border bg-base px-3 py-2 font-mono"
+              className="rounded-md border border-border bg-canvas-base px-3 py-2 font-mono"
             />
             <span className="text-xs text-muted">
               {t(I18nKey.FILES$DISCOVERY_PATTERN_HELP)}
@@ -99,7 +99,7 @@ function DiscoveryForm({
               value={limit}
               disabled={isSaving}
               onChange={(event) => setLimit(event.target.value)}
-              className="rounded-md border border-border bg-base px-3 py-2"
+              className="rounded-md border border-border bg-canvas-base px-3 py-2"
             />
           </label>
           <label className="flex items-center gap-2 text-sm">

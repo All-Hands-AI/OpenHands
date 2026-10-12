@@ -1,13 +1,86 @@
 import { act, render, screen } from "@testing-library/react";
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it } from "vitest";
 import { AgentServerUIRoot } from "#/components/providers/agent-server-ui-root";
+import { AGENT_SERVER_UI_DEFAULT_CSS_VARIABLES } from "#/styles/agent-server-ui-style-scope";
 import {
   AVAILABLE_COLOR_THEMES,
   COLOR_THEMES,
   applyColorTheme,
 } from "#/themes/color-themes";
 
+const defaultWarningColor = readFileSync(
+  `${process.cwd()}/src/tailwind.css`,
+  "utf-8",
+).match(/^\s*--oh-warning:\s*([^;]+);/m)?.[1];
+
 describe("color themes", () => {
+  // @spec MCP-004 — Form feedback follows readable theme text roles
+  // @spec WN-001 — Warning feedback also meets the small-text contrast contract
+  it.each(Object.entries(COLOR_THEMES))(
+    "keeps small feedback text readable on the %s modal surface",
+    (_key, theme) => {
+      // Resolve the shipped palette, including stylesheet-owned defaults.
+      const variables: Record<string, string> = {
+        ...AGENT_SERVER_UI_DEFAULT_CSS_VARIABLES,
+        ...theme.scale,
+        ...theme.tokens,
+      };
+      // Brand defaults stay CSS-owned so runtime theme overrides can win.
+      if (defaultWarningColor) {
+        variables["--oh-warning"] ??= defaultWarningColor;
+      }
+      const resolve = (name: string): string => {
+        const value = variables[name];
+        expect(value, `Missing theme token ${name}`).toBeDefined();
+        const reference = /^var\((--[\w-]+)\)$/.exec(value);
+        return reference ? resolve(reference[1]) : value;
+      };
+      const channels = (hex: string): number[] =>
+        [1, 3, 5].map(
+          (offset) => Number.parseInt(hex.slice(offset, offset + 2), 16) / 255,
+        );
+      const luminance = (color: string | number[]): number => {
+        const values = typeof color === "string" ? channels(color) : color;
+        const linear = values.map((channel) =>
+          channel <= 0.04045
+            ? channel / 12.92
+            : ((channel + 0.055) / 1.055) ** 2.4,
+        );
+        return linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
+      };
+      const contrast = (ink: number, surface: number) =>
+        (Math.max(ink, surface) + 0.05) / (Math.min(ink, surface) + 0.05);
+      const modalSurface = luminance(resolve("--oh-color-base-secondary"));
+
+      for (const role of ["--oh-feedback-error", "--oh-feedback-success"]) {
+        expect(
+          contrast(luminance(resolve(role)), modalSurface),
+          `${role} against the modal surface`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+
+      const warningInk = luminance(resolve("--oh-feedback-warning"));
+      const trustBackground = channels(resolve("--oh-background"));
+      const warningTint = channels(resolve("--oh-warning"));
+      const tintedTrustSurface = warningTint.map(
+        (channel, index) => channel * 0.05 + trustBackground[index] * 0.95,
+      );
+      const warningSurfaces: Array<[string, number]> = [
+        ["ACP credential surface", modalSurface],
+        ["Home raised banner", luminance(resolve("--oh-surface-raised"))],
+        ["Apps trust notice tint", luminance(tintedTrustSurface)],
+      ];
+
+      for (const [surfaceName, surface] of warningSurfaces) {
+        expect(
+          contrast(warningInk, surface),
+          `--oh-feedback-warning against ${surfaceName}`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+    },
+  );
+
   afterEach(() => {
     document
       .querySelectorAll("style[data-theme-test]")
@@ -29,6 +102,31 @@ describe("color themes", () => {
     const style = getComputedStyle(screen.getByTestId("consumer-scope"));
     expect(style.getPropertyValue("--oh-color-primary")).toBe("#123456");
     expect(style.getPropertyValue("--oh-radius")).toBe("12px");
+  });
+  // @spec MCP-004 — Form feedback follows readable theme text roles
+  // @spec WN-001 — Warning feedback can be overridden by an embedding host
+  it("preserves host feedback colors when the selected palette changes", () => {
+    const overrides = {
+      "--oh-feedback-error": "#672727",
+      "--oh-feedback-success": "#24542d",
+      "--oh-feedback-warning": "#755300",
+    } as const;
+    render(
+      <AgentServerUIRoot
+        data-testid="feedback-scope"
+        styleOverrides={overrides}
+      >
+        Canvas
+      </AgentServerUIRoot>,
+    );
+
+    act(() => applyColorTheme("light-plus"));
+
+    const style = getComputedStyle(screen.getByTestId("feedback-scope"));
+    for (const [token, value] of Object.entries(overrides)) {
+      expect(style.getPropertyValue(token)).toBe(value);
+    }
+    document.getElementById("oh-color-theme-override")?.remove();
   });
   it("includes OpenHands-Neo as a neutral-based theme with white button tokens", () => {
     const neo = COLOR_THEMES["openhands-neo"];
