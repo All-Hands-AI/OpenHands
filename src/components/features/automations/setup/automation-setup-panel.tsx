@@ -1848,10 +1848,10 @@ export function AutomationSetupPanel({
         : null}
       <div
         data-testid="automation-setup-panel"
-        className="flex h-full min-h-0 flex-col bg-base"
+        className="flex h-full min-h-0 flex-col bg-canvas-base"
       >
         {showInlineHeader ? (
-          <header className="flex h-10 min-h-10 shrink-0 items-center justify-between gap-2 border-b border-[var(--oh-border)] bg-base px-3">
+          <header className="flex h-10 min-h-10 shrink-0 items-center justify-between gap-2 border-b border-[var(--oh-border)] bg-canvas-base px-3">
             <div className="flex min-w-0 items-center gap-2">
               <h2 className="min-w-0 truncate text-sm font-medium text-content">
                 {name.trim() || t(I18nKey.AUTOMATION_SETUP$TITLE)}

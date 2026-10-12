@@ -163,7 +163,7 @@ export function ConversationMain() {
         <header
           data-testid="automation-setup-topbar"
           className={cn(
-            "flex shrink-0 border-b border-[var(--oh-border)] bg-base",
+            "flex shrink-0 border-b border-[var(--oh-border)] bg-canvas-base",
             isMobile
               ? "flex-col"
               : "h-10 min-h-10 items-center justify-between gap-2 px-3",
@@ -274,7 +274,7 @@ export function ConversationMain() {
         <div
           data-testid="conversation-chat-panel"
           className={cn(
-            "flex flex-col bg-base overflow-hidden",
+            "flex flex-col bg-canvas-base overflow-hidden",
             isMobile
               ? cn("flex-1", showMobileAutomationForm && "hidden")
               : cn(

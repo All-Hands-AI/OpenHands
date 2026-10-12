@@ -103,10 +103,10 @@ export default function AutomationSetupNew() {
     : null;
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-base">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-canvas-base">
       <header
         data-testid="automation-setup-topbar"
-        className="flex h-10 min-h-10 shrink-0 items-center justify-between gap-2 border-b border-[var(--oh-border)] bg-base px-3"
+        className="flex h-10 min-h-10 shrink-0 items-center justify-between gap-2 border-b border-[var(--oh-border)] bg-canvas-base px-3"
       >
         <h2 className="min-w-0 truncate text-sm font-medium text-content">
           {title}
