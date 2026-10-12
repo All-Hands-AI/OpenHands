@@ -36,7 +36,6 @@ import {
   deriveProfileNameFromModel,
   isProfileNameValid,
 } from "#/utils/derive-profile-name";
-import { isOpenHandsProviderModel } from "#/utils/format-model-name";
 import {
   MIN_LLM_API_KEY_LENGTH,
   validateLlmCredentials,
