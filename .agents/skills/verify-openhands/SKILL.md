@@ -8,9 +8,9 @@ description: >
   profiles, conversations, evidence, map tooling, cleanup) and the maintained
   map of every user-facing feature.
 triggers:
-- /verify-openhands
-- feature map
-- verify feature
+  - /verify-openhands
+  - feature map
+  - verify feature
 ---
 
 # Verify OpenHands through the real app
@@ -102,11 +102,11 @@ control-openhands stop                         # stops only this run; evidence s
   failure, and before blaming the product. A wedged UI on a healthy stack:
   capture evidence, `browser reload` or `goto /`, retry once.
 - **Drive** through the real UI with `control-openhands browser ...`. Selectors are
-  `testid=`, `role=button[name="Save"]`, `label=`, `text=`, chained with ` >> `.
+  `testid=`, `role=button[name="Save"]`, `label=`, `text=`, chained with `>>`.
   Use `browser testids` and `browser snapshot` to find handles; prefer scoped
   test IDs and accessible names over CSS. Failures return a hint and a
   screenshot path; read the screenshot before retrying. A click returns the URL
-  from *before* any client-side navigation: use `click ... --expect-url '<regex>'`
+  from _before_ any client-side navigation: use `click ... --expect-url '<regex>'`
   (or `browser wait-url`) after every navigating click, because many routes
   redirect (`/settings` → `/settings/agents`, `/customize` → `/mcp`).
 - **Arrange, don't fake.** `llm`, `fixture` and `api ... --write` exist to set up
@@ -119,17 +119,17 @@ control-openhands stop                         # stops only this run; evidence s
   `conversation events <id>`, `workspace open`.
 - **State control** reaches states a happy path never shows, without mocks:
   `browser reset` (fresh browser profile: first run again), `service stop
-  automation|agent-server` (backend-down UI), `restart` (same state after a
+automation|agent-server` (backend-down UI), `restart` (same state after a
   backend restart: persistence and reconnection) and `restart --rotate-key`
   (stale session key). `restart` keeps the browser on its page. While a service
   is stopped, a reload replaces the page with the backend-unavailable screen, so
   drive backend-down states on the page that was already loaded.
   `service pause automation` and `service resume automation` queue and release
   real requests for in-flight race checks. Resume before stopping the run. `browser
-  network` (with `--bodies`, what the page sent, credentials redacted),
+network` (with `--bodies`, what the page sent, credentials redacted),
   `browser toasts` and `browser media` observe requests by origin, toasts and
   sound without changing anything; `click --observe SEL` and `scroll
-  --observe SEL` record the transient states SEL shows while the action's
+--observe SEL` record the transient states SEL shows while the action's
   effects play out (a "Saving..." label, a loading row). Check `--help` before
   calling a state unreachable: most "can't be driven" claims predate a verb.
 - **Evidence** goes under `<run>/evidence/<feature-id>/` and the append-only
@@ -144,7 +144,7 @@ control-openhands stop                         # stops only this run; evidence s
   drive the steps, then `browser record stop` saves a video of the active tab
   under the same folder (`--gif` adds one that GitHub shows inline). Around a
   long wait, such as the agent working, run `browser record pause` and `browser
-  record resume`: the video cuts there. The caret is hidden in recordings, as
+record resume`: the video cuts there. The caret is hidden in recordings, as
   in screenshots. Keys, logs, browser profile and
   downloads stay in `<run>/private/`. Evidence is not automatically public:
   review every image before publishing it. The CLI masks password fields in
@@ -214,10 +214,12 @@ prerequisite; never substitute a mock and call it a pass.
   report it separately (right repository: Canvas UI here, Agent Server/SDK in
   `OpenHands/software-agent-sdk`, scheduling/dispatch in `OpenHands/automation`).
   Never rewrite an expected result to bless broken behavior. Then record it
-  in the map, which should know every open bug: a `Known failure (reproduced
-  <date>, #<issue>)` note on the bullet that reproduces it, next to the
-  expected result, or a `Known issue #<issue>` Gotchas entry when no recipe can
-  drive it. Passes re-drive these notes once the issue closes.
+  in the map, which should know every open bug (applying from the recorded
+  `Maintenance baseline` line forward, not retroactively, until the backfill
+  of earlier open bugs is complete): a `Known failure (reproduced <date>, #<issue>)`
+  note on the bullet that reproduces it, next to the expected result, or a
+  `Known issue #<issue>` Gotchas entry when no recipe can drive it. Passes
+  re-drive these notes once the issue closes.
 - **Blocked**: name the missing prerequisite (account, entitlement, OS, binary)
   and the route you attempted. Unreachable is never a pass.
 
