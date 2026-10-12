@@ -651,4 +651,44 @@ test.describe("UI regressions", () => {
     await expect(dropdown).toBeEnabled({ timeout: 15_000 });
     await expect(dropdown).toHaveValue("");
   });
+  // @spec WN-001 — Home warning icon follows the embedding host warning role
+  test("home warning icon follows the host warning color", async ({ page }) => {
+    await routeSessionApiKey(page);
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await expect(
+      page.getByTestId("home-llm-not-configured-banner"),
+    ).toBeVisible();
+    const icon = page
+      .getByTestId("home-llm-not-configured-banner")
+      .locator("svg")
+      .first();
+    await icon.evaluate((element) => {
+      const scope = element.closest("[data-agent-server-ui]");
+      if (!scope) throw new Error("Agent Server UI theme scope not found");
+      (scope as HTMLElement).style.setProperty(
+        "--oh-feedback-warning",
+        "#8b1029",
+      );
+    });
+    await expect(icon).toHaveCSS("color", "rgb(139, 16, 41)");
+  });
+
+  // @spec WN-001 — Canvas Apps trust notice follows the host warning role
+  test("Apps trust notice follows the host warning color", async ({ page }) => {
+    await routeSessionApiKey(page);
+    await page.goto("/apps", { waitUntil: "domcontentloaded" });
+    const notice = page.getByText("This app runs trusted JavaScript", {
+      exact: false,
+    });
+    await expect(notice).toBeVisible();
+    await notice.evaluate((element) => {
+      const scope = element.closest("[data-agent-server-ui]");
+      if (!scope) throw new Error("Agent Server UI theme scope not found");
+      (scope as HTMLElement).style.setProperty(
+        "--oh-feedback-warning",
+        "#8b1029",
+      );
+    });
+    await expect(notice).toHaveCSS("color", "rgb(139, 16, 41)");
+  });
 });
