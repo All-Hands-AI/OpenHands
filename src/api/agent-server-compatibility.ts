@@ -340,6 +340,19 @@ export async function validateLocalBackend(
   }
 }
 
+/**
+ * Whether a {@link validateLocalBackend} failure is a decided answer from the
+ * server (rejected key, too-old version) rather than a transient miss, so
+ * probing again cannot change the outcome.
+ */
+export function isDefinitiveLocalBackendError(error: unknown): boolean {
+  return (
+    (error instanceof Error &&
+      error.message === INVALID_BACKEND_API_KEY_ERROR) ||
+    isAgentServerUnsupportedVersionError(error)
+  );
+}
+
 export async function loadAgentServerInfo() {
   // The probe is a *local* agent-server concern — it verifies the runtime
   // hosting the GUI is reachable. It must NEVER run against the active
