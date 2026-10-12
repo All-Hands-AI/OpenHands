@@ -59,10 +59,14 @@ export function BackendRow({
         ? "text-red-300"
         : "text-muted";
   const dotStatus = isInvalidApiKey ? false : (health?.isConnected ?? null);
-  const canSelect = health?.isConnected === true && !isInvalidApiKey;
   const lockedCloudHost = getLockedCloudHost();
   // The host is a tunnel's loopback port, owned by the Managed Agents screen.
   const isMarsSession = Boolean(backend.marsSessionId);
+  // A MARS session reads offline whenever its tunnel is gone (e.g. after a
+  // restart), and selecting it is what reopens the tunnel — so it stays
+  // selectable rather than forcing a new session.
+  const canSelect =
+    (health?.isConnected === true || isMarsSession) && !isInvalidApiKey;
 
   return (
     <li

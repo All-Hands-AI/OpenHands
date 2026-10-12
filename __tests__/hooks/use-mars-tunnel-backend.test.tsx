@@ -56,8 +56,7 @@ import type {
 } from "#/api/mars/mars-tunnel-backend";
 import type { Backend } from "#/api/backend-registry/types";
 
-function makeWrapper() {
-  const queryClient = new QueryClient();
+function makeWrapper(queryClient = new QueryClient()) {
   function Wrapper({ children }: { children: React.ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
@@ -89,14 +88,24 @@ function tunnelStatus(
   };
 }
 
-function fakeMarsBridge(localPort = 51000) {
+const SIGNED_IN = {
+  connections: [{ id: "conn_1", label: "token", isExpired: false }],
+  active: { id: "conn_1", label: "token", isExpired: false },
+  isPersistent: false,
+  canUseOAuth: false,
+};
+const SIGNED_OUT = { ...SIGNED_IN, connections: [], active: null };
+
+function fakeMarsBridge(localPort = 51000, authState: object = SIGNED_IN) {
   return {
+    getAuthState: vi.fn(async () => authState),
     openTunnel: vi.fn(async ({ sessionId }: OpenMarsTunnelParams) =>
       tunnelStatus(sessionId, localPort),
     ),
     closeTunnel: vi.fn(async () => {}),
     getTunnel: vi.fn(async () => undefined),
   } as unknown as MarsBridge & {
+    getAuthState: ReturnType<typeof vi.fn>;
     openTunnel: ReturnType<typeof vi.fn>;
     closeTunnel: ReturnType<typeof vi.fn>;
   };
@@ -297,6 +306,54 @@ describe("useMarsTunnelBackend", () => {
 });
 
 describe("useRestoreMarsTunnels", () => {
+  it("waits for a DigitalOcean sign-in, then reconnects the same session without blocking startup", async () => {
+    // Arrange — after a web-server restart the token is gone (it lives only
+    // in server memory) while the backend record survives in the browser.
+    window.localStorage.setItem(
+      BACKENDS_STORAGE_KEY,
+      JSON.stringify([
+        {
+          id: "mars-1",
+          name: "Agent · sess-1",
+          host: "http://127.0.0.1:51000",
+          apiKey: "",
+          kind: "local",
+          marsSessionId: "sess_abc",
+        },
+      ]),
+    );
+    window.localStorage.setItem(
+      ACTIVE_BACKEND_STORAGE_KEY,
+      JSON.stringify({ backendId: "mars-1", orgId: null }),
+    );
+    __resetActiveStoreForTests();
+    const bridge = fakeMarsBridge(51000, SIGNED_OUT);
+    window.marsBridge = bridge;
+    const queryClient = new QueryClient();
+
+    const { result } = renderHook(() => useRestoreMarsTunnels(), {
+      wrapper: makeWrapper(queryClient),
+    });
+
+    // Signed out: no doomed connect, and the bootstrap is not held up.
+    await waitFor(() => expect(result.current).toBe(false));
+    expect(bridge.openTunnel).not.toHaveBeenCalled();
+
+    // Act — the user signs in again.
+    bridge.getAuthState.mockResolvedValue(SIGNED_IN);
+    await act(() =>
+      queryClient.invalidateQueries({ queryKey: ["mars", "auth-state"] }),
+    );
+
+    // Assert — the existing session is reconnected; no new session needed.
+    await waitFor(() =>
+      expect(bridge.openTunnel).toHaveBeenCalledWith({
+        sessionId: "sess_abc",
+        localPort: 51000,
+      }),
+    );
+  });
+
   it("re-opens only the active session's tunnel on its previous port and follows a port change", async () => {
     // Dialing a session counts as activity, so restoring every persisted
     // session would keep idle sandboxes awake and billing.
@@ -426,10 +483,14 @@ describe("useRestoreMarsTunnels", () => {
       JSON.stringify({ backendId: "mars-1", orgId: null }),
     );
     __resetActiveStoreForTests();
-    validateLocalBackend.mockRejectedValue(new Error("connection refused"));
-    vi.spyOn(Date, "now")
-      .mockReturnValueOnce(0)
-      .mockReturnValue(Number.MAX_SAFE_INTEGER);
+    // The first probe fails and the clock jumps past the wait's deadline,
+    // whoever else reads Date.now() first (e.g. the sign-in query).
+    let now = 0;
+    vi.spyOn(Date, "now").mockImplementation(() => now);
+    validateLocalBackend.mockImplementation(async () => {
+      now = Number.MAX_SAFE_INTEGER;
+      throw new Error("connection refused");
+    });
 
     const { result } = renderHook(() => useRestoreMarsTunnels(), {
       wrapper: makeWrapper(),

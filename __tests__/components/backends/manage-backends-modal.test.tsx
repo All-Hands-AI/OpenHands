@@ -1059,6 +1059,43 @@ describe("BackendRow", () => {
     expect(selectButton).toBeDisabled();
   });
 
+  it("keeps a disconnected DigitalOcean session selectable, since selecting it reconnects", async () => {
+    const onSelect = vi.fn();
+    const marsBackend: Backend = {
+      id: "mars-1",
+      name: "DO session",
+      host: "http://127.0.0.1:41234",
+      apiKey: "",
+      kind: "local",
+      marsSessionId: "sess_1",
+    };
+    renderInQueryClient(
+      <ul>
+        <BackendRow
+          backend={marsBackend}
+          health={{
+            isConnected: false,
+            consecutiveFailures: 3,
+            lastError: "connection refused",
+            disabled: true,
+          }}
+          onSelect={onSelect}
+          onEdit={vi.fn()}
+          onRemove={vi.fn()}
+        />
+      </ul>,
+    );
+
+    const selectButton = within(
+      screen.getByTestId("manage-backends-row-DO session"),
+    )
+      .getByText("DO session")
+      .closest("button")!;
+    expect(selectButton).toBeEnabled();
+    await userEvent.click(selectButton);
+    expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+
   it("shows a logged-out cloud status with a log back in button", () => {
     const onLogin = vi.fn();
 

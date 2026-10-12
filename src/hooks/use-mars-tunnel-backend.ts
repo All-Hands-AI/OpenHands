@@ -11,6 +11,10 @@ import {
 import { prepareMarsSandbox } from "#/api/mars/mars-sandbox-setup";
 import { resetBackendHealth } from "#/api/backend-registry/health-store";
 import { useActiveBackendContext } from "#/contexts/active-backend-context";
+import {
+  getUsableConnectionId,
+  useMarsAuthState,
+} from "#/hooks/query/use-mars-agents";
 import type { Backend } from "#/api/backend-registry/types";
 
 export interface AttachMarsSessionParams {
@@ -172,6 +176,12 @@ export function useRestoreMarsTunnels(): boolean {
   const [launchRestoreId, setLaunchRestoreId] = React.useState(() =>
     getMarsBridge() && backend.marsSessionId ? backend.id : null,
   );
+  // Connecting needs a signed-in DigitalOcean connection. The web build keeps
+  // it only in server memory, so after a restart the user signs in again; the
+  // connection appearing re-runs the effect below and reconnects then.
+  const authQuery = useMarsAuthState();
+  const isAuthPending = authQuery.isPending;
+  const connectionId = getUsableConnectionId(authQuery.data);
 
   React.useEffect(() => {
     const sessionId = backend.marsSessionId;
@@ -179,6 +189,12 @@ export function useRestoreMarsTunnels(): boolean {
     // attach() already connected it and waited for its agent-server.
     if (freshlyAttached.delete(backend.id)) {
       attempted.current.add(backend.id);
+      return;
+    }
+    if (isAuthPending) return;
+    if (!connectionId) {
+      // Nothing to connect with yet; don't hold the bootstrap for it.
+      setLaunchRestoreId((id) => (id === backend.id ? null : id));
       return;
     }
     if (attempted.current.has(backend.id)) return;
@@ -205,7 +221,7 @@ export function useRestoreMarsTunnels(): boolean {
       .finally(() => {
         setLaunchRestoreId((id) => (id === backend.id ? null : id));
       });
-  }, [backend, updateBackend]);
+  }, [backend, updateBackend, isAuthPending, connectionId]);
 
   return launchRestoreId !== null && launchRestoreId === backend.id;
 }
