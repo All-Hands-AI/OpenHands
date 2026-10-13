@@ -81,9 +81,12 @@ report_unwritable() {
   case "$err" in
     *"Permission denied"*|*"permission denied"*|*"Operation not permitted"*|*"operation not permitted"*)
       log_error "The container runs as uid $(id -u); the bind-mounted host dir"
-      log_error "must be writable by that uid. Fix with either:"
-      log_error "  1) rerun with --user \"\$(id -u):\$(id -g)\" (add -e HOME=/home/openhands)"
-      log_error "  2) find $host_hint -type d -exec chmod a+rwX {} +  # host shell; dirs only"
+      log_error "must be writable by that uid. Run ON THE HOST (dirs only):"
+      log_error "  find $host_hint -type d -exec chmod a+rwX {} +"
+      log_error "Use your actual host bind-mount path if different from the example."
+      log_error "This grants all host users directory write access; existing file modes stay unchanged."
+      log_error "If Docker created root-owned dirs, use sudo find ... for the same command."
+      log_error "Create host dirs with mkdir -p before starting Docker to avoid root-owned mounts."
       ;;
     *"Read-only file system"*|*"read-only file system"*)
       log_error "The mount is read-only. Drop the ':ro' suffix from its -v flag"

@@ -87,7 +87,7 @@ function runReport(osError: string) {
 
 describe("docker/entrypoint.sh startup preflight", () => {
   it.skipIf(process.platform === "win32")(
-    "surfaces the OS error and suggests the uid fix for a permission denial",
+    "suggests directory-only host permissions without changing the container user",
     () => {
       const osError =
         "mkdir: cannot create directory '/host/.openhands': Permission denied";
@@ -96,8 +96,12 @@ describe("docker/entrypoint.sh startup preflight", () => {
 
       expect(result.status).toBe(0);
       expect(result.stderr).toContain(`Underlying error: ${osError}`);
-      expect(result.stderr).toContain("chmod a+rwX");
-      expect(result.stderr).toContain("--user");
+      expect(result.stderr).toContain(
+        "find ~/.openhands -type d -exec chmod a+rwX {} +",
+      );
+      expect(result.stderr).toContain("root-owned");
+      expect(result.stderr).toContain("sudo find");
+      expect(result.stderr).not.toContain("--user");
     },
   );
 

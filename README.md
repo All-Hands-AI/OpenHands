@@ -81,17 +81,40 @@ agent-canvas --backend-only   # agent server + automation backend + ingress only
 
 ### Option 2: With a Docker Sandbox
 
-**Prerequisites**:
+Install Docker Desktop on macOS/Windows, or Docker Engine/Docker Desktop on Linux.
+Windows users can follow the [PowerShell quickstart](./README.windows.md).
 
-- Docker: Docker Desktop on macOS/Windows, or Docker Engine/Docker Desktop on Linux.
-- A host directory for `PROJECTS_PATH` containing the project folders you want the agent to access. Create it before starting the container.
+The steps below are for macOS and Linux. Settings, secrets, and conversations
+are saved in `~/.openhands`. Your projects are mounted at `/projects` inside the
+container.
 
-**macOS / Linux:**
+**1. Prepare the host directories**
+
+Set `PROJECTS_PATH` to the directory containing the projects you want the agent
+to work on. Create both directories before starting Docker so it does not
+create them owned by root.
 
 ```sh
 export PROJECTS_PATH="$HOME/projects"  # directory containing your project folders
 mkdir -p "$PROJECTS_PATH" "$HOME/.openhands"
+```
 
+On **Linux Docker Engine**, the container's `openhands` user (uid 10001) needs
+write access to these directories. Run this on the host, then start the
+container below:
+
+```sh
+find "$HOME/.openhands" "$PROJECTS_PATH" -type d -exec chmod a+rwX {} +
+```
+
+This grants **all host users** directory write access. Existing files keep their
+permissions; project files must also be writable by uid 10001 for the agent to
+edit them. Docker Desktop on macOS/Windows handles bind-mount permissions, so
+you can skip this command there.
+
+**2. Start Agent Canvas**
+
+```sh
 docker run -it --rm \
   -p 8000:8000 \
   -v "$HOME/.openhands:/home/openhands/.openhands" \
@@ -99,44 +122,58 @@ docker run -it --rm \
   ghcr.io/openhands/agent-canvas:1.12.0 # x-release-please-version
 ```
 
-> [!NOTE]
-> **Linux (Docker Engine):** the container runs as uid 10001 (`openhands`) —
-> bind-mounted host dirs must be writable by that uid, or the agent-server and
-> automation crash at startup. The easiest fix is to run the container as your
-> own user, so the bind mounts are writable automatically (all persistent state
-> lives under the mounted `.openhands` dir, so this is safe in practice):
->
-> ```sh
-> docker run -it --rm \
->   --user "$(id -u):$(id -g)" \
->   -e HOME=/home/openhands \
->   -p 8000:8000 \
->   -v "$HOME/.openhands:/home/openhands/.openhands" \
->   -v "${PROJECTS_PATH}:/projects" \
->   ghcr.io/openhands/agent-canvas
-> ```
->
-> The `-e HOME=/home/openhands` is required: the entrypoint derives all
-> persistence paths from `$HOME`, and an arbitrary uid (e.g. your host uid) has
-> no `/etc/passwd` entry inside the container, so `$HOME` would not resolve to
-> `/home/openhands` — without pinning it, state would silently detach from the
-> bind mount.
->
-> Alternatively, grant write access on the host — scoped to directories only,
-> because a recursive `chmod -R` would also strip the `600` permission of the
-> persisted secret files (`secret-key.txt`, `api-key.txt`) and make them
-> world-readable:
->
-> ```sh
-> find "$HOME/.openhands" "$PROJECTS_PATH" -type d -exec chmod a+rwX {} +
-> ```
->
-> Docker Desktop (macOS/Windows) handles bind-mount permissions transparently,
-> so none of this is needed there.
+Open [http://localhost:8000/canvas](http://localhost:8000/canvas).
 
-**Windows (PowerShell / Windows Terminal):** See [README.windows.md](./README.windows.md) for the equivalent commands.
+<details>
+<summary>Linux permission troubleshooting</summary>
 
-The agent will be able to access any project under `PROJECTS_PATH`.
+If startup reports `Permission denied`, check the host directory named in the
+error. If Docker created it owned by root, run the directory-only command with
+`sudo` on the host:
+
+```sh
+sudo find "$HOME/.openhands" "$PROJECTS_PATH" -type d -exec chmod a+rwX {} +
+```
+
+Keep `-type d` in this command. It preserves the `600` permissions on
+`secret-key.txt` and `api-key.txt`; a recursive `chmod -R` would make those
+secrets readable by other host users.
+
+Keep the default container user. Running with `--user` can prevent creation of
+`/home/openhands/.config` and disable browser tools even when the backends start.
+
+</details>
+
+<details>
+<summary>Alternative: store state in a named Docker volume</summary>
+
+A fresh named volume inherits the image directory's ownership, so uid 10001 can
+write state without changing permissions on `~/.openhands`.
+
+Use the `PROJECTS_PATH` prepared in step 1. On Linux Docker Engine, grant
+directory write access to that workspace before starting the container:
+
+```sh
+find "$PROJECTS_PATH" -type d -exec chmod a+rwX {} +
+```
+
+The same permission caveats apply: all host users gain directory write access,
+and existing project files must also be writable by uid 10001.
+
+```sh
+docker run -it --rm \
+  -p 8000:8000 \
+  -v openhands-state:/home/openhands/.openhands \
+  -v "${PROJECTS_PATH}:/projects" \
+  ghcr.io/openhands/agent-canvas
+```
+
+Reuse `openhands-state` to keep settings and conversations across container
+removals. Docker manages this volume separately from `~/.openhands` and does not
+copy existing bind-mounted state into it. To find its location for inspection
+or backup, run `docker volume inspect openhands-state`.
+
+</details>
 
 ### Option 3: From Source
 
