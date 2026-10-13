@@ -116,6 +116,11 @@ export function useModalFocus({ elevated }: { elevated: boolean }) {
       window.removeEventListener("focusin", handleFocusIn);
       openModals.splice(openModals.indexOf(modal), 1);
 
+      // A real close detaches the dialog before this runs. StrictMode's
+      // simulated unmount keeps it attached; restoring focus then would
+      // override the content's own autoFocus when the effect re-runs.
+      if (root.isConnected) return;
+
       // Leave focus alone if something outside the dialog deliberately took it.
       const active = document.activeElement;
       const focusWasInDialog =

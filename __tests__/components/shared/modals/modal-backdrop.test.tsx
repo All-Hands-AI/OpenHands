@@ -179,6 +179,33 @@ describe("ModalBackdrop focus management", () => {
     expect(screen.getByRole("textbox", { name: "name" })).toHaveFocus();
   });
 
+  it("keeps the content's own focus and restores the opener under StrictMode", async () => {
+    const user = userEvent.setup();
+    render(
+      <React.StrictMode>
+        <PageWithModal
+          renderModalContent={(close) => (
+            <>
+              <button type="button" onClick={close}>
+                first
+              </button>
+              {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
+              <input aria-label="name" autoFocus />
+            </>
+          )}
+        />
+      </React.StrictMode>,
+    );
+    const opener = screen.getByRole("button", { name: "open" });
+
+    await user.click(opener);
+    expect(screen.getByRole("textbox", { name: "name" })).toHaveFocus();
+
+    await user.click(screen.getByRole("button", { name: "first" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(opener).toHaveFocus();
+  });
+
   it("wraps Tab and Shift+Tab inside the dialog and skips inert controls", async () => {
     const user = userEvent.setup();
     render(
