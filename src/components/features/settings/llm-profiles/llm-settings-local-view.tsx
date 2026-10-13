@@ -38,6 +38,7 @@ import {
 } from "#/utils/derive-profile-name";
 import { SdkSectionSaveControl } from "../sdk-settings/sdk-section-page";
 import {
+  buildCreateProfileBaseConfig,
   buildProfileLlmConfig,
   profileConfigToFormValues,
 } from "./llm-profile-form";
@@ -268,7 +269,10 @@ export function LlmSettingsLocalView() {
       baseConfig:
         viewMode === "edit" && editingProfile?.baseConfig
           ? editingProfile.baseConfig
-          : {},
+          : buildCreateProfileBaseConfig(
+              (settings?.agent_settings?.llm as Record<string, unknown>) ??
+                null,
+            ),
       dirtyLlm,
       values: saveControl.values,
       view: saveControl.view,
