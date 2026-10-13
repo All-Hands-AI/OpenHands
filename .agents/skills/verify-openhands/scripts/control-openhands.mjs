@@ -26,6 +26,7 @@ import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { deflateSync, gunzipSync } from "node:zlib";
 import { buildIdentity } from "./lib/build-id.mjs";
+import { isLoopbackBind } from "../../../../scripts/bind-host.mjs";
 import {
   editorOffset,
   launcherEnvFor,
@@ -604,8 +605,9 @@ async function cmdLaunch({ flags }) {
   const stamped = existsSync(marker) ? readFileSync(marker, "utf8").trim() : "";
   let built = false;
   if (
-    buildMode === "always" ||
-    (buildMode === "auto" && stamped !== currentBuildId)
+    !flags["backend-only"] &&
+    (buildMode === "always" ||
+      (buildMode === "auto" && stamped !== currentBuildId))
   ) {
     if (!existsSync(join(repoRoot, "node_modules"))) {
       throw new CliError("node_modules is missing.", {
@@ -626,6 +628,7 @@ async function cmdLaunch({ flags }) {
     writeFileSync(marker, `${currentBuildId}\n`);
     built = true;
   } else if (
+    !flags["backend-only"] &&
     buildMode === "never" &&
     !existsSync(join(buildDir, "index.html"))
   ) {
@@ -736,6 +739,7 @@ async function cmdLaunch({ flags }) {
         editor.offset,
       );
   const ports = runPorts(base, editor.offset);
+  if (flags["backend-only"]) delete ports.frontend;
   if (flags.port) {
     const busy = [];
     for (const [name, port] of Object.entries(ports))
@@ -749,7 +753,7 @@ async function cmdLaunch({ flags }) {
   Object.assign(env, {
     OH_CANVAS_SAFE_BACKEND_PORT: String(ports.agentServer),
     OH_CANVAS_SAFE_AUTOMATION_PORT: String(ports.automation),
-    OH_CANVAS_SAFE_VITE_PORT: String(ports.frontend),
+    OH_CANVAS_SAFE_VITE_PORT: String(base + 3),
     // A private tmux server per run (OpenHands/OpenHands#17946: the launcher's
     // <stateDir>/tmux is never created, so runs would share one server). It
     // lives under /tmp because a socket below the long run path would exceed
@@ -765,6 +769,10 @@ async function cmdLaunch({ flags }) {
     String(ports.ingress),
   ];
   if (flags.public) launcherArgs.push("--public");
+  if (flags.host) launcherArgs.push("--host", String(flags.host));
+  if (flags["allow-lan-session-key"])
+    launcherArgs.push("--allow-lan-session-key");
+  if (flags["backend-only"]) launcherArgs.push("--backend-only");
   const savedEnv = { ...env };
   delete savedEnv.LOCAL_BACKEND_API_KEY;
   delete savedEnv.OH_SECRET_KEY;
@@ -779,7 +787,14 @@ async function cmdLaunch({ flags }) {
     revision,
     buildId: currentBuildId,
     builtThisRun: built,
-    mode: flags.public ? "public" : "local",
+    mode:
+      flags.public ||
+      (flags.host &&
+        !isLoopbackBind(flags.host) &&
+        !flags["allow-lan-session-key"])
+        ? "public"
+        : "local",
+    backendOnly: Boolean(flags["backend-only"]),
     baseUrl: `http://127.0.0.1:${ports.ingress}`,
     ports,
     launcherArgs,
@@ -816,7 +831,7 @@ async function cmdLaunch({ flags }) {
   saveRun(run);
 
   let browser;
-  if (!flags["no-browser"]) {
+  if (!flags["no-browser"] && !run.backendOnly) {
     try {
       browser = await startBrowser(run);
     } catch (error) {
@@ -882,7 +897,7 @@ async function waitForStack(run, timeoutSec) {
       if (
         settings.status === 200 &&
         automation.status === 200 &&
-        html.status === 200
+        html.status === (run.backendOnly ? 503 : 200)
       )
         return;
     } catch (error) {
@@ -996,6 +1011,7 @@ async function cmdRestart({ flags }) {
     );
   const stopped = await stopLauncher(run);
   run.ports = next.ports;
+  if (run.backendOnly) delete run.ports.frontend;
   if (flags["rotate-key"]) {
     writeFileSync(
       join(run.dir, "private", "session-key"),
@@ -1163,25 +1179,34 @@ async function cmdDoctor({ flags }) {
   }
   if (alive) {
     try {
-      const marker = await http(run, "GET", "/verify-revision.txt", {
-        auth: false,
-      });
-      const served = marker.text.trim();
-      add(
-        "served build matches this checkout's build inputs",
-        marker.status === 200 && served === run.buildId,
-        `served=${served} run=${run.buildId} revision=${run.revision.slice(0, 12)}`,
-      );
-      const current = buildId();
-      const unchanged = current === run.buildId;
-      add(
-        unchanged
-          ? "checkout build inputs unchanged since launch"
-          : "checkout build inputs changed since launch; relaunch with --build auto to serve them",
-        unchanged,
-        `launch=${run.buildId} now=${current}`,
-        "warn",
-      );
+      if (!run.backendOnly) {
+        const marker = await http(run, "GET", "/verify-revision.txt", {
+          auth: false,
+        });
+        const served = marker.text.trim();
+        add(
+          "served build matches this checkout's build inputs",
+          marker.status === 200 && served === run.buildId,
+          `served=${served} run=${run.buildId} revision=${run.revision.slice(0, 12)}`,
+        );
+        const current = buildId();
+        const unchanged = current === run.buildId;
+        add(
+          unchanged
+            ? "checkout build inputs unchanged since launch"
+            : "checkout build inputs changed since launch; relaunch with --build auto to serve them",
+          unchanged,
+          `launch=${run.buildId} now=${current}`,
+          "warn",
+        );
+      } else {
+        const root = await http(run, "GET", "/", { auth: false });
+        add(
+          "backend-only root has no frontend",
+          root.status === 503,
+          `status=${root.status}`,
+        );
+      }
       const unauth = await http(run, "GET", "/api/settings", { auth: false });
       add(
         "unauthenticated API rejected",
@@ -1243,7 +1268,7 @@ async function cmdDoctor({ flags }) {
       add("HTTP checks", false, String(error.message));
     }
   }
-  if (!flags["skip-ui"]) {
+  if (!flags["skip-ui"] && !run.backendOnly) {
     if (daemonInfo(run)) {
       try {
         const probe = await browserCall(run, "uiprobe", {
@@ -4536,6 +4561,7 @@ Examples:
   launch: `control-openhands launch [--public] [--new] [--print-run] [--port N | --port-from N] [--build auto|always|never] [--min-free-mb 2000]
                          [--no-browser] [--timeout SEC] [--sdk-path DIR | --sdk-ref REF | --sdk-version V]
                          [--automation-path DIR | --automation-ref REF | --automation-version V] [--run-id ID] [--vscode]
+                         [--host HOST] [--allow-lan-session-key] [--backend-only]
 
 Builds the checkout when build/verify-revision.txt does not match HEAD, then
 starts bin/agent-canvas.mjs with a private HOME, state dir, session key and
@@ -4546,6 +4572,10 @@ ports, only when the checkout's launcher serves VS Code. Where that is opt-in
 is bundled (before #17660, or since #18048), it is always reserved and --vscode
 changes nothing. Waits for authenticated settings, automation health and the
 SPA, then starts the browser daemon.
+--host and --allow-lan-session-key are forwarded to the real launcher. A LAN
+bind without the opt-in exercises the API-key login screen. --backend-only
+starts the APIs without building or opening a frontend; readiness and doctor
+expect its root route to return 503 and omit the unused frontend port.
 Idempotent: an alive current run is reused unless --new is given.
 --print-run prints only the run directory, for
   export OH_VERIFY_RUN=$(control-openhands launch --new --print-run)

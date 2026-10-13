@@ -95,6 +95,11 @@ control-openhands stop                         # stops only this run; evidence s
   agent-server has no editor binary and nothing listens there). Where that is opt-in (#17660), `--vscode`
   turns it on; where the editor is bundled (before #17660, or since #18048), it
   is always included and `--vscode` changes nothing.
+- **Launcher variants.** `launch --host HOST` and
+  `--allow-lan-session-key` reach the real launcher. An off-loopback bind without
+  the opt-in starts in login mode. `launch --backend-only` owns an isolated API
+  stack without a frontend or browser; `doctor` checks its expected 503 root
+  response. Use these flags for F26 recipes instead of starting untracked stacks.
 - **Doctor** checks the launcher's process group, ports, served build revision,
   unauthenticated rejection, authenticated settings, Agent Server pin and the
   UI's minimum Agent Server version, automation health and a throwaway-tab UI
