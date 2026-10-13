@@ -102,7 +102,9 @@ describe("SidebarOnboardingChecklist", () => {
   beforeEach(() => {
     window.localStorage.clear();
     window.localStorage.setItem(ONBOARDING_COMPLETED_STORAGE_KEY, "1");
-    window.localStorage.removeItem(SIDEBAR_ONBOARDING_CHECKLIST_MINIMIZED_STORAGE_KEY);
+    window.localStorage.removeItem(
+      SIDEBAR_ONBOARDING_CHECKLIST_MINIMIZED_STORAGE_KEY,
+    );
     window.localStorage.removeItem(
       SIDEBAR_ONBOARDING_CHECKLIST_CUSTOMIZE_EXPLORED_STORAGE_KEY,
     );
@@ -200,19 +202,38 @@ describe("SidebarOnboardingChecklist", () => {
     );
     renderChecklist();
     expect(
-      screen.getByText(I18nKey.SIDEBAR$ONBOARDING_CHECKLIST_CONFIGURE_SUBSCRIPTION_AGENT),
+      screen.getByText(
+        I18nKey.SIDEBAR$ONBOARDING_CHECKLIST_CONFIGURE_SUBSCRIPTION_AGENT,
+      ),
     ).not.toHaveClass("line-through");
     expect(
       screen.getByText(I18nKey.SIDEBAR$ONBOARDING_CHECKLIST_CUSTOMIZE),
     ).toHaveClass("line-through");
   });
 
-  it("completes subscription setup when Codex auth is saved", () => {
-    mockUseSearchSecrets.mockReturnValue({ data: [{ name: "CODEX_AUTH_JSON" }] });
+  it.each(["CODEX_AUTH_JSON", "CLAUDE_CODE_OAUTH_TOKEN"])(
+    "completes subscription setup when %s is saved",
+    (name) => {
+      mockUseSearchSecrets.mockReturnValue({ data: [{ name }] });
+      renderChecklist();
+      expect(
+        screen.getByText(
+          I18nKey.SIDEBAR$ONBOARDING_CHECKLIST_CONFIGURE_SUBSCRIPTION_AGENT,
+        ),
+      ).toHaveClass("line-through");
+    },
+  );
+
+  it("does not complete subscription setup for a non-subscription credential", () => {
+    mockUseSearchSecrets.mockReturnValue({
+      data: [{ name: "GOOGLE_APPLICATION_CREDENTIALS_JSON" }],
+    });
     renderChecklist();
     expect(
-      screen.getByText(I18nKey.SIDEBAR$ONBOARDING_CHECKLIST_CONFIGURE_SUBSCRIPTION_AGENT),
-    ).toHaveClass("line-through");
+      screen.getByText(
+        I18nKey.SIDEBAR$ONBOARDING_CHECKLIST_CONFIGURE_SUBSCRIPTION_AGENT,
+      ),
+    ).not.toHaveClass("line-through");
   });
 
   it("crosses out Add LLM API key when LLM is configured", () => {
@@ -319,7 +340,10 @@ describe("SidebarOnboardingChecklist", () => {
 
   it("hides when collapsed", () => {
     const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     const navigation: NavigationContextValue = {
       currentPath: "/",

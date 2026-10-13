@@ -9,6 +9,7 @@ import { useSettings } from "#/hooks/query/use-settings";
 import { useLlmProfiles } from "#/hooks/query/use-llm-profiles";
 import { useSearchSecrets } from "#/hooks/query/use-get-secrets";
 import { useLlmConfigured } from "#/hooks/use-llm-configured";
+import { isSubscriptionCredential } from "#/constants/acp-providers";
 import { parseMcpConfig } from "#/utils/mcp-config";
 import { getLockedCloudHost } from "#/api/agent-server-config";
 import {
@@ -37,11 +38,6 @@ export interface SidebarOnboardingChecklistItemState {
 function hasConfiguredMcpServers(mcpConfig: unknown): boolean {
   return Object.keys(parseMcpConfig(mcpConfig)).length > 0;
 }
-
-const SUBSCRIPTION_CREDENTIAL_NAMES = new Set([
-  "CODEX_AUTH_JSON",
-  "CLAUDE_CODE_OAUTH_TOKEN",
-]);
 
 export function useSidebarOnboardingChecklist() {
   const { isCompleted: onboardingCompleted } = useOnboardingCompletion();
@@ -101,7 +97,7 @@ export function useSidebarOnboardingChecklist() {
         isProfilesLoading,
       ),
       "configure-subscription-agent": (secrets ?? []).some((secret) =>
-        SUBSCRIPTION_CREDENTIAL_NAMES.has(secret.name),
+        isSubscriptionCredential(secret.name),
       ),
       "connect-mcp": hasConfiguredMcpServers(
         settings?.agent_settings?.mcp_config,
