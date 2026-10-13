@@ -133,46 +133,76 @@ const LEADING_NUMBER_HEADING =
 /**
  * A heading that leads with its label and the section number, e.g.
  * `## Req 1.1 — Resource exposure`. The live planner writes upstream references
- * this way (a bare, unbracketed label), so the number is a definition exactly
- * like a leading digit would be. The number keeps the same trailing guard so a
- * word (`## Req 1.1beta`) or a longer number (`## Req 1.12`) is not sliced.
+ * this way (a bare, unbracketed label). The label is captured with the number
+ * so a definition can be attributed to the phase that owns that label — a
+ * database document heading `## Req 1.1 …` is *citing* a requirement, not
+ * defining a DB section, so it must not register `1.1` under the database
+ * phase. The number keeps the same trailing guard as the leading-number form so
+ * a word (`## Req 1.1beta`) or a longer number (`## Req 1.12`) is not sliced.
  */
 const LEADING_LABEL_HEADING =
-  /^(?:Req|DB|BE|FE)\s+([0-9]+(?:\.[0-9]+)*)(?![\p{L}\p{N}]|[,./-]?\d)/u;
+  /^(Req|DB|BE|FE)\s+([0-9]+(?:\.[0-9]+)*)(?![\p{L}\p{N}]|[,./-]?\d)/u;
 /**
  * A heading that spells its own label out at the start, e.g.
  * `## [Req 3.1] Users` — the citation *is* the section number here.
  */
 const OWN_LABEL_HEADING = /^\[(?:Req|DB|BE|FE)\s+([0-9]+(?:\.[0-9]+)*)\]/;
 
+const PHASE_OWNS_LABEL = (
+  phase: DeepPlanPhaseId,
+  label: DeepPlanLabel,
+): boolean => DEEP_PLAN_LABEL_TO_PHASE[label] === phase;
+
 export type DeepPlanDocuments = Partial<Record<DeepPlanPhaseId, string>>;
 
 /**
  * The section number a heading defines, or `null` when it defines none.
  *
- * A heading leads with its number (`## 3.1 Authentication` defines `3.1`) or
+ * A heading leads with its number (`## 3.1 Authentication` defines `3.1`), leads
+ * with its own label (`## Req 3.1 Authentication` inside `requirements.md`), or
  * spells its own label out (`## [Req 3.1] Authentication`). Only a *leading*
  * number counts, so prose numbers (`## 3.1 Response under 200 ms` → `3.1`, not
  * `200`) and version-like titles (`## Version 1.2` → nothing) are ignored.
+ *
+ * `ownPhase` is the phase the document belongs to, when known. A label-leading
+ * heading is a definition only when the label is that phase's own — in a design
+ * document `## Req 3.1 …` is a citation of an upstream section, not a section
+ * this document defines, and counting it would let a downstream `[DB 3.1]`
+ * resolve against a database section that does not exist. Without an owning
+ * phase (the renderer, or a bare title) the label-leading form defines nothing;
+ * the leading-number and bracketed forms are unambiguous and always count.
+ *
  * Shared by {@link extractDefinedSections} and the document-chain renderer so
  * both agree on which sections exist.
  */
-export function definedSectionOfHeading(rawTitle: string): string | null {
+export function definedSectionOfHeading(
+  rawTitle: string,
+  ownPhase?: DeepPlanPhaseId,
+): string | null {
   const title = stripClosedWrapper(rawTitle.trimStart());
   const leadingNumber = LEADING_NUMBER_HEADING.exec(title);
   if (leadingNumber) return leadingNumber[1];
   const leadingLabel = LEADING_LABEL_HEADING.exec(title);
-  if (leadingLabel) return leadingLabel[1];
+  if (
+    leadingLabel &&
+    ownPhase !== undefined &&
+    PHASE_OWNS_LABEL(ownPhase, leadingLabel[1] as DeepPlanLabel)
+  ) {
+    return leadingLabel[2];
+  }
   const ownLabel = OWN_LABEL_HEADING.exec(title);
   if (ownLabel) return ownLabel[1];
   return null;
 }
 
 /** The section number a single line defines, or `null` when it is not a heading. */
-export function sectionHeadingOfLine(line: string): string | null {
+export function sectionHeadingOfLine(
+  line: string,
+  ownPhase?: DeepPlanPhaseId,
+): string | null {
   const heading = HEADING_PATTERN.exec(line);
   if (!heading) return null;
-  return definedSectionOfHeading(heading[1]);
+  return definedSectionOfHeading(heading[1], ownPhase);
 }
 
 /**
@@ -214,15 +244,20 @@ function stripClosedWrapper(title: string): string {
  *
  * A heading may instead spell its own label out (`## [Req 3.1] Authentication`),
  * in which case the leading citation is the definition, or lead with the label
- * and number (`## Req 3.1 — Authentication`). An unnumbered heading that merely
- * cites upstream (`## Users [Req 3.1]`) defines nothing — counting it would let
- * a downstream `[DB 3.1]` resolve against a section this document never
- * defines.
+ * and number (`## Req 3.1 — Authentication`). The label-leading form counts only
+ * when `ownPhase` says the document owns that label, so a design document cannot
+ * register an upstream section (`## Req 3.1 …` in `database-design.md`) as one of
+ * its own. An unnumbered heading that merely cites upstream (`## Users
+ * [Req 3.1]`) defines nothing — counting it would let a downstream `[DB 3.1]`
+ * resolve against a section this document never defines.
  */
-export function extractDefinedSections(content: string): Set<string> {
+export function extractDefinedSections(
+  content: string,
+  ownPhase?: DeepPlanPhaseId,
+): Set<string> {
   const sections = new Set<string>();
   for (const line of content.split("\n")) {
-    const section = sectionHeadingOfLine(line);
+    const section = sectionHeadingOfLine(line, ownPhase);
     if (section !== null) sections.add(section);
   }
   return sections;
@@ -355,7 +390,7 @@ export function validateDocumentChain(
   for (const phase of DEEP_PLAN_PHASES) {
     const content = documents[phase.id];
     if (content !== undefined) {
-      sectionsByPhase.set(phase.id, extractDefinedSections(content));
+      sectionsByPhase.set(phase.id, extractDefinedSections(content, phase.id));
     }
   }
 

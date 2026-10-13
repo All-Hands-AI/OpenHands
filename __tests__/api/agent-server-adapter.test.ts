@@ -2328,6 +2328,40 @@ describe("buildStartPlanningConversationRequest — Deep Planning phase wiring",
     expect(suffix).toContain("IMPORTANT_PLANNING_BOUNDARIES");
   });
 
+  it("gives a phase planner the deep-plan document format, not the generic plan skeleton", () => {
+    // A phase document is a chain link with numbered, citable sections. The
+    // generic OBJECTIVE/CONTEXT/APPROACH/IMPLEMENTATION/TESTING skeleton must
+    // not leak into it — the live planner produced exactly that skeleton for
+    // `database-design.md` before the phase format replaced it.
+    const payload = buildStartPlanningConversationRequest({
+      ...baseOptions,
+      deepPlanPhase: "database",
+      deepPlanGuidance: "Produce database-design.md citing [Req X.X].",
+    });
+
+    const structure = (
+      payload.agent as {
+        system_prompt_kwargs: { plan_structure: string };
+      }
+    ).system_prompt_kwargs.plan_structure;
+    expect(structure).not.toContain("1. OBJECTIVE");
+    expect(structure).toContain("1. TITLE");
+    expect(structure).toContain("NUMBERED, CITABLE SECTIONS");
+    expect(structure).toContain("INLINE UPSTREAM CITATIONS");
+  });
+
+  it("keeps the generic plan structure for a plain planner", () => {
+    const payload = buildStartPlanningConversationRequest(baseOptions);
+
+    const structure = (
+      payload.agent as {
+        system_prompt_kwargs: { plan_structure: string };
+      }
+    ).system_prompt_kwargs.plan_structure;
+    expect(structure).toContain("OBJECTIVE");
+    expect(structure).not.toContain("NUMBERED, CITABLE SECTIONS");
+  });
+
   it("keeps the generic planner directive when a phase sends no guidance", () => {
     const payload = buildStartPlanningConversationRequest({
       ...baseOptions,

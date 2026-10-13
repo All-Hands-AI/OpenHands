@@ -101,7 +101,8 @@ export const DeepPlanDocument = React.memo(function DeepPlanDocument({
         children,
         ...rest
       }: React.ComponentProps<typeof Heading>) {
-        const section = definedSectionOfHeading(textOf(children)) ?? undefined;
+        const section =
+          definedSectionOfHeading(textOf(children), phase) ?? undefined;
         return (
           <Heading {...rest}>
             {section ? (

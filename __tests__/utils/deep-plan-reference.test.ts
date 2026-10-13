@@ -81,20 +81,49 @@ describe("extractDefinedSections", () => {
     expect([...extractDefinedSections("## [Req 3.1] Users")]).toEqual(["3.1"]);
   });
 
-  it("reads a section from a heading that leads with its label", () => {
+  it("reads a section from a heading that leads with the document's own label", () => {
     // The live planner writes requirement headings as `### Req 1.1 — …`. Without
     // recognizing the leading label the number is invisible, so a downstream
     // `[Req 1.1]` is wrongly rejected as dangling.
     expect([
-      ...extractDefinedSections("### Req 1.1 — Resource exposure"),
+      ...extractDefinedSections(
+        "### Req 1.1 — Resource exposure",
+        "requirements",
+      ),
     ]).toEqual(["1.1"]);
-    expect([...extractDefinedSections("## DB 2.1 Todos table")]).toEqual([
+    expect([
+      ...extractDefinedSections("## DB 2.1 Todos table", "database"),
+    ]).toEqual(["2.1"]);
+    // The label must be a whole word, and the number keeps its trailing guard.
+    expect([
+      ...extractDefinedSections("## Requisite 1.1", "requirements"),
+    ]).toEqual([]);
+    expect([
+      ...extractDefinedSections("## Req 1.1beta", "requirements"),
+    ]).toEqual([]);
+    expect([...extractDefinedSections("## Req 1.12", "requirements")]).toEqual([
+      "1.12",
+    ]);
+  });
+
+  it("does not register an upstream label as one of the document's own", () => {
+    // A database document may organize itself around the requirements it
+    // satisfies (`## Req 3.1 …`), but those headings define *requirement*
+    // sections, not DB ones. Counting them under the database phase would let a
+    // downstream `[DB 3.1]` resolve against a section the database never
+    // defines — the traceability hole this validator exists to close.
+    const database = [
+      "# Database design",
+      "## Req 3.1 Resource exposure",
+      "## DB 2.1 todos table",
+    ].join("\n");
+    expect([...extractDefinedSections(database, "database")].sort()).toEqual([
       "2.1",
     ]);
-    // The label must be a whole word, and the number keeps its trailing guard.
-    expect([...extractDefinedSections("## Requisite 1.1")]).toEqual([]);
-    expect([...extractDefinedSections("## Req 1.1beta")]).toEqual([]);
-    expect([...extractDefinedSections("## Req 1.12")]).toEqual(["1.12"]);
+    // Without an owning phase the ambiguous label-leading form defines nothing.
+    expect([...extractDefinedSections("## Req 1.1 Resource exposure")]).toEqual(
+      [],
+    );
   });
 
   it("only counts a heading's leading number, not prose numbers in the title", () => {
@@ -426,6 +455,40 @@ describe("validateDocumentChain", () => {
 
     expect(report.ok).toBe(true);
     expect(report.issues).toEqual([]);
+  });
+
+  it("resolves a design citation to a requirement the planner wrote with a leading label", () => {
+    // The live planner writes `### Req 1.1 — …` headings. A downstream
+    // `[Req 1.1]` must resolve against that definition.
+    const documents: DeepPlanDocuments = {
+      requirements: "# Requirements\n## Req 1.1 — Resource exposure",
+      database: "# Database design\n## DB 2.1 todos table [Req 1.1]",
+    };
+
+    const report = validateDocumentChain(documents, "database");
+
+    expect(report.ok).toBe(true);
+    expect(report.issues).toEqual([]);
+  });
+
+  it("rejects a citation to an upstream label a design document merely organizes by", () => {
+    // A design document may lead headings with an upstream label to show which
+    // requirement it satisfies (`## Req 1.1 …`), but that heading defines a
+    // *requirement* section, not a database one. A downstream `[DB 1.1]` must
+    // still be reported dangling — the database document never defines DB 1.1.
+    const documents: DeepPlanDocuments = {
+      requirements: "# Req\n## 1.1 Resource exposure",
+      database:
+        "# Database design\n## Req 1.1 Resource exposure\n## DB 2.1 todos table",
+      backend: "# Backend design\n## BE 4.1 Login endpoint [Req 1.1] [DB 1.1]",
+    };
+
+    const report = validateDocumentChain(documents, "backend");
+
+    expect(report.ok).toBe(false);
+    expect(report.issues).toEqual([
+      { from: "backend", ref: "DB 1.1", reason: "dangling" },
+    ]);
   });
 
   it("accepts a requirements document whose only marker is a code example", () => {

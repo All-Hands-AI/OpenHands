@@ -73,6 +73,7 @@ import {
   buildPhasePlanPath,
   buildPlanPath,
   DEEP_PLAN_PHASE_TAG_KEY,
+  DEEP_PLAN_STRUCTURE_TEXT,
   LOCAL_PLANNER_PARENT_TAG_KEY,
   PLAN_STRUCTURE_TEXT,
   PLANNING_AGENT_INSTRUCTION,
@@ -1576,7 +1577,14 @@ export function buildStartPlanningConversationRequest(options: {
         },
       ],
       system_prompt_filename: PLANNING_SYSTEM_PROMPT_FILENAME,
-      system_prompt_kwargs: { plan_structure: PLAN_STRUCTURE_TEXT },
+      system_prompt_kwargs: {
+        // A phase planner writes a chain link, not a generic plan: give it the
+        // deep-plan section format so the plain OBJECTIVE/CONTEXT/… skeleton
+        // does not leak into the phase document.
+        plan_structure: options.deepPlanPhase
+          ? DEEP_PLAN_STRUCTURE_TEXT
+          : PLAN_STRUCTURE_TEXT,
+      },
       // agent_context (skills + project context) is intentionally included so
       // the planner shares the code agent's project context. This goes beyond
       // the bare SDK `get_planning_agent()` preset (which sets no context); it

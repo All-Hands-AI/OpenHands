@@ -48,6 +48,36 @@ export const PLAN_STRUCTURE_TEXT = [
   "   * This section should describe what success looks like — expected outputs, behaviors, or conditions.",
 ].join("\n");
 
+/**
+ * The `plan_structure` injected into a Deep Planning phase planner, replacing
+ * the plain single-`PLAN.md` structure. A phase document is not a generic plan:
+ * it is a chain link whose numbered sections are cited by the documents
+ * downstream. The plain OBJECTIVE/CONTEXT/APPROACH/IMPLEMENTATION/TESTING
+ * skeleton competes with the phase guidance and leaks into the phase document
+ * (the live planner produced exactly that skeleton for `database-design.md`),
+ * so a phase planner is given this format instead — numbered, citable sections
+ * and inline upstream citations, with the phase guidance naming the sections.
+ */
+export const DEEP_PLAN_STRUCTURE_TEXT = [
+  "The document must follow the structure the phase guidance describes exactly:",
+  "",
+  "1. TITLE",
+  "   * A single top-level heading naming the document.",
+  "",
+  "2. NUMBERED, CITABLE SECTIONS",
+  "   * Every section heading leads with its own number (e.g. `## 3.1 Authentication`).",
+  "   * That number is the section's citation id; downstream documents cite it as `[<Label> 3.1]`.",
+  "   * Order the sections by the part of the system they describe.",
+  "",
+  "3. INLINE UPSTREAM CITATIONS",
+  "   * Each section cites the upstream sections it derives from as `[Req 1.1]`, `[DB 2.1]`, and so on.",
+  "   * Place each citation in the sentence that depends on it.",
+  "",
+  "Do NOT use the generic plan headings OBJECTIVE, CONTEXT SUMMARY, APPROACH",
+  "OVERVIEW, IMPLEMENTATION STEPS, or TESTING AND VALIDATION; the numbered",
+  "sections above replace them.",
+].join("\n");
+
 // System-prompt suffix for the local planning agent (mirrors the OpenHands
 // app-server's PLANNING_AGENT_INSTRUCTION). The planner's directive + boundaries
 // live in the system prompt; the planning conversation is created idle, so the
