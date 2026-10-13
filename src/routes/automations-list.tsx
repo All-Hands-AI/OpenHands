@@ -108,6 +108,12 @@ export const clientLoader = () => {
   return null;
 };
 
+function withoutDraftAutomations(
+  automations: readonly Automation[] | undefined,
+): Automation[] {
+  return (automations ?? []).filter((a) => !isDraftAutomation(a));
+}
+
 function getDraftKind(draft: AutomationDraftApiResponse): AutomationSetupKind {
   if (draft.endpoint === "/v1") return "custom";
   if (draft.endpoint === "/v1/preset/plugin") return "plugin";
@@ -375,13 +381,21 @@ export default function AutomationsList() {
     offset: 0,
     enabled: isBackendHealthy,
   });
+  // Testing a saved draft materializes a hidden DRAFT automation. The page
+  // lists saved drafts in their own group and never lists these test
+  // artifacts, so the groups, tiles, run summaries, and empty state all
+  // leave them out.
+  const listedAutomations = useMemo(
+    () => withoutDraftAutomations(data?.automations),
+    [data?.automations],
+  );
+  const orgAutomations = useMemo(
+    () => withoutDraftAutomations(orgData?.automations),
+    [orgData?.automations],
+  );
   const runSummaryAutomations = useMemo(
-    () =>
-      uniqueById([
-        ...(orgData?.automations ?? []),
-        ...(data?.automations ?? []),
-      ]),
-    [orgData?.automations, data?.automations],
+    () => uniqueById([...orgAutomations, ...listedAutomations]),
+    [orgAutomations, listedAutomations],
   );
   // One runs query per automation in either list — dashboard mode only.
   const runSummaries = useAutomationRunSummaries(runSummaryAutomations, {
@@ -397,14 +411,13 @@ export default function AutomationsList() {
   const importMutation = useImportAutomation();
 
   const visible = useMemo(() => {
-    if (!data?.automations) return [];
     if (!dashboardSpec) {
-      return data.automations.filter((a) =>
+      return listedAutomations.filter((a) =>
         matchesAutomationSearch(a, searchQuery),
       );
     }
     return applyDashboardView(
-      data.automations,
+      listedAutomations,
       {
         search: searchQuery,
         status: statusFilter,
@@ -419,7 +432,7 @@ export default function AutomationsList() {
       runSummaries,
     );
   }, [
-    data?.automations,
+    listedAutomations,
     dashboardSpec,
     searchQuery,
     statusFilter,
@@ -438,13 +451,10 @@ export default function AutomationsList() {
     [draftsData?.drafts, searchQuery],
   );
   const activeAutomations = useMemo(
-    () => visible.filter((a) => a.enabled && !isDraftAutomation(a)),
+    () => visible.filter((a) => a.enabled),
     [visible],
   );
-  const inactive = useMemo(
-    () => visible.filter((a) => !a.enabled && !isDraftAutomation(a)),
-    [visible],
-  );
+  const inactive = useMemo(() => visible.filter((a) => !a.enabled), [visible]);
 
   const handleToggle = (id: string, currentEnabled: boolean) => {
     const willEnable = !currentEnabled;
@@ -593,9 +603,12 @@ export default function AutomationsList() {
 
   const overviewTiles = useMemo(() => {
     if (!dashboardSpec) return [];
-    const automations = orgData?.automations ?? [];
     return dashboardSpec.overview.tiles.map((tile) => {
-      const value = computeOverviewTile(tile.metric, automations, runSummaries);
+      const value = computeOverviewTile(
+        tile.metric,
+        orgAutomations,
+        runSummaries,
+      );
       const template =
         value.isZero && tile.zeroDetail ? tile.zeroDetail : tile.detail;
       return {
@@ -606,7 +619,7 @@ export default function AutomationsList() {
         Icon: MANIFEST_ICON_BY_SLUG[tile.icon],
       };
     });
-  }, [dashboardSpec, orgData?.automations, runSummaries]);
+  }, [dashboardSpec, orgAutomations, runSummaries]);
 
   const groupInsights = dashboard
     ? { spec: dashboard.spec.insights, byId: runSummaries }
@@ -637,8 +650,16 @@ export default function AutomationsList() {
   const isListError = (isError && !data) || (isDraftsError && !draftsData);
   // Whether the org has any automations comes from the unfiltered list, so an
   // empty filtered response shows the filtered empty state with Clear filters.
+  // The server total includes hidden DRAFT test automations; subtract the ones
+  // loaded. Saved drafts keep the page out of the empty state, since their
+  // group lists them.
+  const orgDraftAutomationCount =
+    (orgData?.automations.length ?? 0) - orgAutomations.length;
   const hasNoAutomations =
-    !isListError && orgData?.total === 0 && (draftsData?.total ?? 0) === 0;
+    !isListError &&
+    orgData !== undefined &&
+    orgData.total - orgDraftAutomationCount === 0 &&
+    (draftsData?.total ?? 0) === 0;
   // The previous filter's rows stand in while the next page loads; when none
   // of them match, show loading rather than a no-match that is not final. An
   // empty org keeps its empty state instead.
