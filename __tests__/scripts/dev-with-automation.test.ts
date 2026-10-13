@@ -8,7 +8,7 @@
 import net from "node:net";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
@@ -20,6 +20,7 @@ import {
   buildAutomationTelemetryEnv,
   buildAutomationRuntimeServicesInfo,
   buildConfig,
+  ensureDirectories,
   buildRouteArgs,
   buildViteBackendEnv,
   buildViteFrontendEnv,
@@ -348,6 +349,53 @@ describe("buildConfig", () => {
       config.vitePort,
     ]);
     expect(ports.size).toBe(4);
+  });
+
+  // @spec TMX-001 — Create the local terminal socket directory
+  it("creates separate default tmux directories before local backends start", async () => {
+    const configs = [];
+    for (let n = 0; n < 2; n += 1) {
+      const env = envWithIsolatedKeyPath();
+      env.OH_CANVAS_SAFE_STATE_DIR = path.join(
+        path.dirname(env.OH_SESSION_API_KEY_PATH),
+        "state",
+      );
+      const config = await buildConfig({ backendOnly: true }, env);
+      ensureDirectories(config);
+      const expected = path.join(config.stateDir, "tmux");
+      expect(config.tmuxTmpDir).toBe(expected);
+      expect(existsSync(expected)).toBe(true);
+      configs.push(config);
+    }
+    expect(configs[0].tmuxTmpDir).not.toBe(configs[1].tmuxTmpDir);
+  });
+
+  it("creates and preserves an explicit socket-capable TMUX_TMPDIR", async () => {
+    const env = envWithIsolatedKeyPath();
+    env.OH_CANVAS_SAFE_STATE_DIR = path.join(
+      path.dirname(env.OH_SESSION_API_KEY_PATH),
+      "state",
+    );
+    env.TMUX_TMPDIR = path.join(
+      path.dirname(env.OH_SESSION_API_KEY_PATH),
+      "sockets",
+    );
+    const config = await buildConfig({}, env);
+    ensureDirectories(config);
+    expect(config.tmuxTmpDir).toBe(env.TMUX_TMPDIR);
+    expect(existsSync(env.TMUX_TMPDIR)).toBe(true);
+    expect(existsSync(path.join(config.stateDir, "tmux"))).toBe(false);
+  });
+
+  it("does not create a local terminal directory in frontend-only mode", async () => {
+    const env = envWithIsolatedKeyPath();
+    env.OH_CANVAS_SAFE_STATE_DIR = path.join(
+      path.dirname(env.OH_SESSION_API_KEY_PATH),
+      "state",
+    );
+    const config = await buildConfig({ frontendOnly: true }, env);
+    ensureDirectories(config);
+    expect(existsSync(path.join(config.stateDir, "tmux"))).toBe(false);
   });
 
   it("lets --automation-git-ref win over an exported OH_AUTOMATION_LOCAL_PATH", async () => {
