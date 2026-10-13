@@ -1,0 +1,34 @@
+{
+  "id": "F16.save-states",
+  "name": "phone",
+  "file": "references/feature-map/F16-application-settings.md",
+  "script": "control-openhands restart\ncontrol-openhands doctor\ncontrol-openhands browser viewport phone\ncontrol-openhands browser goto /settings/app\ncontrol-openhands browser wait 'testid=submit-button'\ncontrol-openhands assert --field value --equals false -- browser eval \"document.querySelector('[data-testid=enable-sound-notifications-switch]').checked\"\ncontrol-openhands service stop agent-server\ncontrol-openhands browser record start --feature F16.save-states --name failed-save-phone\ncontrol-openhands browser click 'testid=app-settings-screen >> text=Sound Notifications'\ncontrol-openhands browser click 'testid=submit-button'\ncontrol-openhands browser wait-text 'An error occurred'\ncontrol-openhands browser screenshot --feature F16.save-states --name failed-save-phone\ncontrol-openhands browser record stop --gif\ncontrol-openhands restart\ncontrol-openhands assert --field value --equals true --bug-shows false -- browser eval \"document.querySelector('[data-testid=enable-sound-notifications-switch]').checked\" # bug",
+  "exitCode": 1,
+  "timedOut": false,
+  "failedLine": 15,
+  "failedCommand": "control-openhands assert --field value --equals true --bug-shows false -- browser eval \"document.querySelector('[data-testid=enable-sound-notifications-switch]').checked\"",
+  "stdout": "{\n  \"ok\": true,\n  \"run\": \"<isolated-run>\",\n  \"baseUrl\": \"<run-origin>\",\n  \"stopped\": {\n    \"stopped\": true,\n    \"forced\": false\n  },\n  \"ports\": {\n    \"ingress\": 18810,\n    \"agentServer\": 18811,\n    \"automation\": 18812,\n    \"frontend\": 18813,\n    \"vscode\": 19811\n  },\n  \"rotatedKey\": false,\n  \"note\": \"Same state, keys and port block; reload the browser to reconnect.\"\n}\n{\n  \"ok\": true,\n  \"run\": \"<isolated-run>\",\n  \"baseUrl\": \"<run-origin>\",\n  \"failed\": [],\n  \"warnings\": [\n    \"LLM configured: model=gpt-5.6 without an API key: `control-openhands llm preset deepseek`\"\n  ],\n  \"passed\": [\n    \"launcher process group alive: /opt/homebrew/Cellar/node/25.9.0_1/bin/node <user-home>/repos/odie-worktrees/maintenance-settings-20261013/bin/agent-ca\",\n    \"launcher is this run's agent-canvas: /opt/homebrew/Cellar/node/25.9.0_1/bin/node <user-home>/repos/odie-worktrees/maintenance-settings-20261013/bin/agent-ca\",\n    \"port ingress:18810 listening: open\",\n    \"port agentServer:18811 listening: open\",\n    \"port automation:18812 listening: open\",\n    \"port frontend:18813 listening: open\",\n    \"served build matches this checkout's build inputs: served=1b17081ec8792938 run=1b17081ec8792938 revision=bdb69754a113\",\n    \"checkout build inputs unchanged since launch: launch=1b17081ec8792938 now=1b17081ec8792938\",\n    \"unauthenticated API rejected: status=401\",\n    \"authenticated settings readable: status=200\",\n    \"agent-server reachable: version=1.54.0\",\n    \"agent-server matches pin: server=1.54.0 pin=1.54.0\",\n    \"agent-server meets the UI minimum: server=1.54.0 minimum=1.51.0\",\n    \"automation healthy: status=200\",\n    \"UI loads without page errors: markers=home-chat-launcher pageErrors=0 testidsInDom=81 (hidden included)\"\n  ]\n}\n{\n  \"ok\": true,\n  \"viewport\": {\n    \"width\": 390,\n    \"height\": 844\n  }\n}\n{\n  \"ok\": true,\n  \"url\": \"<run-origin>/settings/app\",\n  \"status\": 200\n}\n{\n  \"ok\": true,\n  \"state\": \"visible\"\n}\n{\n  \"ok\": true,\n  \"kind\": \"hold\",\n  \"actual\": \"false\",\n  \"field\": \"value\",\n  \"expected\": \"false\",\n  \"command\": \"browser eval document.querySelector('[data-testid=enable-sound-notifications-switch]').checked\"\n}\n{\n  \"ok\": true,\n  \"stopped\": [\n    42020,\n    42024\n  ],\n  \"launcherAlive\": true,\n  \"next\": \"Drive the unavailable state, then `control-openhands restart` to bring the whole stack back.\"\n}\n{\n  \"ok\": true,\n  \"recording\": true,\n  \"fps\": 10,\n  \"maxSeconds\": 600,\n  \"format\": \"mp4\",\n  \"ffmpeg\": \"ffmpeg\",\n  \"url\": \"<run-origin>/settings/app\"\n}\n{\n  \"ok\": true,\n  \"url\": \"<run-origin>/settings/app\"\n}\n{\n  \"ok\": true,\n  \"url\": \"<run-origin>/settings/app\"\n}\n{\n  \"ok\": true,\n  \"text\": \"An error occurred\"\n}\n{\n  \"ok\": true,\n  \"path\": \"baseline-corrected-F16.save-states-phone-1-2026-10-13T02-57-35.178Z/failed-save-phone.png\",\n  \"url\": \"<run-origin>/settings/app\",\n  \"viewport\": {\n    \"width\": 390,\n    \"height\": 844\n  }\n}\n{\n  \"ok\": true,\n  \"path\": \"baseline-corrected-F16.save-states-phone-1-2026-10-13T02-57-35.178Z/failed-save-phone.mp4\",\n  \"seconds\": 3.2,\n  \"recordedSeconds\": 2.5,\n  \"size\": \"390x844\",\n  \"fps\": 10,\n  \"captures\": 25,\n  \"changes\": 22,\n  \"misses\": 0,\n  \"capped\": false,\n  \"cutSeconds\": 0,\n  \"url\": \"<run-origin>/settings/app\",\n  \"gif\": \"baseline-corrected-F16.save-states-phone-1-2026-10-13T02-57-35.178Z/failed-save-phone.gif\"\n}\n{\n  \"ok\": true,\n  \"run\": \"<isolated-run>\",\n  \"baseUrl\": \"<run-origin>\",\n  \"stopped\": {\n    \"stopped\": true,\n    \"forced\": false\n  },\n  \"ports\": {\n    \"ingress\": 18810,\n    \"agentServer\": 18811,\n    \"automation\": 18812,\n    \"frontend\": 18813,\n    \"vscode\": 19811\n  },\n  \"rotatedKey\": false,\n  \"note\": \"Same state, keys and port block; reload the browser to reconnect.\"\n}\n{\n  \"ok\": false,\n  \"kind\": \"mismatch\",\n  \"actual\": \"false\",\n  \"field\": \"value\",\n  \"expected\": \"true\",\n  \"bugShows\": \"false\",\n  \"command\": \"browser eval document.querySelector('[data-testid=enable-sound-notifications-switch]').checked\"\n}\n",
+  "stderr": "",
+  "elapsedMs": 29810,
+  "asserts": [
+    {
+      "ts": "2026-10-13T02:57:16.211Z",
+      "ok": true,
+      "kind": "hold",
+      "actual": "false",
+      "field": "value",
+      "expected": "false",
+      "command": "browser eval document.querySelector('[data-testid=enable-sound-notifications-switch]').checked"
+    },
+    {
+      "ts": "2026-10-13T02:57:32.486Z",
+      "ok": false,
+      "kind": "mismatch",
+      "actual": "false",
+      "field": "value",
+      "expected": "true",
+      "bugShows": "false",
+      "command": "browser eval document.querySelector('[data-testid=enable-sound-notifications-switch]').checked"
+    }
+  ]
+}

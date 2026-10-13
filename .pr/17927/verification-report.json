@@ -1,0 +1,96 @@
+{
+  "attribution": "I am an AI agent helping Engel Nyst (@enyst) with project maintenance.",
+  "date": "2026-10-13",
+  "issue": "https://github.com/OpenHands/OpenHands/issues/17927",
+  "baselineRevision": "bdb69754a113e3458d3645dfba0676ae73f4ebc3",
+  "functionalFixRevision": "d54c5c8e9d365cf3e65619e4cb5a632d5ab4734f",
+  "backendVersions": {
+    "agentServer": "1.54.0",
+    "automation": "1.19.3"
+  },
+  "viewports": [
+    "1440x1000",
+    "390x844"
+  ],
+  "proof": {
+    "ok": true,
+    "id": "F16.save-states",
+    "verdict": "verified",
+    "blocks": [
+      {
+        "name": "desktop",
+        "sha": "cdfb1a17b184dbce",
+        "verdict": "verified",
+        "reasons": [],
+        "baseline": {
+          "xfail": 2
+        },
+        "fix": {
+          "xpass": 2
+        },
+        "ignored": 0
+      },
+      {
+        "name": "phone",
+        "sha": "b8ce2e72bb540d40",
+        "verdict": "verified",
+        "reasons": [],
+        "baseline": {
+          "xfail": 2
+        },
+        "fix": {
+          "xpass": 2
+        },
+        "ignored": 0
+      }
+    ],
+    "recoveredViewports": [],
+    "hint": "Drop the Known failure note and the block's `# bug` marker in the fix's PR: the assertion now guards the corrected behavior as a normal recipe step."
+  },
+  "coverage": [
+    "F16.save-states: two baseline xfail and two fixed xpass per viewport",
+    "Sound and uncontrolled Git Username edits remain after real backend-unavailable Save",
+    "Real Agent Server pause during retry: Saving label, disabled native fields, no skeleton replacement",
+    "Server resumes: retry succeeds; API and reload preserve exact Git/Sound edits"
+  ],
+  "tests": {
+    "focusedPassed": 6,
+    "baselineNewBehaviorFailure": true
+  },
+  "checks": [
+    "production app build at final source",
+    "lint/typecheck/eslint/prettier",
+    "library build",
+    "before/after doctors"
+  ],
+  "errors": {
+    "pageErrors": 0,
+    "injectedAppErrors": 72,
+    "summary": {
+      "app:requestfailed": 14,
+      "app:console.error": 36,
+      "app:http-error": 22
+    },
+    "explanation": "App HTTP/console/request failures remain recorded across intentionally stopped/restarted Agent Server scenarios. Recent console groups are connection-refused and HTTP502. Final successful retries and doctor passed."
+  },
+  "cleanup": {
+    "browserStopped": true,
+    "launcherStopped": true,
+    "ownedPortsClosed": 5,
+    "conversationsCreated": 0,
+    "filesystemFixturesCreated": 0
+  },
+  "maintenanceCorrections": [
+    "Initial supplemental Saving label assertion selected value instead of text; its original private receipts/recording were retained. Corrected assertion and fixture reset produced the 92 passing final receipts. Formal bug attempts were unaffected."
+  ],
+  "mediaNote": "Retry recordings pause only for the owned stack restart/doctor and resume before the real pending and successful Save. Retained state screenshots align with baseline failure views.",
+  "limits": [
+    "No signed-in Cloud application settings run; the form behavior has service/mutation test coverage."
+  ],
+  "privacy": "Public copies retain assertion results and original transcript SHA256; credential literals, private paths and disposable origins are scanned or renamed. Original ledgers remain unchanged.",
+  "mediaReview": {
+    "selectedGifs": "20 decoded frames reviewed by an independent agent; no credentials or private paths visible.",
+    "beforeCaption": "Before recordings show skeleton replacement and failure; the Sound switch plus accepted assertions prove the lost draft. Git Username is below the before recording viewport.",
+    "afterCaption": "After recordings show retained Git draft, enabled retry, successful save/reload and clean Save."
+  }
+}

@@ -1,0 +1,479 @@
+{
+  "receipts": 92,
+  "assertions": [
+    {
+      "command": [
+        "assert",
+        "--field",
+        "value",
+        "--equals",
+        "true",
+        "--",
+        "browser",
+        "eval",
+        "document.querySelector('[data-testid=enable-sound-notifications-switch]').checked"
+      ],
+      "result": {
+        "ok": true,
+        "kind": "hold",
+        "actual": "true",
+        "field": "value",
+        "expected": "true",
+        "command": "browser eval document.querySelector('[data-testid=enable-sound-notifications-switch]').checked --run <isolated-run>"
+      }
+    },
+    {
+      "command": [
+        "assert",
+        "--field",
+        "value",
+        "--equals",
+        "QA Recovery",
+        "--",
+        "browser",
+        "value",
+        "testid=git-user-name-input"
+      ],
+      "result": {
+        "ok": true,
+        "kind": "hold",
+        "actual": "QA Recovery",
+        "field": "value",
+        "expected": "QA Recovery",
+        "command": "browser value testid=git-user-name-input --run <isolated-run>"
+      }
+    },
+    {
+      "command": [
+        "assert",
+        "--field",
+        "enabled",
+        "--equals",
+        "true",
+        "--",
+        "browser",
+        "enabled",
+        "testid=submit-button"
+      ],
+      "result": {
+        "ok": true,
+        "kind": "hold",
+        "actual": "true",
+        "field": "enabled",
+        "expected": "true",
+        "command": "browser enabled testid=submit-button --run <isolated-run>"
+      }
+    },
+    {
+      "command": [
+        "assert",
+        "--field",
+        "value",
+        "--equals",
+        "QA Recovery",
+        "--",
+        "browser",
+        "value",
+        "testid=git-user-name-input"
+      ],
+      "result": {
+        "ok": true,
+        "kind": "hold",
+        "actual": "QA Recovery",
+        "field": "value",
+        "expected": "QA Recovery",
+        "command": "browser value testid=git-user-name-input --run <isolated-run>"
+      }
+    },
+    {
+      "command": [
+        "assert",
+        "--field",
+        "text",
+        "--equals",
+        "Saving...",
+        "--",
+        "browser",
+        "text",
+        "testid=submit-button"
+      ],
+      "result": {
+        "ok": true,
+        "kind": "hold",
+        "actual": "Saving...",
+        "field": "text",
+        "expected": "Saving...",
+        "command": "browser text testid=submit-button --run <isolated-run>"
+      }
+    },
+    {
+      "command": [
+        "assert",
+        "--field",
+        "enabled",
+        "--equals",
+        "false",
+        "--",
+        "browser",
+        "enabled",
+        "testid=git-user-name-input"
+      ],
+      "result": {
+        "ok": true,
+        "kind": "hold",
+        "actual": "false",
+        "field": "enabled",
+        "expected": "false",
+        "command": "browser enabled testid=git-user-name-input --run <isolated-run>"
+      }
+    },
+    {
+      "command": [
+        "assert",
+        "--field",
+        "value",
+        "--equals",
+        "true",
+        "--",
+        "browser",
+        "eval",
+        "document.querySelector('[data-testid=app-settings-screen] fieldset').disabled"
+      ],
+      "result": {
+        "ok": true,
+        "kind": "hold",
+        "actual": "true",
+        "field": "value",
+        "expected": "true",
+        "command": "browser eval document.querySelector('[data-testid=app-settings-screen] fieldset').disabled --run <isolated-run>"
+      }
+    },
+    {
+      "command": [
+        "assert",
+        "--field",
+        "value",
+        "--equals",
+        "false",
+        "--",
+        "browser",
+        "eval",
+        "Boolean(document.querySelector('[data-testid=app-settings-skeleton]'))"
+      ],
+      "result": {
+        "ok": true,
+        "kind": "hold",
+        "actual": "false",
+        "field": "value",
+        "expected": "false",
+        "command": "browser eval Boolean(document.querySelector('[data-testid=app-settings-skeleton]')) --run <isolated-run>"
+      }
+    },
+    {
+      "command": [
+        "assert",
+        "--field",
+        "value",
+        "--equals",
+        "QA Recovery",
+        "--",
+        "browser",
+        "value",
+        "testid=git-user-name-input"
+      ],
+      "result": {
+        "ok": true,
+        "kind": "hold",
+        "actual": "QA Recovery",
+        "field": "value",
+        "expected": "QA Recovery",
+        "command": "browser value testid=git-user-name-input --run <isolated-run>"
+      }
+    },
+    {
+      "command": [
+        "assert",
+        "--field",
+        "value",
+        "--equals",
+        "true",
+        "--",
+        "browser",
+        "eval",
+        "document.querySelector('[data-testid=enable-sound-notifications-switch]').checked"
+      ],
+      "result": {
+        "ok": true,
+        "kind": "hold",
+        "actual": "true",
+        "field": "value",
+        "expected": "true",
+        "command": "browser eval document.querySelector('[data-testid=enable-sound-notifications-switch]').checked --run <isolated-run>"
+      }
+    },
+    {
+      "command": [
+        "assert",
+        "--field",
+        "value",
+        "--equals",
+        "QA Recovery",
+        "--",
+        "api",
+        "GET",
+        "/api/settings",
+        "--pick",
+        "misc_settings.app_preferences.git_user_name"
+      ],
+      "result": {
+        "ok": true,
+        "kind": "hold",
+        "actual": "QA Recovery",
+        "field": "value",
+        "expected": "QA Recovery",
+        "command": "api GET /api/settings --pick misc_settings.app_preferences.git_user_name --run <isolated-run>"
+      }
+    },
+    {
+      "command": [
+        "assert",
+        "--field",
+        "value",
+        "--equals",
+        "true",
+        "--",
+        "browser",
+        "eval",
+        "document.querySelector('[data-testid=enable-sound-notifications-switch]').checked"
+      ],
+      "result": {
+        "ok": true,
+        "kind": "hold",
+        "actual": "true",
+        "field": "value",
+        "expected": "true",
+        "command": "browser eval document.querySelector('[data-testid=enable-sound-notifications-switch]').checked --run <isolated-run>"
+      }
+    },
+    {
+      "command": [
+        "assert",
+        "--field",
+        "value",
+        "--equals",
+        "QA Recovery",
+        "--",
+        "browser",
+        "value",
+        "testid=git-user-name-input"
+      ],
+      "result": {
+        "ok": true,
+        "kind": "hold",
+        "actual": "QA Recovery",
+        "field": "value",
+        "expected": "QA Recovery",
+        "command": "browser value testid=git-user-name-input --run <isolated-run>"
+      }
+    },
+    {
+      "command": [
+        "assert",
+        "--field",
+        "enabled",
+        "--equals",
+        "true",
+        "--",
+        "browser",
+        "enabled",
+        "testid=submit-button"
+      ],
+      "result": {
+        "ok": true,
+        "kind": "hold",
+        "actual": "true",
+        "field": "enabled",
+        "expected": "true",
+        "command": "browser enabled testid=submit-button --run <isolated-run>"
+      }
+    },
+    {
+      "command": [
+        "assert",
+        "--field",
+        "value",
+        "--equals",
+        "QA Recovery",
+        "--",
+        "browser",
+        "value",
+        "testid=git-user-name-input"
+      ],
+      "result": {
+        "ok": true,
+        "kind": "hold",
+        "actual": "QA Recovery",
+        "field": "value",
+        "expected": "QA Recovery",
+        "command": "browser value testid=git-user-name-input --run <isolated-run>"
+      }
+    },
+    {
+      "command": [
+        "assert",
+        "--field",
+        "text",
+        "--equals",
+        "Saving...",
+        "--",
+        "browser",
+        "text",
+        "testid=submit-button"
+      ],
+      "result": {
+        "ok": true,
+        "kind": "hold",
+        "actual": "Saving...",
+        "field": "text",
+        "expected": "Saving...",
+        "command": "browser text testid=submit-button --run <isolated-run>"
+      }
+    },
+    {
+      "command": [
+        "assert",
+        "--field",
+        "enabled",
+        "--equals",
+        "false",
+        "--",
+        "browser",
+        "enabled",
+        "testid=git-user-name-input"
+      ],
+      "result": {
+        "ok": true,
+        "kind": "hold",
+        "actual": "false",
+        "field": "enabled",
+        "expected": "false",
+        "command": "browser enabled testid=git-user-name-input --run <isolated-run>"
+      }
+    },
+    {
+      "command": [
+        "assert",
+        "--field",
+        "value",
+        "--equals",
+        "true",
+        "--",
+        "browser",
+        "eval",
+        "document.querySelector('[data-testid=app-settings-screen] fieldset').disabled"
+      ],
+      "result": {
+        "ok": true,
+        "kind": "hold",
+        "actual": "true",
+        "field": "value",
+        "expected": "true",
+        "command": "browser eval document.querySelector('[data-testid=app-settings-screen] fieldset').disabled --run <isolated-run>"
+      }
+    },
+    {
+      "command": [
+        "assert",
+        "--field",
+        "value",
+        "--equals",
+        "false",
+        "--",
+        "browser",
+        "eval",
+        "Boolean(document.querySelector('[data-testid=app-settings-skeleton]'))"
+      ],
+      "result": {
+        "ok": true,
+        "kind": "hold",
+        "actual": "false",
+        "field": "value",
+        "expected": "false",
+        "command": "browser eval Boolean(document.querySelector('[data-testid=app-settings-skeleton]')) --run <isolated-run>"
+      }
+    },
+    {
+      "command": [
+        "assert",
+        "--field",
+        "value",
+        "--equals",
+        "QA Recovery",
+        "--",
+        "browser",
+        "value",
+        "testid=git-user-name-input"
+      ],
+      "result": {
+        "ok": true,
+        "kind": "hold",
+        "actual": "QA Recovery",
+        "field": "value",
+        "expected": "QA Recovery",
+        "command": "browser value testid=git-user-name-input --run <isolated-run>"
+      }
+    },
+    {
+      "command": [
+        "assert",
+        "--field",
+        "value",
+        "--equals",
+        "true",
+        "--",
+        "browser",
+        "eval",
+        "document.querySelector('[data-testid=enable-sound-notifications-switch]').checked"
+      ],
+      "result": {
+        "ok": true,
+        "kind": "hold",
+        "actual": "true",
+        "field": "value",
+        "expected": "true",
+        "command": "browser eval document.querySelector('[data-testid=enable-sound-notifications-switch]').checked --run <isolated-run>"
+      }
+    },
+    {
+      "command": [
+        "assert",
+        "--field",
+        "value",
+        "--equals",
+        "QA Recovery",
+        "--",
+        "api",
+        "GET",
+        "/api/settings",
+        "--pick",
+        "misc_settings.app_preferences.git_user_name"
+      ],
+      "result": {
+        "ok": true,
+        "kind": "hold",
+        "actual": "QA Recovery",
+        "field": "value",
+        "expected": "QA Recovery",
+        "command": "api GET /api/settings --pick misc_settings.app_preferences.git_user_name --run <isolated-run>"
+      }
+    }
+  ],
+  "pageErrors": 0,
+  "expectedInjectedAppErrors": 72,
+  "errorSummary": {
+    "app:requestfailed": 14,
+    "app:console.error": 36,
+    "app:http-error": 22
+  },
+  "doctorAfter": true
+}

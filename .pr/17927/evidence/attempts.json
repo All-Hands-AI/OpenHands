@@ -1,0 +1,253 @@
+{
+  "sanitization": "Copied original accepted collector receipts. Private run paths and disposable loopback origins renamed; optional exact secret literals redacted. Assertions, timing, revisions, viewport and original bounded stdout retained. No missing metadata invented. Original ledgers and transcripts unchanged. Binaries require visual inspection before publication.",
+  "attempts": [
+    {
+      "ts": "2026-10-13T02:56:25.732Z",
+      "id": "F16.save-states",
+      "name": "desktop",
+      "label": "baseline-corrected",
+      "attempt": 1,
+      "status": "xfail",
+      "sha": "cdfb1a17b184dbce",
+      "file": "references/feature-map/F16-application-settings.md:70",
+      "exitCode": 1,
+      "failedLine": 15,
+      "failedCommand": "control-openhands assert --field value --equals true --bug-shows false -- browser eval \"document.querySelector('[data-testid=enable-sound-notifications-switch]').checked\"",
+      "assertion": {
+        "kind": "mismatch",
+        "expected": "true",
+        "actual": "false",
+        "bugShows": "false"
+      },
+      "doctorBefore": true,
+      "doctorAfter": true,
+      "elapsedMs": 30611,
+      "revision": "bdb69754a113e3458d3645dfba0676ae73f4ebc3",
+      "backend": "local agent-server 1.54.0 automation 1.19.3",
+      "viewport": "1440x1000",
+      "transcript": "baseline-corrected-F16.save-states-desktop-1-2026-10-13T02-56-25.732Z/transcript.json",
+      "originalTranscriptSha256": "534fac24d9a3cdad103fa614e94c94e2c13d7aad691c28d7e1708b8d55df6db5",
+      "artifacts": [
+        "baseline-corrected-F16.save-states-desktop-1-2026-10-13T02-56-25.732Z/failed-save-desktop.png",
+        "baseline-corrected-F16.save-states-desktop-1-2026-10-13T02-56-25.732Z/failed-save-desktop.mp4",
+        "baseline-corrected-F16.save-states-desktop-1-2026-10-13T02-56-25.732Z/failed-save-desktop.gif"
+      ]
+    },
+    {
+      "ts": "2026-10-13T02:57:00.046Z",
+      "id": "F16.save-states",
+      "name": "desktop",
+      "label": "baseline-corrected",
+      "attempt": 2,
+      "status": "xfail",
+      "sha": "cdfb1a17b184dbce",
+      "file": "references/feature-map/F16-application-settings.md:70",
+      "exitCode": 1,
+      "failedLine": 15,
+      "failedCommand": "control-openhands assert --field value --equals true --bug-shows false -- browser eval \"document.querySelector('[data-testid=enable-sound-notifications-switch]').checked\"",
+      "assertion": {
+        "kind": "mismatch",
+        "expected": "true",
+        "actual": "false",
+        "bugShows": "false"
+      },
+      "doctorBefore": true,
+      "doctorAfter": true,
+      "elapsedMs": 28961,
+      "revision": "bdb69754a113e3458d3645dfba0676ae73f4ebc3",
+      "backend": "local agent-server 1.54.0 automation 1.19.3",
+      "viewport": "1440x1000",
+      "transcript": "baseline-corrected-F16.save-states-desktop-2-2026-10-13T02-57-00.046Z/transcript.json",
+      "originalTranscriptSha256": "73e5a78cc2845c8dd471b44575b0369ca10dfa9a3ee2eaba51a1e533934f6bbe",
+      "artifacts": [
+        "baseline-corrected-F16.save-states-desktop-2-2026-10-13T02-57-00.046Z/failed-save-desktop-2.png",
+        "baseline-corrected-F16.save-states-desktop-2-2026-10-13T02-57-00.046Z/failed-save-desktop-2.mp4",
+        "baseline-corrected-F16.save-states-desktop-2-2026-10-13T02-57-00.046Z/failed-save-desktop-2.gif"
+      ]
+    },
+    {
+      "ts": "2026-10-13T02:57:35.178Z",
+      "id": "F16.save-states",
+      "name": "phone",
+      "label": "baseline-corrected",
+      "attempt": 1,
+      "status": "xfail",
+      "sha": "b8ce2e72bb540d40",
+      "file": "references/feature-map/F16-application-settings.md:88",
+      "exitCode": 1,
+      "failedLine": 15,
+      "failedCommand": "control-openhands assert --field value --equals true --bug-shows false -- browser eval \"document.querySelector('[data-testid=enable-sound-notifications-switch]').checked\"",
+      "assertion": {
+        "kind": "mismatch",
+        "expected": "true",
+        "actual": "false",
+        "bugShows": "false"
+      },
+      "doctorBefore": true,
+      "doctorAfter": true,
+      "elapsedMs": 29810,
+      "revision": "bdb69754a113e3458d3645dfba0676ae73f4ebc3",
+      "backend": "local agent-server 1.54.0 automation 1.19.3",
+      "viewport": "390x844",
+      "transcript": "baseline-corrected-F16.save-states-phone-1-2026-10-13T02-57-35.178Z/transcript.json",
+      "originalTranscriptSha256": "be7dbf65bc3cfaaa2d0a31420158c80acac934bbd20f0ca27945e97db766612c",
+      "artifacts": [
+        "baseline-corrected-F16.save-states-phone-1-2026-10-13T02-57-35.178Z/failed-save-phone.png",
+        "baseline-corrected-F16.save-states-phone-1-2026-10-13T02-57-35.178Z/failed-save-phone.mp4",
+        "baseline-corrected-F16.save-states-phone-1-2026-10-13T02-57-35.178Z/failed-save-phone.gif"
+      ]
+    },
+    {
+      "ts": "2026-10-13T02:58:10.770Z",
+      "id": "F16.save-states",
+      "name": "phone",
+      "label": "baseline-corrected",
+      "attempt": 2,
+      "status": "xfail",
+      "sha": "b8ce2e72bb540d40",
+      "file": "references/feature-map/F16-application-settings.md:88",
+      "exitCode": 1,
+      "failedLine": 15,
+      "failedCommand": "control-openhands assert --field value --equals true --bug-shows false -- browser eval \"document.querySelector('[data-testid=enable-sound-notifications-switch]').checked\"",
+      "assertion": {
+        "kind": "mismatch",
+        "expected": "true",
+        "actual": "false",
+        "bugShows": "false"
+      },
+      "doctorBefore": true,
+      "doctorAfter": true,
+      "elapsedMs": 30306,
+      "revision": "bdb69754a113e3458d3645dfba0676ae73f4ebc3",
+      "backend": "local agent-server 1.54.0 automation 1.19.3",
+      "viewport": "390x844",
+      "transcript": "baseline-corrected-F16.save-states-phone-2-2026-10-13T02-58-10.770Z/transcript.json",
+      "originalTranscriptSha256": "e5711127a108f36c4447db6c81fd19d319d92caaf02b20eb49379d18aceaed2a",
+      "artifacts": [
+        "baseline-corrected-F16.save-states-phone-2-2026-10-13T02-58-10.770Z/failed-save-phone-2.png",
+        "baseline-corrected-F16.save-states-phone-2-2026-10-13T02-58-10.770Z/failed-save-phone-2.mp4",
+        "baseline-corrected-F16.save-states-phone-2-2026-10-13T02-58-10.770Z/failed-save-phone-2.gif"
+      ]
+    },
+    {
+      "ts": "2026-10-13T06:19:46.517Z",
+      "id": "F16.save-states",
+      "name": "desktop",
+      "label": "fix",
+      "attempt": 1,
+      "status": "xpass",
+      "sha": "cdfb1a17b184dbce",
+      "file": "../../../.pr/17927/bug-recipes.md:7",
+      "exitCode": 0,
+      "failedLine": null,
+      "assertion": {
+        "kind": "hold",
+        "expected": "true",
+        "actual": "true",
+        "bugShows": "false"
+      },
+      "doctorBefore": true,
+      "elapsedMs": 33772,
+      "revision": "d54c5c8e9d365cf3e65619e4cb5a632d5ab4734f",
+      "backend": "local agent-server 1.54.0 automation 1.19.3",
+      "viewport": "1440x1000",
+      "transcript": "fix-F16.save-states-desktop-1-2026-10-13T06-19-46.517Z/transcript.json",
+      "originalTranscriptSha256": "9a7a6ca8e3e51d4bd2bec8383c44be7543150493803cbc8dfca18ccc7316cec0",
+      "artifacts": [
+        "fix-F16.save-states-desktop-1-2026-10-13T06-19-46.517Z/failed-save-desktop.png",
+        "fix-F16.save-states-desktop-1-2026-10-13T06-19-46.517Z/failed-save-desktop.mp4",
+        "fix-F16.save-states-desktop-1-2026-10-13T06-19-46.517Z/failed-save-desktop.gif"
+      ]
+    },
+    {
+      "ts": "2026-10-13T06:20:21.599Z",
+      "id": "F16.save-states",
+      "name": "desktop",
+      "label": "fix",
+      "attempt": 2,
+      "status": "xpass",
+      "sha": "cdfb1a17b184dbce",
+      "file": "../../../.pr/17927/bug-recipes.md:7",
+      "exitCode": 0,
+      "failedLine": null,
+      "assertion": {
+        "kind": "hold",
+        "expected": "true",
+        "actual": "true",
+        "bugShows": "false"
+      },
+      "doctorBefore": true,
+      "elapsedMs": 32220,
+      "revision": "d54c5c8e9d365cf3e65619e4cb5a632d5ab4734f",
+      "backend": "local agent-server 1.54.0 automation 1.19.3",
+      "viewport": "1440x1000",
+      "transcript": "fix-F16.save-states-desktop-2-2026-10-13T06-20-21.599Z/transcript.json",
+      "originalTranscriptSha256": "b55fa412bb3b01e453e8df5f353fda7ced4edd3b1464d1ddc084ab7c4f7ef10e",
+      "artifacts": [
+        "fix-F16.save-states-desktop-2-2026-10-13T06-20-21.599Z/failed-save-desktop-2.png",
+        "fix-F16.save-states-desktop-2-2026-10-13T06-20-21.599Z/failed-save-desktop-2.mp4",
+        "fix-F16.save-states-desktop-2-2026-10-13T06-20-21.599Z/failed-save-desktop-2.gif"
+      ]
+    },
+    {
+      "ts": "2026-10-13T06:20:55.670Z",
+      "id": "F16.save-states",
+      "name": "phone",
+      "label": "fix",
+      "attempt": 1,
+      "status": "xpass",
+      "sha": "b8ce2e72bb540d40",
+      "file": "../../../.pr/17927/bug-recipes.md:25",
+      "exitCode": 0,
+      "failedLine": null,
+      "assertion": {
+        "kind": "hold",
+        "expected": "true",
+        "actual": "true",
+        "bugShows": "false"
+      },
+      "doctorBefore": true,
+      "elapsedMs": 31393,
+      "revision": "d54c5c8e9d365cf3e65619e4cb5a632d5ab4734f",
+      "backend": "local agent-server 1.54.0 automation 1.19.3",
+      "viewport": "390x844",
+      "transcript": "fix-F16.save-states-phone-1-2026-10-13T06-20-55.670Z/transcript.json",
+      "originalTranscriptSha256": "dc107127b359b3ea5dd89ef904d37acb20d27502c5da2ee274692fe2b017c4c0",
+      "artifacts": [
+        "fix-F16.save-states-phone-1-2026-10-13T06-20-55.670Z/failed-save-phone.png",
+        "fix-F16.save-states-phone-1-2026-10-13T06-20-55.670Z/failed-save-phone.mp4",
+        "fix-F16.save-states-phone-1-2026-10-13T06-20-55.670Z/failed-save-phone.gif"
+      ]
+    },
+    {
+      "ts": "2026-10-13T06:21:29.775Z",
+      "id": "F16.save-states",
+      "name": "phone",
+      "label": "fix",
+      "attempt": 2,
+      "status": "xpass",
+      "sha": "b8ce2e72bb540d40",
+      "file": "../../../.pr/17927/bug-recipes.md:25",
+      "exitCode": 0,
+      "failedLine": null,
+      "assertion": {
+        "kind": "hold",
+        "expected": "true",
+        "actual": "true",
+        "bugShows": "false"
+      },
+      "doctorBefore": true,
+      "elapsedMs": 31381,
+      "revision": "d54c5c8e9d365cf3e65619e4cb5a632d5ab4734f",
+      "backend": "local agent-server 1.54.0 automation 1.19.3",
+      "viewport": "390x844",
+      "transcript": "fix-F16.save-states-phone-2-2026-10-13T06-21-29.775Z/transcript.json",
+      "originalTranscriptSha256": "f3c87e55339199a0b202b90b5a4c4dd8e3ff118b9bf47520e2d330a89719fb10",
+      "artifacts": [
+        "fix-F16.save-states-phone-2-2026-10-13T06-21-29.775Z/failed-save-phone-2.png",
+        "fix-F16.save-states-phone-2-2026-10-13T06-21-29.775Z/failed-save-phone-2.mp4",
+        "fix-F16.save-states-phone-2-2026-10-13T06-21-29.775Z/failed-save-phone-2.gif"
+      ]
+    }
+  ]
+}
