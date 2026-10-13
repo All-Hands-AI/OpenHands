@@ -224,6 +224,7 @@ function parseArgs() {
         config.backendOnly = true;
         break;
       case "--allow-lan-session-key":
+        // @spec LAR-001 — Explicit LAN key opt-in
         config.allowLanSessionKey = true;
         break;
       case "-H":
@@ -1234,6 +1235,7 @@ function buildViteFrontendEnv(config) {
   // keeps transparent auth; public or off-loopback mode serves no credential
   // and shows the API-key entry screen.
   const policy = applySessionKeyPolicy({
+    // @spec LAR-001 — Explicit LAN key opt-in
     host: config.bindHost,
     allowLanSessionKey: config.allowLanSessionKey,
     sessionApiKey:

@@ -625,6 +625,7 @@ describe("stack mode routing", () => {
     expect(viteEnv.VITE_AUTH_REQUIRED).toBe("true");
   });
 
+  // @spec LAR-001 — Explicit LAN key opt-in
   it("honors the explicit LAN session-key opt-in for Vite", async () => {
     const config = await buildConfig(
       { host: "0.0.0.0", allowLanSessionKey: true },

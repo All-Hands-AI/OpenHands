@@ -48,6 +48,7 @@ describe("agent-canvas CLI", () => {
     expect(stdout).toContain("--help");
   });
 
+  // @spec LAR-002 — Expected occupied-port errors
   it("reports a busy ingress port once without a stack trace", async () => {
     const occupied = net.createServer();
     await new Promise<void>((resolve) =>
