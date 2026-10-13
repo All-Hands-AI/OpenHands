@@ -57,12 +57,29 @@ describe("agent-canvas CLI", () => {
     const port = (occupied.address() as net.AddressInfo).port;
     const state = mkdtempSync(resolve(tmpdir(), "canvas-busy-port-"));
     try {
+      // The occupied port prevents any service from starting. Stub only uvx
+      // discovery so this CLI diagnostic test also runs without Python tools.
+      if (process.platform === "win32") {
+        writeFileSync(resolve(state, "uvx.cmd"), "@exit /b 0\r\n");
+      } else {
+        writeFileSync(resolve(state, "uvx"), "#!/bin/sh\nexit 0\n", {
+          mode: 0o700,
+        });
+      }
       const child = spawn(
         process.execPath,
         ["bin/agent-canvas.mjs", "--backend-only", "--port", String(port)],
         {
           cwd: repoRoot,
-          env: { ...process.env, OH_CANVAS_SAFE_STATE_DIR: state },
+          env: {
+            ...process.env,
+            PATH: `${state}${delimiter}${process.env.PATH ?? ""}`,
+            HOME: state,
+            USERPROFILE: state,
+            OH_CANVAS_SAFE_STATE_DIR: state,
+            OH_AGENT_SERVER_LOCAL_PATH: "",
+            OH_AUTOMATION_LOCAL_PATH: "",
+          },
           stdio: ["ignore", "pipe", "pipe"],
         },
       );
@@ -77,6 +94,7 @@ describe("agent-canvas CLI", () => {
       expect(code).toBe(1);
       expect(
         output.match(/Cannot start: the following ports are already in use/g),
+        output,
       ).toHaveLength(1);
       expect(output).not.toMatch(/\n\s+at /);
       expect(output).toContain("--port <other>");
