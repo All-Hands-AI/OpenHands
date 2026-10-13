@@ -278,6 +278,28 @@ describe("extractReferences", () => {
       extractReferences("![alt](https://example.com/a.png) see [Req 3.1]"),
     ).toEqual([{ label: "Req", section: "3.1" }]);
   });
+
+  it("counts a link whose leading exclamation mark is escaped", () => {
+    // `\!` renders a literal `!`, so the link that follows is real.
+    expect(extractReferences("\\![Req 9.9](https://example.com)")).toEqual([
+      { label: "Req", section: "9.9" },
+    ]);
+  });
+
+  it("ignores an image behind an even backslash run", () => {
+    // `\\!` renders a backslash then image syntax, so the alt text is not a
+    // citation. An odd count would escape the `!` and make the link real.
+    expect(extractReferences("\\\\![Req 9.9](https://example.com)")).toEqual(
+      [],
+    );
+  });
+
+  it("counts a link behind an even backslash run", () => {
+    // `\\[` renders a backslash then a real link; only an odd count escapes it.
+    expect(extractReferences("\\\\[Req 9.9](https://example.com)")).toEqual([
+      { label: "Req", section: "9.9" },
+    ]);
+  });
 });
 
 describe("validateDocumentChain", () => {
@@ -465,6 +487,22 @@ describe("validateDocumentChain", () => {
     const uncovered = validateDocumentChain(documents, "tasks");
     expect(uncovered.ok).toBe(true);
     expect(uncovered.uncovered).toEqual(["3.1"]);
+  });
+
+  it("flags a citation link behind an escaped image marker", () => {
+    // `\![Req 9.9](url)` renders a literal `!` then a real link, so the
+    // checkpoint must reject it as a dangling reference rather than treat it
+    // as image alt text.
+    const documents: DeepPlanDocuments = {
+      requirements: "## 3.1 Login",
+      tasks: "- [ ] T1 \\![Req 9.9](https://example.com)",
+    };
+
+    const report = validateDocumentChain(documents, "tasks");
+    expect(report.ok).toBe(false);
+    expect(report.issues).toEqual([
+      { from: "tasks", ref: "Req 9.9", reason: "dangling" },
+    ]);
   });
 
   it("rejects a citation to a section only an unnumbered heading cites", () => {

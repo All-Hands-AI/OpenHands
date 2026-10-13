@@ -47,23 +47,61 @@ export interface RefReport {
  * One scan shared by validation and rendering, so the two can never disagree
  * about what a citation is. Alternatives, in order:
  *
- *  1. Image alt text or escaped markup — `![Req 3.1](url)` or
- *     `\[Req 3.1](url)`. The bracketed text is not a citation (it labels an
- *     image, or renders literally), so the whole span is consumed with no
- *     capture group and both consumers ignore it.
+ *  1. A verbatim span: fenced code (``` / ~~~) or an inline code span. A
+ *     citation-looking marker inside one is an illustrative example.
  *  2. A Markdown link whose whole label is a citation — `[Req 3.1](https://…)`.
  *     The label is a real reference the validator must check, but the link is
  *     authored markup, so it must stay as written when rendering.
- *  3. Any other verbatim span: fenced code (``` / ~~~), an inline code span, or
- *     a Markdown link. A citation-looking marker inside one of these is an
- *     illustrative example, not a dependency.
+ *  3. Any other Markdown link. A citation-looking marker nested in its text is
+ *     part of the link, not a dependency.
  *  4. A bare citation in prose — `[Req 3.1]`.
  *
- * Groups: 1/2 direct-link label/section, 3 protected span, 4/5 prose
- * label/section. The image/escaped alternative deliberately captures nothing.
+ * Whether alternative 2 is actually a link is decided by
+ * {@link isImageOrEscapedLink} from the match's surrounding bytes: the same
+ * bracket-and-parenthesis shape also spells image alt text (`![Req 3.1](url)`)
+ * and escaped markup (`\[Req 3.1](url)`), and Markdown backslash parity means
+ * that cannot be told from the matched text alone.
+ *
+ * Groups: 1 code span, 2/3 direct-link label/section, 4 other link,
+ * 5/6 prose label/section.
  */
 const CITATION_OR_PROTECTED =
-  /(?:[!\\])\[(?:Req|DB|BE|FE)\s+[0-9]+(?:\.[0-9]+)*\]\([^)\n]*\)|\[(Req|DB|BE|FE)\s+([0-9]+(?:\.[0-9]+)*)\]\([^)\n]*\)|(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`|\[(?:[^[\]\n]|\[[^\]\n]*\])*\]\([^)\n]*\))|\[(Req|DB|BE|FE)\s+([0-9]+(?:\.[0-9]+)*)\]/g;
+  /(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`)|\[(Req|DB|BE|FE)\s+([0-9]+(?:\.[0-9]+)*)\]\([^)\n]*\)|(\[(?:[^[\]\n]|\[[^\]\n]*\])*\]\([^)\n]*\))|\[(Req|DB|BE|FE)\s+([0-9]+(?:\.[0-9]+)*)\]/g;
+
+/**
+ * Counts the backslashes immediately before `index`. Markdown escapes by
+ * backslash parity: a run of n backslashes escapes the next character only
+ * when n is odd.
+ */
+function backslashesBefore(content: string, index: number): number {
+  let count = 0;
+  let i = index - 1;
+  while (i >= 0 && content[i] === "\\") {
+    count += 1;
+    i -= 1;
+  }
+  return count;
+}
+
+/**
+ * Whether the citation link starting at `index` is image alt text or escaped
+ * markup rather than a real link.
+ *
+ * `\[Req 3.1](url)` renders a literal bracket (an odd backslash count escapes
+ * it); `\\[Req 3.1](url)` renders a backslash followed by a real link (even
+ * count). The same parity applies to the `!` that makes image syntax:
+ * `\![Req 3.1](url)` renders `!` then a real link, while `\\![Req 3.1](url)`
+ * renders a backslash then an image.
+ */
+function isImageOrEscapedLink(content: string, index: number): boolean {
+  const backslashes = backslashesBefore(content, index);
+  if (backslashes % 2 === 1) return true;
+  if (backslashes > 0) return false;
+  const bangIndex = index - 1;
+  if (bangIndex < 0 || content[bangIndex] !== "!") return false;
+  return backslashesBefore(content, bangIndex) % 2 === 0;
+}
+
 const HEADING_PATTERN = /^#{1,6}\s+(.*)$/;
 /**
  * An inline Markdown delimiter that may wrap a heading's leading section
@@ -192,8 +230,16 @@ export function extractReferences(
 ): { label: DeepPlanLabel; section: string }[] {
   const refs: { label: DeepPlanLabel; section: string }[] = [];
   for (const match of content.matchAll(CITATION_OR_PROTECTED)) {
-    const label = (match[1] ?? match[4]) as DeepPlanLabel | undefined;
-    const section = match[2] ?? match[5];
+    const directLabel = match[2] as DeepPlanLabel | undefined;
+    const directSection = match[3];
+    if (directLabel !== undefined && directSection !== undefined) {
+      if (!isImageOrEscapedLink(content, match.index ?? 0)) {
+        refs.push({ label: directLabel, section: directSection });
+      }
+      continue;
+    }
+    const label = match[5] as DeepPlanLabel | undefined;
+    const section = match[6];
     if (label === undefined || section === undefined) continue;
     refs.push({ label, section });
   }
@@ -252,15 +298,20 @@ export function linkifyCitations(
     CITATION_OR_PROTECTED,
     (
       match,
+      codeSpan: string | undefined,
       directLabel: DeepPlanLabel | undefined,
-      directSection: string | undefined,
-      protectedSpan: string | undefined,
+      _directSection: string | undefined,
+      otherLink: string | undefined,
       label: DeepPlanLabel | undefined,
       section: string | undefined,
     ) => {
-      // A link the author already wrote stays exactly as it is; only a bare
-      // prose citation is rewritten into a chain link.
-      if (directLabel !== undefined || protectedSpan !== undefined)
+      // Code spans and any link the author already wrote stay exactly as they
+      // are; only a bare prose citation is rewritten into a chain link.
+      if (
+        codeSpan !== undefined ||
+        directLabel !== undefined ||
+        otherLink !== undefined
+      )
         return match;
       if (label === undefined || section === undefined) return match;
       const target = DEEP_PLAN_LABEL_TO_PHASE[label];
