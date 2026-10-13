@@ -46,6 +46,7 @@ import {
   ipcMain,
   nativeImage,
   nativeTheme,
+  safeStorage,
   shell,
 } from "electron";
 import { chmodSync, existsSync } from "node:fs";
@@ -313,6 +314,8 @@ async function waitForAgentServer(
 
 let loadingWin = null;
 let mainWin = null;
+/** MARS session bridge (port-forward tunnels, MARSOHS-1429) — created in app.whenReady(). */
+let marsTunnelBridge = null;
 
 // Collapsed splash size — loading.html's .container height must match. The
 // expanded height reveals the startup-log console below it ("Show details").
@@ -388,13 +391,27 @@ function createMainWindow() {
     // App-shell background (--oh-background in src/index.css) — avoids white
     // flashes during the show → maximize repaint after the splash closes.
     backgroundColor: "#0b0e14",
+    // hiddenInset hides the native title bar but keeps the traffic lights
+    // floating over the app shell; the renderer reserves a drag band for them.
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
     icon: appIconPath,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      // Desktop-shell state and the MARS tunnel bridge (see preload-main.cjs).
+      preload: join(__dirname, "preload-main.cjs"),
     },
   });
+
+  // The renderer drops its reserved traffic-light band in fullscreen, where
+  // macOS hides the buttons. Only transitions are pushed; the preload reads the
+  // current state over "window:full-screen:get" on every page load.
+  const sendFullScreenState = () => {
+    if (!mainWin || mainWin.isDestroyed()) return;
+    mainWin.webContents.send("window:full-screen", mainWin.isFullScreen());
+  };
+  mainWin.on("enter-full-screen", sendFullScreenState);
+  mainWin.on("leave-full-screen", sendFullScreenState);
 
   mainWin.loadURL("http://localhost:8000");
 
@@ -565,6 +582,13 @@ ipcMain.handle("boot-log:quit", (event) => {
   app.quit();
 });
 
+// Synchronous so the preload has the state before the first render; a
+// renderer that starts with "not fullscreen" paints the band and then drops it.
+ipcMain.on("window:full-screen:get", (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  event.returnValue = win !== null && !win.isDestroyed() && win.isFullScreen();
+});
+
 // ── Backend stack ─────────────────────────────────────────────────────────────
 
 /**
@@ -695,6 +719,19 @@ app.whenReady().then(async () => {
   injectBundledUv();
   injectBundledNode();
 
+  // Registered before the window loads so the renderer's first paint can
+  // already reach the bridge (MARSOHS-1429). Independent of the agent-server
+  // stack below — MARS sessions don't need the bundled backend to be up.
+  const { createMarsTunnelBridge } = await import(
+    pathToFileURL(join(scriptsDir, "mars-tunnel-bridge.mjs")).href
+  );
+  marsTunnelBridge = createMarsTunnelBridge({
+    userDataPath: app.getPath("userData"),
+    safeStorage,
+    openExternal: (url) => shell.openExternal(url),
+  });
+  marsTunnelBridge.registerIpc(ipcMain);
+
   if (!uvxAvailable()) {
     dialog.showErrorBox(
       "Missing prerequisite: uv",
@@ -742,7 +779,10 @@ app.whenReady().then(async () => {
     const errorTail = recentServiceErrors.length
       ? `\n\nRecent service errors:\n${recentServiceErrors.join("\n")}`
       : "";
-    dialog.showErrorBox("OpenHands Agent Canvas failed to start", summary + errorTail);
+    dialog.showErrorBox(
+      "OpenHands Agent Canvas failed to start",
+      summary + errorTail,
+    );
     app.quit();
   }
 });
@@ -778,6 +818,14 @@ app.on("before-quit", (event) => {
 
   cleanupStarted = true;
   event.preventDefault();
+
+  // MARS connections are in-process state (tunnel listeners to close; no OS
+  // subprocess to signal and wait on), so this
+  // doesn't need the SIGTERM-based cleanup path below — just tear them down
+  // directly. Best-effort: quitting must not hang on it.
+  void marsTunnelBridge?.dispose().catch((err) => {
+    console.warn("[desktop] Failed to close MARS connections:", err);
+  });
 
   console.log("[desktop] Stopping backend services…");
   if (process.platform === "win32") {

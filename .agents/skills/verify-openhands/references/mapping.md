@@ -40,7 +40,10 @@ candidate. Sources, roughly in order of yield:
    controls, and anything the agent can drive through client tools
    (`canvas_ui_control`).
 5. **Keyboard shortcuts**: grep `keydown`, `useHotkeys`, `metaKey`, `ctrlKey` in
-   `src/`. A shortcut is an entry point.
+   `src/`. A shortcut is an entry point. When it reads `event.repeat` (a held
+   key must not fire twice) or needs a modifier held across a click, drive it
+   with `browser key down <Key> [--repeat N]` and `browser key up <Key>`
+   (`browser press` sends one keydown and keyup).
 6. **Backends and modes**: local vs Cloud backend, public vs local auth, ACP
    agents, partial stacks (`agent-canvas --help`), Electron, Docker, and the
    embeddable library (`src/index.ts` / `build:lib`).
@@ -116,7 +119,27 @@ sections, in this order:
 4. `## Gotchas`: traps that waste or invalidate a run: debounces, focus traps,
    items that only appear after the agent runs, features hidden behind a
    prerequisite, and known open issues (link them; they are repro candidates, not
-   exemptions).
+   exemptions). The map should know every open bug. Record one on the bullet
+   that reproduces it, next to the expected result, as `Known failure
+   (reproduced <date>, #<issue>): <what happens>`; list it here as
+   `Known issue #<issue>: ...` only when no recipe can drive it.
+
+   Make the note executable when a recipe can drive it: indent a fenced block
+   under it, opened with `` ```sh known-bug <ID> [name] `` (the name tells
+   entry points or viewports apart, such as `desktop` and `phone`). Its
+   commands set their own viewport and starting page and assert the *correct*
+   behavior; exactly one line, the one that fails because of the bug, is a
+   `control-openhands assert --field <path> --equals <correct> --bug-shows
+   <what the bug shows> -- <command>` ending in `# bug`. Arrange steps go
+   before it and must be able to fail on their own (assert the starting value
+   too), so a broken setup is never read as the bug. Keep a `browser
+   screenshot` before the assertion where the symptom is visual.
+   `control-openhands bug run <ID>` then reports `xfail` while the bug lasts,
+   `xpass` once it stops, and `fail` for anything else; `map check` rejects a
+   block without exactly one such line. F25's `F25.selector-dropdown` note is
+   the worked example. When a fix is proven, the PR that drops the note turns
+   the block's commands into the bullet's normal steps, so the same assertion
+   guards the corrected behavior.
 
 Treat commands as literal: quote selectors, keep names unique to the run (prefix
 fixtures with `QA_`), and restore shared state after mutations (delete the secret,
