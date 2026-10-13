@@ -5,6 +5,7 @@ import { NavigationLink } from "#/components/shared/navigation-link";
 import { useTracking } from "#/hooks/use-tracking";
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
+import { hoverRevealActionClassName } from "#/utils/hover-reveal-classes";
 import {
   getSidebarOnboardingChecklistHref,
   isExternalSidebarOnboardingChecklistItem,
@@ -220,10 +221,8 @@ export function SidebarOnboardingChecklist({
             onClick={dismiss}
             className={cn(
               "relative z-10 inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted",
-              "pointer-events-none opacity-0 transition-opacity motion-reduce:transition-none",
-              "group-hover:pointer-events-auto group-hover:opacity-100 hover:bg-surface hover:text-content",
-              "group-focus-within:pointer-events-auto group-focus-within:opacity-100 focus-visible:opacity-100",
-              "[@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100",
+              "transition-opacity motion-reduce:transition-none hover:text-content",
+              hoverRevealActionClassName(),
             )}
           >
             <X className="size-4" />
