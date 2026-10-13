@@ -154,8 +154,8 @@ export function HomeLauncherModeToggle({
                   "relative inline-flex items-center gap-2 rounded-full px-5 py-2",
                   "cursor-pointer transition-colors",
                   isActive
-                    ? "text-white"
-                    : "text-[var(--oh-muted)] hover:text-white",
+                    ? "text-[var(--oh-contrast)]"
+                    : "text-[var(--oh-muted)] hover:text-[var(--oh-contrast)]",
                   disableAnimation &&
                     isActive &&
                     "bg-[var(--oh-interactive-hover)]",
