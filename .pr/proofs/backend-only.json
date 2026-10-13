@@ -1,0 +1,21 @@
+{
+  "ok": true,
+  "id": "F26.backend-only",
+  "verdict": "verified",
+  "blocks": [
+    {
+      "name": "metadata",
+      "sha": "3ac605d791807b50",
+      "verdict": "verified",
+      "reasons": [],
+      "baseline": {
+        "xfail": 2
+      },
+      "fix": {
+        "xpass": 2
+      },
+      "ignored": 0
+    }
+  ],
+  "hint": "Drop the Known failure note and the block's `# bug` marker in the fix's PR: the assertion now guards the corrected behavior as a normal recipe step."
+}

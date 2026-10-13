@@ -1,0 +1,21 @@
+{
+  "ok": true,
+  "id": "F26.cli-port-in-use",
+  "verdict": "verified",
+  "blocks": [
+    {
+      "name": "once",
+      "sha": "5b36717af87a1a54",
+      "verdict": "verified",
+      "reasons": [],
+      "baseline": {
+        "xfail": 2
+      },
+      "fix": {
+        "xpass": 2
+      },
+      "ignored": 0
+    }
+  ],
+  "hint": "Drop the Known failure note and the block's `# bug` marker in the fix's PR: the assertion now guards the corrected behavior as a normal recipe step."
+}

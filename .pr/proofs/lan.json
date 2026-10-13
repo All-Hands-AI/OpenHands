@@ -1,0 +1,48 @@
+{
+  "ok": true,
+  "id": "F26.host-bind-lan-optin",
+  "verdict": "verified",
+  "blocks": [
+    {
+      "name": "desktop",
+      "sha": "8c50fb9593a03a94",
+      "verdict": "verified",
+      "reasons": [],
+      "baseline": {
+        "xfail": 2
+      },
+      "fix": {
+        "xpass": 2
+      },
+      "ignored": 0
+    },
+    {
+      "name": "phone",
+      "sha": "4ef373abb96f2693",
+      "verdict": "verified",
+      "reasons": [],
+      "baseline": {
+        "xfail": 2
+      },
+      "fix": {
+        "xpass": 2
+      },
+      "ignored": 0
+    }
+  ],
+  "recoveredViewports": [
+    {
+      "name": "desktop",
+      "revision": "93dba96a09f7d4bbcb52f778f298ab620a944fb9",
+      "viewport": "1440x900",
+      "source": "evidence/known-bugs/F26.host-bind-lan-optin-desktop-1791862141251-2.json:stdout"
+    },
+    {
+      "name": "phone",
+      "revision": "93dba96a09f7d4bbcb52f778f298ab620a944fb9",
+      "viewport": "390x844",
+      "source": "evidence/known-bugs/F26.host-bind-lan-optin-phone-1791862155549-2.json:stdout"
+    }
+  ],
+  "hint": "Drop the Known failure note and the block's `# bug` marker in the fix's PR: the assertion now guards the corrected behavior as a normal recipe step."
+}

@@ -1,0 +1,24 @@
+{
+  "id": "F26.host-bind-lan-optin",
+  "name": "phone",
+  "file": "references/feature-map/F26-runtime-variants.md",
+  "script": "control-openhands browser viewport 390x844\ncontrol-openhands browser goto /\ncontrol-openhands browser wait 'role=dialog' --timeout 30000\ncontrol-openhands browser screenshot --feature F26.host-bind-lan-optin --name phone\ncontrol-openhands assert --field value --equals true --bug-shows false -- browser eval 'Boolean(window.__AGENT_CANVAS_SESSION_API_KEY__)' # bug",
+  "exitCode": 0,
+  "timedOut": false,
+  "failedLine": null,
+  "stdout": "{\n  \"ok\": true,\n  \"viewport\": {\n    \"width\": 390,\n    \"height\": 844\n  }\n}\n{\n  \"ok\": true,\n  \"url\": \"http://127.0.0.1:23800/\",\n  \"status\": 200\n}\n{\n  \"ok\": true,\n  \"state\": \"visible\"\n}\n{\n  \"ok\": true,\n  \"path\": \"<run>/evidence/F26.host-bind-lan-optin/phone.png\",\n  \"url\": \"http://127.0.0.1:23800/\",\n  \"viewport\": {\n    \"width\": 390,\n    \"height\": 844\n  }\n}\n{\n  \"ok\": true,\n  \"kind\": \"hold\",\n  \"actual\": \"true\",\n  \"field\": \"value\",\n  \"expected\": \"true\",\n  \"bugShows\": \"false\",\n  \"command\": \"browser eval Boolean(window.__AGENT_CANVAS_SESSION_API_KEY__)\"\n}\n",
+  "stderr": "",
+  "elapsedMs": 1582,
+  "asserts": [
+    {
+      "ts": "2026-10-13T03:47:17.707Z",
+      "ok": true,
+      "kind": "hold",
+      "actual": "true",
+      "field": "value",
+      "expected": "true",
+      "bugShows": "false",
+      "command": "browser eval Boolean(window.__AGENT_CANVAS_SESSION_API_KEY__)"
+    }
+  ]
+}

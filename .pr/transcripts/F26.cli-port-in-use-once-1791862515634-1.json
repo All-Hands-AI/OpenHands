@@ -1,0 +1,25 @@
+{
+  "id": "F26.cli-port-in-use",
+  "name": "once",
+  "file": "references/feature-map/F26-runtime-variants.md",
+  "script": "control-openhands assert --field messageCount --equals 1 --bug-shows 2 -- launcher busy-port # bug",
+  "exitCode": 1,
+  "timedOut": false,
+  "failedLine": 1,
+  "failedCommand": "control-openhands assert --field messageCount --equals 1 --bug-shows 2 -- launcher busy-port",
+  "stdout": "{\n  \"ok\": false,\n  \"kind\": \"mismatch\",\n  \"actual\": \"2\",\n  \"field\": \"messageCount\",\n  \"expected\": \"1\",\n  \"bugShows\": \"2\",\n  \"command\": \"launcher busy-port\"\n}\n",
+  "stderr": "",
+  "elapsedMs": 282,
+  "asserts": [
+    {
+      "ts": "2026-10-13T03:35:20.596Z",
+      "ok": false,
+      "kind": "mismatch",
+      "actual": "2",
+      "field": "messageCount",
+      "expected": "1",
+      "bugShows": "2",
+      "command": "launcher busy-port"
+    }
+  ]
+}
