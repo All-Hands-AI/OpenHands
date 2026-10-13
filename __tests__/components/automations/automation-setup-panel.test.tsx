@@ -10,6 +10,7 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { HttpError } from "@openhands/typescript-client";
+import { AxiosError } from "axios";
 import {
   NavigationProvider,
   type NavigationContextValue,
@@ -198,6 +199,13 @@ vi.mock("#/manifests/automation-interface", () => ({
         ? "/v1"
         : "/v1/preset/prompt",
 }));
+
+/** An axios error carrying a server response, as the Local transport throws. */
+function axiosResponseError(status: number, data: unknown): AxiosError {
+  const error = new AxiosError(`Request failed with status code ${status}`);
+  error.response = { status, data } as AxiosError["response"];
+  return error;
+}
 
 function renderPanel(
   draft: AutomationSetupDraft = {
@@ -1991,6 +1999,95 @@ describe("AutomationSetupPanel", () => {
 
     await user.click(screen.getByTestId("automation-setup-close"));
     expect(mockNavigate).toHaveBeenCalledWith("/automations");
+  });
+
+  describe("existing automation request failures", () => {
+    const editDraft: AutomationSetupDraft = {
+      prompt: "Review every pull request",
+      kind: "prompt",
+      editingAutomationId: "auto-1",
+      form: {
+        kind: "prompt",
+        name: "Daily digest",
+        prompt: "Review every pull request",
+      },
+    };
+
+    it.each([
+      {
+        action: "Save",
+        button: "automation-setup-save",
+        service: "updateAutomation",
+        error: axiosResponseError(422, {
+          detail: [
+            {
+              loc: ["body", "trigger", "schedule"],
+              msg: "Value error, Invalid cron expression: not a cron",
+              type: "value_error",
+            },
+          ],
+        }),
+        expected: "Value error, Invalid cron expression: not a cron",
+      },
+      {
+        action: "Test",
+        button: "automation-setup-test",
+        service: "dispatchAutomation",
+        error: axiosResponseError(404, { detail: "Automation not found" }),
+        expected: "Automation not found",
+      },
+      {
+        action: "Save (Cloud)",
+        button: "automation-setup-save",
+        service: "updateAutomation",
+        error: new HttpError(
+          404,
+          "Not Found",
+          { detail: "Automation not found" },
+          `HTTP request failed (404 Not Found): {"detail":"Automation not found"}`,
+        ),
+        expected: "Automation not found",
+      },
+    ] as const)(
+      "toasts the API's message when $action fails",
+      async ({ button, service, error, expected }) => {
+        vi.mocked(AutomationService[service]).mockRejectedValue(error);
+        const user = userEvent.setup();
+        renderPanel(editDraft);
+
+        await user.click(screen.getByTestId(button));
+
+        await waitFor(() =>
+          expect(displayErrorToast).toHaveBeenCalledWith(expected),
+        );
+        expect(displayErrorToast).toHaveBeenCalledTimes(1);
+      },
+    );
+  });
+
+  it("toasts the API's message when creating an automation fails", async () => {
+    vi.mocked(AutomationService.createAutomationDraft).mockRejectedValue(
+      axiosResponseError(422, {
+        detail: [
+          {
+            loc: ["body", "timeout"],
+            msg: "Input should be less than or equal to 1800",
+            type: "less_than_equal",
+          },
+        ],
+      }),
+    );
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(screen.getByTestId("automation-setup-create"));
+
+    await waitFor(() =>
+      expect(displayErrorToast).toHaveBeenCalledWith(
+        "Input should be less than or equal to 1800",
+      ),
+    );
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it("preserves multi-event trigger keys when saving an existing automation", async () => {
