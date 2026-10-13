@@ -61,6 +61,7 @@ import {
 import { useArchivedConversationsStore } from "#/stores/archived-conversations-store";
 import { usePinnedConversationsStore } from "#/stores/pinned-conversations-store";
 import { uniqueById } from "#/utils/unique-by-id";
+import AgentServerConversationService from "#/api/conversation-service/agent-server-conversation-service.api";
 
 interface ConversationPanelProps {
   onClose?: () => void;
@@ -859,13 +860,17 @@ export function ConversationPanel({
 
   const handleConfirmDeleteAll = async () => {
     if (deleteAllPreparation !== "ready" || isDeletingAll) return;
+    // Every item, including its planning children, belongs to this confirmed
+    // backend/org even if the host changes selection while requests await.
+    const deletionScope =
+      AgentServerConversationService.createConversationDeletionScope();
     setIsDeletingAll(true);
     // Enumeration completes before confirmation. Capture that complete,
     // deduplicated set before deletes start invalidating the paginated cache.
     const idsToDelete = allLoadedConversations.map((c) => c.id);
     const results = await Promise.allSettled(
       idsToDelete.map((conversationId) =>
-        deleteConversationAsync({ conversationId }),
+        deleteConversationAsync({ conversationId, deletionScope }),
       ),
     );
 

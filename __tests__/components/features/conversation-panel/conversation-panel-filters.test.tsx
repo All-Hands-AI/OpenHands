@@ -603,6 +603,7 @@ describe("ConversationPanel filters and pagination", () => {
       await screen.findByText("CONVERSATION$CONFIRM_DELETE_ALL_DESC 3");
       await user.click(screen.getByTestId("confirm-button"));
       await waitFor(() => expect(deleteSpy).toHaveBeenCalledTimes(3));
+      expect(new Set(deleteSpy.mock.calls.map(([, scope]) => scope)).size).toBe(1);
       expect(deleteSpy.mock.calls.map(([id]) => id).sort()).toEqual([
         "archived",
         "unloaded",
@@ -681,8 +682,8 @@ describe("ConversationPanel filters and pagination", () => {
       await waitFor(() => {
         expect(deleteSpy).toHaveBeenCalledTimes(2);
       });
-      expect(deleteSpy).toHaveBeenCalledWith("recent-1");
-      expect(deleteSpy).toHaveBeenCalledWith("recent-2");
+      expect(deleteSpy).toHaveBeenCalledWith("recent-1", expect.objectContaining({ kind: "local" }));
+      expect(deleteSpy).toHaveBeenCalledWith("recent-2", expect.objectContaining({ kind: "local" }));
     });
 
     it("delete-all still deletes hidden archived conversations", async () => {
@@ -749,9 +750,9 @@ describe("ConversationPanel filters and pagination", () => {
       await waitFor(() => {
         expect(deleteSpy).toHaveBeenCalledTimes(3);
       });
-      expect(deleteSpy).toHaveBeenCalledWith("visible-1");
-      expect(deleteSpy).toHaveBeenCalledWith("archived-1");
-      expect(deleteSpy).toHaveBeenCalledWith("archived-2");
+      expect(deleteSpy).toHaveBeenCalledWith("visible-1", expect.objectContaining({ kind: "local" }));
+      expect(deleteSpy).toHaveBeenCalledWith("archived-1", expect.objectContaining({ kind: "local" }));
+      expect(deleteSpy).toHaveBeenCalledWith("archived-2", expect.objectContaining({ kind: "local" }));
     });
 
     it("navigates away after the active conversation is deleted successfully even when another deletion fails", async () => {
