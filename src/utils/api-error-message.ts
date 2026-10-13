@@ -108,16 +108,27 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
   }
 
   if (isSdkHttpError(error)) return fallback;
+  if (
+    axios.isAxiosError(error) &&
+    error.response &&
+    (!error.response.data ||
+      /^Request failed with status code \d+/i.test(error.message))
+  ) {
+    return fallback;
+  }
   if (error instanceof Error && error.message) return error.message;
   return fallback;
 }
 
 /**
- * Whether the server answered a failed call: there is a response body, or the
- * shared client's `HttpError` (a non-2xx status, possibly with an empty body).
- * A network failure or timeout has neither.
+ * Whether the server answered a failed call: there is a response body, an axios
+ * response with a status code, or the shared client's `HttpError` (a non-2xx
+ * status, possibly with an empty body). A network failure or timeout has neither.
  */
 export function hasApiErrorResponse(error: unknown): boolean {
+  if (axios.isAxiosError(error)) {
+    return Boolean(error.response);
+  }
   return Boolean(getApiErrorBody(error)) || isSdkHttpError(error);
 }
 

@@ -33,10 +33,12 @@ import { AUTOMATION_SETUP_SHOW_AGENT_EVENT } from "#/components/features/automat
 import { setupDraftFromAutomation } from "#/utils/automation-edit-draft";
 import { useDeploymentCapabilities } from "#/hooks/query/use-manifest-capabilities";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { CORS_OR_NETWORK_ERROR_MESSAGE } from "#/utils/user-facing-error";
 import type { AutomationDraftApiResponse } from "#/manifests/types";
 
 const mockNavigate = vi.fn();
 const mockToastSuccess = vi.fn();
+const mockT = (key: string) => key;
 const createGitRepositoriesQueryResult = () => ({
   data: {
     pages: [
@@ -79,7 +81,7 @@ vi.mock("react-hot-toast", () => ({
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
-    t: (key: string) => key,
+    t: mockT,
     i18n: { language: "en" },
   }),
 }));
@@ -2268,6 +2270,69 @@ describe("AutomationSetupPanel", () => {
 
     await waitFor(() => {
       expect(displayErrorToast).toHaveBeenCalledWith("Automation not found");
+    });
+  });
+
+  it("toasts localized fallback on save when axios rejects with an empty-body 500", async () => {
+    const empty500Error = Object.assign(
+      new Error("Request failed with status code 500"),
+      {
+        isAxiosError: true,
+        response: {
+          status: 500,
+          data: "",
+        },
+      },
+    );
+    vi.mocked(AutomationService.updateAutomation).mockRejectedValue(
+      empty500Error,
+    );
+
+    const user = userEvent.setup();
+    renderPanel({
+      prompt: "Review every pull request",
+      kind: "prompt",
+      editingAutomationId: "auto-1",
+      form: {
+        kind: "prompt",
+        name: "Daily digest",
+        prompt: "Review every pull request",
+      },
+    });
+
+    await user.click(screen.getByTestId("automation-setup-save"));
+
+    await waitFor(() => {
+      expect(displayErrorToast).toHaveBeenCalledWith("AUTOMATIONS$EDIT_ERROR");
+    });
+  });
+
+  it("toasts shared disconnect wording on test when axios rejects with a network error", async () => {
+    const networkError = Object.assign(new Error("Network Error"), {
+      isAxiosError: true,
+    });
+    vi.mocked(AutomationService.dispatchAutomation).mockRejectedValue(
+      networkError,
+    );
+
+    const user = userEvent.setup();
+    renderPanel({
+      prompt: "Review every pull request",
+      kind: "prompt",
+      editingAutomationId: "auto-1",
+      form: {
+        kind: "prompt",
+        name: "Daily digest",
+        prompt: "Review every pull request",
+      },
+    });
+
+    await user.click(screen.getByTestId("automation-setup-test"));
+
+    await waitFor(() => {
+      expect(displayErrorToast).toHaveBeenCalledWith(
+        CORS_OR_NETWORK_ERROR_MESSAGE,
+      );
     });
   });
 });

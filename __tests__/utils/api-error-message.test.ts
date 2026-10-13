@@ -167,6 +167,16 @@ describe("getApiErrorMessage", () => {
     expect(getApiErrorMessage(error, "fallback")).toBe("Runner exploded");
   });
 
+  it("returns the fallback instead of the raw transport text for an axios error without a usable body", () => {
+    const error = new AxiosError("Request failed with status code 500");
+    error.response = {
+      status: 500,
+      data: "",
+    } as never;
+
+    expect(getApiErrorMessage(error, "fallback")).toBe("fallback");
+  });
+
   it("returns the fallback when the error carries no usable information", () => {
     expect(getApiErrorMessage(null, "fallback")).toBe("fallback");
   });
@@ -207,6 +217,32 @@ describe("getApiOrConnectionErrorMessage", () => {
 
   it("keeps the shared timeout wording when the request times out", () => {
     const error = new Error("Request timeout after 60000ms");
+
+    expect(getApiOrConnectionErrorMessage(error, "fallback")).toBe(
+      BACKEND_REQUEST_TIMEOUT_MESSAGE,
+    );
+  });
+
+  it("returns the fallback for an axios error with an empty body", () => {
+    const error = new AxiosError("Request failed with status code 500");
+    error.response = {
+      status: 500,
+      data: "",
+    } as never;
+
+    expect(getApiOrConnectionErrorMessage(error, "fallback")).toBe("fallback");
+  });
+
+  it("keeps the shared disconnect wording for an axios network error", () => {
+    const error = new AxiosError("Network Error");
+
+    expect(getApiOrConnectionErrorMessage(error, "fallback")).toBe(
+      CORS_OR_NETWORK_ERROR_MESSAGE,
+    );
+  });
+
+  it("keeps the shared timeout wording for an axios timeout error", () => {
+    const error = new AxiosError("timeout of 200ms exceeded");
 
     expect(getApiOrConnectionErrorMessage(error, "fallback")).toBe(
       BACKEND_REQUEST_TIMEOUT_MESSAGE,

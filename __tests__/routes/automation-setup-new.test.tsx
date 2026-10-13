@@ -9,6 +9,7 @@ import {
 } from "#/api/automation-form-session";
 import type { Automation } from "#/types/automation";
 import type { AutomationDraftApiResponse } from "#/manifests/types";
+import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -117,5 +118,45 @@ describe("AutomationSetupNew", () => {
     expect(draft.serverDraftId).toBe("draft-1");
     expect(draft.form.repository).toBe("acme/one, acme/two");
     expect(draft.form.eventKey).toBe("issues,push");
+  });
+
+  it("toasts extracted API error message when loading an automation fails with a structured 404", async () => {
+    const error = Object.assign(
+      new Error("Request failed with status code 404"),
+      {
+        isAxiosError: true,
+        response: {
+          status: 404,
+          data: { detail: "Automation not found" },
+        },
+      },
+    );
+    vi.mocked(AutomationService.getAutomation).mockRejectedValue(error);
+
+    renderRoute("/automations/setup?automationId=auto-missing");
+
+    await waitFor(() => {
+      expect(displayErrorToast).toHaveBeenCalledWith("Automation not found");
+    });
+  });
+
+  it("toasts localized fallback when loading an automation fails with an empty-body 500", async () => {
+    const error = Object.assign(
+      new Error("Request failed with status code 500"),
+      {
+        isAxiosError: true,
+        response: {
+          status: 500,
+          data: "",
+        },
+      },
+    );
+    vi.mocked(AutomationService.getAutomation).mockRejectedValue(error);
+
+    renderRoute("/automations/setup?automationId=auto-broken");
+
+    await waitFor(() => {
+      expect(displayErrorToast).toHaveBeenCalledWith("ERROR$GENERIC");
+    });
   });
 });

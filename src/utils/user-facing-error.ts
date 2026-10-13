@@ -74,7 +74,8 @@ export function isBackendRequestTimeoutMessage(
   return (
     normalized.includes("request timeout") ||
     normalized.includes("timeout after") ||
-    normalized.includes("backend request timed out")
+    normalized.includes("backend request timed out") ||
+    normalized.includes("timeout of")
   );
 }
 

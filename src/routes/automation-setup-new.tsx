@@ -19,6 +19,7 @@ import { I18nKey } from "#/i18n/declaration";
 import { buildAutomationDraftTags } from "#/utils/automation-draft-tags";
 import { setupDraftFromAutomation } from "#/utils/automation-edit-draft";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { getApiOrConnectionErrorMessage } from "#/utils/api-error-message";
 
 const BLANK_DRAFT: AutomationSetupDraft = { prompt: "", kind: "prompt" };
 
@@ -81,7 +82,9 @@ export default function AutomationSetupNew() {
         if (!cancelled) setDraft(BLANK_DRAFT);
       } catch (error) {
         if (!cancelled) {
-          displayErrorToast(error instanceof Error ? error.message : null);
+          displayErrorToast(
+            getApiOrConnectionErrorMessage(error, t(I18nKey.ERROR$GENERIC)),
+          );
           setDraft(BLANK_DRAFT);
         }
       }
@@ -91,7 +94,7 @@ export default function AutomationSetupNew() {
     return () => {
       cancelled = true;
     };
-  }, [automationId, draftId]);
+  }, [automationId, draftId, t]);
 
   const title = draft?.form?.name?.trim() || t(I18nKey.AUTOMATION_SETUP$TITLE);
   const conversationTags = draft?.serverDraftId

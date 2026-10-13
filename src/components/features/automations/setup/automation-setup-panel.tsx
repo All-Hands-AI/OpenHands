@@ -82,7 +82,7 @@ import {
   patchConversationInCache,
 } from "#/hooks/mutation/conversation-mutation-utils";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
-import { getApiErrorMessage } from "#/utils/api-error-message";
+import { getApiOrConnectionErrorMessage } from "#/utils/api-error-message";
 import { useNavigation } from "#/context/navigation-context";
 import type {
   AutomationDraftApiResponse,
@@ -678,6 +678,9 @@ export function AutomationSetupPanel({
     }
     displayErrorToast(statusMessage.text);
   }, [statusMessage]);
+  const toastApiError = (error: unknown, fallback: string) => {
+    displayErrorToast(getApiOrConnectionErrorMessage(error, fallback));
+  };
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [streamingField, setStreamingField] =
     useState<AutomationSetupField | null>(null);
@@ -794,12 +797,10 @@ export function AutomationSetupPanel({
     }
     updateConversationTags((tags) => buildAutomationSetupModeTags(tags)).catch(
       (error: unknown) => {
-        displayErrorToast(
-          getApiErrorMessage(error, t(I18nKey.AUTOMATION_SETUP$SAVE_FAILED)),
-        );
+        toastApiError(error, t(I18nKey.ERROR$GENERIC));
       },
     );
-  }, [conversationId, conversationTags, updateConversationTags]);
+  }, [conversationId, conversationTags, updateConversationTags, t]);
 
   const saveDraftInFormSession = useCallback(
     (
@@ -849,15 +850,13 @@ export function AutomationSetupPanel({
       })
       .catch((error: unknown) => {
         if (!cancelled) {
-          displayErrorToast(
-            getApiErrorMessage(error, t(I18nKey.AUTOMATIONS$EDIT_ERROR)),
-          );
+          toastApiError(error, t(I18nKey.ERROR$GENERIC));
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [conversationId, draft.form, editingAutomationId, isEditingExisting]);
+  }, [conversationId, draft.form, editingAutomationId, isEditingExisting, t]);
 
   useEffect(() => {
     if (!taggedServerDraftId || serverDraft?.id === taggedServerDraftId) {
@@ -885,9 +884,7 @@ export function AutomationSetupPanel({
           setIsTaggedDraftMissing(true);
           return;
         }
-        displayErrorToast(
-          getApiErrorMessage(error, t(I18nKey.AUTOMATION_SETUP$SAVE_FAILED)),
-        );
+        toastApiError(error, t(I18nKey.ERROR$GENERIC));
       })
       .finally(() => {
         if (!cancelled) setIsHydratingServerDraft(false);
@@ -902,6 +899,7 @@ export function AutomationSetupPanel({
     saveDraftInFormSession,
     serverDraft?.id,
     taggedServerDraftId,
+    t,
   ]);
 
   const {
@@ -1378,9 +1376,7 @@ export function AutomationSetupPanel({
         return true;
       }
       setSaveState("error");
-      displayErrorToast(
-        getApiErrorMessage(error, t(I18nKey.AUTOMATION_SETUP$SAVE_FAILED)),
-      );
+      toastApiError(error, t(I18nKey.AUTOMATION_SETUP$SAVE_FAILED));
       return false;
     }
   };
@@ -1514,9 +1510,7 @@ export function AutomationSetupPanel({
         return;
       }
       setSaveState("error");
-      displayErrorToast(
-        getApiErrorMessage(error, t(I18nKey.AUTOMATION_SETUP$SAVE_FAILED)),
-      );
+      toastApiError(error, t(I18nKey.AUTOMATION_SETUP$SAVE_FAILED));
     } finally {
       setIsSubmitting(false);
     }
@@ -1602,9 +1596,7 @@ export function AutomationSetupPanel({
           text: dispatchError,
         });
       } else {
-        displayErrorToast(
-          getApiErrorMessage(error, t(I18nKey.AUTOMATIONS$RUN_NOW_ERROR)),
-        );
+        toastApiError(error, t(I18nKey.AUTOMATIONS$RUN_NOW_ERROR));
       }
     } finally {
       setIsSubmitting(false);
@@ -1648,9 +1640,7 @@ export function AutomationSetupPanel({
       if (typeof created.id === "string")
         navigate(automationDetailPath(created.id));
     } catch (error) {
-      displayErrorToast(
-        getApiErrorMessage(error, t(I18nKey.SETUP$SUBMIT_FAILED)),
-      );
+      toastApiError(error, t(I18nKey.SETUP$SUBMIT_FAILED));
     } finally {
       setIsSubmitting(false);
     }
@@ -1724,9 +1714,7 @@ export function AutomationSetupPanel({
       toast.success(t(I18nKey.AUTOMATIONS$EDIT_SUCCESS));
     } catch (error) {
       setSaveState("error");
-      displayErrorToast(
-        getApiErrorMessage(error, t(I18nKey.AUTOMATIONS$EDIT_ERROR)),
-      );
+      toastApiError(error, t(I18nKey.AUTOMATIONS$EDIT_ERROR));
     } finally {
       setIsSubmitting(false);
     }
@@ -1746,9 +1734,7 @@ export function AutomationSetupPanel({
         text: t(I18nKey.AUTOMATION_SETUP$TEST_DISPATCHED),
       });
     } catch (error) {
-      displayErrorToast(
-        getApiErrorMessage(error, t(I18nKey.AUTOMATIONS$RUN_NOW_ERROR)),
-      );
+      toastApiError(error, t(I18nKey.AUTOMATIONS$RUN_NOW_ERROR));
     } finally {
       setIsSubmitting(false);
     }
