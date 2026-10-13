@@ -131,6 +131,15 @@ const LEADING_MARKDOWN_WRAPPER = /^(\*\*|__|\*|_|`)/;
 const LEADING_NUMBER_HEADING =
   /^([0-9]+(?:\.[0-9]+)*)(?![\p{L}\p{N}]|[,./-]?\d)/u;
 /**
+ * A heading that leads with its label and the section number, e.g.
+ * `## Req 1.1 — Resource exposure`. The live planner writes upstream references
+ * this way (a bare, unbracketed label), so the number is a definition exactly
+ * like a leading digit would be. The number keeps the same trailing guard so a
+ * word (`## Req 1.1beta`) or a longer number (`## Req 1.12`) is not sliced.
+ */
+const LEADING_LABEL_HEADING =
+  /^(?:Req|DB|BE|FE)\s+([0-9]+(?:\.[0-9]+)*)(?![\p{L}\p{N}]|[,./-]?\d)/u;
+/**
  * A heading that spells its own label out at the start, e.g.
  * `## [Req 3.1] Users` — the citation *is* the section number here.
  */
@@ -152,6 +161,8 @@ export function definedSectionOfHeading(rawTitle: string): string | null {
   const title = stripClosedWrapper(rawTitle.trimStart());
   const leadingNumber = LEADING_NUMBER_HEADING.exec(title);
   if (leadingNumber) return leadingNumber[1];
+  const leadingLabel = LEADING_LABEL_HEADING.exec(title);
+  if (leadingLabel) return leadingLabel[1];
   const ownLabel = OWN_LABEL_HEADING.exec(title);
   if (ownLabel) return ownLabel[1];
   return null;
@@ -202,10 +213,11 @@ function stripClosedWrapper(title: string): string {
  * nothing.
  *
  * A heading may instead spell its own label out (`## [Req 3.1] Authentication`),
- * in which case the leading citation is the definition. An unnumbered heading
- * that merely cites upstream (`## Users [Req 3.1]`) defines nothing — counting
- * it would let a downstream `[DB 3.1]` resolve against a section this document
- * never defines.
+ * in which case the leading citation is the definition, or lead with the label
+ * and number (`## Req 3.1 — Authentication`). An unnumbered heading that merely
+ * cites upstream (`## Users [Req 3.1]`) defines nothing — counting it would let
+ * a downstream `[DB 3.1]` resolve against a section this document never
+ * defines.
  */
 export function extractDefinedSections(content: string): Set<string> {
   const sections = new Set<string>();

@@ -81,6 +81,22 @@ describe("extractDefinedSections", () => {
     expect([...extractDefinedSections("## [Req 3.1] Users")]).toEqual(["3.1"]);
   });
 
+  it("reads a section from a heading that leads with its label", () => {
+    // The live planner writes requirement headings as `### Req 1.1 — …`. Without
+    // recognizing the leading label the number is invisible, so a downstream
+    // `[Req 1.1]` is wrongly rejected as dangling.
+    expect([
+      ...extractDefinedSections("### Req 1.1 — Resource exposure"),
+    ]).toEqual(["1.1"]);
+    expect([...extractDefinedSections("## DB 2.1 Todos table")]).toEqual([
+      "2.1",
+    ]);
+    // The label must be a whole word, and the number keeps its trailing guard.
+    expect([...extractDefinedSections("## Requisite 1.1")]).toEqual([]);
+    expect([...extractDefinedSections("## Req 1.1beta")]).toEqual([]);
+    expect([...extractDefinedSections("## Req 1.12")]).toEqual(["1.12"]);
+  });
+
   it("only counts a heading's leading number, not prose numbers in the title", () => {
     // `200` is an SLA figure, not a section the document defines; counting it
     // would let `[Req 200]` resolve against a section that never exists.
