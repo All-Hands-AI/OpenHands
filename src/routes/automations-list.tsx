@@ -378,8 +378,8 @@ export default function AutomationsList() {
   const runSummaryAutomations = useMemo(
     () =>
       uniqueById([
-        ...(orgData?.automations ?? []),
-        ...(data?.automations ?? []),
+        ...(orgData?.automations ?? []).filter((a) => !isDraftAutomation(a)),
+        ...(data?.automations ?? []).filter((a) => !isDraftAutomation(a)),
       ]),
     [orgData?.automations, data?.automations],
   );
@@ -593,7 +593,9 @@ export default function AutomationsList() {
 
   const overviewTiles = useMemo(() => {
     if (!dashboardSpec) return [];
-    const automations = orgData?.automations ?? [];
+    const automations = (orgData?.automations ?? []).filter(
+      (a) => !isDraftAutomation(a),
+    );
     return dashboardSpec.overview.tiles.map((tile) => {
       const value = computeOverviewTile(tile.metric, automations, runSummaries);
       const template =
@@ -637,8 +639,11 @@ export default function AutomationsList() {
   const isListError = (isError && !data) || (isDraftsError && !draftsData);
   // Whether the org has any automations comes from the unfiltered list, so an
   // empty filtered response shows the filtered empty state with Clear filters.
+  const orgNonDraftCount = orgData?.automations
+    ? orgData.automations.filter((a) => !isDraftAutomation(a)).length
+    : (orgData?.total ?? 0);
   const hasNoAutomations =
-    !isListError && orgData?.total === 0 && (draftsData?.total ?? 0) === 0;
+    !isListError && orgNonDraftCount === 0 && (draftsData?.total ?? 0) === 0;
   // The previous filter's rows stand in while the next page loads; when none
   // of them match, show loading rather than a no-match that is not final. An
   // empty org keeps its empty state instead.

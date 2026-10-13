@@ -207,6 +207,38 @@ describe("AutomationsList — manifest-declared dashboard", () => {
     expect(within(tile).getByText("0 live")).toBeInTheDocument();
   });
 
+  it("excludes DRAFT automations from overview tiles and their runs", async () => {
+    const draftTestAutomation = createAutomation({
+      id: "a-draft",
+      name: "Draft test automation",
+      state: "DRAFT",
+      enabled: false,
+    });
+    vi.mocked(AutomationService.getAutomations).mockResolvedValue({
+      automations: [okAutomation, draftTestAutomation],
+      total: 2,
+    });
+    vi.mocked(AutomationService.getAutomationRuns).mockImplementation(
+      async (id) => ({
+        runs: id === "a-draft" ? [createRun({ id: "run-draft" })] : [],
+        total: id === "a-draft" ? 1 : 0,
+      }),
+    );
+
+    renderAt("/automations", <AutomationsList />);
+
+    await screen.findByTestId("automation-card-a-ok");
+
+    const automationsTile = screen.getByTestId("overview-tile-automations");
+    expect(
+      within(automationsTile).getByText("1", { exact: true }),
+    ).toBeInTheDocument();
+    expect(within(automationsTile).getByText("1 live")).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("automation-card-a-draft"),
+    ).not.toBeInTheDocument();
+  });
+
   it("uses the manifest's zero detail when no automation needs attention", async () => {
     vi.mocked(AutomationService.getAutomationRuns).mockResolvedValue({
       runs: [createRun({})],
