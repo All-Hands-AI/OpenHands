@@ -1153,9 +1153,14 @@ function startIngress(config) {
     {
       cwd: projectRoot,
       color: c.yellow,
-      // The MARS web bridge guards /mars/* with the stack's session key, the
-      // same one the page already holds.
-      env: config.sessionApiKey ? { MARS_WEB_KEY: config.sessionApiKey } : {},
+      // The MARS web bridge lives here, on the browser-facing server, guarded
+      // by the stack's session key (the one the page already holds). Off under
+      // Electron, see `config.marsWebBridge`.
+      env: !config.marsWebBridge
+        ? { MARS_WEB: "0" }
+        : config.sessionApiKey
+          ? { MARS_WEB_KEY: config.sessionApiKey }
+          : {},
     },
   );
 }
@@ -1575,6 +1580,11 @@ async function main(options = {}) {
   // so downstream helpers (Vite spawn, static build) can produce a
   // runtime-services info object describing what the agent can reach.
   config.mode = mode;
+  // One MARS web bridge per stack, on the server a browser reaches: the
+  // ingress. Never under Electron, whose preload already provides the bridge
+  // (a second one would hold its own sign-in state and tunnels, and with
+  // MARS_TOKEN set would validate the token against DO at every start).
+  config.marsWebBridge = mode !== "agent-canvas";
   config.agentHostAlias = agentHostAlias;
   config.frontendKind = useStaticMode ? "static" : "vite";
   ensureDirectories(config);
@@ -1718,6 +1728,7 @@ function startStaticFrontend(config, staticDir) {
         ? ["--runtime-services-info", runtimeServicesInfo]
         : []),
       // Proxy routes only to services that this launch mode started.
+      // (MARS web bridge: see the env below — the ingress hosts it.)
       ...buildRouteArgs(getLocalServiceRoutes(config)),
       // Only the static server injects into the document, so only it can tell
       // the frontend this origin serves the editor. The ingress routes the same
@@ -1731,6 +1742,10 @@ function startStaticFrontend(config, staticDir) {
     {
       cwd: config.canvasPath,
       color: c.magenta,
+      // The ingress in front of this server hosts the MARS web bridge; a
+      // second one here would answer /mars/* with its own, separate sign-in
+      // state for anyone who opens this port directly.
+      env: { MARS_WEB: "0" },
     },
   );
 }

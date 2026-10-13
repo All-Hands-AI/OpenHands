@@ -661,15 +661,58 @@ describe("createMarsWebBridge with a session key", () => {
 
 describe("mountMarsWebBridge", () => {
   it("mounts by default on a loopback bind, even without a key", async () => {
-    const logs: string[] = [];
+    const warnings: string[] = [];
+    const debugs: string[] = [];
     const mounted = mountMarsWebBridge({
       env: {},
       host: "127.0.0.1",
-      log: (m) => logs.push(m),
+      log: (m) => warnings.push(m),
+      debug: (m) => debugs.push(m),
     });
     expect(mounted).not.toBeNull();
-    expect(logs[0]).toMatch(/local callers only/);
+    expect(warnings).toEqual([]);
+    expect(debugs[0]).toMatch(/local callers only/);
     await mounted!.dispose();
+  });
+
+  it("is off with MARS_WEB=0, silently", () => {
+    const logs: string[] = [];
+    expect(
+      mountMarsWebBridge({
+        env: { MARS_WEB: "0", MARS_WEB_KEY: "k" },
+        host: "127.0.0.1",
+        log: (m) => logs.push(m),
+        debug: (m) => logs.push(m),
+      }),
+    ).toBeNull();
+    expect(logs).toEqual([]);
+  });
+
+  it("only warns about an unmountable LAN bind when someone opted in", () => {
+    const warnings: string[] = [];
+    const debugs: string[] = [];
+    // Nobody asked for DigitalOcean: a Docker public-mode instance must not
+    // see a warning on every start.
+    expect(
+      mountMarsWebBridge({
+        env: {},
+        host: "::",
+        log: (m) => warnings.push(m),
+        debug: (m) => debugs.push(m),
+      }),
+    ).toBeNull();
+    expect(warnings).toEqual([]);
+    expect(debugs[0]).toMatch(/not loopback/);
+    // MARS_TOKEN says they meant to use it, so the refusal is worth a warning.
+    expect(
+      mountMarsWebBridge({
+        env: { MARS_TOKEN: "dop_v1_x" },
+        host: "::",
+        log: (m) => warnings.push(m),
+        debug: () => {},
+      }),
+    ).toBeNull();
+    expect(warnings[0]).toMatch(/not loopback/);
   });
 
   it("refuses a non-loopback bind without a key, and mounts with one", async () => {
@@ -679,6 +722,7 @@ describe("mountMarsWebBridge", () => {
         env: {},
         host: "0.0.0.0",
         log: (m) => logs.push(m),
+        debug: (m) => logs.push(m),
       }),
     ).toBeNull();
     expect(logs[0]).toMatch(/not loopback/);
