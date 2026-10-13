@@ -78,10 +78,10 @@ Rows count repeated checks by the worker and its independent verifier separately
 | #18381 | F21: tiles count draft test automations | yes, #17242 | #18393 |
 | #18382 | F21: draft delete confirmation ignores Escape, no dialog | yes, #17242 | #18394 |
 | #18383 | F10/F13: "A meta-profile…" in LLM/agent editors | yes, #18144 | #18384 |
-| #18386 | F03: Code/Automate toggle white on light pill | yes, #17199 | pending |
-| #18387 | F02: success toasts white in light themes | no (since #16632) | pending |
-| #18388 | F16: Application settings stale after backend switch | no | pending |
-| #18389 | F25: backend modals neither take nor keep focus | no | pending |
+| #18386 | F03: Code/Automate toggle white on light pill | yes, #17199 | #18402 |
+| #18387 | F02: success toasts white in light themes | no (since #16632) | #18403 |
+| #18388 | F16: Application settings stale after backend switch (Save can write the other backend's Git identity) | no | #18401 |
+| #18389 | F25: backend modals neither take nor keep focus | no | #18400 |
 | #18390 | F25: new backend asked for the old conversation id (intermittent) | not established | none: root cause not pinned down |
 | #18395 | F06: confirmation labels wrap in 26 px buttons | no (#18127 only lengthened them) | #18397 |
 | #18396 | F08: File discovery dialog wider than a phone | no (since #17869) | #18398 |
