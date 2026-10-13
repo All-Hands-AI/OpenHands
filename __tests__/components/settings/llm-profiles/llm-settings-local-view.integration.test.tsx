@@ -41,7 +41,7 @@ describe("LLM profile creation with the real embedded form", () => {
     // Arrange: existing agent settings have a non-default option and credentials.
     const save = vi
       .spyOn(ProfilesService, "saveProfile")
-      .mockResolvedValue({ success: true });
+      .mockResolvedValue({ name: "QA_Inherited", message: "Saved" });
     const user = userEvent.setup();
     renderWithProviders(<LlmSettingsLocalView />);
 
