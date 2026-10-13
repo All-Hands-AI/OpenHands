@@ -21,6 +21,8 @@
   /* @spec MCP-004 — Form feedback follows readable theme text roles */
   --color-feedback-error: var(--oh-feedback-error);
   --color-feedback-success: var(--oh-feedback-success);
+  /* @spec WN-001 — Warning text has a separate readable theme role */
+  --color-feedback-warning: var(--oh-feedback-warning);
   --color-basic: var(--oh-color-basic);
   --color-tertiary: var(--oh-color-tertiary);
   --color-tertiary-light: var(--oh-color-tertiary-light);
@@ -128,6 +130,8 @@
   --oh-success-foreground: var(--cool-grey-950);
   --oh-warning: #c9b974;
   --oh-warning-foreground: var(--cool-grey-950);
+  /* @spec WN-001 — Default warning text stays distinct from warning controls */
+  --oh-feedback-warning: #c9b974;
   --oh-danger: #e76a5e;
   --oh-danger-foreground: var(--cool-grey-50);
   --oh-segment: var(--cool-grey-925);

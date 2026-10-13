@@ -73,9 +73,7 @@ function createNoDirectAgentServerFetchRule() {
           return node.value;
         }
         if (node.type === "TemplateLiteral") {
-          return node.quasis
-            .map((q) => q.value.raw)
-            .join("");
+          return node.quasis.map((q) => q.value.raw).join("");
         }
         return null;
       }
@@ -168,8 +166,7 @@ export default [
       // @openhands/typescript-client clients instead of a raw `fetch`.
       local: {
         rules: {
-          "no-direct-agent-server-fetch":
-            createNoDirectAgentServerFetchRule(),
+          "no-direct-agent-server-fetch": createNoDirectAgentServerFetchRule(),
         },
       },
     },
@@ -398,8 +395,8 @@ export default [
   // Class existence does not need component contracts. With no remaining
   // unknown utilities, new findings fail lint; styling policy remains opt-in.
   // Canvas primitives use #/ui, not the plugin's default components/ui path.
-  // require-static-classes is enabled for those consumers; 0.2.0 still cannot
-  // read imported constants, so its documented narrow exceptions remain.
+  // require-static-classes is enabled for those consumers; imported class
+  // constants remain opaque, so its documented narrow exceptions remain.
   // no-raw-colors starts at warn while existing palette colors are migrated
   // and checked across themes (#18004). Keep verified plugin/config tokens exempt below.
   // no-restyle first protects divider/toggle appearances; layout remains public,
@@ -410,7 +407,9 @@ export default [
   // for the remaining UI primitives and audit dynamic styles for no-inline-styles.
   // 0.2.0 also improves render-prop, destructuring, barrel-export, and custom
   // animation recognition. Vue/Svelte support adds no new rule names or parsers
-  // to this React project; keep this upgrade separate from rule activation.
+  // to this React project. 0.2.1 uses Tailwind's JS-config loader and recognizes
+  // module-defined font sizes, custom theme scales, and SVG paint-clearing classes.
+  // Keep dependency upgrades separate from rule activation.
   {
     files: ["src/**/*.{ts,tsx}"],
     plugins: { shadcn: shadcnPlugin },
@@ -423,7 +422,7 @@ export default [
           // Typography, menus, and Pre need a separate design audit.
           componentImports: [
             "^#/ui/(divider|toggle-switch|combobox-caret)$",
-            // 0.2.0 needs the existing re-export path matched explicitly too.
+            // Match the existing re-export path explicitly too.
             "^#/components/features/automations/toggle-switch$",
           ],
           allow: ["layout"],
@@ -450,14 +449,13 @@ export default [
       "shadcn/no-raw-colors": [
         "warn",
         {
-          // 0.2.0 reads CSS @theme tokens, but not these JS-config/plugin tokens.
+          // Retain existing JS-config/plugin exceptions for a separate token audit.
           // Exact classes only: do not exempt raw palettes or whole namespaces.
           allow: [
-            // hero.ts / @heroui/theme: semantic colors and the medium font size.
+            // hero.ts / @heroui/theme: semantic colors pending the token audit.
             "bg-background",
             "bg-content1",
             "text-primary-foreground",
-            "text-medium",
             // tailwind.config.js: existing named tokens, pending theme migration.
             "bg-status-fail-bg",
             "text-status-fail-text",
