@@ -1,0 +1,26 @@
+{
+  "ok": true,
+  "run": "<owned-run>",
+  "baseUrl": "http://owned-loopback.invalid",
+  "failed": [],
+  "warnings": [
+    "LLM configured: model=gpt-5.6 without an API key: `control-openhands llm preset deepseek`"
+  ],
+  "passed": [
+    "launcher process group alive: /opt/homebrew/Cellar/node/25.9.0_1/bin/node <private-checkout>",
+    "launcher is this run's agent-canvas: /opt/homebrew/Cellar/node/25.9.0_1/bin/node <private-checkout>",
+    "port ingress:22800 listening: open",
+    "port agentServer:22801 listening: open",
+    "port automation:22802 listening: open",
+    "port frontend:22803 listening: open",
+    "served build matches this checkout's build inputs: served=e2ce02ac1850680f run=e2ce02ac1850680f revision=5b632876d994",
+    "checkout build inputs unchanged since launch: launch=e2ce02ac1850680f now=e2ce02ac1850680f",
+    "unauthenticated API rejected: status=401",
+    "authenticated settings readable: status=200",
+    "agent-server reachable: version=1.54.0",
+    "agent-server matches pin: server=1.54.0, chosen by OH_AGENT_SERVER_VERSION (default pin 1.54.0)",
+    "agent-server meets the UI minimum: server=1.54.0 minimum=1.51.0",
+    "automation healthy: status=200",
+    "UI loads without page errors: markers=first-run-onboarding-screen,onboarding-modal pageErrors=0 testidsInDom=169 (hidden included)"
+  ]
+}

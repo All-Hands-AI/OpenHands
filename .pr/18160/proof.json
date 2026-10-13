@@ -1,0 +1,35 @@
+{
+  "ok": true,
+  "id": "F26.frontend-only-returning",
+  "verdict": "verified",
+  "blocks": [
+    {
+      "name": "desktop",
+      "sha": "3b843fe652e0ea4f",
+      "verdict": "verified",
+      "reasons": [],
+      "baseline": {
+        "xfail": 2
+      },
+      "fix": {
+        "xpass": 2
+      },
+      "ignored": 0
+    },
+    {
+      "name": "phone",
+      "sha": "b62cbfd2c20d0dca",
+      "verdict": "verified",
+      "reasons": [],
+      "baseline": {
+        "xfail": 2
+      },
+      "fix": {
+        "xpass": 2
+      },
+      "ignored": 0
+    }
+  ],
+  "recoveredViewports": [],
+  "hint": "Drop the Known failure note and the block's `# bug` marker in the fix's PR: the assertion now guards the corrected behavior as a normal recipe step."
+}

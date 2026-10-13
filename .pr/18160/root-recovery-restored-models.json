@@ -1,0 +1,36 @@
+{
+  "ok": true,
+  "total": 3,
+  "byOrigin": {
+    "http://127.0.0.1:22800": 3
+  },
+  "recent": [
+    {
+      "ts": "2026-10-13T05:52:27.092Z",
+      "origin": "http://owned-loopback.invalid",
+      "path": "/api/llm/models/verified",
+      "method": "GET",
+      "type": "fetch",
+      "app": true,
+      "status": 200
+    },
+    {
+      "ts": "2026-10-13T05:52:28.321Z",
+      "origin": "http://owned-loopback.invalid",
+      "path": "/api/llm/models/verified",
+      "method": "GET",
+      "type": "fetch",
+      "app": true,
+      "status": 200
+    },
+    {
+      "ts": "2026-10-13T05:52:31.129Z",
+      "origin": "http://owned-loopback.invalid",
+      "path": "/api/llm/models/verified",
+      "method": "GET",
+      "type": "fetch",
+      "app": true,
+      "status": 200
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "ok": true,
+  "total": 18,
+  "byOrigin": {
+    "http://127.0.0.1:22800": 18
+  },
+  "recent": [
+    {
+      "ts": "2026-10-13T05:50:52.780Z",
+      "origin": "http://owned-loopback.invalid",
+      "path": "/api/llm/models/verified",
+      "method": "GET",
+      "type": "fetch",
+      "app": true,
+      "status": 503
+    },
+    {
+      "ts": "2026-10-13T05:51:03.113Z",
+      "origin": "http://owned-loopback.invalid",
+      "path": "/api/llm/models/verified",
+      "method": "GET",
+      "type": "fetch",
+      "app": true,
+      "status": 503
+    },
+    {
+      "ts": "2026-10-13T05:51:04.062Z",
+      "origin": "http://owned-loopback.invalid",
+      "path": "/api/llm/models/verified",
+      "method": "GET",
+      "type": "fetch",
+      "app": true,
+      "status": 503
+    },
+    {
+      "ts": "2026-10-13T05:51:05.982Z",
+      "origin": "http://owned-loopback.invalid",
+      "path": "/api/llm/models/verified",
+      "method": "GET",
+      "type": "fetch",
+      "app": true,
+      "status": 503
+    },
+    {
+      "ts": "2026-10-13T05:51:08.207Z",
+      "origin": "http://owned-loopback.invalid",
+      "path": "/api/llm/models/verified",
+      "method": "GET",
+      "type": "fetch",
+      "app": true,
+      "status": 503
+    }
+  ]
+}
