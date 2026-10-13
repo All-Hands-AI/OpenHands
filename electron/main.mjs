@@ -54,10 +54,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { spawnSync } from "node:child_process";
 
-import {
-  isExternalBrowsableUrl,
-  isLoopbackAppUrl,
-} from "./lib/window-url-policy.mjs";
+import { isExternalBrowsableUrl, isLoopbackAppUrl } from "./lib/window-url-policy.mjs";
 import { resolveBundledRuntimeDir } from "./lib/bundled-runtime-dir.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
