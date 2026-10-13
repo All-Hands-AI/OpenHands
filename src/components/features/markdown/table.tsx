@@ -31,7 +31,7 @@ export function th({
   React.ThHTMLAttributes<HTMLTableCellElement> &
   ExtraProps) {
   return (
-    <th className="whitespace-nowrap border-border bg-surface px-3 py-2 text-left font-semibold text-contrast">
+    <th className="max-w-md break-words border-border bg-surface px-3 py-2 text-left font-semibold text-contrast">
       {children}
     </th>
   );
@@ -44,7 +44,7 @@ export function td({
   React.TdHTMLAttributes<HTMLTableCellElement> &
   ExtraProps) {
   return (
-    <td className="whitespace-nowrap border-border px-3 py-2 align-top">
+    <td className="max-w-md break-words border-border px-3 py-2 align-top">
       {children}
     </td>
   );
