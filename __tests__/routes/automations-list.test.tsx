@@ -452,6 +452,42 @@ describe("AutomationsList — draft sections", () => {
     );
   });
 
+  it("exposes the delete draft confirmation as a modal dialog that closes on Escape and moves focus to Cancel", async () => {
+    vi.mocked(AutomationService.getAutomations).mockResolvedValue(listResponse);
+    vi.mocked(AutomationService.listServerDrafts).mockResolvedValue(
+      draftListResponse,
+    );
+
+    const user = userEvent.setup();
+    renderList();
+
+    const deleteTrigger = await screen.findByTestId(
+      "automation-setup-draft-delete-draft-1",
+    );
+    await user.click(deleteTrigger);
+
+    // 1. Must expose role="dialog" with aria-modal="true"
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toBeInTheDocument();
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+
+    // 2. Focus moves into the dialog onto the Cancel button
+    const cancelButton = screen.getByRole("button", {
+      name: I18nKey.AUTOMATIONS$CANCEL,
+    });
+    expect(cancelButton).toHaveFocus();
+
+    // 3. Pressing Escape closes the dialog without deleting
+    await user.keyboard("{Escape}");
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+    expect(AutomationService.deleteServerDraft).not.toHaveBeenCalled();
+
+    // 4. Focus returns to the trigger that opened the dialog
+    expect(deleteTrigger).toHaveFocus();
+  });
+
   it("treats a Cloud HttpError 404 from the drafts API as an empty drafts list", async () => {
     // Cloud draft calls run through callCloudProxy, which throws the shared
     // client's HttpError with `status` on the error itself (not under `response`).
