@@ -12,7 +12,7 @@ import { useFreeModelsStore } from "#/stores/free-models-store";
 import { SETTINGS_QUERY_KEYS } from "#/hooks/query/query-keys";
 
 describe("LLM profile creation with the real embedded form", () => {
-  let inheritedStringSerializer: boolean | null;
+  let inheritedStringSerializer: boolean | null | undefined;
   beforeEach(() => {
     vi.restoreAllMocks();
     inheritedStringSerializer = null;
@@ -80,7 +80,9 @@ describe("LLM profile creation with the real embedded form", () => {
           base_url: "https://another-profile.example/v1",
           temperature: 0.4,
           aws_secret_access_key: "**********",
-          force_string_serializer: inheritedStringSerializer,
+          ...(inheritedStringSerializer === undefined
+            ? {}
+            : { force_string_serializer: inheritedStringSerializer }),
         },
       },
     }));
@@ -131,6 +133,13 @@ describe("LLM profile creation with the real embedded form", () => {
     {
       name: "untouched automatic null",
       initial: null,
+      edit: false,
+      refresh: undefined,
+      expected: undefined,
+    },
+    {
+      name: "untouched omitted automatic value",
+      initial: undefined,
       edit: false,
       refresh: undefined,
       expected: undefined,
