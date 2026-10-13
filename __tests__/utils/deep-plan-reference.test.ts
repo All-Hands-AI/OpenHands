@@ -251,6 +251,14 @@ describe("extractReferences", () => {
       extractReferences("See [the requirement [Req 9.9]](https://example.com)"),
     ).toEqual([]);
   });
+
+  it("counts a link whose whole label is a citation", () => {
+    // A direct `[Req 9.9](url)` link names a section the chain must check; the
+    // link being authored markup does not make the label illustrative.
+    expect(extractReferences("[Req 9.9](https://example.com)")).toEqual([
+      { label: "Req", section: "9.9" },
+    ]);
+  });
 });
 
 describe("validateDocumentChain", () => {
@@ -398,6 +406,27 @@ describe("validateDocumentChain", () => {
     expect(report.issues).toEqual([
       { from: "backend", ref: "DB 2.5.1", reason: "missing-document" },
     ]);
+  });
+
+  it("validates and covers a directly linked citation", () => {
+    // A task may write the citation as a Markdown link, `[Req 9.9](url)`.
+    // Validation must still see the label, and coverage must count it: the
+    // linked citation is a reference, not illustrative markup.
+    const documents: DeepPlanDocuments = {
+      requirements: "## 3.1 Login",
+      tasks: "- [ ] T1 [Req 9.9](https://example.com)",
+    };
+
+    const dangling = validateDocumentChain(documents, "tasks");
+    expect(dangling.ok).toBe(false);
+    expect(dangling.issues).toEqual([
+      { from: "tasks", ref: "Req 9.9", reason: "dangling" },
+    ]);
+
+    documents.tasks = "- [ ] T1 [Req 3.1](https://example.com)";
+    const covered = validateDocumentChain(documents, "tasks");
+    expect(covered.ok).toBe(true);
+    expect(covered.uncovered).toEqual([]);
   });
 
   it("rejects a citation to a section only an unnumbered heading cites", () => {
@@ -630,6 +659,13 @@ describe("linkifyCitations", () => {
       "backend",
     );
     expect(out).toBe("See [the requirement [Req 3.1]](https://example.com)");
+  });
+
+  it("leaves a link whose whole label is a citation untouched", () => {
+    // The label is a real reference, but the author already wrote the link, so
+    // the renderer must not nest or retarget it.
+    const out = linkifyCitations("[Req 3.1](https://example.com)", "backend");
+    expect(out).toBe("[Req 3.1](https://example.com)");
   });
 
   it("still links a real citation outside a protected span", () => {

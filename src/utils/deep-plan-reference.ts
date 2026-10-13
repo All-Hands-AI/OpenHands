@@ -44,14 +44,22 @@ export interface RefReport {
 }
 
 /**
- * A citation match, or a span whose contents Markdown renders verbatim. The
- * protected alternative is listed first and covers fenced code (``` / ~~~),
- * inline code spans and existing Markdown links, so a citation written inside
- * one of them is treated as an example rather than a dependency — both when
- * validating the chain and when rewriting citations into links.
+ * One scan shared by validation and rendering, so the two can never disagree
+ * about what a citation is. Alternatives, in order:
+ *
+ *  1. A Markdown link whose whole label is a citation — `[Req 3.1](https://…)`.
+ *     The label is a real reference the validator must check, but the link is
+ *     authored markup, so it must stay as written when rendering.
+ *  2. Any other verbatim span: fenced code (``` / ~~~), an inline code span, or
+ *     a Markdown link. A citation-looking marker inside one of these is an
+ *     illustrative example, not a dependency.
+ *  3. A bare citation in prose — `[Req 3.1]`.
+ *
+ * Groups: 1/2 direct-link label/section, 3 protected span, 4/5 prose
+ * label/section.
  */
 const CITATION_OR_PROTECTED =
-  /(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`|\[(?:[^[\]\n]|\[[^\]\n]*\])*\]\([^)\n]*\))|\[(Req|DB|BE|FE)\s+([0-9]+(?:\.[0-9]+)*)\]/g;
+  /\[(Req|DB|BE|FE)\s+([0-9]+(?:\.[0-9]+)*)\]\([^)\n]*\)|(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`|\[(?:[^[\]\n]|\[[^\]\n]*\])*\]\([^)\n]*\))|\[(Req|DB|BE|FE)\s+([0-9]+(?:\.[0-9]+)*)\]/g;
 const HEADING_PATTERN = /^#{1,6}\s+(.*)$/;
 /**
  * An inline Markdown delimiter that may wrap a heading's leading section
@@ -168,17 +176,22 @@ export function extractDefinedSections(content: string): Set<string> {
 
 /**
  * Every citation in a document's prose, in order of appearance. A citation
- * written inside code (an example marker such as `` `[Req 9.9]` ``) or inside
- * an existing Markdown link is skipped: those spans are not dependencies, so
- * counting them would reject a checkpoint the planner never meant to fail.
+ * written inside code (an example marker such as `` `[Req 9.9]` ``) or nested
+ * in another Markdown link's text is skipped: those spans are illustrative, not
+ * dependencies, so counting them would reject a checkpoint the planner never
+ * meant to fail. A link whose whole label is a citation is still a reference —
+ * the label names a section the chain must check — so it is counted here even
+ * though `linkifyCitations` leaves the authored link untouched.
  */
 export function extractReferences(
   content: string,
 ): { label: DeepPlanLabel; section: string }[] {
   const refs: { label: DeepPlanLabel; section: string }[] = [];
   for (const match of content.matchAll(CITATION_OR_PROTECTED)) {
-    if (match[1] !== undefined) continue;
-    refs.push({ label: match[2] as DeepPlanLabel, section: match[3] });
+    const label = (match[1] ?? match[4]) as DeepPlanLabel | undefined;
+    const section = match[2] ?? match[5];
+    if (label === undefined || section === undefined) continue;
+    refs.push({ label, section });
   }
   return refs;
 }
@@ -235,12 +248,16 @@ export function linkifyCitations(
     CITATION_OR_PROTECTED,
     (
       match,
+      directLabel: DeepPlanLabel | undefined,
+      directSection: string | undefined,
       protectedSpan: string | undefined,
       label: DeepPlanLabel | undefined,
       section: string | undefined,
     ) => {
-      // Code spans and existing links keep their contents verbatim.
-      if (protectedSpan !== undefined) return match;
+      // A link the author already wrote stays exactly as it is; only a bare
+      // prose citation is rewritten into a chain link.
+      if (directLabel !== undefined || protectedSpan !== undefined)
+        return match;
       if (label === undefined || section === undefined) return match;
       const target = DEEP_PLAN_LABEL_TO_PHASE[label];
       if (target === from) return match;
