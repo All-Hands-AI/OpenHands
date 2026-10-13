@@ -2298,6 +2298,70 @@ createInterface({ input: process.stdin }).on("line", (line) => {
 async function cmdFixture({ positional, flags }) {
   const run = loadRun(flags);
   const [kind] = positional;
+  if (kind === "recovery-gate") {
+    // Real frontend-only launcher, same origin and browser profile. No API
+    // interception: the launcher's reject routes supply the expected 503s.
+    if (flags.restore) {
+      if (!run.recoveryGateLauncherArgs)
+        throw new CliError("No recovery-gate fixture is active.", { code: 3 });
+      await stopLauncher(run);
+      run.launcherArgs = run.recoveryGateLauncherArgs;
+      delete run.recoveryGateLauncherArgs;
+      spawnLauncher(run);
+      saveRun(run);
+      await waitForStack(run, intFlag(flags.timeout, 600));
+      out({ ok: true, restored: true, baseUrl: run.baseUrl });
+      return;
+    }
+    if (!run.recoveryGateLauncherArgs) {
+      if (
+        !groupAlive(run.launcherPgid) ||
+        !run.launcherArgs ||
+        run.launcherArgs.includes("--backend-only") ||
+        run.launcherArgs.includes("--frontend-only")
+      )
+        throw new CliError(
+          "Start a healthy full-stack run before this fixture.",
+          { code: 3 },
+        );
+      await waitForStack(run, 30);
+      await stopLauncher(run);
+      run.recoveryGateLauncherArgs = [...run.launcherArgs];
+      run.launcherArgs = [...run.launcherArgs, "--frontend-only"];
+      spawnLauncher(run);
+      saveRun(run);
+    }
+    const deadline = Date.now() + 60_000;
+    for (;;) {
+      if (!groupAlive(run.launcherPgid))
+        throw new CliError("The frontend-only fixture launcher exited.", {
+          code: 3,
+        });
+      try {
+        const [html, info] = await Promise.all([
+          http(run, "GET", "/", { auth: false, timeout: 3000 }),
+          http(run, "GET", "/server_info", { auth: false, timeout: 3000 }),
+        ]);
+        if (html.status === 200 && info.status === 503) {
+          out({
+            ok: true,
+            expectedBackendStatus: 503,
+            baseUrl: run.baseUrl,
+            hint: "Run recovery-gate recipes with --no-doctor: the backend is deliberately absent. Restore afterward and doctor the full stack.",
+          });
+          return;
+        }
+      } catch {
+        /* The owned frontend is still starting. */
+      }
+      if (Date.now() > deadline)
+        throw new CliError(
+          "Frontend-only fixture did not become ready within 60s.",
+          { code: 3 },
+        );
+      await delay(500);
+    }
+  }
   const workspace = join(run.dir, "workspace");
   const name =
     flags.name && flags.name !== true
@@ -4644,7 +4708,9 @@ Examples:
   control-openhands conversation start --prompt "Create hello.py that prints hi and run it" --wait --timeout 300
   control-openhands conversation events <id> --last 10
 `,
-  fixture: `control-openhands fixture git-repo [--name qa-repo] [--remote https://github.com/qa-example/qa-repo.git]
+  fixture: `fixture recovery-gate [--restore]  switch this owned full stack to the real frontend-only launcher for a stored-backend recovery probe; --restore returns the original stack. Doctor the healthy stack before/after; use bug run --no-doctor only during the intentional 503 fixture.
+
+control-openhands fixture git-repo [--name qa-repo] [--remote https://github.com/qa-example/qa-repo.git]
         # git repo in <run>/workspace (README, src/calc.py, test); --remote only sets origin,
         # also on a repo that already exists (the output then carries existed and remoteChanged)
 control-openhands fixture git-remote [--name qa-remote]   # bare repo <run>/workspace/qa-remote.git to push to
