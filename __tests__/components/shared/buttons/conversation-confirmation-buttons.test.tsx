@@ -353,19 +353,31 @@ describe("conversation confirmation controls", () => {
         typeof import("#/components/shared/action-tooltip")
       >("#/components/shared/action-tooltip");
 
+      const handleConfirm = vi.fn();
+      const handleReject = vi.fn();
+
       render(
         <>
-          <ActionTooltip type="confirm" onClick={vi.fn()} />
-          <ActionTooltip type="reject" onClick={vi.fn()} />
+          <ActionTooltip type="confirm" onClick={handleConfirm} />
+          <ActionTooltip type="reject" onClick={handleReject} />
         </>,
       );
 
-      expect(screen.getByTestId("action-confirm-button")).toHaveTextContent(
+      const confirmButton = screen.getByTestId("action-confirm-button");
+      const rejectButton = screen.getByTestId("action-reject-button");
+
+      expect(confirmButton).toHaveTextContent(
         `CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE ${continueHint}`,
       );
-      expect(screen.getByTestId("action-reject-button")).toHaveTextContent(
-        `BUTTON$CANCEL ${cancelHint}`,
-      );
+      expect(confirmButton).toHaveAttribute("aria-label", "ACTION$CONFIRM");
+      expect(rejectButton).toHaveTextContent(`BUTTON$CANCEL ${cancelHint}`);
+      expect(rejectButton).toHaveAttribute("aria-label", "ACTION$REJECT");
+
+      fireEvent.click(confirmButton);
+      expect(handleConfirm).toHaveBeenCalledTimes(1);
+
+      fireEvent.click(rejectButton);
+      expect(handleReject).toHaveBeenCalledTimes(1);
     },
   );
 });

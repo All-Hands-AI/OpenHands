@@ -130,7 +130,7 @@ export function ConversationConfirmationButtons() {
         <p className="text-sm font-normal text-contrast min-w-0">
           {t(I18nKey.CHAT_INTERFACE$USER_ASK_CONFIRMATION)}
         </p>
-        <div className="flex shrink-0 items-center gap-3">
+        <div className="ml-auto flex flex-wrap justify-end items-center gap-x-3 gap-y-2">
           <ActionTooltip
             type="reject"
             onClick={() => handleConfirmation(false)}
