@@ -11,7 +11,7 @@ and the **Activity Log** of runs with status, summary, cost, a logs dialog, a
 link to each run's conversation and JSON/CSV export. The **Edit automation**
 dialog changes name, prompt, agent and LLM profile, timeout and the schedule.
 
-Source: `src/routes/automation-detail.tsx`, `src/components/features/automations/detail/`, `src/components/features/automations/delete-confirmation-modal.tsx`, `src/hooks/query/use-automation-detail.ts`, `src/utils/automation-preset-sources.ts`, `src/hooks/query/use-bash-command-logs.ts`, `src/hooks/query/use-automation-tarball-files.ts`, `src/utils/automation-schedule.ts`, `src/utils/automation-timeout.ts`, `src/utils/automation-disabled-reason.ts`, `src/utils/automation-activity-log-export.ts`.
+Source: `src/routes/automation-detail.tsx`, `src/components/features/automations/detail/`, `src/components/features/automations/delete-confirmation-modal.tsx`, `src/hooks/query/use-automation-detail.ts`, `src/utils/automation-preset-sources.ts`, `src/hooks/query/use-bash-command-logs.ts`, `src/hooks/query/use-automation-tarball-files.ts`, `src/utils/automation-schedule.ts`, `src/utils/automation-disabled-reason.ts`, `src/utils/automation-activity-log-export.ts`.
 
 ## Sub-features
 
