@@ -54,7 +54,10 @@ import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { spawnSync } from "node:child_process";
 
-import { isExternalBrowsableUrl, isLoopbackAppUrl } from "./lib/window-url-policy.mjs";
+import {
+  isExternalBrowsableUrl,
+  isLoopbackAppUrl,
+} from "./lib/window-url-policy.mjs";
 import { resolveBundledRuntimeDir } from "./lib/bundled-runtime-dir.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -684,6 +687,9 @@ async function startStack() {
     staticDir: buildDir,
     mode: "agent-canvas",
     isPublic: false,
+    // The preload provides window.marsBridge; the stack's ingress must not
+    // host a second, separate one.
+    marsWebBridge: false,
     skipNpmCheck: true,
     agentServerReadyTimeoutMs: 10 * 60_000,
     onServiceLog: handleServiceLog,

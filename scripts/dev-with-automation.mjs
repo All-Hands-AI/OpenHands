@@ -1126,6 +1126,25 @@ process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
 process.on("SIGHUP", shutdown);
 
+/**
+ * One MARS web bridge per stack, on the server the browser reaches: the
+ * ingress, guarded by the stack's session key (the same one the page holds).
+ * The static child behind it gets `MARS_WEB=0`: a second bridge there would
+ * answer /mars/* with its own, separate sign-in state for anyone who opens
+ * that port directly. Without a key the ingress bridge would take
+ * destroySession and savePat from any local process, the agent's shell
+ * included, so a stack with no session key mounts nothing. Electron turns it
+ * off altogether (`config.marsWebBridge`), its preload provides the bridge.
+ */
+export function buildMarsWebEnv(role, config) {
+  if (role === "static" || config.marsWebBridge === false) {
+    return { MARS_WEB: "0" };
+  }
+  return config.sessionApiKey
+    ? { MARS_WEB_KEY: config.sessionApiKey }
+    : { MARS_WEB: "0" };
+}
+
 function startIngress(config) {
   logService("ingress", `Starting on port ${config.ingressPort}...`, c.yellow);
 
@@ -1153,14 +1172,7 @@ function startIngress(config) {
     {
       cwd: projectRoot,
       color: c.yellow,
-      // The MARS web bridge lives here, on the browser-facing server, guarded
-      // by the stack's session key (the one the page already holds). Off under
-      // Electron, see `config.marsWebBridge`.
-      env: !config.marsWebBridge
-        ? { MARS_WEB: "0" }
-        : config.sessionApiKey
-          ? { MARS_WEB_KEY: config.sessionApiKey }
-          : {},
+      env: buildMarsWebEnv("ingress", config),
     },
   );
 }
@@ -1464,6 +1476,11 @@ async function main(options = {}) {
     // AUTOMATION_AGENT_SERVER_URL.
     sandboxAgentServerUrl,
     staticMode: staticModeOverride,
+    // Whether the ingress hosts the MARS web bridge (DigitalOcean Managed
+    // Agents for the browser). Electron passes false: its preload already
+    // provides the bridge, and a second one would hold its own sign-in state
+    // and, with MARS_TOKEN set, validate the token against DO at every start.
+    marsWebBridge = true,
     defaultStaticMode = false,
     buildStaticFrontend,
     staticDir: staticDirOverride,
@@ -1580,11 +1597,7 @@ async function main(options = {}) {
   // so downstream helpers (Vite spawn, static build) can produce a
   // runtime-services info object describing what the agent can reach.
   config.mode = mode;
-  // One MARS web bridge per stack, on the server a browser reaches: the
-  // ingress. Never under Electron, whose preload already provides the bridge
-  // (a second one would hold its own sign-in state and tunnels, and with
-  // MARS_TOKEN set would validate the token against DO at every start).
-  config.marsWebBridge = mode !== "agent-canvas";
+  config.marsWebBridge = marsWebBridge;
   config.agentHostAlias = agentHostAlias;
   config.frontendKind = useStaticMode ? "static" : "vite";
   ensureDirectories(config);
@@ -1742,10 +1755,7 @@ function startStaticFrontend(config, staticDir) {
     {
       cwd: config.canvasPath,
       color: c.magenta,
-      // The ingress in front of this server hosts the MARS web bridge; a
-      // second one here would answer /mars/* with its own, separate sign-in
-      // state for anyone who opens this port directly.
-      env: { MARS_WEB: "0" },
+      env: buildMarsWebEnv("static", config),
     },
   );
 }
