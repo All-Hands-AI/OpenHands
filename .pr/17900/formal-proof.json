@@ -1,0 +1,48 @@
+{
+  "ok": true,
+  "id": "F16.keyboard",
+  "verdict": "verified",
+  "blocks": [
+    {
+      "name": "desktop",
+      "sha": "d1916abc3de73fa4",
+      "verdict": "verified",
+      "reasons": [],
+      "baseline": {
+        "xfail": 2
+      },
+      "fix": {
+        "xpass": 2
+      },
+      "ignored": 0
+    },
+    {
+      "name": "phone",
+      "sha": "7103e463a0b99620",
+      "verdict": "verified",
+      "reasons": [],
+      "baseline": {
+        "xfail": 2
+      },
+      "fix": {
+        "xpass": 2
+      },
+      "ignored": 0
+    }
+  ],
+  "recoveredViewports": [
+    {
+      "name": "desktop",
+      "revision": "bdb69754a113e3458d3645dfba0676ae73f4ebc3",
+      "viewport": "1440x1000",
+      "source": "evidence/known-bugs/F16.keyboard-desktop-1791865133986-2.json:stdout"
+    },
+    {
+      "name": "phone",
+      "revision": "bdb69754a113e3458d3645dfba0676ae73f4ebc3",
+      "viewport": "390x844",
+      "source": "evidence/known-bugs/F16.keyboard-phone-1791865149712-2.json:stdout"
+    }
+  ],
+  "hint": "Drop the Known failure note and the block's `# bug` marker in the fix's PR: the assertion now guards the corrected behavior as a normal recipe step."
+}

@@ -1,0 +1,25 @@
+{
+  "id": "F16.keyboard",
+  "name": "desktop",
+  "file": "references/feature-map/F16-application-settings.md",
+  "script": "control-openhands browser viewport desktop\ncontrol-openhands browser goto /settings/app\ncontrol-openhands browser wait 'testid=submit-button'\ncontrol-openhands browser record start --feature F16.keyboard --name keyboard-desktop\ncontrol-openhands browser focus 'testid=color-theme-input'\ncontrol-openhands browser press Tab\ncontrol-openhands browser press Escape\ncontrol-openhands browser screenshot --feature F16.keyboard --name keyboard-desktop\ncontrol-openhands browser record stop --gif\ncontrol-openhands assert --field value --equals enable-analytics-switch --bug-shows title-llm-profile-input -- browser eval \"document.activeElement.getAttribute('data-testid')\" # bug",
+  "exitCode": 1,
+  "timedOut": false,
+  "failedLine": 10,
+  "failedCommand": "control-openhands assert --field value --equals enable-analytics-switch --bug-shows title-llm-profile-input -- browser eval \"document.activeElement.getAttribute('data-testid')\"",
+  "stdout": "{\n  \"ok\": true,\n  \"viewport\": {\n    \"width\": 1440,\n    \"height\": 1000\n  }\n}\n{\n  \"ok\": true,\n  \"url\": \"<run-origin>/settings/app\",\n  \"status\": 200\n}\n{\n  \"ok\": true,\n  \"state\": \"visible\"\n}\n{\n  \"ok\": true,\n  \"recording\": true,\n  \"fps\": 10,\n  \"maxSeconds\": 600,\n  \"format\": \"mp4\",\n  \"ffmpeg\": \"ffmpeg\",\n  \"url\": \"<run-origin>/settings/app\"\n}\n{\n  \"ok\": true\n}\n{\n  \"ok\": true,\n  \"url\": \"<run-origin>/settings/app\"\n}\n{\n  \"ok\": true,\n  \"url\": \"<run-origin>/settings/app\"\n}\n{\n  \"ok\": true,\n  \"path\": \"baseline-media-F16.keyboard-desktop-2-2026-10-13T04-19-01.960Z/keyboard-desktop-2.png\",\n  \"url\": \"<run-origin>/settings/app\",\n  \"viewport\": {\n    \"width\": 1440,\n    \"height\": 1000\n  }\n}\n{\n  \"ok\": true,\n  \"path\": \"baseline-media-F16.keyboard-desktop-2-2026-10-13T04-19-01.960Z/keyboard-desktop-2.mp4\",\n  \"seconds\": 1.5,\n  \"recordedSeconds\": 0.6,\n  \"size\": \"1440x1000\",\n  \"fps\": 10,\n  \"captures\": 6,\n  \"changes\": 6,\n  \"misses\": 0,\n  \"capped\": false,\n  \"cutSeconds\": 0,\n  \"url\": \"<run-origin>/settings/app\",\n  \"gif\": \"baseline-media-F16.keyboard-desktop-2-2026-10-13T04-19-01.960Z/keyboard-desktop-2.gif\"\n}\n{\n  \"ok\": false,\n  \"kind\": \"mismatch\",\n  \"actual\": \"title-llm-profile-input\",\n  \"field\": \"value\",\n  \"expected\": \"enable-analytics-switch\",\n  \"bugShows\": \"title-llm-profile-input\",\n  \"command\": \"browser eval document.activeElement.getAttribute('data-testid')\"\n}\n",
+  "stderr": "",
+  "elapsedMs": 2479,
+  "asserts": [
+    {
+      "ts": "2026-10-13T04:18:59.228Z",
+      "ok": false,
+      "kind": "mismatch",
+      "actual": "title-llm-profile-input",
+      "field": "value",
+      "expected": "enable-analytics-switch",
+      "bugShows": "title-llm-profile-input",
+      "command": "browser eval document.activeElement.getAttribute('data-testid')"
+    }
+  ]
+}
