@@ -43,12 +43,12 @@ export interface RefReport {
   uncovered: string[];
 }
 
-const REFERENCE_PATTERN = /\[(Req|DB|BE|FE)\s+([0-9]+(?:\.[0-9]+)*)\]/g;
 /**
- * A citation to rewrite, or a span whose contents must stay verbatim. The
+ * A citation match, or a span whose contents Markdown renders verbatim. The
  * protected alternative is listed first and covers fenced code (``` / ~~~),
- * inline code spans and Markdown links, so a citation written inside one of
- * them is returned unchanged instead of being turned into a nested link.
+ * inline code spans and existing Markdown links, so a citation written inside
+ * one of them is treated as an example rather than a dependency — both when
+ * validating the chain and when rewriting citations into links.
  */
 const CITATION_OR_PROTECTED =
   /(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`|\[(?:[^[\]\n]|\[[^\]\n]*\])*\]\([^)\n]*\))|\[(Req|DB|BE|FE)\s+([0-9]+(?:\.[0-9]+)*)\]/g;
@@ -166,13 +166,19 @@ export function extractDefinedSections(content: string): Set<string> {
   return sections;
 }
 
-/** Every citation in a document, in order of appearance. */
+/**
+ * Every citation in a document's prose, in order of appearance. A citation
+ * written inside code (an example marker such as `` `[Req 9.9]` ``) or inside
+ * an existing Markdown link is skipped: those spans are not dependencies, so
+ * counting them would reject a checkpoint the planner never meant to fail.
+ */
 export function extractReferences(
   content: string,
 ): { label: DeepPlanLabel; section: string }[] {
   const refs: { label: DeepPlanLabel; section: string }[] = [];
-  for (const match of content.matchAll(REFERENCE_PATTERN)) {
-    refs.push({ label: match[1] as DeepPlanLabel, section: match[2] });
+  for (const match of content.matchAll(CITATION_OR_PROTECTED)) {
+    if (match[1] !== undefined) continue;
+    refs.push({ label: match[2] as DeepPlanLabel, section: match[3] });
   }
   return refs;
 }

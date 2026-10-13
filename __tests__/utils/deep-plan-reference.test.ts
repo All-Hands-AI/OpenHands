@@ -231,6 +231,26 @@ describe("extractReferences", () => {
       { label: "Req", section: "3.1" },
     ]);
   });
+
+  it("ignores citations written inside inline code", () => {
+    expect(extractReferences("Use `[Req 9.9]` as the example marker")).toEqual(
+      [],
+    );
+  });
+
+  it("ignores citations written inside fenced code", () => {
+    expect(
+      extractReferences(
+        ["```", "[Req 9.9]", "```", "See [Req 3.1]"].join("\n"),
+      ),
+    ).toEqual([{ label: "Req", section: "3.1" }]);
+  });
+
+  it("ignores citations written inside an existing link", () => {
+    expect(
+      extractReferences("See [the requirement [Req 9.9]](https://example.com)"),
+    ).toEqual([]);
+  });
 });
 
 describe("validateDocumentChain", () => {
@@ -338,6 +358,26 @@ describe("validateDocumentChain", () => {
     };
 
     const report = validateDocumentChain(documents, "database");
+
+    expect(report.ok).toBe(true);
+    expect(report.issues).toEqual([]);
+  });
+
+  it("accepts a requirements document whose only marker is a code example", () => {
+    // The planner often shows the citation syntax with an illustrative marker
+    // such as `[Req 9.9]`. That is an example, not a dependency, so it must not
+    // block the requirements checkpoint before the database phase starts.
+    const documents: DeepPlanDocuments = {
+      requirements: [
+        "# Requirements",
+        "",
+        "## 1 Scope",
+        "",
+        "Use `[Req 9.9]` as the example marker.",
+      ].join("\n"),
+    };
+
+    const report = validateDocumentChain(documents, "requirements");
 
     expect(report.ok).toBe(true);
     expect(report.issues).toEqual([]);
