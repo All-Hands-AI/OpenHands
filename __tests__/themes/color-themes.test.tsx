@@ -18,7 +18,7 @@ describe("color themes", () => {
   // @spec MCP-004 — Form feedback follows readable theme text roles
   // @spec WN-001 — Warning feedback also meets the small-text contrast contract
   it.each(Object.entries(COLOR_THEMES))(
-    "keeps small feedback text readable on the %s modal surface",
+    "keeps small text readable on the %s theme surfaces",
     (_key, theme) => {
       // Resolve the shipped palette, including stylesheet-owned defaults.
       const variables: Record<string, string> = {
@@ -78,6 +78,15 @@ describe("color themes", () => {
           `--oh-feedback-warning against ${surfaceName}`,
         ).toBeGreaterThanOrEqual(4.5);
       }
+
+      // @spec TN-001 — Toast text stays readable on the toast surface
+      expect(
+        contrast(
+          luminance(resolve("--oh-contrast")),
+          luminance(resolve("--oh-color-tertiary")),
+        ),
+        "--oh-contrast against the toast surface",
+      ).toBeGreaterThanOrEqual(4.5);
     },
   );
 
