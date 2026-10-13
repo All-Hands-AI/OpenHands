@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "toasts": [],
+  "history": [
+    {
+      "ts": "2026-10-13T09:44:10.036Z",
+      "role": "status",
+      "text": "Automation not found"
+    }
+  ]
+}
