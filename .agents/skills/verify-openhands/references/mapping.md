@@ -124,6 +124,23 @@ sections, in this order:
    (reproduced <date>, #<issue>): <what happens>`; list it here as
    `Known issue #<issue>: ...` only when no recipe can drive it.
 
+   Make the note executable when a recipe can drive it: indent a fenced block
+   under it, opened with `` ```sh known-bug <ID> [name] `` (the name tells
+   entry points or viewports apart, such as `desktop` and `phone`). Its
+   commands set their own viewport and starting page and assert the *correct*
+   behavior; exactly one line, the one that fails because of the bug, is a
+   `control-openhands assert --field <path> --equals <correct> --bug-shows
+   <what the bug shows> -- <command>` ending in `# bug`. Arrange steps go
+   before it and must be able to fail on their own (assert the starting value
+   too), so a broken setup is never read as the bug. Keep a `browser
+   screenshot` before the assertion where the symptom is visual.
+   `control-openhands bug run <ID>` then reports `xfail` while the bug lasts,
+   `xpass` once it stops, and `fail` for anything else; `map check` rejects a
+   block without exactly one such line. F25's `F25.selector-dropdown` note is
+   the worked example. When a fix is proven, the PR that drops the note turns
+   the block's commands into the bullet's normal steps, so the same assertion
+   guards the corrected behavior.
+
 Treat commands as literal: quote selectors, keep names unique to the run (prefix
 fixtures with `QA_`), and restore shared state after mutations (delete the secret,
 deactivate the profile) unless the next recipe depends on it, in which case say so.
