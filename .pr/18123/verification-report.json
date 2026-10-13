@@ -1,0 +1,53 @@
+{
+  "attribution": "I am an AI agent helping Engel Nyst (@enyst) with project maintenance.",
+  "issue": "https://github.com/OpenHands/OpenHands/issues/18123",
+  "sourceCommit": "d5b5cca9d85f9bdc08f68f88aae40be22d46e3e7",
+  "helperSha256": "4478659ee79db977e23e460ceb224b2cfec2624a03f298aa3ecf46f979734ecb",
+  "scope": "Cross-connect modified-click harness timeout and diagnostic observer. No production UI changes.",
+  "browser": "Project-pinned Playwright 1.63.0 Chromium runner; one worker; no retries; native setContent fixtures; no app/backend stack for focused cases.",
+  "positiveRun": {
+    "startTime": "2026-10-13T04:25:22.920Z",
+    "durationMs": 5992.856000000001,
+    "passed": 3,
+    "failed": 0,
+    "flaky": 0,
+    "checks": [
+      {
+        "name": "a modified link click opens one tab and records the delivered event",
+        "status": "passed",
+        "durationMs": 136
+      },
+      {
+        "name": "a consumed click fails quickly and records its actual target and final prevention",
+        "status": "passed",
+        "durationMs": 5082
+      },
+      {
+        "name": "an obscured link reports click failure and handles its pending page waiter",
+        "status": "passed",
+        "durationMs": 384
+      }
+    ]
+  },
+  "negativeControl": {
+    "description": "Same consumed native click using the original unbounded context.waitForEvent(page) pattern extracted into a temporary helper. Forced no-tab path reached the 15-second overall test timeout instead of the expected five-second step error.",
+    "startTime": "2026-10-13T04:24:29.272Z",
+    "durationMs": 15417.512,
+    "failedAsExpected": true,
+    "actualError": "browserContext.waitForEvent: Test timeout of 15000ms exceeded.",
+    "expectedError": "cmd-click opened no new tab within 5000 ms"
+  },
+  "staticChecks": [
+    "Strict isolated TypeScript for helper and native browser spec passed.",
+    "Prettier for helper, native spec and modified cross-connect spec passed.",
+    "git diff --check passed."
+  ],
+  "notRun": [
+    "Full cross-connect stack suite: pending serialized stack slot.",
+    "Full mock-LLM suite and Docker suite.",
+    "Original intermittent Linux CI lost-click: not reproduced locally."
+  ],
+  "teardown": "Configured Playwright runner exited; native fixtures/browser contexts closed. No product stack or user service was started for focused tests.",
+  "replayCommand": "npx playwright test --config=.pr/18123/browser-only.config.ts",
+  "configurationNote": "The original run used the same settings from .tmp/18123-browser.config.ts; the retained replay config adjusts only relative directory depth for its artifact location."
+}
