@@ -40,8 +40,14 @@ export function DeleteConfirmationModal({
 
   // Move keyboard focus into the dialog when it opens, onto the
   // non-destructive choice, so Enter or Space cannot delete by accident.
+  // On close, hand focus back to the control that opened the dialog.
   React.useEffect(() => {
-    if (isOpen) cancelButtonRef.current?.focus();
+    if (!isOpen) return undefined;
+    const opener = document.activeElement;
+    cancelButtonRef.current?.focus();
+    return () => {
+      if (opener instanceof HTMLElement && opener.isConnected) opener.focus();
+    };
   }, [isOpen]);
 
   if (!isOpen) return null;

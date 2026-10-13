@@ -476,8 +476,12 @@ describe("AutomationsList — draft sections", () => {
     // Act — dismiss with the keyboard.
     await user.keyboard("{Escape}");
 
-    // Assert — the dialog is gone and the draft was kept.
+    // Assert — the dialog is gone, focus is back on the opener, and the
+    // draft was kept.
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(
+      screen.getByTestId("automation-setup-draft-delete-draft-1"),
+    ).toHaveFocus();
     expect(AutomationService.deleteServerDraft).not.toHaveBeenCalled();
     expect(
       screen.getByTestId("automation-setup-draft-draft-1"),
