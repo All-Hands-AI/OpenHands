@@ -1034,105 +1034,182 @@ describe("dev-with-automation CLI", () => {
     15_000,
   );
 
+  // Runs the real `main()` with `--backend-only` and lets the caller decide
+  // what the automation backend does. `main()` starts it as
+  // `uv run --project <checkout> uvicorn ... --host 127.0.0.1 --port <port>`;
+  // the fake `uv` hands those arguments to `automationSource` (a Node ESM
+  // script). The agent-server is an in-process stub that answers every request,
+  // so the launcher reaches the automation wait without delay.
+  async function launchBackendOnly(automationSource: string) {
+    const moduleUrl = pathToFileURL(
+      path.join(repoRoot, "scripts", "dev-with-automation.mjs"),
+    ).href;
+    const dir = mkdtempSync(path.join(tmpdir(), "automation-startup-"));
+    const bin = path.join(dir, "bin");
+    const checkout = path.join(dir, "automation");
+    mkdirSync(bin);
+    mkdirSync(checkout);
+    writeFileSync(path.join(checkout, "pyproject.toml"), "");
+    const automationScript = path.join(dir, "automation.mjs");
+    writeFileSync(automationScript, automationSource);
+    // `uvx` only has to exist; the agent-server is stubbed below.
+    writeFileSync(path.join(bin, "uvx"), "#!/bin/sh\nexit 0\n", {
+      mode: 0o755,
+    });
+    writeFileSync(
+      path.join(bin, "uv"),
+      `#!/bin/sh\nexec ${JSON.stringify(process.execPath)} ${JSON.stringify(automationScript)} "$@"\n`,
+      { mode: 0o755 },
+    );
+    const ports: number[] = [];
+    for (let i = 0; i < 3; i += 1) {
+      const server = net.createServer();
+      await new Promise<void>((resolve) =>
+        server.listen(0, "127.0.0.1", resolve),
+      );
+      ports.push((server.address() as net.AddressInfo).port);
+      await new Promise((resolve) => server.close(resolve));
+    }
+    const [ingressPort, agentServerPort, automationPort] = ports;
+    const launcherScript = path.join(dir, "launch.mjs");
+    writeFileSync(
+      launcherScript,
+      [
+        'import http from "node:http";',
+        `import { main } from ${JSON.stringify(moduleUrl)};`,
+        "const startAgentServer = (config) =>",
+        '  http.createServer((_req, res) => res.end("{}")).listen(config.agentServerPort, "127.0.0.1");',
+        "main({ startAgentServer, agentServerReadyTimeoutMs: 10_000 })",
+        '  .then(() => console.log("LAUNCHED"))',
+        '  .catch((error) => { console.log("FAILED:", error.message); process.exit(1); });',
+      ].join("\n"),
+    );
+
+    const launcher = spawn(
+      process.execPath,
+      [launcherScript, "--backend-only", "--port", String(ingressPort)],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}`,
+          HOME: dir,
+          OH_CANVAS_SAFE_STATE_DIR: path.join(dir, "state"),
+          OH_CANVAS_SAFE_BACKEND_PORT: String(agentServerPort),
+          OH_CANVAS_SAFE_AUTOMATION_PORT: String(automationPort),
+          OH_AUTOMATION_LOCAL_PATH: checkout,
+        },
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
+    let output = "";
+    launcher.stdout.on("data", (chunk) => {
+      output += chunk.toString();
+    });
+    launcher.stderr.on("data", (chunk) => {
+      output += chunk.toString();
+    });
+    const exited = once(launcher, "exit").then(([code]) => code as number);
+
+    return {
+      ingressPort,
+      automationPort,
+      output: () => output,
+      exitCode: (timeoutMs: number) =>
+        Promise.race([exited, delay(timeoutMs).then(() => "timed out")]),
+      async waitForOutput(text: string, timeoutMs: number) {
+        const deadline = Date.now() + timeoutMs;
+        while (!output.includes(text) && Date.now() < deadline) {
+          if (launcher.exitCode !== null) break;
+          await delay(50);
+        }
+        return output.includes(text);
+      },
+      async stop() {
+        // SIGTERM lets the launcher's shutdown handler stop its detached
+        // services; that is also the cleanup when a regression leaves it up.
+        if (launcher.exitCode === null) {
+          launcher.kill("SIGTERM");
+          await Promise.race([exited, delay(6_000)]);
+          if (launcher.exitCode === null) launcher.kill("SIGKILL");
+        }
+        rmSync(dir, { recursive: true, force: true });
+      },
+    };
+  }
+
+  const isListening = (port: number) =>
+    new Promise<boolean>((resolve) => {
+      const socket = net.connect(port, "127.0.0.1");
+      socket.once("connect", () => {
+        socket.destroy();
+        resolve(true);
+      });
+      socket.once("error", () => resolve(false));
+    });
+
   it.skipIf(process.platform === "win32")(
     "stops the stack and fails when the automation backend exits during startup",
     async () => {
-      const moduleUrl = pathToFileURL(
-        path.join(repoRoot, "scripts", "dev-with-automation.mjs"),
-      ).href;
-      const dir = mkdtempSync(path.join(tmpdir(), "automation-startup-exit-"));
-      const bin = path.join(dir, "bin");
-      const checkout = path.join(dir, "automation");
-      mkdirSync(bin);
-      mkdirSync(checkout);
-      writeFileSync(path.join(checkout, "pyproject.toml"), "");
-      // `uvx` only has to exist. The automation backend is started with
-      // `uv run --project <checkout> uvicorn ...`, and this one exits the way
-      // it does when a database migration fails.
-      writeFileSync(path.join(bin, "uvx"), "#!/bin/sh\nexit 0\n", {
-        mode: 0o755,
-      });
-      writeFileSync(
-        path.join(bin, "uv"),
-        '#!/bin/sh\necho "Failed to apply SQLite migrations" >&2\nexit 3\n',
-        { mode: 0o755 },
+      // Exits the way automation does when a database migration fails.
+      const stack = await launchBackendOnly(
+        'console.error("Failed to apply SQLite migrations");\nprocess.exit(3);\n',
       );
-      const ports: number[] = [];
-      for (let i = 0; i < 3; i += 1) {
-        const server = net.createServer();
-        await new Promise<void>((resolve) =>
-          server.listen(0, "127.0.0.1", resolve),
-        );
-        ports.push((server.address() as net.AddressInfo).port);
-        await new Promise((resolve) => server.close(resolve));
-      }
-      const [ingressPort, agentServerPort, automationPort] = ports;
-      const launcherScript = path.join(dir, "launch.mjs");
-      writeFileSync(
-        launcherScript,
-        [
-          `import { main } from ${JSON.stringify(moduleUrl)};`,
-          "main({ startAgentServer: () => {}, agentServerReadyTimeoutMs: 100 })",
-          '  .then(() => console.log("LAUNCHED"))',
-          '  .catch((error) => { console.log("FAILED:", error.message); process.exit(1); });',
-        ].join("\n"),
-      );
-
-      const launcher = spawn(
-        process.execPath,
-        [launcherScript, "--backend-only", "--port", String(ingressPort)],
-        {
-          cwd: repoRoot,
-          env: {
-            ...process.env,
-            PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}`,
-            HOME: dir,
-            OH_CANVAS_SAFE_STATE_DIR: path.join(dir, "state"),
-            OH_CANVAS_SAFE_BACKEND_PORT: String(agentServerPort),
-            OH_CANVAS_SAFE_AUTOMATION_PORT: String(automationPort),
-            OH_AUTOMATION_LOCAL_PATH: checkout,
-          },
-          stdio: ["ignore", "pipe", "pipe"],
-        },
-      );
-      let output = "";
-      launcher.stdout.on("data", (chunk) => {
-        output += chunk.toString();
-      });
-      launcher.stderr.on("data", (chunk) => {
-        output += chunk.toString();
-      });
 
       try {
-        const exitResult = await Promise.race([
-          once(launcher, "exit").then(([code]) => ({ code, timedOut: false })),
-          delay(25_000).then(() => ({ code: null, timedOut: true })),
-        ]);
+        const exitCode = await stack.exitCode(25_000);
 
-        expect(exitResult, output).toEqual({ code: 1, timedOut: false });
+        const output = stack.output();
+        expect(exitCode, output).toBe(1);
         expect(output).toContain(
           "FAILED: The automation backend exited during startup (code 3).",
         );
         expect(output).not.toContain("LAUNCHED");
-        expect(output).not.toContain("Main UI:");
-        const ingressStillListening = await new Promise<boolean>((resolve) => {
-          const socket = net.connect(ingressPort, "127.0.0.1");
-          socket.once("connect", () => {
-            socket.destroy();
-            resolve(true);
-          });
-          socket.once("error", () => resolve(false));
-        });
-        expect(ingressStillListening).toBe(false);
+        // The banner's first entry, printed in every launch mode.
+        expect(output).not.toContain("Ingress:");
+        expect(await isListening(stack.ingressPort)).toBe(false);
       } finally {
-        // On a regression the launcher is still running with detached
-        // services; SIGTERM lets its shutdown handler stop them.
-        if (launcher.exitCode === null) {
-          launcher.kill("SIGTERM");
-          await Promise.race([once(launcher, "exit"), delay(6_000)]);
-          if (launcher.exitCode === null) launcher.kill("SIGKILL");
-        }
-        rmSync(dir, { recursive: true, force: true });
+        await stack.stop();
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(process.platform === "win32")(
+    "announces the stack only after the automation backend reports healthy",
+    async () => {
+      // Listening but not ready yet: the first two health probes get 503, so
+      // the launcher can only log "Ready" after it has polled and waited.
+      const stack = await launchBackendOnly(
+        [
+          'import http from "node:http";',
+          'const port = Number(process.argv[process.argv.indexOf("--port") + 1]);',
+          "let probes = 0;",
+          "http",
+          "  .createServer((req, res) => {",
+          '    const healthy = req.url === "/api/automation/health" && ++probes > 2;',
+          "    res.writeHead(healthy ? 200 : 503).end(healthy ? '{\"status\":\"ok\"}' : '');",
+          "  })",
+          '  .listen(port, "127.0.0.1");',
+          "// Never outlive the test, even if the launcher is killed.",
+          "setTimeout(() => process.exit(0), 30_000);",
+        ].join("\n"),
+      );
+
+      try {
+        expect(
+          await stack.waitForOutput("LAUNCHED", 20_000),
+          stack.output(),
+        ).toBe(true);
+
+        const output = stack.output();
+        const ready = output.indexOf(
+          `Ready at http://127.0.0.1:${stack.automationPort}/api/automation/health`,
+        );
+        expect(ready, output).toBeGreaterThan(-1);
+        expect(output.indexOf("Ingress:"), output).toBeGreaterThan(ready);
+      } finally {
+        await stack.stop();
       }
     },
     30_000,
