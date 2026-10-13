@@ -20,7 +20,7 @@ import {
 const TOAST_STYLE: CSSProperties = {
   background: "var(--oh-color-tertiary)",
   border: "1px solid var(--oh-border-input)",
-  color: "#fff",
+  color: "var(--oh-contrast)",
   borderRadius: "var(--oh-radius)",
   maxWidth: "400px",
   wordBreak: "break-word",

@@ -3,6 +3,8 @@ import toast from "react-hot-toast";
 import {
   displaySuccessToast,
   displayErrorToast,
+  TOAST_OPTIONS,
+  ERROR_TOAST_OPTIONS,
 } from "#/utils/custom-toast-handlers";
 
 const { toastMock } = vi.hoisted(() => ({
@@ -22,6 +24,26 @@ vi.mock("react-hot-toast", () => ({
 describe("custom-toast-handlers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  describe("toast styles and theme tokens", () => {
+    it("should use semantic contrast role for default and success toasts instead of hardcoded white", () => {
+      expect(TOAST_OPTIONS.style).toEqual(
+        expect.objectContaining({
+          background: "var(--oh-color-tertiary)",
+          color: "var(--oh-contrast)",
+        }),
+      );
+    });
+
+    it("should preserve error toast muted color override", () => {
+      expect(ERROR_TOAST_OPTIONS.style).toEqual(
+        expect.objectContaining({
+          background: "var(--oh-color-tertiary)",
+          color: "var(--oh-muted)",
+        }),
+      );
+    });
   });
 
   describe("displaySuccessToast", () => {
