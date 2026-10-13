@@ -268,10 +268,11 @@ describe("EventService", () => {
     });
 
     it("returns an empty page for Missing event file in cloud mode", async () => {
-      const missingError = new Error("HttpError");
-      missingError.name = "HttpError";
-      missingError.status = 500;
-      missingError.response = { body: "Missing event file" };
+      const missingError = Object.assign(new Error("HttpError"), {
+        name: "HttpError",
+        status: 500,
+        response: { body: "Missing event file" },
+      });
       callCloudProxyMock.mockRejectedValue(missingError);
 
       await expect(
@@ -411,10 +412,11 @@ describe("EventService", () => {
 
     it("returns an empty page for Missing event file in local mode", async () => {
       useBackend(localBackend);
-      const missingError = new Error("HttpError");
-      missingError.name = "HttpError";
-      missingError.status = 500;
-      missingError.response = { body: "Missing event file" };
+      const missingError = Object.assign(new Error("HttpError"), {
+        name: "HttpError",
+        status: 500,
+        response: { body: "Missing event file" },
+      });
       remoteSearchMock.mockRejectedValue(missingError);
 
       await expect(

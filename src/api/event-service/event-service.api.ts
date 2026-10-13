@@ -16,10 +16,17 @@ import type {
 } from "./event-service.types";
 
 function isMissingEventFileError(err: unknown): boolean {
-  if (isSdkHttpError(err) && (err as any).status === 500) {
-    const body = (err as any).response?.body || (err as any).body;
-    const bodyStr = typeof body === 'string' ? body : JSON.stringify(body);
-    if (bodyStr && bodyStr.includes("Missing event file")) return true;
+  if (isSdkHttpError(err)) {
+    const errorWithStatus = err as {
+      status?: number;
+      response?: { body?: unknown };
+      body?: unknown;
+    };
+    if (errorWithStatus.status === 500) {
+      const body = errorWithStatus.response?.body ?? errorWithStatus.body;
+      const bodyStr = typeof body === "string" ? body : JSON.stringify(body);
+      if (bodyStr && bodyStr.includes("Missing event file")) return true;
+    }
   }
   return err instanceof Error && err.message.includes("Missing event file");
 }
