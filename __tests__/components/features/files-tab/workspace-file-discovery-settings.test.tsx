@@ -7,6 +7,7 @@ import SettingsService from "#/api/settings-service/settings-service.api";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { DEFAULT_FILE_DISCOVERY } from "#/utils/workspace-file-discovery";
 import { useSettings } from "#/hooks/query/use-settings";
+import { MODAL_MAX_WIDTH_VIEWPORT } from "#/components/shared/modals/modal-body";
 
 vi.mock("#/api/settings-service/settings-service.api", () => ({
   default: { getSettings: vi.fn(), saveSettings: vi.fn() },
@@ -30,6 +31,7 @@ vi.mock("#/contexts/active-backend-context", () => ({
 function SettingsConsumer() {
   const { data } = useSettings();
   return (
+    // eslint-disable-next-line i18next/no-literal-string
     <output aria-label="MCP settings">
       {JSON.stringify(data?.mcp_config)}
     </output>
@@ -183,5 +185,15 @@ describe("workspace discovery settings", () => {
     expect(
       screen.getByRole("status", { name: "MCP settings" }),
     ).toHaveTextContent(JSON.stringify(mcpConfig));
+  });
+
+  it("caps the dialog body with MODAL_MAX_WIDTH_VIEWPORT to fit phone viewports", async () => {
+    const { user } = setup();
+    await user.click(
+      await screen.findByRole("button", { name: "FILES$DISCOVERY_SETTINGS" }),
+    );
+
+    const modalBody = screen.getByTestId("workspace-file-discovery-body");
+    expect(modalBody).toHaveClass(MODAL_MAX_WIDTH_VIEWPORT);
   });
 });
