@@ -18,7 +18,7 @@ describe("color themes", () => {
   // @spec MCP-004 — Form feedback follows readable theme text roles
   // @spec WN-001 — Warning feedback also meets the small-text contrast contract
   it.each(Object.entries(COLOR_THEMES))(
-    "keeps small feedback text readable on the %s modal surface",
+    "keeps small text readable on the %s theme surfaces",
     (_key, theme) => {
       // Resolve the shipped palette, including stylesheet-owned defaults.
       const variables: Record<string, string> = {
@@ -60,6 +60,15 @@ describe("color themes", () => {
         ).toBeGreaterThanOrEqual(4.5);
       }
 
+      // @spec HL-001 — Home mode labels stay readable on the hover pill
+      expect(
+        contrast(
+          luminance(resolve("--oh-contrast")),
+          luminance(resolve("--oh-interactive-hover")),
+        ),
+        "--oh-contrast against the Home mode toggle pill",
+      ).toBeGreaterThanOrEqual(4.5);
+
       const warningInk = luminance(resolve("--oh-feedback-warning"));
       const trustBackground = channels(resolve("--oh-background"));
       const warningTint = channels(resolve("--oh-warning"));
@@ -78,6 +87,15 @@ describe("color themes", () => {
           `--oh-feedback-warning against ${surfaceName}`,
         ).toBeGreaterThanOrEqual(4.5);
       }
+
+      // @spec TN-001 — Toast text stays readable on the toast surface
+      expect(
+        contrast(
+          luminance(resolve("--oh-contrast")),
+          luminance(resolve("--oh-color-tertiary")),
+        ),
+        "--oh-contrast against the toast surface",
+      ).toBeGreaterThanOrEqual(4.5);
     },
   );
 

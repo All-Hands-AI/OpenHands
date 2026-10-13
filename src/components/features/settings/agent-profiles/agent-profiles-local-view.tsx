@@ -321,7 +321,7 @@ export function AgentProfilesLocalView() {
         isRequired
         error={
           isDuplicateName
-            ? t(I18nKey.SETTINGS$META_PROFILE_NAME_TAKEN)
+            ? t(I18nKey.SETTINGS$AGENT_PROFILE_NAME_TAKEN)
             : undefined
         }
       />

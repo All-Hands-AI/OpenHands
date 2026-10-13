@@ -9,12 +9,13 @@ import { Settings } from "#/types/settings";
 import ProfilesService from "#/api/profiles-service/profiles-service.api";
 
 const activeBackendState = vi.hoisted(() => ({
+  id: "local",
   kind: "local" as "local" | "cloud",
 }));
 
 vi.mock("#/contexts/active-backend-context", () => ({
   useActiveBackend: () => ({
-    backend: { kind: activeBackendState.kind },
+    backend: { id: activeBackendState.id, kind: activeBackendState.kind },
     orgId: null,
   }),
 }));
@@ -35,24 +36,40 @@ function buildSettings(overrides: Partial<Settings> = {}): Settings {
 }
 
 function renderAppSettingsScreen() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   return render(<AppSettingsScreen />, {
     wrapper: ({ children }) => (
-      <QueryClientProvider
-        client={
-          new QueryClient({
-            defaultOptions: { queries: { retry: false } },
-          })
-        }
-      >
-        {children}
-      </QueryClientProvider>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     ),
   });
+}
+
+/** Serves each backend's own Git identity, as two agent servers would. */
+function mockSettingsPerBackend() {
+  const gitUserNames: Record<string, string> = {
+    local: "openhands",
+    "qa-second": "QA Second Git",
+  };
+  vi.spyOn(SettingsService, "getSettings").mockImplementation(async () =>
+    buildSettings({ git_user_name: gitUserNames[activeBackendState.id] }),
+  );
+}
+
+/** Makes `backendId` active the way the backend selector does: in place. */
+function switchBackend(
+  rerender: (ui: React.ReactElement) => void,
+  backendId: string,
+) {
+  activeBackendState.id = backendId;
+  rerender(<AppSettingsScreen />);
 }
 
 describe("AppSettingsScreen", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    activeBackendState.id = "local";
     activeBackendState.kind = "local";
   });
 
@@ -198,5 +215,60 @@ describe("AppSettingsScreen", () => {
         }),
       );
     });
+  });
+
+  it("shows the active backend's values after switching back to a backend with cached settings", async () => {
+    mockSettingsPerBackend();
+    const { rerender } = renderAppSettingsScreen();
+    expect(await screen.findByTestId("git-user-name-input")).toHaveValue(
+      "openhands",
+    );
+    switchBackend(rerender, "qa-second");
+    await waitFor(() =>
+      expect(screen.getByTestId("git-user-name-input")).toHaveValue(
+        "QA Second Git",
+      ),
+    );
+
+    switchBackend(rerender, "local");
+
+    await waitFor(() =>
+      expect(screen.getByTestId("git-user-name-input")).toHaveValue(
+        "openhands",
+      ),
+    );
+  });
+
+  it("drops unsaved edits on a backend switch and saves only the active backend's values", async () => {
+    mockSettingsPerBackend();
+    const saveSettingsSpy = vi
+      .spyOn(SettingsService, "saveSettings")
+      .mockResolvedValue(true);
+    const user = userEvent.setup();
+    const { rerender } = renderAppSettingsScreen();
+    await screen.findByTestId("git-user-name-input");
+    switchBackend(rerender, "qa-second");
+    await waitFor(() =>
+      expect(screen.getByTestId("git-user-name-input")).toHaveValue(
+        "QA Second Git",
+      ),
+    );
+    await user.type(screen.getByTestId("git-user-name-input"), " edited");
+
+    switchBackend(rerender, "local");
+    await waitFor(() =>
+      expect(screen.getByTestId("git-user-name-input")).toHaveValue(
+        "openhands",
+      ),
+    );
+    expect(screen.getByTestId("submit-button")).toBeDisabled();
+    await user.click(screen.getByTestId("enable-sound-notifications-switch"));
+    await user.click(screen.getByTestId("submit-button"));
+
+    await waitFor(() =>
+      expect(saveSettingsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ git_user_name: "openhands" }),
+      ),
+    );
   });
 });
