@@ -1154,7 +1154,7 @@ async function waitForAutomationStartup(config, proc, timeoutMs) {
       : `signal ${proc.signalCode}`;
   const message =
     `The automation backend exited during startup (${exit}). ` +
-    "Its [automation] log lines above show why.";
+    "Its [automation] log lines below show why.";
   logError(message);
   await stopServices();
   throw new Error(message);
