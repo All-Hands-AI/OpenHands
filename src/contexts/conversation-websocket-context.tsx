@@ -876,7 +876,7 @@ export function ConversationWebSocketProvider({
           // Same pattern again: the user answers in a modal, and the outcome
           // is posted back once they close it.
           if (conversationId && isRequestSecretActionEvent(event)) {
-            handleRequestSecretAction(
+            void handleRequestSecretAction(
               event.action,
               conversationId,
               event.tool_call_id,

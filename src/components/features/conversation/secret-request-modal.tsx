@@ -1,6 +1,4 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
-import type { CustomSecretInput } from "#/api/agent-server-adapter";
 import { SecretForm } from "#/components/features/settings/secrets-settings/secret-form";
 import {
   BaseModalDescription,
@@ -8,7 +6,6 @@ import {
 } from "#/components/shared/modals/confirmation-modals/base-modal";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
-import { useSearchSecrets } from "#/hooks/query/use-get-secrets";
 import { useOptionalConversationId } from "#/hooks/use-conversation-id";
 import { I18nKey } from "#/i18n/declaration";
 import { completeSecretRequest } from "#/services/secret-request";
@@ -25,14 +22,9 @@ export function SecretRequestModal() {
   const request = useSecretRequestStore((s) =>
     s.requests.find((r) => r.conversationId === conversationId),
   );
-  const { data: secrets, isLoading } = useSearchSecrets();
-  // SecretForm calls onCancel after every settled save, so remember whether
-  // the save that just settled succeeded.
-  const savedSecret = React.useRef<CustomSecretInput | null>(null);
 
-  if (!request || isLoading) return null;
+  if (!request) return null;
 
-  const exists = secrets?.some((s) => s.name === request.name) ?? false;
   const title = t(I18nKey.SECRETS$REQUEST_TITLE);
 
   return (
@@ -49,19 +41,16 @@ export function SecretRequestModal() {
           ) : null}
         </div>
         <div className="w-full">
+          {/* SecretForm also calls onCancel after a successful save; the
+              request is already complete by then, so that call is a no-op. */}
           <SecretForm
             key={request.toolCallId}
-            mode={exists ? "edit" : "add"}
-            selectedSecret={exists ? request.name : null}
+            mode="add"
+            selectedSecret={null}
             defaultName={request.name}
-            onSaved={(secret) => {
-              savedSecret.current = secret;
-            }}
-            onCancel={() => {
-              const saved = savedSecret.current;
-              savedSecret.current = null;
-              void completeSecretRequest(request, saved);
-            }}
+            keepOpenOnError
+            onSaved={(secret) => void completeSecretRequest(request, secret)}
+            onCancel={() => void completeSecretRequest(request, null)}
           />
         </div>
       </ModalBody>

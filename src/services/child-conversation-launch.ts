@@ -28,10 +28,10 @@ import {
   type ChildConversationIsolation,
   type ChildConversationTarget,
 } from "#/constants/child-conversation";
-import { useGoalStore } from "#/stores/goal-store";
 import type { LaunchChildConversationAction } from "#/types/agent-server/core";
 import { buildAgentCanvasUrl } from "#/utils/base-path";
 import { claimClientToolCall } from "#/utils/claim-client-tool-call";
+import { postClientToolResult } from "./client-tool-result";
 import {
   displayErrorToast,
   displaySuccessToastWithLink,
@@ -472,22 +472,12 @@ async function reportLaunchResult(
     );
   }
 
-  // The agent-server cancels an active `/goal` loop on any inbound message, so
-  // a launch must not silently end one. The toast above still tells the user
-  // what happened.
-  const goalStatus =
-    useGoalStore.getState().statusByConversation[parentConversationId];
-  if (goalStatus?.active) return;
-
-  await AgentServerConversationService.sendMessage(parentConversationId, {
-    role: "user",
-    content: [
-      {
-        type: "text",
-        text: `${CHILD_CONVERSATION_RESULT_PREFIX}${JSON.stringify(result)}`,
-      },
-    ],
-  });
+  // Skipped during a `/goal` loop; the toast above still tells the user.
+  await postClientToolResult(
+    parentConversationId,
+    CHILD_CONVERSATION_RESULT_PREFIX,
+    result,
+  );
 }
 
 /**

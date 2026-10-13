@@ -36,7 +36,12 @@ const renderModal = async (requests: SecretRequest[] = [request]) => {
 describe("SecretRequestModal", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    mockCompleteSecretRequest.mockReset();
+    // Like the real service, completing a request removes it from the queue.
+    mockCompleteSecretRequest
+      .mockReset()
+      .mockImplementation((r: SecretRequest) =>
+        useSecretRequestStore.getState().dismiss(r.toolCallId),
+      );
     vi.spyOn(SecretsService, "getSecrets").mockResolvedValue([]);
   });
 
@@ -51,7 +56,6 @@ describe("SecretRequestModal", () => {
   it("ignores requests from other conversations", async () => {
     await renderModal([{ ...request, conversationId: "other-conversation" }]);
 
-    await waitFor(() => expect(SecretsService.getSecrets).toHaveBeenCalled());
     expect(
       screen.queryByTestId("secret-request-modal"),
     ).not.toBeInTheDocument();
@@ -68,11 +72,16 @@ describe("SecretRequestModal", () => {
     await user.click(screen.getByTestId("submit-button"));
 
     await waitFor(() =>
-      expect(mockCompleteSecretRequest).toHaveBeenCalledExactlyOnceWith(
-        request,
-        { name: "GITHUB_TOKEN", description: undefined },
-      ),
+      expect(
+        screen.queryByTestId("secret-request-modal"),
+      ).not.toBeInTheDocument(),
     );
+    // The form's later onCancel is a no-op for the real, already-completed
+    // request (covered in secret-request.test.ts).
+    expect(mockCompleteSecretRequest).toHaveBeenNthCalledWith(1, request, {
+      name: "GITHUB_TOKEN",
+      description: undefined,
+    });
     expect(createSecret).toHaveBeenCalledWith(
       "GITHUB_TOKEN",
       "ghp_example",
@@ -80,7 +89,7 @@ describe("SecretRequestModal", () => {
     );
   });
 
-  it("completes without a secret when the user cancels or the save fails", async () => {
+  it("stays open after a failed save so the user can retry or cancel", async () => {
     const user = userEvent.setup();
     vi.spyOn(SecretsService, "createSecret").mockRejectedValue(
       new Error("Save failed"),
@@ -91,25 +100,16 @@ describe("SecretRequestModal", () => {
     await user.click(screen.getByTestId("submit-button"));
 
     await waitFor(() =>
-      expect(mockCompleteSecretRequest).toHaveBeenCalledExactlyOnceWith(
-        request,
-        null,
-      ),
+      expect(screen.getByTestId("cancel-button")).toBeEnabled(),
     );
+    expect(screen.getByTestId("secret-request-modal")).toBeInTheDocument();
+    expect(mockCompleteSecretRequest).not.toHaveBeenCalled();
 
     await user.click(screen.getByTestId("cancel-button"));
 
-    expect(mockCompleteSecretRequest).toHaveBeenLastCalledWith(request, null);
-  });
-
-  it("edits an existing secret of the same name instead of duplicating it", async () => {
-    vi.spyOn(SecretsService, "getSecrets").mockResolvedValue([
-      { name: "GITHUB_TOKEN", description: "Old token" },
-    ]);
-
-    await renderModal();
-
-    expect(screen.getByTestId("edit-secret-form")).toBeInTheDocument();
-    expect(screen.getByTestId("name-input")).toHaveValue("GITHUB_TOKEN");
+    expect(mockCompleteSecretRequest).toHaveBeenCalledExactlyOnceWith(
+      request,
+      null,
+    );
   });
 });

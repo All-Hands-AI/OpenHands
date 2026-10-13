@@ -9,17 +9,18 @@ const REQUEST_SECRET_DESCRIPTION = `Ask the user to securely provide a secret yo
 Call this when a task needs a credential that is not among your available
 secrets — for example a GitHub token to push to a repository. Never ask the
 user to paste a secret into the chat, and never put a secret value in this
-tool's arguments.
+tool's arguments. It is not for connecting MCP servers or OAuth sign-ins.
 
-The value is stored in the user's secrets and made available to this
-conversation as an environment variable named after the secret; you never see
-it. One call per missing secret.
+The value is stored in the user's secrets and exposed to this conversation as
+an environment variable named after the secret. Reference it as $NAME in
+commands; never print or echo it. One call per missing secret.
 
 What comes back: this tool is acknowledged immediately, before the user has
-answered. The outcome arrives as a follow-up message starting with
-"${SECRET_REQUEST_RESULT_PREFIX.trim()}". On "saved", use the secret by the name it
-reports (the user may have renamed it). Otherwise, follow the guidance in the
-message; do not call this tool again unless the user asks you to.`;
+answered. End your turn after calling it and wait. The outcome arrives as a
+follow-up message starting with "${SECRET_REQUEST_RESULT_PREFIX.trim()}". On "saved",
+continue using the secret by the name it reports (the user may have renamed
+it). Otherwise, follow the guidance in the message; do not call this tool again
+unless the user asks you to.`;
 
 export const REQUEST_SECRET_CLIENT_TOOL: ClientToolSpec = {
   name: REQUEST_SECRET_TOOL_NAME,

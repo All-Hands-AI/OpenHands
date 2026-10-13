@@ -22,6 +22,8 @@ interface SecretFormProps {
   onSaved?: (secret: CustomSecretInput) => void;
   /** Name to prefill in add mode. */
   defaultName?: string;
+  /** Keep the form open after a failed save so the user can retry. */
+  keepOpenOnError?: boolean;
 }
 
 export function SecretForm({
@@ -30,13 +32,15 @@ export function SecretForm({
   onCancel,
   onSaved,
   defaultName = "",
+  keepOpenOnError = false,
 }: SecretFormProps) {
   const queryClient = useQueryClient();
   const { t } = useTranslation("openhands");
 
   const { data: secrets } = useSearchSecrets();
-  const { mutate: createSecret } = useCreateSecret();
-  const { mutate: updateSecret } = useUpdateSecret();
+  const { mutate: createSecret, isPending: isCreating } = useCreateSecret();
+  const { mutate: updateSecret, isPending: isUpdating } = useUpdateSecret();
+  const isSaving = isCreating || isUpdating;
 
   const [error, setError] = React.useState<string | null>(null);
   const [name, setName] = React.useState(
@@ -61,6 +65,10 @@ export function SecretForm({
     setError(null);
   }, [mode, selectedSecret, secretDescription, defaultName]);
 
+  const closeUnlessKeptOpen = (_data: unknown, error: Error | null) => {
+    if (!error || !keepOpenOnError) onCancel();
+  };
+
   const invalidateSecrets = () => {
     queryClient.invalidateQueries({
       queryKey: ["secrets-search"],
@@ -78,7 +86,7 @@ export function SecretForm({
     createSecret(
       { name, value, description },
       {
-        onSettled: onCancel,
+        onSettled: closeUnlessKeptOpen,
         onSuccess: () => {
           invalidateSecrets();
           onSaved?.({ name, description });
@@ -96,7 +104,7 @@ export function SecretForm({
     updateSecret(
       { secretToEdit, name, description, value },
       {
-        onSettled: onCancel,
+        onSettled: closeUnlessKeptOpen,
         onSuccess: () => {
           invalidateSecrets();
           onSaved?.({ name, description });
@@ -223,6 +231,7 @@ export function SecretForm({
           type="button"
           variant="secondary"
           onClick={onCancel}
+          isDisabled={isSaving}
         >
           {t(I18nKey.BUTTON$CANCEL)}
         </BrandButton>
@@ -230,7 +239,7 @@ export function SecretForm({
           testId="submit-button"
           type="submit"
           variant="primary"
-          isDisabled={isSubmitDisabled}
+          isDisabled={isSubmitDisabled || isSaving}
         >
           {mode === "add" && t(I18nKey.SECRETS$ADD_SECRET)}
           {mode === "edit" && t(I18nKey.SECRETS$EDIT_SECRET)}

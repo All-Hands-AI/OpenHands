@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { devtools } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 export interface SecretRequest {
   conversationId: string;
@@ -18,10 +18,12 @@ interface SecretRequestActions {
   dismiss: (toolCallId: string) => void;
 }
 
+// Persisted so a reload reopens a pending request: its tool call is already
+// claimed, so the replayed ActionEvent will not queue it again.
 export const useSecretRequestStore = create<
   SecretRequestState & SecretRequestActions
 >()(
-  devtools(
+  persist(
     (set) => ({
       requests: [],
       enqueue: (request) =>
@@ -31,6 +33,12 @@ export const useSecretRequestStore = create<
           requests: s.requests.filter((r) => r.toolCallId !== toolCallId),
         })),
     }),
-    { name: "SecretRequestStore" },
+    {
+      name: "openhands-pending-secret-requests",
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state): SecretRequestState => ({
+        requests: state.requests,
+      }),
+    },
   ),
 );

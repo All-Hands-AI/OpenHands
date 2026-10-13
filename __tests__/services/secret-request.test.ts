@@ -15,9 +15,24 @@ import {
 } from "#/stores/secret-request-store";
 import type { RequestSecretAction } from "#/types/agent-server/core";
 
-const { mockSendMessage, mockUpdateConversationSecrets } = vi.hoisted(() => ({
+const {
+  mockSendMessage,
+  mockUpdateConversationSecrets,
+  mockGetSecretsOrThrow,
+  mockDisplayErrorToast,
+} = vi.hoisted(() => ({
   mockSendMessage: vi.fn(),
   mockUpdateConversationSecrets: vi.fn(),
+  mockGetSecretsOrThrow: vi.fn(),
+  mockDisplayErrorToast: vi.fn(),
+}));
+
+vi.mock("#/api/secrets-service", () => ({
+  SecretsService: { getSecretsOrThrow: mockGetSecretsOrThrow },
+}));
+
+vi.mock("#/utils/custom-toast-handlers", () => ({
+  displayErrorToast: mockDisplayErrorToast,
 }));
 
 vi.mock(
@@ -67,15 +82,32 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockSendMessage.mockResolvedValue(undefined);
   mockUpdateConversationSecrets.mockResolvedValue(undefined);
+  mockGetSecretsOrThrow.mockResolvedValue([]);
 });
 
 describe("handleRequestSecretAction", () => {
-  it("queues one modal per tool call, ignoring replays", () => {
+  it("queues one modal per tool call, ignoring replays", async () => {
     useSecretRequestStore.setState({ requests: [] });
-    handleRequestSecretAction(action, CONVERSATION_ID, "tool-call-1");
-    handleRequestSecretAction(action, CONVERSATION_ID, "tool-call-1");
+    await handleRequestSecretAction(action, CONVERSATION_ID, "tool-call-1");
+    await handleRequestSecretAction(action, CONVERSATION_ID, "tool-call-1");
 
     expect(useSecretRequestStore.getState().requests).toEqual([request]);
+  });
+
+  it("attaches a secret the user already saved without asking again", async () => {
+    useSecretRequestStore.setState({ requests: [] });
+    mockGetSecretsOrThrow.mockResolvedValueOnce([
+      { name: "GITHUB_TOKEN", description: "Saved in Settings" },
+    ]);
+
+    await handleRequestSecretAction(action, CONVERSATION_ID, "tool-call-1");
+
+    expect(useSecretRequestStore.getState().requests).toEqual([]);
+    expect(mockUpdateConversationSecrets).toHaveBeenCalledExactlyOnceWith(
+      CONVERSATION_ID,
+      [{ name: "GITHUB_TOKEN", description: "Saved in Settings" }],
+    );
+    expect(reportedResult()).toEqual({ status: "saved", name: "GITHUB_TOKEN" });
   });
 });
 
@@ -119,6 +151,9 @@ describe("completeSecretRequest", () => {
       name: "GITHUB_TOKEN",
       error: "Conversation not found",
     });
+    expect(mockDisplayErrorToast).toHaveBeenCalledWith(
+      "Conversation not found",
+    );
   });
 
   it("reports a request only once when the form settles after a cancel", async () => {

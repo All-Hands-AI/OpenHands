@@ -38,6 +38,7 @@ interface RenderFormOptions {
   selectedSecret?: string | null;
   onCancel?: () => void;
   onSaved?: (secret: { name: string; description?: string }) => void;
+  keepOpenOnError?: boolean;
 }
 
 function renderForm({
@@ -45,6 +46,7 @@ function renderForm({
   selectedSecret = null,
   onCancel = vi.fn(),
   onSaved = vi.fn(),
+  keepOpenOnError,
 }: RenderFormOptions = {}) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -57,6 +59,7 @@ function renderForm({
         selectedSecret={selectedSecret}
         onCancel={onCancel}
         onSaved={onSaved}
+        keepOpenOnError={keepOpenOnError}
       />
     </QueryClientProvider>,
   );
@@ -288,6 +291,26 @@ describe("Secret form behavior", () => {
 
     expect(onCancel).toHaveBeenCalledOnce();
   });
+
+  it.each([
+    { keepOpenOnError: undefined, closes: true },
+    { keepOpenOnError: true, closes: false },
+  ])(
+    "closes after a failed save unless kept open (keepOpenOnError=$keepOpenOnError)",
+    async ({ keepOpenOnError, closes }) => {
+      const user = userEvent.setup();
+      const { onCancel, onSaved } = renderForm({ keepOpenOnError });
+
+      await user.type(screen.getByTestId("name-input"), "NEW_SECRET");
+      await user.type(screen.getByTestId("value-input"), "value");
+      await user.click(screen.getByTestId("submit-button"));
+      const options = mocks.create.mock.calls[0][1];
+      options.onSettled(undefined, new Error("Save failed"));
+
+      expect(onSaved).not.toHaveBeenCalled();
+      expect(onCancel).toHaveBeenCalledTimes(closes ? 1 : 0);
+    },
+  );
 
   it("omits an empty optional description when creating", async () => {
     const user = userEvent.setup();
