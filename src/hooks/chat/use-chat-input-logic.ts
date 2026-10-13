@@ -12,9 +12,14 @@ import { useOptionalConversationId } from "#/hooks/use-conversation-id";
 import { useDraftPersistence } from "./use-draft-persistence";
 
 /**
- * Hook for managing chat input content logic
+ * Hook for managing chat input content logic.
+ *
+ * `persistDraft: false` turns off draft persistence for a composer that does
+ * not own a draft (see `useDraftPersistence`).
  */
-export const useChatInputLogic = () => {
+export const useChatInputLogic = ({
+  persistDraft = true,
+}: { persistDraft?: boolean } = {}) => {
   const chatInputRef = useRef<HTMLDivElement | null>(null);
   // Optional because the chat input also renders on the home page, where no
   // conversation route is mounted yet. Draft persistence is conversation-
@@ -34,6 +39,7 @@ export const useChatInputLogic = () => {
   const { saveDraft, clearDraft } = useDraftPersistence(
     conversationId,
     chatInputRef,
+    { persist: persistDraft },
   );
 
   // Apply only messages queued for this composer. On the home page (no
