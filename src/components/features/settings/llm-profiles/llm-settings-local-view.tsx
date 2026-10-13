@@ -47,7 +47,10 @@ import {
   LLM_SUBSCRIPTION_VENDOR_KEY,
   OPENAI_SUBSCRIPTION_VENDOR,
 } from "#/constants/llm-subscription";
-import { SettingsFormValues } from "#/utils/sdk-settings-schema";
+import {
+  buildSdkSettingsPayload,
+  SettingsFormValues,
+} from "#/utils/sdk-settings-schema";
 import { BackNavButton } from "#/components/shared/buttons/back-nav-button";
 import { Typography } from "#/ui/typography";
 import { useSettingsSectionHeader } from "#/contexts/settings-section-header-context";
@@ -253,10 +256,26 @@ export function LlmSettingsLocalView() {
     // otherwise reset everything else to defaults.
     let dirtyLlm: Record<string, unknown>;
     try {
-      dirtyLlm = (saveControl.getDirtyPayload().llm ?? {}) as Record<
-        string,
-        unknown
-      >;
+      // A new profile has no saved config to merge over, so persist every
+      // value its form displays, using the same schema coercion as edits.
+      // Create-mode overrides already keep credentials and links blank.
+      const initialPayload =
+        viewMode === "create" && agentSchema
+          ? buildSdkSettingsPayload(
+              agentSchema,
+              saveControl.values,
+              Object.fromEntries(
+                Object.keys(saveControl.values).map((key) => [key, true]),
+              ),
+            )
+          : {};
+      dirtyLlm = {
+        ...((initialPayload.llm ?? {}) as Record<string, unknown>),
+        ...((saveControl.getDirtyPayload().llm ?? {}) as Record<
+          string,
+          unknown
+        >),
+      };
     } catch (error) {
       displayErrorToast(
         error instanceof Error ? error.message : t(I18nKey.ERROR$GENERIC),
@@ -348,6 +367,7 @@ export function LlmSettingsLocalView() {
     }
   }, [
     saveControl,
+    agentSchema,
     isNameValid,
     supportsConnections,
     profileName,
