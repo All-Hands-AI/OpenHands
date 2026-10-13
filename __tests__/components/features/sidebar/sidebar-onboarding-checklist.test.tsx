@@ -289,9 +289,12 @@ describe("SidebarOnboardingChecklist", () => {
     expect(readSidebarOnboardingChecklistMinimized()).toBe(false);
   });
 
-  it.each([false, true])(
-    "dismisses from the %s minimized state and updates the Application switch",
-    async (minimized) => {
+  it.each([
+    ["expanded", false],
+    ["minimized", true],
+  ] as const)(
+    "dismisses from the %s state and updates the Application switch",
+    async (_label, minimized) => {
       if (minimized) {
         window.localStorage.setItem(
           SIDEBAR_ONBOARDING_CHECKLIST_MINIMIZED_STORAGE_KEY,
@@ -301,11 +304,9 @@ describe("SidebarOnboardingChecklist", () => {
       const user = userEvent.setup();
       renderChecklist({ withSettingsSwitch: true });
 
-      const checklist = screen.getByTestId("sidebar-onboarding-checklist");
       const switchControl = screen.getByTestId(
         "show-getting-started-checklist-switch",
       );
-      await user.hover(checklist);
       await user.click(
         screen.getByRole("button", {
           name: I18nKey.SIDEBAR$ONBOARDING_CHECKLIST_DISMISS,
