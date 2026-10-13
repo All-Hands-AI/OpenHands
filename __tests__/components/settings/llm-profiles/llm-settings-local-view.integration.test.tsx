@@ -1,4 +1,5 @@
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "test-utils";
@@ -8,10 +9,13 @@ import ProfilesService from "#/api/profiles-service/profiles-service.api";
 import ProviderConnectionsService from "#/api/provider-connections-service/provider-connections-service.api";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 import { useFreeModelsStore } from "#/stores/free-models-store";
+import { SETTINGS_QUERY_KEYS } from "#/hooks/query/query-keys";
 
 describe("LLM profile creation with the real embedded form", () => {
+  let inheritedStringSerializer: boolean | null;
   beforeEach(() => {
     vi.restoreAllMocks();
+    inheritedStringSerializer = null;
     useFreeModelsStore
       .getState()
       .setFlags({ freeModels: new Set(), defaultModel: "openai/gpt-4o" });
@@ -23,7 +27,7 @@ describe("LLM profile creation with the real embedded form", () => {
       valid: true,
     });
     vi.spyOn(ProviderConnectionsService, "list").mockResolvedValue([]);
-    vi.spyOn(SettingsService, "getSettings").mockResolvedValue({
+    vi.spyOn(SettingsService, "getSettings").mockImplementation(async () => ({
       ...MOCK_DEFAULT_USER_SETTINGS,
       agent_settings_schema: {
         ...MOCK_DEFAULT_USER_SETTINGS.agent_settings_schema!,
@@ -49,6 +53,20 @@ describe("LLM profile creation with the real embedded form", () => {
                         prominence: "minor" as const,
                         choices: [],
                       },
+                      {
+                        key: "llm.force_string_serializer",
+                        label: "Force string serializer",
+                        description: "Null selects automatic model detection",
+                        section: "llm",
+                        section_label: "LLM",
+                        value_type: "boolean" as const,
+                        default: null,
+                        secret: false,
+                        required: false,
+                        depends_on: [],
+                        prominence: "minor" as const,
+                        choices: [],
+                      },
                     ],
                   }
                 : section,
@@ -62,11 +80,13 @@ describe("LLM profile creation with the real embedded form", () => {
           base_url: "https://another-profile.example/v1",
           temperature: 0.4,
           aws_secret_access_key: "**********",
+          force_string_serializer: inheritedStringSerializer,
         },
       },
-    });
+    }));
   });
 
+  // @spec LLP-001 — New profiles preserve options and credential boundaries.
   it("saves an untouched displayed option without inheriting another profile's credentials", async () => {
     // Arrange: existing agent settings have a non-default option and credentials.
     const save = vi
@@ -105,4 +125,82 @@ describe("LLM profile creation with the real embedded form", () => {
     );
     expect(save.mock.calls[0][1].llm.aws_secret_access_key).toBeUndefined();
   });
+
+  // @spec LLP-001 — Preserve automatic nullable booleans and explicit overrides.
+  it.each([
+    {
+      name: "untouched automatic null",
+      initial: null,
+      edit: false,
+      refresh: undefined,
+      expected: undefined,
+    },
+    {
+      name: "inherited explicit false",
+      initial: false,
+      edit: false,
+      refresh: undefined,
+      expected: false,
+    },
+    {
+      name: "explicit dirty edit",
+      initial: null,
+      edit: true,
+      refresh: undefined,
+      expected: true,
+    },
+    {
+      name: "inherited false after settings refresh",
+      initial: false,
+      edit: false,
+      refresh: null,
+      expected: false,
+    },
+  ])(
+    "keeps $name in the new profile",
+    async ({ initial, edit, refresh, expected }) => {
+      // Arrange: null and false render alike but have different provider meaning.
+      inheritedStringSerializer = initial;
+      const save = vi
+        .spyOn(ProfilesService, "saveProfile")
+        .mockResolvedValue({ name: "QA_Boolean", message: "Saved" });
+      const user = userEvent.setup();
+      const queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+      });
+      renderWithProviders(
+        <QueryClientProvider client={queryClient}>
+          <LlmSettingsLocalView />
+        </QueryClientProvider>,
+      );
+      await user.click(await screen.findByTestId("add-llm-profile"));
+      await user.click(await screen.findByTestId("sdk-section-all-toggle"));
+      const checkbox = screen.getByTestId(
+        "sdk-settings-llm.force_string_serializer",
+      );
+      expect(checkbox).not.toBeChecked();
+
+      // Act: save untouched, or explicitly edit, without re-seeding the open draft.
+      if (refresh !== undefined) {
+        inheritedStringSerializer = refresh;
+        await act(async () => {
+          await queryClient.invalidateQueries({
+            queryKey: SETTINGS_QUERY_KEYS.byScope("personal"),
+          });
+        });
+      }
+      if (edit) await user.click(checkbox.closest("label")!);
+      await user.clear(screen.getByTestId("profile-name-input"));
+      await user.type(screen.getByTestId("profile-name-input"), "QA_Boolean");
+      await user.type(
+        screen.getByTestId("llm-api-key-input"),
+        "new-profile-key",
+      );
+      await user.click(screen.getByTestId("save-profile-btn"));
+
+      // Assert: the saved request preserves auto-detection, false or the dirty true.
+      await waitFor(() => expect(save).toHaveBeenCalled());
+      expect(save.mock.calls[0][1].llm.force_string_serializer).toBe(expected);
+    },
+  );
 });
