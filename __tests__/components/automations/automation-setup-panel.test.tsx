@@ -9,7 +9,6 @@ import {
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { HttpError } from "@openhands/typescript-client";
 import {
   NavigationProvider,
   type NavigationContextValue,
@@ -2183,5 +2182,92 @@ describe("AutomationSetupPanel", () => {
     ).not.toEqual(
       expect.objectContaining({ setup_script_path: expect.anything() }),
     );
+  });
+
+  it("surfaces API validation error message instead of raw 422 status text on save", async () => {
+    const axiosError = Object.assign(
+      new Error("Request failed with status code 422"),
+      {
+        isAxiosError: true,
+        response: {
+          data: {
+            detail: [
+              {
+                loc: ["body", "trigger", "schedule"],
+                msg: "Value error, Invalid cron expression: not a cron",
+                type: "value_error",
+              },
+            ],
+          },
+        },
+      },
+    );
+    vi.mocked(AutomationService.updateAutomation).mockRejectedValue(axiosError);
+
+    const user = userEvent.setup();
+    renderPanel({
+      prompt: "Review every pull request",
+      kind: "prompt",
+      editingAutomationId: "auto-1",
+      form: {
+        kind: "prompt",
+        name: "Daily digest",
+        prompt: "Review every pull request",
+      },
+    });
+
+    await user.click(screen.getByTestId("automation-setup-save"));
+
+    await waitFor(() => {
+      expect(displayErrorToast).toHaveBeenCalledWith(
+        "Value error, Invalid cron expression: not a cron",
+      );
+    });
+  });
+
+  it("surfaces 'Automation not found' instead of raw 404 status text on save and test", async () => {
+    const notFoundError = Object.assign(
+      new Error("Request failed with status code 404"),
+      {
+        isAxiosError: true,
+        response: {
+          data: {
+            detail: "Automation not found",
+          },
+        },
+      },
+    );
+    vi.mocked(AutomationService.updateAutomation).mockRejectedValue(
+      notFoundError,
+    );
+    vi.mocked(AutomationService.dispatchAutomation).mockRejectedValue(
+      notFoundError,
+    );
+
+    const user = userEvent.setup();
+    renderPanel({
+      prompt: "Review every pull request",
+      kind: "prompt",
+      editingAutomationId: "auto-1",
+      form: {
+        kind: "prompt",
+        name: "Daily digest",
+        prompt: "Review every pull request",
+      },
+    });
+
+    await user.click(screen.getByTestId("automation-setup-save"));
+
+    await waitFor(() => {
+      expect(displayErrorToast).toHaveBeenCalledWith("Automation not found");
+    });
+
+    vi.mocked(displayErrorToast).mockClear();
+
+    await user.click(screen.getByTestId("automation-setup-test"));
+
+    await waitFor(() => {
+      expect(displayErrorToast).toHaveBeenCalledWith("Automation not found");
+    });
   });
 });

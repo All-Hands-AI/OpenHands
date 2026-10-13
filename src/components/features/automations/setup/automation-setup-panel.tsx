@@ -82,6 +82,7 @@ import {
   patchConversationInCache,
 } from "#/hooks/mutation/conversation-mutation-utils";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { getApiErrorMessage } from "#/utils/api-error-message";
 import { useNavigation } from "#/context/navigation-context";
 import type {
   AutomationDraftApiResponse,
@@ -793,7 +794,9 @@ export function AutomationSetupPanel({
     }
     updateConversationTags((tags) => buildAutomationSetupModeTags(tags)).catch(
       (error: unknown) => {
-        displayErrorToast(error instanceof Error ? error.message : null);
+        displayErrorToast(
+          getApiErrorMessage(error, t(I18nKey.AUTOMATION_SETUP$SAVE_FAILED)),
+        );
       },
     );
   }, [conversationId, conversationTags, updateConversationTags]);
@@ -846,7 +849,9 @@ export function AutomationSetupPanel({
       })
       .catch((error: unknown) => {
         if (!cancelled) {
-          displayErrorToast(error instanceof Error ? error.message : null);
+          displayErrorToast(
+            getApiErrorMessage(error, t(I18nKey.AUTOMATIONS$EDIT_ERROR)),
+          );
         }
       });
     return () => {
@@ -880,7 +885,9 @@ export function AutomationSetupPanel({
           setIsTaggedDraftMissing(true);
           return;
         }
-        displayErrorToast(error instanceof Error ? error.message : null);
+        displayErrorToast(
+          getApiErrorMessage(error, t(I18nKey.AUTOMATION_SETUP$SAVE_FAILED)),
+        );
       })
       .finally(() => {
         if (!cancelled) setIsHydratingServerDraft(false);
@@ -1371,7 +1378,9 @@ export function AutomationSetupPanel({
         return true;
       }
       setSaveState("error");
-      displayErrorToast(error instanceof Error ? error.message : null);
+      displayErrorToast(
+        getApiErrorMessage(error, t(I18nKey.AUTOMATION_SETUP$SAVE_FAILED)),
+      );
       return false;
     }
   };
@@ -1505,7 +1514,9 @@ export function AutomationSetupPanel({
         return;
       }
       setSaveState("error");
-      displayErrorToast(error instanceof Error ? error.message : null);
+      displayErrorToast(
+        getApiErrorMessage(error, t(I18nKey.AUTOMATION_SETUP$SAVE_FAILED)),
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -1591,7 +1602,9 @@ export function AutomationSetupPanel({
           text: dispatchError,
         });
       } else {
-        displayErrorToast(error instanceof Error ? error.message : null);
+        displayErrorToast(
+          getApiErrorMessage(error, t(I18nKey.AUTOMATIONS$RUN_NOW_ERROR)),
+        );
       }
     } finally {
       setIsSubmitting(false);
@@ -1635,7 +1648,9 @@ export function AutomationSetupPanel({
       if (typeof created.id === "string")
         navigate(automationDetailPath(created.id));
     } catch (error) {
-      displayErrorToast(error instanceof Error ? error.message : null);
+      displayErrorToast(
+        getApiErrorMessage(error, t(I18nKey.SETUP$SUBMIT_FAILED)),
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -1709,7 +1724,9 @@ export function AutomationSetupPanel({
       toast.success(t(I18nKey.AUTOMATIONS$EDIT_SUCCESS));
     } catch (error) {
       setSaveState("error");
-      displayErrorToast(error instanceof Error ? error.message : null);
+      displayErrorToast(
+        getApiErrorMessage(error, t(I18nKey.AUTOMATIONS$EDIT_ERROR)),
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -1729,7 +1746,9 @@ export function AutomationSetupPanel({
         text: t(I18nKey.AUTOMATION_SETUP$TEST_DISPATCHED),
       });
     } catch (error) {
-      displayErrorToast(error instanceof Error ? error.message : null);
+      displayErrorToast(
+        getApiErrorMessage(error, t(I18nKey.AUTOMATIONS$RUN_NOW_ERROR)),
+      );
     } finally {
       setIsSubmitting(false);
     }
