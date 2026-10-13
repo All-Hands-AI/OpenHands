@@ -119,7 +119,7 @@ Preconditions:
 - **Bug candidate (`F26.host-bind-lan-optin`):** `scripts/bind-host.mjs` tells npm users to pass `--allow-lan-session-key`, but neither `bin/agent-canvas.mjs` nor `scripts/dev-with-automation.mjs` parses or forwards it (only `scripts/static-server.mjs` and the Docker entrypoint do), and unknown flags are silently ignored (#17949, whose first item is exactly this; reproduced again on 2026-10-08 at d2c89252d).
 - Known issue #17946: the npm launcher never creates its `TMUX_TMPDIR`, so hand-started instances share one tmux server and a restart of one resets the others' terminals.
 
-## Launcher flag regression recipes
+### Launcher flag regression recipes
 
 Run these on a fresh `control-openhands launch --new --host 0.0.0.0
 --allow-lan-session-key` stack. They observe only whether a disposable key was

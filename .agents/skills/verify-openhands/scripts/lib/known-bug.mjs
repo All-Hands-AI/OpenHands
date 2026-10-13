@@ -16,6 +16,41 @@
 // fail. `bug proof` turns two runs' attempts into a verdict on a fix.
 import { createHash } from "node:crypto";
 
+/** Recover only an observed viewport from this exact attempt's CLI receipts. */
+export function transcriptViewport(attempt, transcript) {
+  if (
+    transcript?.id !== attempt.id ||
+    transcript?.name !== attempt.name ||
+    typeof transcript.script !== "string" ||
+    createHash("sha256")
+      .update(transcript.script)
+      .digest("hex")
+      .slice(0, 16) !== attempt.sha ||
+    typeof transcript.stdout !== "string"
+  )
+    return undefined;
+  let rows;
+  try {
+    rows = transcript.stdout
+      .trim()
+      .split(/\n(?=\{)/)
+      .map((text) => JSON.parse(text));
+  } catch {
+    return undefined;
+  }
+  const viewport = rows
+    .filter((row) => row.ok === true && row.viewport)
+    .at(-1)?.viewport;
+  if (
+    !Number.isInteger(viewport?.width) ||
+    !Number.isInteger(viewport?.height) ||
+    viewport.width <= 0 ||
+    viewport.height <= 0
+  )
+    return undefined;
+  return `${viewport.width}x${viewport.height}`;
+}
+
 const OPEN = /^(\s*)```sh known-bug (F\d{2}\.[a-z0-9-]+)(?: ([a-z0-9-]+))?\s*$/;
 const BUG_LINE = /#\s*bug\s*$/;
 

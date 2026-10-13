@@ -40,6 +40,7 @@ import {
   judgeAssertion,
   knownBugBlocks,
   proofVerdict,
+  transcriptViewport,
 } from "./lib/known-bug.mjs";
 import { routePattern } from "./lib/route-pattern.mjs";
 import {
@@ -3702,7 +3703,7 @@ async function cmdBug({ positional, flags }) {
           assertion,
         });
         const page = daemonInfo(run)
-          ? await browserCall(run, "url").catch(() => ({}))
+          ? await browserCall(run, "metadata").catch(() => ({}))
           : {};
         const transcript = join(dir, `${stamp}.json`);
         writeFileSync(
@@ -3823,7 +3824,25 @@ async function cmdBug({ positional, flags }) {
           code: 2,
           hint: "Run `control-openhands bug run ID --attempts 2` on that run first.",
         });
-      return readJsonl(path).filter((r) => r.id === id);
+      return readJsonl(path)
+        .filter((r) => r.id === id)
+        .map((row) => {
+          if (row.viewport || !row.transcript) return row;
+          const transcriptPath = resolve(String(dir), row.transcript);
+          if (!transcriptPath.startsWith(`${resolve(String(dir))}/`))
+            return row;
+          try {
+            const viewport = transcriptViewport(
+              row,
+              JSON.parse(readFileSync(transcriptPath, "utf8")),
+            );
+            return viewport
+              ? { ...row, viewport, viewportSource: `${row.transcript}:stdout` }
+              : row;
+          } catch {
+            return row;
+          }
+        });
     };
     // --baseline-label / --fix-label keep only the attempts given that
     // --label, so a deliberate negative check on the same run is set aside.
@@ -3851,6 +3870,14 @@ async function cmdBug({ positional, flags }) {
           ? "not-fixed"
           : "inconclusive",
       blocks: verdicts,
+      recoveredViewports: [...baseline, ...fix]
+        .filter((row) => row.viewportSource)
+        .map((row) => ({
+          name: row.name,
+          revision: row.revision,
+          viewport: row.viewport,
+          source: row.viewportSource,
+        })),
       hint: verified
         ? "Drop the Known failure note and the block's `# bug` marker in the fix's PR: the assertion now guards the corrected behavior as a normal recipe step."
         : "Only a verified verdict proves the fix. An inconclusive baseline never counts as fixed.",
