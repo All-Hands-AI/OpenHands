@@ -88,4 +88,22 @@ describe("table (markdown)", () => {
     expect(container.querySelectorAll("th")).toHaveLength(3);
     expect(container.querySelectorAll("td")).toHaveLength(6);
   });
+
+  it("should wrap table header and body cells with bounded width and break words", () => {
+    render(<MarkdownRenderer>{GFM_TABLE}</MarkdownRenderer>);
+
+    const headers = screen.getAllByRole("columnheader");
+    for (const th of headers) {
+      expect(th).toHaveClass("max-w-md");
+      expect(th).toHaveClass("break-words");
+      expect(th).not.toHaveClass("whitespace-nowrap");
+    }
+
+    const cells = screen.getAllByRole("cell");
+    for (const td of cells) {
+      expect(td).toHaveClass("max-w-md");
+      expect(td).toHaveClass("break-words");
+      expect(td).not.toHaveClass("whitespace-nowrap");
+    }
+  });
 });
