@@ -20,6 +20,8 @@ interface SecretFormProps {
   selectedSecret: string | null;
   onCancel: () => void;
   onSaved?: (secret: CustomSecretInput) => void;
+  /** Name to prefill in add mode. */
+  defaultName?: string;
 }
 
 export function SecretForm({
@@ -27,6 +29,7 @@ export function SecretForm({
   selectedSecret,
   onCancel,
   onSaved,
+  defaultName = "",
 }: SecretFormProps) {
   const queryClient = useQueryClient();
   const { t } = useTranslation("openhands");
@@ -37,7 +40,7 @@ export function SecretForm({
 
   const [error, setError] = React.useState<string | null>(null);
   const [name, setName] = React.useState(
-    mode === "edit" && selectedSecret ? selectedSecret : "",
+    mode === "edit" && selectedSecret ? selectedSecret : defaultName,
   );
   const [value, setValue] = React.useState("");
   const [description, setDescription] = React.useState("");
@@ -52,11 +55,11 @@ export function SecretForm({
   const initialName = mode === "edit" && selectedSecret ? selectedSecret : "";
 
   React.useEffect(() => {
-    setName(mode === "edit" && selectedSecret ? selectedSecret : "");
+    setName(mode === "edit" && selectedSecret ? selectedSecret : defaultName);
     setValue("");
     setDescription(secretDescription);
     setError(null);
-  }, [mode, selectedSecret, secretDescription]);
+  }, [mode, selectedSecret, secretDescription, defaultName]);
 
   const invalidateSecrets = () => {
     queryClient.invalidateQueries({

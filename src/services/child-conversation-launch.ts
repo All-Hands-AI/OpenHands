@@ -31,6 +31,7 @@ import {
 import { useGoalStore } from "#/stores/goal-store";
 import type { LaunchChildConversationAction } from "#/types/agent-server/core";
 import { buildAgentCanvasUrl } from "#/utils/base-path";
+import { claimClientToolCall } from "#/utils/claim-client-tool-call";
 import {
   displayErrorToast,
   displaySuccessToastWithLink,
@@ -197,39 +198,6 @@ function validateLaunchParams(
       isolation: isolation ?? "worktree",
     },
   };
-}
-
-/**
- * Remember which tool calls have already been acted on.
- *
- * Unlike the Canvas UI tool, a launch is not idempotent: replaying its
- * ActionEvent (a socket reconnect that falls back to `resend_mode: "all"`, or a
- * REST/WebSocket race after a reload) would start a second — on Cloud, billable
- * — conversation. Claim the tool call before any network work so a replay that
- * arrives mid-flight is dropped too.
- */
-function claimToolCall(parentConversationId: string, toolCallId: string) {
-  const key = `${LEDGER_STORAGE_KEY_PREFIX}${parentConversationId}`;
-  let handled: string[] = [];
-  try {
-    const raw = window.localStorage.getItem(key);
-    const parsed: unknown = raw ? JSON.parse(raw) : null;
-    if (Array.isArray(parsed)) {
-      handled = parsed.filter((id): id is string => typeof id === "string");
-    }
-  } catch {
-    // A corrupt ledger must not block the launch; start a fresh one.
-  }
-
-  if (handled.includes(toolCallId)) return false;
-
-  try {
-    window.localStorage.setItem(key, JSON.stringify([...handled, toolCallId]));
-  } catch {
-    // Storage full or unavailable — proceed, accepting replay risk over never
-    // launching at all.
-  }
-  return true;
 }
 
 function absoluteCanvasUrl(path: string) {
@@ -533,7 +501,16 @@ export async function handleLaunchChildConversationAction(
   parentConversationId: string,
   toolCallId: string,
 ): Promise<void> {
-  if (!claimToolCall(parentConversationId, toolCallId)) return;
+  // A launch is not idempotent — on Cloud, a replay would start a second,
+  // billable conversation.
+  if (
+    !claimClientToolCall(
+      `${LEDGER_STORAGE_KEY_PREFIX}${parentConversationId}`,
+      toolCallId,
+    )
+  ) {
+    return;
+  }
 
   const validation = validateLaunchParams(action);
   let result: LaunchChildConversationResult;
