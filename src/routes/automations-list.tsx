@@ -588,6 +588,9 @@ export default function AutomationsList() {
     });
   };
 
+  const deleteDraftName =
+    deleteDraftTarget?.name ?? t(I18nKey.AUTOMATIONS$UNTITLED_DRAFT);
+
   const handleViewModeChange = useCallback((view: AutomationViewMode) => {
     setViewMode(view);
     writeStoredAutomationViewMode(view);
@@ -896,46 +899,19 @@ export default function AutomationsList() {
         onCancel={() => setDeleteTarget(null)}
       />
 
-      {deleteDraftTarget ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/60"
-            aria-label={t(I18nKey.BUTTON$CLOSE)}
-            onClick={() => setDeleteDraftTarget(null)}
-          />
-          <div className="relative w-full max-w-sm rounded-xl border border-border bg-surface p-6">
-            <h2 className="text-lg font-semibold text-content">
-              {t(I18nKey.AUTOMATION_SETUP$DELETE_DRAFT_TITLE)}
-            </h2>
-            <p className="mt-2 text-sm text-muted">
-              {t(I18nKey.AUTOMATION_SETUP$DELETE_DRAFT_MESSAGE, {
-                name:
-                  deleteDraftTarget.name ??
-                  t(I18nKey.AUTOMATIONS$UNTITLED_DRAFT),
-              })}
-            </p>
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setDeleteDraftTarget(null)}
-                className="rounded-lg border border-border px-4 py-2 text-sm text-contrast hover:bg-surface-raised"
-              >
-                {t(I18nKey.AUTOMATIONS$CANCEL)}
-              </button>
-              <button
-                type="button"
-                data-testid="automation-setup-draft-delete-confirm"
-                onClick={handleDeleteDraftConfirm}
-                disabled={deleteDraftMutation.isPending}
-                className="rounded-lg bg-danger px-4 py-2 text-sm text-white hover:bg-danger/80 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {t(I18nKey.AUTOMATION_SETUP$DELETE_DRAFT)}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <DeleteConfirmationModal
+        automationName={deleteDraftName}
+        isOpen={deleteDraftTarget !== null}
+        onConfirm={handleDeleteDraftConfirm}
+        onCancel={() => setDeleteDraftTarget(null)}
+        title={t(I18nKey.AUTOMATION_SETUP$DELETE_DRAFT_TITLE)}
+        message={t(I18nKey.AUTOMATION_SETUP$DELETE_DRAFT_MESSAGE, {
+          name: deleteDraftName,
+        })}
+        confirmLabel={t(I18nKey.AUTOMATION_SETUP$DELETE_DRAFT)}
+        confirmTestId="automation-setup-draft-delete-confirm"
+        isConfirming={deleteDraftMutation.isPending}
+      />
 
       <ImportAutomationModal
         isOpen={isImportOpen}
