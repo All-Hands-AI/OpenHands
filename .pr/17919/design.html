@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Complete and scoped bulk conversation deletion — #17919</title>
+<style>
+:root{--fg:#20221e;--muted:#5d6259;--bg:#fcfcf8;--card:#fff;--soft:#edf2fb;--accent:#2b4eaa;--warn:#b25b0e;--rule:#dce0d6;--code:#f2f3ed;--mono:ui-monospace,SFMono-Regular,Menlo,monospace;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+*{box-sizing:border-box}body{margin:0;color:var(--fg);background:var(--bg);font:16px/1.65 var(--sans)}.wrap{max-width:1300px;margin:auto;padding:38px 28px 80px;display:grid;grid-template-columns:220px minmax(0,1fr);gap:38px}main,nav,.fig{min-width:0}nav{font-size:13px;position:sticky;top:24px;align-self:start}nav ol{padding-left:18px}nav a{color:var(--fg)}header{padding-bottom:24px;border-bottom:1px solid var(--rule)}h1{font-size:35px;line-height:1.2;letter-spacing:-.02em;margin:8px 0 16px}h2{font-size:25px;line-height:1.35;margin:38px 0 14px}h3{font-size:19px;line-height:1.4}.eyebrow{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}p{margin:12px 0}.callout{border-left:3px solid var(--accent);background:var(--soft);padding:13px 17px}.ba{display:grid;grid-template-columns:1fr 1fr;gap:18px}.fig{margin:0}.fig svg{width:100%;height:auto;background:var(--card);border:1px solid var(--rule);border-radius:8px}.old{fill:var(--code);stroke:var(--muted);stroke-width:1.5;stroke-dasharray:5 3}.new{fill:var(--soft);stroke:var(--accent);stroke-width:2}.edge{fill:none;stroke:var(--warn);stroke-width:2;stroke-dasharray:5 3}.symbol{font:700 17px var(--sans);fill:var(--fg)}.detail{font:14px var(--sans);fill:var(--muted)}.location{font:12px var(--mono);fill:var(--accent)}figcaption{font-size:14px;color:var(--muted);margin:8px 0}.src{font:12px var(--mono);color:var(--accent);overflow-wrap:anywhere}pre{background:var(--code);padding:16px;overflow:auto;font:13px/1.6 var(--mono);border:1px solid var(--rule);border-radius:5px}code{font:14px var(--mono)}table{border-collapse:collapse;width:100%;font-size:14px}th,td{text-align:left;padding:11px;border-bottom:1px solid var(--rule);vertical-align:top}th{background:var(--code)}article{border-top:1px solid var(--rule);margin-top:26px;padding-top:14px}details{border:1px solid var(--rule);border-radius:5px;margin:14px 0}summary{padding:10px 14px;cursor:pointer;color:var(--muted)}details pre{border:0;margin:0}.screen{display:block;max-width:100%;height:auto;border:1px solid var(--rule);border-radius:8px}.phone{max-width:390px;margin:auto}.sub{color:var(--muted)}@media(max-width:800px){.wrap{grid-template-columns:minmax(0,1fr);padding:24px 18px;gap:18px}nav{position:static}.ba{grid-template-columns:minmax(0,1fr)}h1{font-size:30px}}
+</style></head><body><div class="wrap"><nav aria-label="Design contents"><strong>#17919 · proposal</strong><ol><li><a href="#flow">Full scope before confirmation</a></li><li><a href="#api">One client across every await</a></li><li><a href="#evidence">Repeated real UI proof</a></li></ol><details><summary>Changed files</summary><ol><li><a href="#panel">conversation-panel.tsx</a></li><li><a href="#dialog">confirm-delete-modal.tsx</a></li><li><a href="#mutation">use-delete-conversation.ts</a></li><li><a href="#service">agent-server-conversation-service.api.ts</a></li><li><a href="#panel-tests">conversation-panel-filters.test.tsx</a></li><li><a href="#service-tests">agent-server-conversation-service.test.ts</a></li><li><a href="#mutation-tests">use-delete-conversation.test.tsx</a></li><li><a href="#specs">conversation-deletion.md</a></li></ol></details></nav><main>
+<header><div class="eyebrow">Agent Canvas · maintenance proposal · 2026-10-13</div><h1>Delete the whole conversation set on the confirmed backend</h1><p>Delete all now loads every page before enabling confirmation. Confirmation snapshots the complete ID set and one typed deletion scope, so asynchronous callbacks or planning-child lookups cannot redirect later requests to a different backend or organization.</p><p class="callout">★ With 23 real blank conversations, the baseline confirms 20 and leaves 3. This proposal confirms 23 and leaves 0 in two desktop and two phone runs. The destructive operation remains bound to its confirmed transport.</p><p class="sub">Functional revision <code>5a6bddcb3b55</code> compared with <code>bdb69754a113</code>. This temporary review page and its images are documentation only; the repository’s same-repository approval workflow removes <code>.pr/</code>.</p></header>
+<section id="flow"><h2>Every page is ready before Confirm becomes available</h2><p>The existing paginated query remains the data owner. Preparation tracks visited cursors, blocks confirmation after a later-page error, and discards a canceled or superseded request. The ID snapshot includes archived items hidden by the view. <a class="src" href="https://github.com/OpenHands/OpenHands/blob/5a6bddcb3b5528ca160c8e49ead552b1cac96914/src/components/features/conversation-panel/conversation-panel.tsx">src/components/features/conversation-panel/conversation-panel.tsx:837</a></p><div class="ba"><figure class="fig"><h3>Before · loaded page and late client resolution</h3><svg viewBox="0 0 480 440" role="img" aria-labelledby="before-flow-t before-flow-d"><title id="before-flow-t">before-flow</title><desc id="before-flow-d">The action sees only20 loaded IDs; transport can be resolved after asynchronous callbacks.</desc><defs><marker id="before-flow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="var(--warn)"/></marker></defs><a href="https://github.com/OpenHands/OpenHands/blob/bdb69754a113e3458d3645dfba0676ae73f4ebc3/src/components/features/conversation-panel/conversation-panel.tsx"><g><rect class="old" x="22" y="20" width="436" height="79" rx="7"/><text class="symbol" x="40" y="44">handleConfirmDeleteAll</text><text class="detail" x="40" y="66">Only the loaded page contributes IDs.</text><text class="location" x="40" y="86">conversation-panel.tsx:818</text></g></a><path class="edge" d="M240,103 V121" marker-end="url(#before-flow-arrow)"/><a href="https://github.com/OpenHands/OpenHands/blob/bdb69754a113e3458d3645dfba0676ae73f4ebc3/src/hooks/mutation/use-delete-conversation.ts"><g><rect class="old" x="22" y="125" width="436" height="79" rx="7"/><text class="symbol" x="40" y="149">deleteConversationAsync</text><text class="detail" x="40" y="171">onMutate awaits query cancellation.</text><text class="location" x="40" y="191">use-delete-conversation.ts:13</text></g></a><path class="edge" d="M240,208 V226" marker-end="url(#before-flow-arrow)"/><a href="https://github.com/OpenHands/OpenHands/blob/bdb69754a113e3458d3645dfba0676ae73f4ebc3/src/api/conversation-service/agent-server-conversation-service.api.ts"><g><rect class="old" x="22" y="230" width="436" height="79" rx="7"/><text class="symbol" x="40" y="254">getLocalPlanningConversationIds</text><text class="detail" x="40" y="276">Lookup may await while backend selection changes.</text><text class="location" x="40" y="296">agent-server-conversation-service.api.ts:742</text></g></a><path class="edge" d="M240,313 V331" marker-end="url(#before-flow-arrow)"/><a href="https://github.com/OpenHands/OpenHands/blob/bdb69754a113e3458d3645dfba0676ae73f4ebc3/src/api/conversation-service/agent-server-conversation-service.api.ts"><g><rect class="old" x="22" y="335" width="436" height="79" rx="7"/><text class="symbol" x="40" y="359">deleteConversation</text><text class="detail" x="40" y="381">Resolves the current client after the lookup.</text><text class="location" x="40" y="401">agent-server-conversation-service.api.ts:1039</text></g></a></svg><figcaption>The count and deletion scope stop at what the list already loaded.</figcaption></figure><figure class="fig"><h3>After · complete enumeration and captured transport</h3><svg viewBox="0 0 480 440" role="img" aria-labelledby="after-flow-t after-flow-d"><title id="after-flow-t">after-flow</title><desc id="after-flow-d">All23 IDs are prepared before confirmation; one scope survives every await.</desc><defs><marker id="after-flow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="var(--warn)"/></marker></defs><a href="https://github.com/OpenHands/OpenHands/blob/5a6bddcb3b5528ca160c8e49ead552b1cac96914/src/components/features/conversation-panel/conversation-panel.tsx"><g><rect class="new" x="22" y="20" width="436" height="79" rx="7"/><text class="symbol" x="40" y="44">handleRequestDeleteAll</text><text class="detail" x="40" y="66">fetchNextPage exhausts every cursor first.</text><text class="location" x="40" y="86">conversation-panel.tsx:838</text></g></a><path class="edge" d="M240,103 V121" marker-end="url(#after-flow-arrow)"/><a href="https://github.com/OpenHands/OpenHands/blob/5a6bddcb3b5528ca160c8e49ead552b1cac96914/src/components/features/conversation-panel/conversation-panel.tsx"><g><rect class="new" x="22" y="125" width="436" height="79" rx="7"/><text class="symbol" x="40" y="149">handleConfirmDeleteAll</text><text class="detail" x="40" y="171">Captures client and unique IDs synchronously.</text><text class="location" x="40" y="191">conversation-panel.tsx:863</text></g></a><path class="edge" d="M240,208 V226" marker-end="url(#after-flow-arrow)"/><a href="https://github.com/OpenHands/OpenHands/blob/5a6bddcb3b5528ca160c8e49ead552b1cac96914/src/hooks/mutation/use-delete-conversation.ts"><g><rect class="new" x="22" y="230" width="436" height="79" rx="7"/><text class="symbol" x="40" y="254">deleteConversationAsync</text><text class="detail" x="40" y="276">Forwards the same deletionScope through onMutate.</text><text class="location" x="40" y="296">use-delete-conversation.ts:10</text></g></a><path class="edge" d="M240,313 V331" marker-end="url(#after-flow-arrow)"/><a href="https://github.com/OpenHands/OpenHands/blob/5a6bddcb3b5528ca160c8e49ead552b1cac96914/src/api/conversation-service/agent-server-conversation-service.api.ts"><g><rect class="new" x="22" y="335" width="436" height="79" rx="7"/><text class="symbol" x="40" y="359">deleteConversation</text><text class="detail" x="40" y="381">Planning GETs and all DELETEs reuse scope.client.</text><text class="location" x="40" y="401">agent-server-conversation-service.api.ts:1057</text></g></a></svg><figcaption>All pages load first; one confirmed client survives the mutation awaits.</figcaption></figure></div></section>
+<section id="api"><h2>The optional scope preserves existing callers</h2><div class="ba"><div><h3>Before</h3><pre>deleteConversation(conversationId: string): Promise&lt;void&gt;</pre></div><div><h3>After · additive</h3><pre>deleteConversation(
+  conversationId: string,
+  scope = createConversationDeletionScope()
+): Promise&lt;void&gt;</pre></div></div><p><code>ConversationDeletionScope</code> contains a Local <code>ConversationClient</code>, or a Cloud <code>CloudClient</code> with captured backend/organization IDs. Bulk Confirm supplies it before <code>mutateAsync</code>; optional single-delete callers keep their existing call shape. No endpoint, wire schema or minimum backend version changes. <a class="src" href="https://github.com/OpenHands/OpenHands/blob/5a6bddcb3b5528ca160c8e49ead552b1cac96914/src/api/conversation-service/agent-server-conversation-service.api.ts">src/api/conversation-service/agent-server-conversation-service.api.ts:94</a></p><table><thead><tr><th>Boundary</th><th>Behavior</th></tr></thead><tbody><tr><td>Local planning children</td><td>Parent/child GETs and every DELETE share <code>scope.client</code>, including after a delayed lookup.</td></tr><tr><td>Cloud organization</td><td>The original organization header and backend client are retained. Suspension attribution belongs to that captured scope.</td></tr><tr><td>Partial deletion failure</td><td>Existing per-item settlement and failure count remain. This proposal does not make a backend batch transaction.</td></tr></tbody></table></section>
+<section id="evidence"><h2>The same real UI recipe changes from failure to pass</h2><table><thead><tr><th>Viewport</th><th>Baseline</th><th>Proposal</th><th>Proof</th></tr></thead><tbody><tr><td>Desktop 1440×1000</td><td>2 × xfail · count 20 → remaining 3</td><td>2 × xpass · count 23 → remaining 0</td><td>verified</td></tr><tr><td>Phone 390×844</td><td>2 × xfail · count 20 → remaining 3</td><td>2 × xpass · count 23 → remaining 0</td><td>verified</td></tr></tbody></table><p>The recipe creates 23 blanks through the navigation picker, records the confirmation/deletion UI, and reads the final backend count. SDK 1.54.0 and automation 1.19.3 match between runs. Profiles use dummy keys without validation; no model calls occur. Health checks pass before each attempt and after each pair. Recipe hash <code>fdc4d7ec4dea3f04</code>.</p><div class="ba"><figure class="fig"><h3>Baseline phone · smaller count</h3><img class="screen phone" src="before-phone-confirmation.png" alt="Baseline phone confirmation asks to delete20 conversations"><figcaption>Only the loaded 20 are offered for deletion.</figcaption></figure><figure class="fig"><h3>Proposal phone · full count</h3><img class="screen phone" src="after-phone-confirmation.png" alt="Proposal phone confirmation asks to delete23 conversations"><figcaption>The confirmation includes the full 23.</figcaption></figure></div><details><summary>Desktop confirmation and final empty state</summary><div class="ba"><figure><img class="screen" src="after-desktop-confirmation.png" alt="Desktop confirmation count 23"><figcaption>Full desktop count.</figcaption></figure><figure><img class="screen" src="after-desktop-after-delete.png" alt="Desktop sidebar says no conversations found"><figcaption>Zero conversations remain.</figcaption></figure></div></details><p>Meaningful negative controls fail on the old code; 31 focused test files/500 tests pass on the proposal, including pagination failure/cancel/archive cases and delayed lookup/backend/org changes. Lint, application and library builds pass. Cloud and in-flight selection changes are covered through real typed clients at the HTTP boundary; no signed-in Cloud live switch was exercised.</p></section>
+<section><h2>File-level review anchors</h2><article id="panel"><h3>Preparation enumerates every page; Confirm captures the scope and IDs before deletion.</h3><p><a class="src" href="https://github.com/OpenHands/OpenHands/blob/5a6bddcb3b5528ca160c8e49ead552b1cac96914/src/components/features/conversation-panel/conversation-panel.tsx">src/components/features/conversation-panel/conversation-panel.tsx:837</a></p><details><summary>Read the scoped diff</summary><pre>diff --git a/src/components/features/conversation-panel/conversation-panel.tsx b/src/components/features/conversation-panel/conversation-panel.tsx
+index 165541a989..3d083cd9ab 100644
+--- a/src/components/features/conversation-panel/conversation-panel.tsx
++++ b/src/components/features/conversation-panel/conversation-panel.tsx
+@@ -61,6 +61,7 @@ import {
+ import { useArchivedConversationsStore } from &quot;#/stores/archived-conversations-store&quot;;
+ import { usePinnedConversationsStore } from &quot;#/stores/pinned-conversations-store&quot;;
+ import { uniqueById } from &quot;#/utils/unique-by-id&quot;;
++import AgentServerConversationService from &quot;#/api/conversation-service/agent-server-conversation-service.api&quot;;
+ 
+ interface ConversationPanelProps {
+   onClose?: () =&gt; void;
+@@ -82,7 +83,7 @@ export function ConversationPanel({
+ }: ConversationPanelProps) {
+   const { t } = useTranslation(&quot;openhands&quot;);
+   const { conversationId: currentConversationId, navigate } = useNavigation();
+-  const { backend: activeBackend } = useActiveBackend();
++  const { backend: activeBackend, orgId: activeOrgId } = useActiveBackend();
+   const backendScopedPath = useBackendScopedPath();
+   // Click-outside is only relevant in the legacy drawer mode where an
+   // onClose handler is provided. When the panel is rendered inline (e.g.
+@@ -103,6 +104,19 @@ export function ConversationPanel({
+   ] = React.useState(false);
+   const [confirmDeleteAllVisible, setConfirmDeleteAllVisible] =
+     React.useState(false);
++  const [deleteAllPreparation, setDeleteAllPreparation] = React.useState&lt;
++    &quot;loading&quot; | &quot;ready&quot; | &quot;error&quot;
++  &gt;(&quot;loading&quot;);
++  const [isDeletingAll, setIsDeletingAll] = React.useState(false);
++  const deleteAllRequest = React.useRef(0);
++
++  // A confirmation belongs to the backend/org whose pages were enumerated.
++  // External selection changes (including embedded hosts) cancel it rather
++  // than carrying a destructive action into the newly selected scope.
++  React.useEffect(() =&gt; {
++    deleteAllRequest.current += 1;
++    setConfirmDeleteAllVisible(false);
++  }, [activeBackend.id, activeOrgId]);
+   const showOlderConversations = useConversationPanelPreferencesStore(
+     (state) =&gt; state.showOlderConversations,
+   );
+@@ -254,9 +268,8 @@ export function ConversationPanel({
+   // Fetch in-progress start tasks
+   const { data: startTasks } = useStartTasks();
+ 
+-  // Deduped, archive-unaware collection of every conversation currently loaded
+-  // from the backend. Bulk actions like &quot;Delete all&quot; must use this list so
+-  // hiding archived rows from the UI never shrinks what gets deleted.
++  // Archive-unaware collection of the loaded pages. Delete all first loads
++  // every remaining page so neither pagination nor hidden rows shrink its scope.
+   const allLoadedConversations = React.useMemo(() =&gt; {
+     const all = data?.pages.flatMap((page) =&gt; page.items) ?? [];
+     // The 10s background refetch re-fetches every loaded page with the
+@@ -815,14 +828,51 @@ export function ConversationPanel({
+     }
+   };
+ 
++  const handleCancelDeleteAll = () =&gt; {
++    if (isDeletingAll) return;
++    deleteAllRequest.current += 1;
++    setConfirmDeleteAllVisible(false);
++  };
++
++  // @spec CD-001 — Enumerate all pages before confirming bulk deletion
++  const handleRequestDeleteAll = async () =&gt; {
++    const request = ++deleteAllRequest.current;
++    setDeleteAllPreparation(&quot;loading&quot;);
++    setConfirmDeleteAllVisible(true);
++    let page = data?.pages.at(-1);
++    const visitedPages = new Set&lt;string&gt;();
++
++    while (page?.next_page_id) {
++      if (visitedPages.has(page.next_page_id)) {
++        setDeleteAllPreparation(&quot;error&quot;);
++        return;
++      }
++      visitedPages.add(page.next_page_id);
++      const result = await fetchNextPage();
++      if (request !== deleteAllRequest.current) return;
++      if (result.isFetchNextPageError || !result.data) {
++        setDeleteAllPreparation(&quot;error&quot;);
++        return;
++      }
++      page = result.data.pages.at(-1);
++    }
++    setDeleteAllPreparation(&quot;ready&quot;);
++  };
++
+   const handleConfirmDeleteAll = async () =&gt; {
+-    // Delete against the unfiltered loaded set so archived (currently hidden)
+-    // conversations are still removed from the server — matching the action&#x27;s
+-    // &quot;delete all conversations&quot; label and confirmation count.
++    if (deleteAllPreparation !== &quot;ready&quot; || isDeletingAll) return;
++    // Every item, including its planning children, belongs to this confirmed
++    // backend/org even if the host changes selection while requests await.
++    // @spec CD-002 — Capture transport before mutation callbacks await
++    const deletionScope =
++      AgentServerConversationService.createConversationDeletionScope();
++    setIsDeletingAll(true);
++    // Enumeration completes before confirmation. Capture that complete,
++    // deduplicated set before deletes start invalidating the paginated cache.
+     const idsToDelete = allLoadedConversations.map((c) =&gt; c.id);
+     const results = await Promise.allSettled(
+       idsToDelete.map((conversationId) =&gt;
+-        deleteConversationAsync({ conversationId }),
++        deleteConversationAsync({ conversationId, deletionScope }),
+       ),
+     );
+ 
+@@ -847,6 +897,7 @@ export function ConversationPanel({
+         `${failedCount} conversation${failedCount === 1 ? &quot;&quot; : &quot;s&quot;} could not be deleted.`,
+       );
+     }
++    setIsDeletingAll(false);
+   };
+ 
+   const renderConversationCard = React.useCallback(
+@@ -1123,7 +1174,7 @@ export function ConversationPanel({
+                 tagFacets={tagFacets}
+                 automationNameFacets={automationNameFacets}
+                 totalConversationsCount={allLoadedConversations.length}
+-                onRequestDeleteAll={() =&gt; setConfirmDeleteAllVisible(true)}
++                onRequestDeleteAll={handleRequestDeleteAll}
+               /&gt;
+             &lt;/div&gt;
+           &lt;/div&gt;
+@@ -1315,14 +1366,24 @@ export function ConversationPanel({
+       {confirmDeleteAllVisible &amp;&amp; (
+         &lt;ConfirmDeleteModal
+           title={t(I18nKey.CONVERSATION$CONFIRM_DELETE_ALL_TITLE)}
+-          description={t(I18nKey.CONVERSATION$CONFIRM_DELETE_ALL_DESC, {
+-            count: allLoadedConversations.length,
+-          })}
++          description={
++            deleteAllPreparation === &quot;ready&quot;
++              ? t(I18nKey.CONVERSATION$CONFIRM_DELETE_ALL_DESC, {
++                  count: allLoadedConversations.length,
++                })
++              : t(
++                  deleteAllPreparation === &quot;error&quot;
++                    ? I18nKey.ERROR$GENERIC
++                    : I18nKey.HOME$LOADING,
++                )
++          }
++          isConfirmDisabled={deleteAllPreparation !== &quot;ready&quot;}
++          isPending={isDeletingAll}
+           onConfirm={async () =&gt; {
+             await handleConfirmDeleteAll();
+             setConfirmDeleteAllVisible(false);
+           }}
+-          onCancel={() =&gt; setConfirmDeleteAllVisible(false)}
++          onCancel={handleCancelDeleteAll}
+         /&gt;
+       )}
+ 
+</pre></details></article><article id="dialog"><h3>Optional disabled/pending controls block early confirmation and duplicate actions.</h3><p><a class="src" href="https://github.com/OpenHands/OpenHands/blob/5a6bddcb3b5528ca160c8e49ead552b1cac96914/src/components/features/conversation-panel/confirm-delete-modal.tsx">src/components/features/conversation-panel/confirm-delete-modal.tsx:14</a></p><details><summary>Read the scoped diff</summary><pre>diff --git a/src/components/features/conversation-panel/confirm-delete-modal.tsx b/src/components/features/conversation-panel/confirm-delete-modal.tsx
+index 9ffec41072..05d4ec04bb 100644
+--- a/src/components/features/conversation-panel/confirm-delete-modal.tsx
++++ b/src/components/features/conversation-panel/confirm-delete-modal.tsx
+@@ -15,6 +15,8 @@ interface ConfirmDeleteModalProps {
+   conversationTitle?: string;
+   title?: string;
+   description?: React.ReactNode;
++  isConfirmDisabled?: boolean;
++  isPending?: boolean;
+ }
+ 
+ export function ConfirmDeleteModal({
+@@ -23,6 +25,8 @@ export function ConfirmDeleteModal({
+   conversationTitle,
+   title,
+   description,
++  isConfirmDisabled = false,
++  isPending = false,
+ }: ConfirmDeleteModalProps) {
+   const { t } = useTranslation(&quot;openhands&quot;);
+ 
+@@ -60,6 +64,7 @@ export function ConfirmDeleteModal({
+             variant=&quot;secondary&quot;
+             onClick={onCancel}
+             testId=&quot;cancel-button&quot;
++            isDisabled={isPending}
+           &gt;
+             {t(I18nKey.BUTTON$CANCEL)}
+           &lt;/BrandButton&gt;
+@@ -68,6 +73,8 @@ export function ConfirmDeleteModal({
+             variant=&quot;primary&quot;
+             onClick={onConfirm}
+             testId=&quot;confirm-button&quot;
++            isDisabled={isConfirmDisabled || isPending}
++            aria-busy={isPending}
+           &gt;
+             {t(I18nKey.ACTION$CONFIRM_DELETE)}
+           &lt;/BrandButton&gt;
+</pre></details></article><article id="mutation"><h3>The optional scope reaches the service after asynchronous onMutate callbacks.</h3><p><a class="src" href="https://github.com/OpenHands/OpenHands/blob/5a6bddcb3b5528ca160c8e49ead552b1cac96914/src/hooks/mutation/use-delete-conversation.ts">src/hooks/mutation/use-delete-conversation.ts:8</a></p><details><summary>Read the scoped diff</summary><pre>diff --git a/src/hooks/mutation/use-delete-conversation.ts b/src/hooks/mutation/use-delete-conversation.ts
+index 5a559bf39a..d1ffe7d97c 100644
+--- a/src/hooks/mutation/use-delete-conversation.ts
++++ b/src/hooks/mutation/use-delete-conversation.ts
+@@ -1,15 +1,24 @@
+ import { useMutation, useQueryClient } from &quot;@tanstack/react-query&quot;;
+ import AgentServerConversationService from &quot;#/api/conversation-service/agent-server-conversation-service.api&quot;;
++import type { ConversationDeletionScope } from &quot;#/api/conversation-service/agent-server-conversation-service.api&quot;;
+ import { clearConversationLocalStorage } from &quot;#/utils/conversation-local-storage&quot;;
+ 
+ export const useDeleteConversation = () =&gt; {
+   const queryClient = useQueryClient();
+ 
+   return useMutation({
+-    mutationFn: (variables: { conversationId: string }) =&gt;
+-      AgentServerConversationService.deleteConversation(
+-        variables.conversationId,
+-      ),
++    mutationFn: (variables: {
++      conversationId: string;
++      deletionScope?: ConversationDeletionScope;
++    }) =&gt;
++      variables.deletionScope
++        ? AgentServerConversationService.deleteConversation(
++            variables.conversationId,
++            variables.deletionScope,
++          )
++        : AgentServerConversationService.deleteConversation(
++            variables.conversationId,
++          ),
+     onMutate: async (variables) =&gt; {
+       await queryClient.cancelQueries({ queryKey: [&quot;user&quot;, &quot;conversations&quot;] });
+       const previousConversations = queryClient.getQueryData([
+</pre></details></article><article id="service"><h3>One typed Local or Cloud client carries the original transport and organization.</h3><p><a class="src" href="https://github.com/OpenHands/OpenHands/blob/5a6bddcb3b5528ca160c8e49ead552b1cac96914/src/api/conversation-service/agent-server-conversation-service.api.ts">src/api/conversation-service/agent-server-conversation-service.api.ts:94</a></p><details><summary>Read the scoped diff</summary><pre>diff --git a/src/api/conversation-service/agent-server-conversation-service.api.ts b/src/api/conversation-service/agent-server-conversation-service.api.ts
+index 17b0dabcc2..2dc22d5bf6 100644
+--- a/src/api/conversation-service/agent-server-conversation-service.api.ts
++++ b/src/api/conversation-service/agent-server-conversation-service.api.ts
+@@ -6,6 +6,7 @@ import {
+   type VSCodeStatusResponse,
+ } from &quot;@openhands/typescript-client&quot;;
+ import {
++  type CloudClient,
+   ConversationClient,
+   FileClient,
+   ProfilesClient,
+@@ -25,11 +26,12 @@ import {
+   getEffectiveLocalBackend,
+ } from &quot;../backend-registry/active-store&quot;;
+ import { callCloudProxy } from &quot;../cloud/proxy&quot;;
++import { activeOrgForBackend, createCloudClient } from &quot;../cloud/client&quot;;
++import { recordOrganizationSuspension } from &quot;../cloud/organization-suspension-store&quot;;
+ import ProfilesService from &quot;../profiles-service/profiles-service.api&quot;;
+ import {
+   batchGetCloudConversations,
+   createCloudAppConversation,
+-  deleteCloudConversation,
+   downloadCloudConversation,
+   getCloudAppConversationStartTask,
+   readCloudConversationFile,
+@@ -87,6 +89,16 @@ import type {
+ } from &quot;./agent-server-conversation-service.types&quot;;
+ 
+ const DEFAULT_CONVERSATION_TIMESTAMP = &quot;1970-01-01T00:00:00.000Z&quot;;
++
++/** Captured synchronously before a delete mutation&#x27;s asynchronous callbacks. */
++export type ConversationDeletionScope =
++  | { kind: &quot;local&quot;; client: ConversationClient }
++  | {
++      kind: &quot;cloud&quot;;
++      client: CloudClient;
++      backendId: string;
++      orgId: string | null;
++    };
+ // Creating the first conversation right after a cold agent-server boot (fresh
+ // machine or the packaged desktop app, where uvx may still be warming caches)
+ // can exceed the client&#x27;s 60s default timeout.
+@@ -737,18 +749,20 @@ class AgentServerConversationService {
+    */
+   static async getLocalPlanningConversationIds(
+     parentConversationId: string,
++    client?: ConversationClient,
+   ): Promise&lt;string[]&gt; {
+-    if (getActiveBackend().backend.kind === &quot;cloud&quot;) return [];
++    if (!client &amp;&amp; getActiveBackend().backend.kind === &quot;cloud&quot;) return [];
+ 
+     const ids = new Set&lt;string&gt;();
+ 
+     try {
+-      const [parent] = await this.batchGetAppConversations([
+-        parentConversationId,
+-      ]);
++      const [parent] = await this.batchGetAppConversations(
++        [parentConversationId],
++        client,
++      );
+       const childIds = parent?.sub_conversation_ids ?? [];
+       if (childIds.length &gt; 0) {
+-        const children = await this.batchGetAppConversations(childIds);
++        const children = await this.batchGetAppConversations(childIds, client);
+         for (const child of children) {
+           if (child &amp;&amp; isPlannerConversationOf(child, parentConversationId)) {
+             ids.add(child.id);
+@@ -846,15 +860,16 @@ class AgentServerConversationService {
+ 
+   static async batchGetAppConversations(
+     ids: string[],
++    client?: ConversationClient,
+   ): Promise&lt;(AppConversation | null)[]&gt; {
+     if (ids.length === 0) return [];
+ 
+-    if (getActiveBackend().backend.kind === &quot;cloud&quot;) {
++    if (!client &amp;&amp; getActiveBackend().backend.kind === &quot;cloud&quot;) {
+       return batchGetCloudConversations(ids);
+     }
+ 
+-    const data: unknown = await new ConversationClient(
+-      getAgentServerClientOptions(),
++    const data: unknown = await (
++      client ?? new ConversationClient(getAgentServerClientOptions())
+     ).getConversations&lt;DirectConversationInfo&gt;(ids);
+ 
+     return requireDirectConversationBatch(data).map((item) =&gt;
+@@ -1022,9 +1037,38 @@ class AgentServerConversationService {
+     return toConversationPage(requireConversationSearchPage(data));
+   }
+ 
+-  static async deleteConversation(conversationId: string): Promise&lt;void&gt; {
+-    if (getActiveBackend().backend.kind === &quot;cloud&quot;) {
+-      await deleteCloudConversation(conversationId);
++  // @spec CD-002 — Capture the confirmed backend and organization
++  static createConversationDeletionScope(): ConversationDeletionScope {
++    const backend = getActiveBackend().backend;
++    if (backend.kind === &quot;cloud&quot;) {
++      return {
++        kind: &quot;cloud&quot;,
++        client: createCloudClient(backend),
++        backendId: backend.id,
++        orgId: activeOrgForBackend(backend),
++      };
++    }
++    return {
++      kind: &quot;local&quot;,
++      client: new ConversationClient(getAgentServerClientOptions()),
++    };
++  }
++
++  static async deleteConversation(
++    conversationId: string,
++    scope: ConversationDeletionScope = this.createConversationDeletionScope(),
++  ): Promise&lt;void&gt; {
++    if (scope.kind === &quot;cloud&quot;) {
++      try {
++        await scope.client.request({
++          method: &quot;DELETE&quot;,
++          path: `/api/v1/app-conversations/${conversationId}`,
++          ...(scope.orgId ? { headers: { &quot;X-Org-Id&quot;: scope.orgId } } : {}),
++        });
++      } catch (error) {
++        recordOrganizationSuspension(scope.backendId, scope.orgId, error);
++        throw error;
++      }
+       removeStoredConversationMetadata(conversationId);
+       return;
+     }
+@@ -1033,10 +1077,12 @@ class AgentServerConversationService {
+     // planner helper is hidden from the conversation list by its
+     // `plannerparent` tag — so without this it would survive its parent as an
+     // invisible, unreachable conversation (plus its events and state).
+-    const planningConversationIds =
+-      await this.getLocalPlanningConversationIds(conversationId);
++    const planningConversationIds = await this.getLocalPlanningConversationIds(
++      conversationId,
++      scope.client,
++    );
+ 
+-    const client = new ConversationClient(getAgentServerClientOptions());
++    const { client } = scope;
+     await Promise.all(
+       planningConversationIds.map(async (planningConversationId) =&gt; {
+         try {
+</pre></details></article><article id="panel-tests"><h3>Real paginated query tests cover complete enumeration, failed pages, hidden archives and cancellation.</h3><p><a class="src" href="https://github.com/OpenHands/OpenHands/blob/5a6bddcb3b5528ca160c8e49ead552b1cac96914/__tests__/components/features/conversation-panel/conversation-panel-filters.test.tsx">__tests__/components/features/conversation-panel/conversation-panel-filters.test.tsx:552</a></p><details><summary>Read the scoped diff</summary><pre>diff --git a/__tests__/components/features/conversation-panel/conversation-panel-filters.test.tsx b/__tests__/components/features/conversation-panel/conversation-panel-filters.test.tsx
+index fae5c68e7e..d674bd5b1b 100644
+--- a/__tests__/components/features/conversation-panel/conversation-panel-filters.test.tsx
++++ b/__tests__/components/features/conversation-panel/conversation-panel-filters.test.tsx
+@@ -21,6 +21,16 @@ vi.mock(&quot;#/utils/custom-toast-handlers&quot;, () =&gt; ({
+   displayErrorToast: vi.fn(),
+   TOAST_OPTIONS: {},
+ }));
++vi.mock(&quot;react-i18next&quot;, async (importOriginal) =&gt; ({
++  ...(await importOriginal&lt;typeof import(&quot;react-i18next&quot;)&gt;()),
++  useTranslation: () =&gt; ({
++    t: (key: string, values?: { count?: number }) =&gt;
++      key === &quot;CONVERSATION$CONFIRM_DELETE_ALL_DESC&quot;
++        ? `${key} ${values?.count}`
++        : key,
++    i18n: { language: &quot;en&quot;, exists: () =&gt; false },
++  }),
++}));
+ 
+ describe(&quot;ConversationPanel filters and pagination&quot;, () =&gt; {
+   setupConversationPanelTest();
+@@ -539,6 +549,98 @@ describe(&quot;ConversationPanel filters and pagination&quot;, () =&gt; {
+       ).toHaveTextContent(&quot;main&quot;);
+     });
+ 
++    // @spec CD-001 — Complete, unique enumeration precedes confirmation
++    it(&quot;loads every page before confirming deletion, including hidden archives and overlapping rows&quot;, async () =&gt; {
++      // Arrange: only the first page is visible; the second page is still
++      // loading and repeats a row while introducing a hidden archived row.
++      const user = userEvent.setup();
++      const deleteSpy = vi
++        .spyOn(AgentServerConversationService, &quot;deleteConversation&quot;)
++        .mockResolvedValue();
++      let resolveSecondPage!: (page: {
++        items: ReturnType&lt;typeof createMockConversation&gt;[];
++        next_page_id: null;
++      }) =&gt; void;
++      const secondPage = new Promise&lt;{
++        items: ReturnType&lt;typeof createMockConversation&gt;[];
++        next_page_id: null;
++      }&gt;((resolve) =&gt; {
++        resolveSecondPage = resolve;
++      });
++      vi.spyOn(
++        AgentServerConversationService,
++        &quot;searchConversations&quot;,
++      ).mockImplementation(async (_, pageId) =&gt;
++        pageId === &quot;second-page&quot;
++          ? secondPage
++          : {
++              items: [createMockConversation({ id: &quot;visible&quot; })],
++              next_page_id: &quot;second-page&quot;,
++            },
++      );
++      useArchivedConversationsStore.setState({
++        archivesByBackendId: { &quot;default-local&quot;: [&quot;archived&quot;] },
++      });
++      renderConversationPanel();
++      await screen.findByTestId(&quot;conversation-card&quot;);
++
++      // Act: request the destructive action without loading more rows.
++      await user.click(screen.getByTestId(&quot;conversation-layouts-toggle&quot;));
++      await user.click(screen.getByTestId(&quot;delete-all-conversations&quot;));
++
++      // Assert: an incomplete count cannot authorize a partial deletion.
++      expect(screen.getByTestId(&quot;confirm-button&quot;)).toBeDisabled();
++      expect(deleteSpy).not.toHaveBeenCalled();
++      await act(async () =&gt; {
++        resolveSecondPage({
++          items: [
++            createMockConversation({ id: &quot;visible&quot; }),
++            createMockConversation({ id: &quot;archived&quot; }),
++            createMockConversation({ id: &quot;unloaded&quot; }),
++          ],
++          next_page_id: null,
++        });
++      });
++      await screen.findByText(&quot;CONVERSATION$CONFIRM_DELETE_ALL_DESC 3&quot;);
++      await user.click(screen.getByTestId(&quot;confirm-button&quot;));
++      await waitFor(() =&gt; expect(deleteSpy).toHaveBeenCalledTimes(3));
++      expect(new Set(deleteSpy.mock.calls.map(([, scope]) =&gt; scope)).size).toBe(1);
++      expect(deleteSpy.mock.calls.map(([id]) =&gt; id).sort()).toEqual([
++        &quot;archived&quot;,
++        &quot;unloaded&quot;,
++        &quot;visible&quot;,
++      ]);
++    });
++
++    it(&quot;does not allow a partial delete when a later conversation page fails to load&quot;, async () =&gt; {
++      // Arrange: the list loads, but enumerating the backend fails midway.
++      const user = userEvent.setup();
++      const deleteSpy = vi
++        .spyOn(AgentServerConversationService, &quot;deleteConversation&quot;)
++        .mockResolvedValue();
++      vi.spyOn(
++        AgentServerConversationService,
++        &quot;searchConversations&quot;,
++      ).mockImplementation(async (_, pageId) =&gt; {
++        if (pageId) throw new Error(&quot;second page unavailable&quot;);
++        return {
++          items: [createMockConversation({ id: &quot;visible&quot; })],
++          next_page_id: &quot;second-page&quot;,
++        };
++      });
++      renderConversationPanel();
++      await screen.findByTestId(&quot;conversation-card&quot;);
++
++      // Act + Assert: the failure keeps confirmation disabled and Cancel
++      // available, without issuing any delete request against the loaded page.
++      await user.click(screen.getByTestId(&quot;conversation-layouts-toggle&quot;));
++      await user.click(screen.getByTestId(&quot;delete-all-conversations&quot;));
++      await screen.findByText(&quot;ERROR$GENERIC&quot;);
++      expect(screen.getByTestId(&quot;confirm-button&quot;)).toBeDisabled();
++      expect(screen.getByTestId(&quot;cancel-button&quot;)).toBeEnabled();
++      expect(deleteSpy).not.toHaveBeenCalled();
++    });
++
+     it(&quot;delete-all is enabled when no conversations are older than the cutoff and deletes every loaded conversation&quot;, async () =&gt; {
+       const user = userEvent.setup();
+       const deleteSpy = vi
+@@ -581,8 +683,8 @@ describe(&quot;ConversationPanel filters and pagination&quot;, () =&gt; {
+       await waitFor(() =&gt; {
+         expect(deleteSpy).toHaveBeenCalledTimes(2);
+       });
+-      expect(deleteSpy).toHaveBeenCalledWith(&quot;recent-1&quot;);
+-      expect(deleteSpy).toHaveBeenCalledWith(&quot;recent-2&quot;);
++      expect(deleteSpy).toHaveBeenCalledWith(&quot;recent-1&quot;, expect.objectContaining({ kind: &quot;local&quot; }));
++      expect(deleteSpy).toHaveBeenCalledWith(&quot;recent-2&quot;, expect.objectContaining({ kind: &quot;local&quot; }));
+     });
+ 
+     it(&quot;delete-all still deletes hidden archived conversations&quot;, async () =&gt; {
+@@ -649,9 +751,9 @@ describe(&quot;ConversationPanel filters and pagination&quot;, () =&gt; {
+       await waitFor(() =&gt; {
+         expect(deleteSpy).toHaveBeenCalledTimes(3);
+       });
+-      expect(deleteSpy).toHaveBeenCalledWith(&quot;visible-1&quot;);
+-      expect(deleteSpy).toHaveBeenCalledWith(&quot;archived-1&quot;);
+-      expect(deleteSpy).toHaveBeenCalledWith(&quot;archived-2&quot;);
++      expect(deleteSpy).toHaveBeenCalledWith(&quot;visible-1&quot;, expect.objectContaining({ kind: &quot;local&quot; }));
++      expect(deleteSpy).toHaveBeenCalledWith(&quot;archived-1&quot;, expect.objectContaining({ kind: &quot;local&quot; }));
++      expect(deleteSpy).toHaveBeenCalledWith(&quot;archived-2&quot;, expect.objectContaining({ kind: &quot;local&quot; }));
+     });
+ 
+     it(&quot;navigates away after the active conversation is deleted successfully even when another deletion fails&quot;, async () =&gt; {
+</pre></details></article><article id="service-tests"><h3>Delayed Local lookups and changed Cloud organization still use the captured scope.</h3><p><a class="src" href="https://github.com/OpenHands/OpenHands/blob/5a6bddcb3b5528ca160c8e49ead552b1cac96914/__tests__/api/agent-server-conversation-service.test.ts">__tests__/api/agent-server-conversation-service.test.ts:909</a></p><details><summary>Read the scoped diff</summary><pre>diff --git a/__tests__/api/agent-server-conversation-service.test.ts b/__tests__/api/agent-server-conversation-service.test.ts
+index 5440453461..0a48d5e194 100644
+--- a/__tests__/api/agent-server-conversation-service.test.ts
++++ b/__tests__/api/agent-server-conversation-service.test.ts
+@@ -20,6 +20,7 @@ import {
+ import type { Backend } from &quot;#/api/backend-registry/types&quot;;
+ import { clearCachedAgentServerInfo } from &quot;#/api/agent-server-compatibility&quot;;
+ import AgentServerConversationService from &quot;#/api/conversation-service/agent-server-conversation-service.api&quot;;
++import { getOrganizationSuspension } from &quot;#/api/cloud/organization-suspension-store&quot;;
+ import LLMSubscriptionService from &quot;#/api/llm-subscription-service&quot;;
+ import {
+   LLM_AUTH_TYPE_SUBSCRIPTION,
+@@ -905,6 +906,42 @@ describe(&quot;AgentServerConversationService&quot;, () =&gt; {
+       __resetActiveStoreForTests();
+     });
+ 
++    // @spec CD-002 — Planning lookup and deletion keep the captured transport
++    it(&quot;keeps planning lookup and deletion on the original backend during a switch&quot;, async () =&gt; {
++      const original: Backend = { id: &quot;delete-origin&quot;, kind: &quot;local&quot;, name: &quot;Original&quot;, host: &quot;http://original.test&quot;, apiKey: &quot;original-key&quot; };
++      const next: Backend = { ...original, id: &quot;delete-next&quot;, host: &quot;http://next.test&quot;, apiKey: &quot;next-key&quot; };
++      setRegisteredBackends([original, next]);
++      setActiveSelection({ backendId: original.id });
++      let resolveParent!: (value: unknown) =&gt; void;
++      mockHttpGet.mockReturnValueOnce(new Promise(resolve =&gt; { resolveParent = resolve; }));
++      mockHttpGet.mockResolvedValueOnce({ data: [makeDirectConversation({ id: &quot;planner&quot;, tags: { plannerparent: &quot;parent&quot; } })] });
++      mockHttpDelete.mockResolvedValue({ data: undefined });
++      const deletion = AgentServerConversationService.deleteConversation(&quot;parent&quot;);
++      setActiveSelection({ backendId: next.id });
++      resolveParent({ data: [makeDirectConversation({ id: &quot;parent&quot;, sub_conversation_ids: [&quot;planner&quot;] })] });
++      await deletion;
++      expect(mockHttpDelete.mock.calls.map(call =&gt; call[0])).toEqual([&quot;/api/conversations/planner&quot;, &quot;/api/conversations/parent&quot;]);
++      expect(vi.mocked(ConversationClient).mock.calls.map(([options]) =&gt; options?.host)).toEqual(expect.arrayContaining([original.host]));
++      expect(vi.mocked(ConversationClient).mock.calls.every(([options]) =&gt; options?.host === original.host)).toBe(true);
++    });
++
++    it(&quot;uses the captured Cloud organization and records suspension there after selection changes&quot;, async () =&gt; {
++      setRegisteredBackends([cloudBackend, localBackend]);
++      setActiveSelection({ backendId: cloudBackend.id, orgId: &quot;delete-org&quot; });
++      const scope = AgentServerConversationService.createConversationDeletionScope();
++      setActiveSelection({ backendId: cloudBackend.id, orgId: &quot;other-org&quot; });
++      const requests = captureRequests([&quot;delete&quot;], HttpResponse.json({ detail: &quot;Organization is suspended&quot; }, { status: 403 }));
++      await expect(AgentServerConversationService.deleteConversation(&quot;cloud-parent&quot;, scope)).rejects.toThrow();
++      expect(requests[0].url).toBe(`${cloudBackend.host}/api/v1/app-conversations/cloud-parent`);
++      expect(requests[0].headers[&quot;x-org-id&quot;]).toBe(&quot;delete-org&quot;);
++      expect(getOrganizationSuspension(cloudBackend.id, &quot;delete-org&quot;)).toBe(&quot;organization&quot;);
++      expect(getOrganizationSuspension(cloudBackend.id, &quot;other-org&quot;)).toBeNull();
++      setActiveSelection({ backendId: localBackend.id });
++      server.use(http.delete(`${cloudBackend.host}/api/v1/app-conversations/cloud-parent`, () =&gt; new HttpResponse(null, { status: 204 })));
++      await AgentServerConversationService.deleteConversation(&quot;cloud-parent&quot;, scope);
++      expect(mockHttpDelete).not.toHaveBeenCalled();
++    });
++
+     it(&quot;hits the local /api/conversations/{id} endpoint when active backend is local&quot;, async () =&gt; {
+       mockHttpDelete.mockResolvedValue({ data: undefined });
+ 
+</pre></details></article><article id="mutation-tests"><h3>A deferred mutation callback cannot replace a supplied scope.</h3><p><a class="src" href="https://github.com/OpenHands/OpenHands/blob/5a6bddcb3b5528ca160c8e49ead552b1cac96914/__tests__/hooks/mutation/use-delete-conversation.test.tsx">__tests__/hooks/mutation/use-delete-conversation.test.tsx:8</a></p><details><summary>Read the scoped diff</summary><pre>diff --git a/__tests__/hooks/mutation/use-delete-conversation.test.tsx b/__tests__/hooks/mutation/use-delete-conversation.test.tsx
+index 8360f28cca..8e8288616f 100644
+--- a/__tests__/hooks/mutation/use-delete-conversation.test.tsx
++++ b/__tests__/hooks/mutation/use-delete-conversation.test.tsx
+@@ -5,6 +5,24 @@ import AgentServerConversationService from &quot;#/api/conversation-service/agent-ser
+ import { useDeleteConversation } from &quot;#/hooks/mutation/use-delete-conversation&quot;;
+ 
+ describe(&quot;useDeleteConversation&quot;, () =&gt; {
++  // @spec CD-002 — Mutation callbacks preserve the caller&#x27;s captured scope
++  it(&quot;keeps the caller&#x27;s captured delete scope across an asynchronous onMutate&quot;, async () =&gt; {
++    const deleteSpy = vi.spyOn(AgentServerConversationService, &quot;deleteConversation&quot;).mockResolvedValue(undefined);
++    const scope = AgentServerConversationService.createConversationDeletionScope();
++    let release!: () =&gt; void;
++    const queryClient = new QueryClient();
++    vi.spyOn(queryClient, &quot;cancelQueries&quot;).mockReturnValue(new Promise&lt;void&gt;(resolve =&gt; { release = resolve; }));
++    const { result } = renderHook(() =&gt; useDeleteConversation(), {
++      wrapper: ({ children }) =&gt; &lt;QueryClientProvider client={queryClient}&gt;{children}&lt;/QueryClientProvider&gt;,
++    });
++    const deletion = result.current.mutateAsync({ conversationId: &quot;captured&quot;, deletionScope: scope });
++    await waitFor(() =&gt; expect(release).toBeDefined());
++    expect(deleteSpy).not.toHaveBeenCalled();
++    release();
++    await deletion;
++    expect(deleteSpy).toHaveBeenCalledWith(&quot;captured&quot;, scope);
++  });
++
+   it(&quot;invalidates the conversation list and start-tasks queries on settle&quot;, async () =&gt; {
+     vi.spyOn(
+       AgentServerConversationService,
+</pre></details></article><article id="specs"><h3>CD-001 and CD-002 state the complete-enumeration and captured-transport contracts.</h3><p><a class="src" href="https://github.com/OpenHands/OpenHands/blob/5a6bddcb3b5528ca160c8e49ead552b1cac96914/specs/conversation-deletion.md">specs/conversation-deletion.md:3</a></p><details><summary>Read the scoped diff</summary><pre>diff --git a/specs/conversation-deletion.md b/specs/conversation-deletion.md
+new file mode 100644
+index 0000000000..3151236c58
+--- /dev/null
++++ b/specs/conversation-deletion.md
+@@ -0,0 +1,13 @@
++# Conversation deletion
++
++### CD-001: Bulk deletion enumerates its complete scope
++
++- Delete all loads every backend page and deduplicates conversation IDs before enabling confirmation.
++- The confirmation count includes hidden archived conversations.
++- A failed later page blocks deletion; cancellation discards late preparation responses.
++
++### CD-002: Confirmed deletion captures its transport
++
++- Bulk confirmation captures one typed backend client before asynchronous mutation callbacks.
++- Local planning-child lookups and all deletes use that captured client.
++- Cloud deletes preserve the captured backend and organization; suspension belongs to that original organization.
+</pre></details></article></section>
+</main></div></body></html>

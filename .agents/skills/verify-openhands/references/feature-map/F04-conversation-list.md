@@ -112,10 +112,42 @@ Preconditions:
 - **Show archived and Unarchive (`F04.show-archived-unarchive`).** In More options click `testid=toggle-show-archived` (`aria-checked` `true`) and `testid=advanced-options-close`; `control-openhands browser count 'testid=conversation-card >> has-text=Conversation <id5> >> testid=conversation-card-archived-chip'` is `1` and the ⋮ menu offers `Unarchive Conversation`. `control-openhands browser click 'testid=context-menu >> testid=unarchive-button'` opens no dialog (`browser count 'role=dialog'` `0`) and the chip count drops to `0`. Turn Show archived off again.
 - **Delete (`F04.delete`).** Open a conversation from its row, open ⋮ and run `control-openhands browser click 'testid=context-menu >> testid=delete-button'`; the dialog reads `Confirm Delete` and `Are you sure you want to delete the "<title>" conversation? This action cannot be undone.` `control-openhands browser click 'role=dialog >> role=button[name="Cancel"]'` keeps the row. Repeat and `control-openhands browser click 'role=dialog >> role=button[name="Confirm Delete"]' --expect-url '/conversations(\?|$)'`; after `browser reload` the row count is `0` and `control-openhands api GET /api/conversations/<id>` is `404`.
 - **Phone (`F04.phone`).** Run `control-openhands browser viewport phone`, `control-openhands browser goto /`, `control-openhands browser click 'testid=sidebar-mobile-menu-toggle'`, then `control-openhands browser bbox 'testid=sidebar-mobile-drawer >> testid=conversation-panel'` (`insideViewport` `true`, `pageHorizontalOverflow` `false`) and `control-openhands browser screenshot --feature F04.phone --name drawer`. Hover a row in the drawer and click its `testid=ellipsis-button`; `control-openhands browser bbox 'testid=context-menu'` is inside the viewport. `control-openhands browser mouse-click 380 20` closes the menu (`browser count 'testid=context-menu'` `0`) and the drawer (`control-openhands browser wait 'testid=sidebar-mobile-drawer' --state hidden --timeout 5000`; an immediate `visible` still reads `true` during the slide-out). Reopen the drawer and `control-openhands browser click 'testid=sidebar-mobile-drawer >> testid=conversation-card >> has-text=QA_F04 renamed' --expect-url '/conversations/'`; `control-openhands browser wait 'testid=sidebar-mobile-drawer' --state hidden --timeout 5000` succeeds. Return with `control-openhands browser viewport desktop`.
-- **Delete all (`F04.delete-all`).** Run `control-openhands browser click 'testid=conversation-layouts-toggle'`, `control-openhands browser click 'testid=delete-all-conversations'` and `control-openhands browser snapshot 'role=dialog'`: `Delete all conversations`, `Are you sure you want to delete N conversations?`. Cancel keeps every row. Confirm with `control-openhands browser click 'role=dialog >> role=button[name="Confirm Delete"]'` and `control-openhands browser wait 'role=dialog' --state detached --timeout 30000`; `control-openhands api GET '/api/conversations/search?limit=100'` has no items, Delete all is disabled again, and in By date mode the empty state returns. Expected for every conversation; today N and the deletion cover only the loaded pages (22 conversations, 20 loaded: 2 remain).
+- **Delete all (`F04.delete-all`).** Run `control-openhands browser click 'testid=conversation-layouts-toggle'`, `control-openhands browser click 'testid=delete-all-conversations'` and `control-openhands browser snapshot 'role=dialog'`: `Delete all conversations`, `Are you sure you want to delete N conversations?`. Cancel keeps every row. Confirm with `control-openhands browser click 'role=dialog >> role=button[name="Confirm Delete"]'` and `control-openhands browser wait 'role=dialog' --state detached --timeout 30000`; `control-openhands api GET '/api/conversations/search?limit=100'` has no items, Delete all is disabled again, and in By date mode the empty state returns. The confirmation loads all pages before enabling Confirm, includes archived conversations hidden by the current view, and uses the full unique count. A failed later page keeps Confirm disabled; Cancel keeps every row. Verified 2026-10-13 for #17919: 23 UI-created blank conversations show 23 in the confirmation and leave 0 after one pass, twice on desktop and twice on phone. Backend/org changes during preparation close confirmation; a confirmed operation retains its captured backend/org transport.
 - **Collapsed rail (`F04.collapsed-rail`).** Run `control-openhands browser click 'testid=sidebar-collapse-toggle'`, then `control-openhands browser count 'testid=conversation-panel'` (`0`). Expand with `control-openhands browser click 'aside[data-collapsed]'` (see F02); the count is `1`.
 - **Cloud picker and start tasks (`F04.cloud-picker`, `F04.start-task-cards`).** Blocked without an OpenHands Cloud backend and git provider. On Cloud, the same `conversation-panel-new-thread-picker` opens `cloud-provider-tabs`, `cloud-repo-search-input` (`Search repositories`) and `launch-repository` rows; start tasks render `testid=start-task-card` linking to `/conversations/task-<id>`.
-- **Cleanup.** View → Delete all twice (the second pass removes the rows the first left behind), until `api GET '/api/conversations/search?limit=100'` is empty; re-apply the Recent preset. Fixture folders and the workspace registry vanish with the run.
+- **Pagination regression (`F04.delete-all`, isolated Local run only).** Start with a QA profile using a dummy key without validation and point the default agent profile at it; select `browser viewport desktop` or `phone`. This recipe removes existing run-owned conversations and creates 23 new blanks through the actual UI. No messages are sent or models called. Run it at the end of the family. The full-count ARIA snapshot reads 23, and the final read-only API count is 0.
+
+  ```sh
+  control-openhands browser goto /
+  phone=$(control-openhands browser eval 'window.innerWidth < 768' | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8")).value')
+  panel=''
+  if [ "$phone" = true ]; then panel='testid=sidebar-mobile-drawer >> '; fi
+  ids=$(control-openhands api GET '/api/conversations/search?limit=100' --pick items | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8")).value.map(x=>x.id).join("\n")')
+  for id in $ids; do control-openhands api DELETE "/api/conversations/$id" --write; done
+  for index in $(seq 1 23); do
+    control-openhands browser goto /
+    if [ "$phone" = true ]; then control-openhands browser click 'testid=sidebar-mobile-menu-toggle'; fi
+    control-openhands browser click "${panel}testid=conversation-panel-new-thread-picker"
+    control-openhands browser click "${panel}testid=launch-no-workspace" --expect-url '/conversations/'
+  done
+  control-openhands assert --field value --equals 23 -- api GET '/api/conversations/search?limit=100' --pick items.length
+  control-openhands browser goto /
+  control-openhands browser reload
+  if [ "$phone" = true ]; then control-openhands browser click 'testid=sidebar-mobile-menu-toggle'; fi
+  control-openhands browser record start --feature F04.delete-all --name pagination-delete
+  trap 'control-openhands browser record stop --gif || true' EXIT
+  control-openhands browser click "${panel}testid=conversation-layouts-toggle"
+  control-openhands browser click 'testid=delete-all-conversations'
+  control-openhands browser wait 'role=dialog >> button[data-testid="confirm-button"]:not(:disabled)' --timeout 30000
+  control-openhands browser snapshot 'role=dialog' --feature F04.delete-all --name full-count
+  control-openhands browser screenshot --feature F04.delete-all --name confirmation
+  control-openhands browser click 'role=dialog >> testid=confirm-button'
+  control-openhands browser wait 'role=dialog' --state detached --timeout 30000
+  control-openhands browser screenshot --feature F04.delete-all --name after-delete
+  control-openhands assert --field value --equals 0 -- api GET '/api/conversations/search?limit=100' --pick items.length
+  ```
+
+- **Cleanup.** View → Delete all once, then confirm that `api GET '/api/conversations/search?limit=100'` is empty; re-apply the Recent preset. Fixture folders and the workspace registry vanish with the run.
 
 ## Gotchas
 
@@ -136,4 +168,3 @@ Preconditions:
 - `service stop agent-server` needs `control-openhands restart` and a `browser reload` before anything else works.
 - The list refreshes on an interval: a row keeps `conversation-status-working` and `Conversation <id5>` for up to about 40 s after the conversation finished. Use `browser wait ... --timeout 60000`, not an immediate `count`.
 - Model-written titles vary from run to run; match finished conversations on a word from the prompt (`has-text=pong`), never on the whole title.
-- Known issue #17919: Delete all deletes only the loaded pages, and its dialog states that smaller count (`F04.delete-all`).
