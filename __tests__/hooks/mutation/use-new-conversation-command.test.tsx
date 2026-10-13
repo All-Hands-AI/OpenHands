@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import AgentServerConversationService from "#/api/conversation-service/agent-server-conversation-service.api";
 import { useNewConversationCommand } from "#/hooks/mutation/use-new-conversation-command";
 import * as telemetry from "#/services/telemetry";
+import AgentProfilesService from "#/api/agent-profiles-service/agent-profiles-service.api";
 
 const mockNavigate = vi.fn();
 
@@ -220,6 +221,38 @@ describe("useNewConversationCommand", () => {
         sandboxId: "sandbox-abc",
       });
     });
+  });
+
+  it("launches the active agent profile rather than the global settings", async () => {
+    vi.spyOn(AgentProfilesService, "listProfiles").mockResolvedValue({
+      profiles: [
+        {
+          id: "acp-1",
+          name: "claude",
+          agent_kind: "acp",
+          revision: 1,
+          llm_profile_ref: null,
+          mcp_server_refs: null,
+        },
+      ],
+      active_agent_profile_id: "acp-1",
+    } as never);
+    const createSpy = vi
+      .spyOn(AgentServerConversationService, "createConversation")
+      .mockResolvedValue(makeStartTask() as never);
+
+    const { result } = renderHook(() => useNewConversationCommand(), {
+      wrapper,
+    });
+    await result.current.mutateAsync();
+
+    expect(createSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sandboxId: "sandbox-abc",
+        agentProfileId: "acp-1",
+        agentProfileKind: "acp",
+      }),
+    );
   });
 
   it("shows a loading toast and dismisses it on success", async () => {
