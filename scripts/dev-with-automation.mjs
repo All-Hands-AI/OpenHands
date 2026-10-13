@@ -1477,6 +1477,9 @@ async function main(options = {}) {
     // When true, enable public mode (require LOCAL_BACKEND_API_KEY,
     // don't bake session key into frontend).
     isPublic: isPublicOverride,
+    // Permit session API key injection when binding to a non-loopback host.
+    // When null, the CLI flag / AGENT_CANVAS_ALLOW_LAN_SESSION_KEY decides.
+    allowLanSessionKey: allowLanSessionKeyOverride,
     // When true, skip the npm prerequisite check. Used by the Electron desktop
     // launcher where npm is not needed at runtime in static mode.
     skipNpmCheck = false,
@@ -1504,6 +1507,12 @@ async function main(options = {}) {
   // Allow options to override CLI args for public mode
   if (isPublicOverride != null) {
     args.public = isPublicOverride;
+  }
+
+  // Allow options to override CLI args for --allow-lan-session-key
+  // (bin/agent-canvas.mjs passes it as an option rather than re-parsing argv).
+  if (allowLanSessionKeyOverride != null) {
+    args.allowLanSessionKey = allowLanSessionKeyOverride;
   }
 
   // Allow options to override CLI args (for bin/agent-canvas.mjs)
@@ -1673,6 +1682,38 @@ async function main(options = {}) {
   return { config, agentServerReady };
 }
 
+/**
+ * Session-key/auth flags for the static frontend server. Mirrors the policy
+ * applied to the Vite origin (see buildViteFrontendEnv): loopback binds keep
+ * transparent auth, off-loopback binds (and public mode) serve no credential
+ * unless the caller explicitly opts back in via --allow-lan-session-key.
+ */
+function buildStaticFrontendAuthArgs(config) {
+  const policy = applySessionKeyPolicy({
+    host: config.bindHost,
+    sessionApiKey:
+      config.launchAgentServer && !config.isPublic
+        ? config.sessionApiKey
+        : null,
+    authRequired: Boolean(config.launchAgentServer && config.isPublic),
+    allowLanSessionKey: config.allowLanSessionKey,
+    warn: (msg) => logService("static", msg, c.yellow),
+  });
+  const flags = [];
+  if (policy.sessionApiKey) {
+    flags.push("--session-api-key", policy.sessionApiKey);
+  }
+  if (policy.authRequired) {
+    flags.push("--auth-required");
+  }
+  // Propagate the opt-in to static-server so its own bind policy does not
+  // re-strip the key when the listener is off-loopback (mirrors dev-static.mjs).
+  if (config.allowLanSessionKey) {
+    flags.push("--allow-lan-session-key");
+  }
+  return flags;
+}
+
 function startStaticFrontend(config, staticDir) {
   logService("static", `Starting on port ${config.vitePort}...`, c.magenta);
   logService("static", `Serving from: ${staticDir}`, c.dim);
@@ -1701,25 +1742,7 @@ function startStaticFrontend(config, staticDir) {
       // In local mode on loopback, inject the API key so the pre-built
       // frontend can authenticate transparently. Off-loopback binds (and
       // public mode) use the API key entry screen instead.
-      ...(() => {
-        const policy = applySessionKeyPolicy({
-          host: config.bindHost,
-          sessionApiKey:
-            config.launchAgentServer && !config.isPublic
-              ? config.sessionApiKey
-              : null,
-          authRequired: Boolean(config.launchAgentServer && config.isPublic),
-          warn: (msg) => logService("static", msg, c.yellow),
-        });
-        const flags = [];
-        if (policy.sessionApiKey) {
-          flags.push("--session-api-key", policy.sessionApiKey);
-        }
-        if (policy.authRequired) {
-          flags.push("--auth-required");
-        }
-        return flags;
-      })(),
+      ...buildStaticFrontendAuthArgs(config),
       // Inject runtime-services info so the agent knows what's reachable.
       ...(runtimeServicesInfo
         ? ["--runtime-services-info", runtimeServicesInfo]
@@ -1752,6 +1775,7 @@ export {
   buildAutomationTelemetryEnv,
   buildConfig,
   buildRouteArgs,
+  buildStaticFrontendAuthArgs,
   buildViteBackendEnv,
   buildViteFrontendEnv,
   getAgentServerBaseUrl,
