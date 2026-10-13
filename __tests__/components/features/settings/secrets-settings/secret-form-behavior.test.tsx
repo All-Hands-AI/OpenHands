@@ -37,14 +37,12 @@ interface RenderFormOptions {
   mode?: "add" | "edit";
   selectedSecret?: string | null;
   onCancel?: () => void;
-  onSaved?: (secret: { name: string; description?: string }) => void;
 }
 
 function renderForm({
   mode = "add",
   selectedSecret = null,
   onCancel = vi.fn(),
-  onSaved = vi.fn(),
 }: RenderFormOptions = {}) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -56,11 +54,10 @@ function renderForm({
         mode={mode}
         selectedSecret={selectedSecret}
         onCancel={onCancel}
-        onSaved={onSaved}
       />
     </QueryClientProvider>,
   );
-  return { ...view, invalidate, onCancel, onSaved };
+  return { ...view, invalidate, onCancel };
 }
 
 beforeEach(() => {
@@ -253,7 +250,7 @@ describe("Secret form behavior", () => {
 
   it("creates a trimmed secret, refreshes both secret lists, and closes after settlement", async () => {
     const user = userEvent.setup();
-    const { invalidate, onCancel, onSaved } = renderForm();
+    const { invalidate, onCancel } = renderForm();
 
     await user.type(screen.getByTestId("name-input"), "NEW_SECRET");
     await user.type(screen.getByTestId("value-input"), "  secret value  ");
@@ -272,16 +269,11 @@ describe("Secret form behavior", () => {
 
     expect(invalidate).not.toHaveBeenCalled();
     expect(onCancel).not.toHaveBeenCalled();
-    expect(onSaved).not.toHaveBeenCalled();
 
     await act(async () => options.onSuccess());
 
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["secrets-search"] });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["secrets"] });
-    expect(onSaved).toHaveBeenCalledExactlyOnceWith({
-      name: "NEW_SECRET",
-      description: "for deployments",
-    });
     expect(onCancel).not.toHaveBeenCalled();
 
     options.onSettled();

@@ -13,20 +13,17 @@ import {
 import { BrandButton } from "../brand-button";
 import { useSearchSecrets } from "#/hooks/query/use-get-secrets";
 import { OptionalTag } from "../optional-tag";
-import type { CustomSecretInput } from "#/api/agent-server-adapter";
 
 interface SecretFormProps {
   mode: "add" | "edit";
   selectedSecret: string | null;
   onCancel: () => void;
-  onSaved?: (secret: CustomSecretInput) => void;
 }
 
 export function SecretForm({
   mode,
   selectedSecret,
   onCancel,
-  onSaved,
 }: SecretFormProps) {
   const queryClient = useQueryClient();
   const { t } = useTranslation("openhands");
@@ -76,10 +73,7 @@ export function SecretForm({
       { name, value, description },
       {
         onSettled: onCancel,
-        onSuccess: () => {
-          invalidateSecrets();
-          onSaved?.({ name, description });
-        },
+        onSuccess: invalidateSecrets,
       },
     );
   };
@@ -94,10 +88,7 @@ export function SecretForm({
       { secretToEdit, name, description, value },
       {
         onSettled: onCancel,
-        onSuccess: () => {
-          invalidateSecrets();
-          onSaved?.({ name, description });
-        },
+        onSuccess: invalidateSecrets,
       },
     );
   };
