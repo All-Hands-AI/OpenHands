@@ -5,6 +5,7 @@ import AgentServerConversationService from "#/api/conversation-service/agent-ser
 import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation";
 
 describe("useDeleteConversation", () => {
+  // @spec CD-002 — Mutation callbacks preserve the caller's captured scope
   it("keeps the caller's captured delete scope across an asynchronous onMutate", async () => {
     const deleteSpy = vi.spyOn(AgentServerConversationService, "deleteConversation").mockResolvedValue(undefined);
     const scope = AgentServerConversationService.createConversationDeletionScope();

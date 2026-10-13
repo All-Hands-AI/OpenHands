@@ -834,6 +834,7 @@ export function ConversationPanel({
     setConfirmDeleteAllVisible(false);
   };
 
+  // @spec CD-001 — Enumerate all pages before confirming bulk deletion
   const handleRequestDeleteAll = async () => {
     const request = ++deleteAllRequest.current;
     setDeleteAllPreparation("loading");
@@ -862,6 +863,7 @@ export function ConversationPanel({
     if (deleteAllPreparation !== "ready" || isDeletingAll) return;
     // Every item, including its planning children, belongs to this confirmed
     // backend/org even if the host changes selection while requests await.
+    // @spec CD-002 — Capture transport before mutation callbacks await
     const deletionScope =
       AgentServerConversationService.createConversationDeletionScope();
     setIsDeletingAll(true);
