@@ -637,10 +637,10 @@ describe("AgentProfilesLocalView save mapping", () => {
 
       expect(input).toHaveAttribute("aria-invalid", "true");
       expect(input).toHaveAccessibleDescription(
-        "SETTINGS$META_PROFILE_NAME_TAKEN",
+        "SETTINGS$AGENT_PROFILE_NAME_TAKEN",
       );
       expect(screen.getByRole("alert")).toHaveTextContent(
-        "SETTINGS$META_PROFILE_NAME_TAKEN",
+        "SETTINGS$AGENT_PROFILE_NAME_TAKEN",
       );
       expect(screen.getByTestId("save-agent-profile-btn")).toBeDisabled();
 
@@ -679,7 +679,7 @@ describe("AgentProfilesLocalView save mapping", () => {
 
       expect(input).toHaveAttribute("aria-invalid", "true");
       expect(input).toHaveAccessibleDescription(
-        "SETTINGS$META_PROFILE_NAME_TAKEN",
+        "SETTINGS$AGENT_PROFILE_NAME_TAKEN",
       );
       expect(screen.getByTestId("save-agent-profile-btn")).toBeDisabled();
     });

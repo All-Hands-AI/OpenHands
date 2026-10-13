@@ -1,7 +1,6 @@
 import { useRef, useCallback, useEffect } from "react";
 import {
   isContentEmpty,
-  clearEmptyContent,
   getTextContent,
 } from "#/components/features/chat/utils/chat-input.utils";
 import {
@@ -97,11 +96,6 @@ export const useChatInputLogic = () => {
     [],
   );
 
-  // Helper function to properly clear contentEditable for placeholder display
-  const clearEmptyContentHandler = useCallback((): void => {
-    clearEmptyContent(chatInputRef.current);
-  }, []);
-
   // Get current message text
   const getCurrentMessage = useCallback(
     (): string => getTextContent(chatInputRef.current),
@@ -112,7 +106,6 @@ export const useChatInputLogic = () => {
     chatInputRef,
     messageToSend,
     checkIsContentEmpty,
-    clearEmptyContentHandler,
     getCurrentMessage,
     saveDraft,
     clearDraft,

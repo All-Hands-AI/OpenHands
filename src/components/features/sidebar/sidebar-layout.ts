@@ -12,9 +12,6 @@ export const SIDEBAR_ICON_SLOT_CLASS =
 export const SIDEBAR_COLLAPSED_ICON_SLOT_CLASS =
   "relative h-9 min-h-9 max-h-9 w-full shrink-0";
 
-export const SIDEBAR_HEADER_ROW_CLASS =
-  "flex h-10 min-h-10 shrink-0 items-center gap-2 pl-2.5 pr-2.5 w-full";
-
 export function sidebarHeaderRowClassName(collapsed: boolean): string {
   return cn(
     "flex h-10 min-h-10 shrink-0 items-center w-full",
