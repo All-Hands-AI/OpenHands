@@ -25,7 +25,7 @@ function isMissingEventFileError(err: unknown): boolean {
     if (errorWithStatus.status === 500) {
       const body = errorWithStatus.response?.body ?? errorWithStatus.body;
       const bodyStr = typeof body === "string" ? body : JSON.stringify(body);
-      if (bodyStr && bodyStr.includes("Missing event file")) return true;
+      if (bodyStr?.includes("Missing event file")) return true;
     }
   }
   return err instanceof Error && err.message.includes("Missing event file");
