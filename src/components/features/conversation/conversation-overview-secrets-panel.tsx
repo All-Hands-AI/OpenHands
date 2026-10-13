@@ -5,6 +5,8 @@ import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { useSearchSecrets } from "#/hooks/query/use-get-secrets";
 import { useDeleteSecret } from "#/hooks/mutation/use-delete-secret";
+import { useUpdateConversationSecrets } from "#/hooks/mutation/use-update-conversation-secrets";
+import { useOptionalConversationId } from "#/hooks/use-conversation-id";
 import { SecretForm } from "#/components/features/settings/secrets-settings/secret-form";
 import { ConfirmationModal } from "#/components/shared/modals/confirmation-modal";
 import { cn } from "#/utils/utils";
@@ -25,6 +27,8 @@ export function ConversationOverviewSecretsPanel({
 
   const { data: secrets, isLoading } = useSearchSecrets();
   const { mutate: deleteSecret, isPending: isDeleting } = useDeleteSecret();
+  const { conversationId } = useOptionalConversationId();
+  const { mutate: updateConversationSecrets } = useUpdateConversationSecrets();
 
   const [view, setView] = useState<"list" | "add-secret-form">("list");
   const [secretToDelete, setSecretToDelete] = useState<string | null>(null);
@@ -58,6 +62,11 @@ export function ConversationOverviewSecretsPanel({
           mode="add"
           selectedSecret={null}
           onCancel={() => setView("list")}
+          onSaved={(secret) => {
+            if (conversationId) {
+              updateConversationSecrets({ conversationId, secrets: [secret] });
+            }
+          }}
         />
       </div>
     );
