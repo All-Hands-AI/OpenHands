@@ -1,0 +1,41 @@
+09:17:52 [static] /redoc -> http://127.0.0.1:18961
+09:17:52 [static] /docs -> http://127.0.0.1:18961
+09:17:52 [static] /api -> http://127.0.0.1:18961
+09:17:52 [static] * (default) -> static files + SPA fallback
+09:17:52 [automation] Exited with code 1
+09:17:54 [ingress] Starting on port 18960...
+09:17:54 [ingress] ╔═══════════════════════════════════════════════════════════════╗
+09:17:54 [ingress] ║  Ingress Proxy                                                ║
+09:17:54 [ingress] ╠═══════════════════════════════════════════════════════════════╣
+09:17:54 [ingress] ║  Listening on: http://localhost:18960/                          ║
+09:17:54 [ingress] ╠═══════════════════════════════════════════════════════════════╣
+09:17:54 [ingress] ║  Routes:                                                      ║
+09:17:54 [ingress] ║      /api/automation → http://127.0.0.1:18962                 ║
+09:17:54 [ingress] ║      /openapi.json → http://127.0.0.1:18961                   ║
+09:17:54 [ingress] ║      /server_info → http://127.0.0.1:18961                    ║
+09:17:54 [ingress] ║      /sockets → http://127.0.0.1:18961                        ║
+09:17:54 [ingress] ║      /health → http://127.0.0.1:18961                         ║
+09:17:54 [ingress] ║      /vscode → http://127.0.0.1:19961                         ║
+09:17:54 [ingress] ║      /ready → http://127.0.0.1:18961                          ║
+09:17:54 [ingress] ║      /alive → http://127.0.0.1:18961                          ║
+09:17:54 [ingress] ║      /redoc → http://127.0.0.1:18961                          ║
+09:17:54 [ingress] ║      /docs → http://127.0.0.1:18961                           ║
+09:17:54 [ingress] ║      /api → http://127.0.0.1:18961                            ║
+09:17:54 [ingress] ║      * (default) → http://localhost:18963                     ║
+09:17:54 [ingress] ║                                                               ║
+09:17:54 [ingress] ╚═══════════════════════════════════════════════════════════════╝
+
+╔══════════════════════════════════════════════════════════════╗
+║  Agent Canvas + Automation Stack                             ║
+╠══════════════════════════════════════════════════════════════╣
+║                                                              ║
+║  Ingress:      http://localhost:18960/                       ║
+║  Main UI:      http://localhost:18960/                       ║
+║  API Docs:     http://localhost:18960/api/automation/docs    ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+
+State directory: /tmp/claude-0/-home-user/57d719a1-92e2-58a1-a0aa-981ea9d13b23/scratchpad/ohv/2026-10-13T0856-d41925/private/f26-autofail/state
+Press Ctrl+C to stop
+
+09:18:09 [ingress] [ingress:18960] Proxy error -> http://127.0.0.1:18962/: connect ECONNREFUSED 127.0.0.1:18962
