@@ -9,13 +9,11 @@ import {
   DEEP_PLAN_CITATION_SCHEME,
   deepPlanDocumentId,
   deepPlanSectionId,
+  definedSectionOfHeading,
   linkifyCitations,
   parseDeepPlanCitation,
 } from "#/utils/deep-plan-reference";
 import { DEEP_PLAN_PHASE_LABEL_KEY } from "#/utils/deep-plan-messages";
-
-/** A heading whose leading token is a numeric section, e.g. `4.2 Login`. */
-const SECTION_HEADING = /^([0-9]+(?:\.[0-9]+)*)(?:\s|$)/;
 
 function textOf(node: React.ReactNode): string {
   if (typeof node === "string" || typeof node === "number") return String(node);
@@ -68,11 +66,20 @@ export const DeepPlanDocument = React.memo(function DeepPlanDocument({
     ({
       href,
       children,
+      ...rest
     }: React.ClassAttributes<HTMLAnchorElement> &
       React.AnchorHTMLAttributes<HTMLAnchorElement> &
       ExtraProps) => {
       if (!href?.startsWith(DEEP_PLAN_CITATION_SCHEME)) {
-        return <a href={href}>{children}</a>;
+        // A non-citation link is an ordinary external link; render it through
+        // the plan anchor so it keeps `target="_blank"` and
+        // `rel="noopener noreferrer"` instead of a bare `<a>`.
+        const PlanAnchor = planComponents.a;
+        return (
+          <PlanAnchor href={href} {...rest}>
+            {children}
+          </PlanAnchor>
+        );
       }
       return (
         <a
@@ -94,7 +101,7 @@ export const DeepPlanDocument = React.memo(function DeepPlanDocument({
         children,
         ...rest
       }: React.ComponentProps<typeof Heading>) {
-        const section = SECTION_HEADING.exec(textOf(children))?.[1];
+        const section = definedSectionOfHeading(textOf(children)) ?? undefined;
         return (
           <Heading {...rest}>
             {section ? (

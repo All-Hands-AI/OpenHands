@@ -44,6 +44,14 @@ export interface RefReport {
 }
 
 const REFERENCE_PATTERN = /\[(Req|DB|BE|FE)\s+([0-9]+(?:\.[0-9]+)*)\]/g;
+/**
+ * A citation to rewrite, or a span whose contents must stay verbatim. The
+ * protected alternative is listed first and covers fenced code (``` / ~~~),
+ * inline code spans and Markdown links, so a citation written inside one of
+ * them is returned unchanged instead of being turned into a nested link.
+ */
+const CITATION_OR_PROTECTED =
+  /(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`|\[(?:[^[\]\n]|\[[^\]\n]*\])*\]\([^)\n]*\))|\[(Req|DB|BE|FE)\s+([0-9]+(?:\.[0-9]+)*)\]/g;
 const HEADING_PATTERN = /^#{1,6}\s+(.*)$/;
 /**
  * An inline Markdown delimiter that may wrap a heading's leading section
@@ -218,8 +226,16 @@ export function linkifyCitations(
 ): string {
   const upstream = new Set(upstreamPhasesOf(from));
   return content.replace(
-    REFERENCE_PATTERN,
-    (match, label: DeepPlanLabel, section: string) => {
+    CITATION_OR_PROTECTED,
+    (
+      match,
+      protectedSpan: string | undefined,
+      label: DeepPlanLabel | undefined,
+      section: string | undefined,
+    ) => {
+      // Code spans and existing links keep their contents verbatim.
+      if (protectedSpan !== undefined) return match;
+      if (label === undefined || section === undefined) return match;
       const target = DEEP_PLAN_LABEL_TO_PHASE[label];
       if (target === from) return match;
       if (!upstream.has(target)) return match;
@@ -271,7 +287,16 @@ export function validateDocumentChain(
       // would only re-derive it — and, because requirements has no upstream at
       // all, every self-label would otherwise read as `not-upstream` and block
       // the checkpoint meant to confirm the very sections it names.
-      if (target === phase.id) continue;
+      //
+      // A self-label that names a section the document never defines is still a
+      // broken citation, though: `[DB 9.9]` in a body that has no `9.9` heading
+      // must be reported rather than waved through as a self-definition.
+      if (target === phase.id) {
+        if (!sectionsByPhase.get(phase.id)?.has(section)) {
+          issues.push({ from: phase.id, ref, reason: "dangling" });
+        }
+        continue;
+      }
 
       if (!upstream.has(target)) {
         issues.push({ from: phase.id, ref, reason: "not-upstream" });

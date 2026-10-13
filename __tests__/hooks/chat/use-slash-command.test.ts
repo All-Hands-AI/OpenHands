@@ -159,6 +159,38 @@ describe("useSlashCommand", () => {
     expect(commands).toEqual(expect.arrayContaining(["/btw", "/code-search"]));
   });
 
+  it("includes /deep-plan in the built-in commands on a local backend", () => {
+    // Deep Planning is provisioned only on local backends.
+    mockConversation.data = { conversation_version: "V1" };
+    mockSkills.data = [];
+
+    const ref = makeChatInputRef();
+    const { result } = renderHook(() => useSlashCommand(ref));
+
+    expect(result.current.filteredItems.map((i) => i.command)).toContain(
+      "/deep-plan",
+    );
+  });
+
+  it("excludes /deep-plan from the built-in commands on a cloud backend", () => {
+    // The mode's interceptor is local-only, so the menu must not offer it on
+    // Cloud where entering it can never provision a planner.
+    setRegisteredBackends([cloudBackend]);
+    setActiveSelection({ backendId: cloudBackend.id });
+    mockConversation.data = { conversation_version: "V1" };
+    mockSkills.data = [];
+
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(ActiveBackendProvider, null, children);
+
+    const ref = makeChatInputRef();
+    const { result } = renderHook(() => useSlashCommand(ref), { wrapper });
+
+    const commands = result.current.filteredItems.map((i) => i.command);
+    expect(commands).not.toContain("/deep-plan");
+    expect(commands).toContain("/plan");
+  });
+
   it("includes /new in the built-in commands on a cloud backend", () => {
     // Arrange
     setRegisteredBackends([cloudBackend]);

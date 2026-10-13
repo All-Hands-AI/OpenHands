@@ -296,7 +296,9 @@ describe("validateDocumentChain", () => {
   it("still reports a downstream citation to a document that cites only itself", () => {
     // A self-label is not an upstream definition: the database design cannot
     // resolve `[Req 3.1]` against the requirements' own annotation unless the
-    // heading actually defines section 3.1.
+    // heading actually defines section 3.1. The requirements' unnumbered
+    // `## Users [Req 3.1]` is itself a self-label to an undefined section, so
+    // it is reported as dangling too (see the self-label rule in the validator).
     const documents: DeepPlanDocuments = {
       requirements: "## Users [Req 3.1]",
       database: "## 2.1 Users [Req 3.1]",
@@ -307,8 +309,38 @@ describe("validateDocumentChain", () => {
 
     expect(report.ok).toBe(false);
     expect(report.issues).toEqual([
+      { from: "requirements", ref: "Req 3.1", reason: "dangling" },
       { from: "database", ref: "Req 3.1", reason: "dangling" },
     ]);
+  });
+
+  it("reports a self-label naming a section the document never defines", () => {
+    // `[DB 9.9]` in the database body is the document's own label, but no
+    // `9.9` heading defines it, so it is a broken citation rather than a
+    // self-definition.
+    const documents: DeepPlanDocuments = {
+      requirements: "## 3.1 Users",
+      database: "## 2.1 Schema\n\nSee [DB 9.9].",
+    };
+
+    const report = validateDocumentChain(documents, "database");
+
+    expect(report.ok).toBe(false);
+    expect(report.issues).toEqual([
+      { from: "database", ref: "DB 9.9", reason: "dangling" },
+    ]);
+  });
+
+  it("accepts a self-label that names a section the document defines", () => {
+    const documents: DeepPlanDocuments = {
+      requirements: "## 3.1 Users",
+      database: "### 9.9 Schema [DB 9.9]",
+    };
+
+    const report = validateDocumentChain(documents, "database");
+
+    expect(report.ok).toBe(true);
+    expect(report.issues).toEqual([]);
   });
 
   it("reports a citation to an upstream document that has not been produced", () => {
@@ -540,6 +572,31 @@ describe("linkifyCitations", () => {
   it("leaves a document's own-label definition unlinked", () => {
     const out = linkifyCitations("## [Req 3.1] Users", "requirements");
     expect(out).toBe("## [Req 3.1] Users");
+  });
+
+  it("leaves a citation inside an inline code span verbatim", () => {
+    const out = linkifyCitations("Use `[Req 3.1]` as the marker", "backend");
+    expect(out).toBe("Use `[Req 3.1]` as the marker");
+  });
+
+  it("leaves a citation inside fenced code verbatim", () => {
+    const content = ["```", "[Req 3.1]", "```"].join("\n");
+    expect(linkifyCitations(content, "backend")).toBe(content);
+  });
+
+  it("leaves a citation inside an existing link verbatim", () => {
+    const out = linkifyCitations(
+      "See [the requirement [Req 3.1]](https://example.com)",
+      "backend",
+    );
+    expect(out).toBe("See [the requirement [Req 3.1]](https://example.com)");
+  });
+
+  it("still links a real citation outside a protected span", () => {
+    const out = linkifyCitations("Use `code` then cite [Req 3.1]", "backend");
+    expect(out).toBe(
+      "Use `code` then cite [[Req 3.1]](deep-plan-doc:requirements#3.1)",
+    );
   });
 });
 

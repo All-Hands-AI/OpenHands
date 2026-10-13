@@ -1,7 +1,12 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useConversationSkills } from "#/hooks/query/use-conversation-skills";
 import { SkillInfo } from "#/types/settings";
-import { BUILT_IN_COMMANDS, MODEL_COMMAND } from "#/utils/constants";
+import {
+  BUILT_IN_COMMANDS,
+  DEEP_PLAN_COMMAND,
+  MODEL_COMMAND,
+} from "#/utils/constants";
+import { isDeepPlanSupported } from "#/utils/deep-plan";
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import { useLlmProfiles } from "#/hooks/query/use-llm-profiles";
 import { useFreeModels } from "#/hooks/query/use-free-models";
@@ -39,7 +44,12 @@ export const useSlashCommand = (
   // Scope the skill catalog to this conversation's attached workspace so the
   // slash menu lists the same project skills that were loaded into it.
   const { data: skills, isLoading: isSkillsLoading } = useConversationSkills();
-  const isCloud = useActiveBackend().backend.kind === "cloud";
+  const { backend } = useActiveBackend();
+  const isCloud = backend.kind === "cloud";
+  // Deep Planning is only provisioned on local backends, so the built-in
+  // `/deep-plan` entry must not be offered on Cloud (its interceptor is gated
+  // the same way).
+  const deepPlanSupported = isDeepPlanSupported(backend.kind);
   const { data: profilesData, isLoading: isProfilesLoading } = useLlmProfiles();
   const freeModels = useFreeModels();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -57,6 +67,7 @@ export const useSlashCommand = (
   const slashItems = useMemo(() => {
     const items: SlashCommandItem[] = BUILT_IN_COMMANDS.filter((cmd) => {
       if (cmd.command === "/new") return isCloud;
+      if (cmd.command === DEEP_PLAN_COMMAND) return deepPlanSupported;
       return true;
     });
 
@@ -79,7 +90,7 @@ export const useSlashCommand = (
       }
     });
     return items;
-  }, [skills, isSkillsLoading, isCloud]);
+  }, [skills, isSkillsLoading, isCloud, deepPlanSupported]);
 
   const modelProfileItems = useMemo<SlashCommandItem[]>(() => {
     return (profilesData?.profiles ?? []).map((profile) => {

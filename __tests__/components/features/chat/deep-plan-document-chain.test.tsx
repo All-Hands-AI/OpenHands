@@ -13,7 +13,9 @@ const documents = {
   ),
 };
 
-const setup = (docs = documents) =>
+const setup = (
+  docs: Partial<Record<"requirements" | "backend", string>> = documents,
+) =>
   renderWithProviders(
     <DeepPlanDocumentChain documents={docs} expandedPhase="backend" />,
   );
@@ -54,6 +56,31 @@ describe("DeepPlanDocumentChain", () => {
     setup();
     await user.click(screen.getByTestId("deep-plan-citation"));
     expect(scrollIntoView).toHaveBeenCalled();
+  });
+
+  it("stamps a self-label heading with the section it spells out", () => {
+    // `## [Req 3.1] Users` defines 3.1 via the validator's own parser, so the
+    // renderer anchors it too — the same section a citation links to.
+    setup({
+      requirements: ["# Requirements", "", "## [Req 3.1] Users"].join("\n"),
+    });
+    expect(
+      document.getElementById("deep-plan-section-requirements-3.1")?.id,
+    ).toBe("deep-plan-section-requirements-3.1");
+  });
+
+  it("keeps target and rel on an external link", () => {
+    setup({
+      backend: [
+        "# Backend design",
+        "",
+        "See [the docs](https://example.com) for details.",
+      ].join("\n"),
+    });
+    const link = screen.getByRole("link", { name: "the docs" });
+    expect(link).toHaveAttribute("href", "https://example.com");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link.getAttribute("rel")).toContain("noopener");
   });
 
   it("marks the expanded phase document as open", () => {
