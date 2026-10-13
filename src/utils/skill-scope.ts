@@ -125,3 +125,18 @@ export function groupSkillsByScope(
 
   return groups;
 }
+
+/**
+ * Unique, stable identifier for a skill definition across different sources.
+ * Distinguishes local vs. bundled skills even when they share the same name,
+ * preventing React key collisions.
+ */
+export function getSkillKey(skill: {
+  name: string;
+  source?: string | null;
+  type?: string;
+}): string {
+  const source = skill.source?.trim() || "public";
+  const type = skill.type || "knowledge";
+  return `${skill.name}::${source}::${type}`;
+}

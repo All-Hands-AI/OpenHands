@@ -10,6 +10,7 @@ import { modalTitleLgClassName } from "#/utils/modal-classes";
 import { extensionModuleCardPillClassName } from "#/utils/extension-module-card-classes";
 import type { PluginViewModel } from "./build-plugins-view-model";
 import { PluginFilesSection } from "./plugin-files-section";
+import { getSkillKey } from "#/utils/skill-scope";
 
 interface PluginDetailModalProps {
   plugin: PluginViewModel;
@@ -114,7 +115,7 @@ export function PluginDetailModal({
               <ul className="flex min-w-0 flex-col gap-2">
                 {plugin.skills.map((skill) => (
                   <li
-                    key={skill.name}
+                    key={getSkillKey(skill)}
                     data-testid={`plugin-bundled-skill-${skill.name}`}
                     className="flex items-start gap-3 rounded-lg border border-border bg-contrast/[0.04] px-3 py-2.5"
                   >

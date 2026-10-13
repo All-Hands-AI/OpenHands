@@ -24,6 +24,7 @@ import {
   extensionModuleCardGridContainerClassName,
   extensionModuleEmptyStateClassName,
 } from "#/utils/extension-module-card-classes";
+import { getSkillKey } from "#/utils/skill-scope";
 import type { SkillInfo } from "#/types/settings";
 import { cn } from "#/utils/utils";
 import {
@@ -174,7 +175,7 @@ export function ConversationOverviewSkillsPanel({
           <div className={cn(extensionModuleCardGridClassName, "grid-cols-1")}>
             {filteredSkills.map((skill) => (
               <SkillCard
-                key={skill.name}
+                key={getSkillKey(skill)}
                 skill={skill}
                 enabled={isEnabled(skill)}
                 onOpen={() => setSelectedSkill(skill)}
