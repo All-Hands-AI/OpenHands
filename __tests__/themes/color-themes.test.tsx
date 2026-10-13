@@ -87,6 +87,15 @@ describe("color themes", () => {
           `--oh-feedback-warning against ${surfaceName}`,
         ).toBeGreaterThanOrEqual(4.5);
       }
+
+      // @spec TN-001 — Toast text stays readable on the toast surface
+      expect(
+        contrast(
+          luminance(resolve("--oh-contrast")),
+          luminance(resolve("--oh-color-tertiary")),
+        ),
+        "--oh-contrast against the toast surface",
+      ).toBeGreaterThanOrEqual(4.5);
     },
   );
 
