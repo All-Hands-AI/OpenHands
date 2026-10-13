@@ -1,0 +1,17 @@
+{
+  "run": "<owned-run>",
+  "browser": {
+    "stopped": true,
+    "pid": 21957
+  },
+  "launcherStopped": true,
+  "ports": {
+    "ingress": "closed",
+    "agentServer": "closed",
+    "automation": "closed",
+    "frontend": "closed",
+    "vscode": "closed"
+  },
+  "evidenceFiles": 0,
+  "ok": true
+}

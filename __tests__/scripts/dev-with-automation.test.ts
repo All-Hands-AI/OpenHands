@@ -347,8 +347,13 @@ describe("buildConfig", () => {
       }
     `;
     // Only command discovery is stubbed. No backend executes in this probe.
-    const uvx = path.join(probeHome, "uvx");
-    writeFileSync(uvx, "#!/bin/sh\nexit 0\n", { mode: 0o700 });
+    if (process.platform === "win32") {
+      writeFileSync(path.join(probeHome, "uvx.cmd"), "@exit /b 0\r\n");
+    } else {
+      writeFileSync(path.join(probeHome, "uvx"), "#!/bin/sh\nexit 0\n", {
+        mode: 0o700,
+      });
+    }
     const result = spawnSync(
       process.execPath,
       ["--input-type=module", "-e", script],

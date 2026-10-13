@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "id": "1c7e70b0-ac47-4007-bdac-61f4361ed767",
+  "prompt": "Run exactly one terminal command in the same existing terminal: printf \"%s\\n\" \"$QA_TMUX_SENTINEL\". Do not set or change the variable. Do not run any other comma",
+  "chars": 218,
+  "title": "\u2705 Run QA terminal sentinel command",
+  "status": "finished",
+  "model": "deepseek/deepseek-flash",
+  "workspace": "<owned-run>/workspace/qa-terminal",
+  "updatedAt": "2026-10-13T05:45:17.857334Z",
+  "waitedFor": [
+    "idle",
+    "finished",
+    "error",
+    "stuck",
+    "paused",
+    "waiting_for_confirmation"
+  ]
+}

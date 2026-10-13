@@ -1,0 +1,102 @@
+[
+  {
+    "ts": "2026-10-13T05:25:10.467Z",
+    "id": "F26.tmux-directory",
+    "name": "once",
+    "label": "baseline",
+    "attempt": 1,
+    "status": "xfail",
+    "sha": "aac27fd212a3ab02",
+    "file": "../../../../../../../..bug-recipes.md:9",
+    "exitCode": 1,
+    "failedLine": 1,
+    "failedCommand": "control-openhands assert --field directoryExists --equals true --bug-shows false -- fixture tmux-directory",
+    "assertion": {
+      "kind": "mismatch",
+      "expected": "true",
+      "actual": "false",
+      "bugShows": "false"
+    },
+    "doctorBefore": true,
+    "doctorAfter": true,
+    "elapsedMs": 158,
+    "revision": "c3325d2b405e08d712a91872c905524a13d59c25",
+    "backend": "local agent-server 1.54.0 automation 1.19.3",
+    "viewport": "1440x900",
+    "transcript": "transcripts/baseline/F26.tmux-directory-once-1791869104713-1.json"
+  },
+  {
+    "ts": "2026-10-13T05:25:16.175Z",
+    "id": "F26.tmux-directory",
+    "name": "once",
+    "label": "baseline",
+    "attempt": 2,
+    "status": "xfail",
+    "sha": "aac27fd212a3ab02",
+    "file": "../../../../../../../..bug-recipes.md:9",
+    "exitCode": 1,
+    "failedLine": 1,
+    "failedCommand": "control-openhands assert --field directoryExists --equals true --bug-shows false -- fixture tmux-directory",
+    "assertion": {
+      "kind": "mismatch",
+      "expected": "true",
+      "actual": "false",
+      "bugShows": "false"
+    },
+    "doctorBefore": true,
+    "doctorAfter": true,
+    "elapsedMs": 155,
+    "revision": "c3325d2b405e08d712a91872c905524a13d59c25",
+    "backend": "local agent-server 1.54.0 automation 1.19.3",
+    "viewport": "1440x900",
+    "transcript": "transcripts/baseline/F26.tmux-directory-once-1791869110468-2.json"
+  },
+  {
+    "ts": "2026-10-13T05:39:41.404Z",
+    "id": "F26.tmux-directory",
+    "name": "once",
+    "label": "fix",
+    "attempt": 1,
+    "status": "xpass",
+    "sha": "aac27fd212a3ab02",
+    "file": "../../../../../../../..bug-recipes.md:9",
+    "exitCode": 0,
+    "failedLine": null,
+    "assertion": {
+      "kind": "hold",
+      "expected": "true",
+      "actual": "true",
+      "bugShows": "false"
+    },
+    "doctorBefore": true,
+    "elapsedMs": 376,
+    "revision": "853053285a5d034a8481768a91a876e489b812ea",
+    "backend": "local agent-server 1.54.0 automation 1.19.3",
+    "viewport": "1440x900",
+    "transcript": "transcripts/fix/F26.tmux-directory-once-1791869978261-1.json"
+  },
+  {
+    "ts": "2026-10-13T05:39:44.284Z",
+    "id": "F26.tmux-directory",
+    "name": "once",
+    "label": "fix",
+    "attempt": 2,
+    "status": "xpass",
+    "sha": "aac27fd212a3ab02",
+    "file": "../../../../../../../..bug-recipes.md:9",
+    "exitCode": 0,
+    "failedLine": null,
+    "assertion": {
+      "kind": "hold",
+      "expected": "true",
+      "actual": "true",
+      "bugShows": "false"
+    },
+    "doctorBefore": true,
+    "elapsedMs": 168,
+    "revision": "853053285a5d034a8481768a91a876e489b812ea",
+    "backend": "local agent-server 1.54.0 automation 1.19.3",
+    "viewport": "1440x900",
+    "transcript": "transcripts/fix/F26.tmux-directory-once-1791869981405-2.json"
+  }
+]
