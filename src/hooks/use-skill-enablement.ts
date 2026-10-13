@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { getActiveBackend } from "#/api/backend-registry/active-store";
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { useSettings } from "#/hooks/query/use-settings";
@@ -81,7 +82,7 @@ function withMembership(
  */
 export function useSkillEnablement(): SkillEnablementController {
   const { t } = useTranslation("openhands");
-  const { backend } = useActiveBackend();
+  const { backend, orgId } = useActiveBackend();
   const usesCatalogAllowList = backend.kind !== "cloud";
   const { data: settings, isLoading: settingsLoading } = useSettings();
 
@@ -90,8 +91,28 @@ export function useSkillEnablement(): SkillEnablementController {
   const persistedRef = React.useRef<SkillEnablement>({});
   const hydratingRef = React.useRef(false);
   const hydrationVersionRef = React.useRef(0);
+  const ownerGenerationRef = React.useRef(0);
+
+  React.useEffect(() => {
+    ownerGenerationRef.current += 1;
+  }, [backend.id, orgId]);
+
   const { mutate: saveSettings } = useSaveSettings("personal", {
-    onPersisted: (saved) => {
+    onMutate: () => ({
+      backendId: backend.id,
+      orgId,
+      ownerGeneration: ownerGenerationRef.current,
+    }),
+    onPersisted: (saved, dispatched) => {
+      if (!dispatched) return;
+      const active = getActiveBackend();
+      if (
+        active.backend.id !== dispatched.backendId ||
+        active.orgId !== dispatched.orgId ||
+        ownerGenerationRef.current !== dispatched.ownerGeneration
+      ) {
+        return;
+      }
       persistedRef.current = {
         enabledSkills:
           saved.enabled_skills ?? persistedRef.current.enabledSkills,
@@ -102,14 +123,19 @@ export function useSkillEnablement(): SkillEnablementController {
   });
 
   React.useEffect(() => {
+    // Invalidate pending callbacks even while the next backend is loading, or
+    // when a switch back reuses identical cached skill lists.
+    hydrationVersionRef.current += 1;
+    savedRef.current = null;
     if (settingsLoading || !settings) return;
     const hydrated = readSkillEnablement(settings, usesCatalogAllowList);
     persistedRef.current = hydrated;
-    hydrationVersionRef.current += 1;
     hydratingRef.current = true;
     savedRef.current = snapshot(hydrated);
     setEnablement(hydrated);
   }, [
+    backend.id,
+    orgId,
     settingsLoading,
     settings?.enabled_skills,
     settings?.disabled_skills,

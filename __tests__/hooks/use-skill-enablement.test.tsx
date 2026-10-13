@@ -3,6 +3,11 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import SettingsService from "#/api/settings-service/settings-service.api";
+import {
+  setActiveSelection,
+  setRegisteredBackends,
+} from "#/api/backend-registry/active-store";
+import { ActiveBackendProvider } from "#/contexts/active-backend-context";
 import { useSkillEnablement } from "#/hooks/use-skill-enablement";
 import { useSettings } from "#/hooks/query/use-settings";
 import { SETTINGS_QUERY_KEYS } from "#/hooks/query/query-keys";
@@ -11,13 +16,18 @@ import { CATALOG_SKILL_NAMES } from "#/utils/skill-enablement";
 import type { Settings, SkillInfo } from "#/types/settings";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
-const active = vi.hoisted(() => ({
-  backend: { id: "test-backend", kind: "local" },
-  orgId: null,
-}));
-vi.mock("#/contexts/active-backend-context", () => ({
-  useActiveBackend: () => active,
-}));
+function selectBackend(kind: "local" | "cloud") {
+  setRegisteredBackends([
+    {
+      id: "test-backend",
+      name: "Test",
+      host: "http://localhost:18100",
+      apiKey: "",
+      kind,
+    },
+  ]);
+  setActiveSelection({ backendId: "test-backend" });
+}
 vi.mock("#/hooks/use-tracking", () => ({
   useTracking: () => ({ trackMcpConfigUpdated: vi.fn() }),
 }));
@@ -32,7 +42,7 @@ describe("useSkillEnablement", () => {
   const otherSkill = { name: "project-skill" } as SkillInfo;
 
   beforeEach(() => {
-    active.backend.kind = "local";
+    selectBackend("local");
     settings = {
       ...DEFAULT_SETTINGS,
       enabled_skills: [],
@@ -57,14 +67,16 @@ describe("useSkillEnablement", () => {
 
   function wrapper({ children }: { children: React.ReactNode }) {
     return (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <ActiveBackendProvider>{children}</ActiveBackendProvider>
+      </QueryClientProvider>
     );
   }
 
   it.each(["local", "cloud"])(
     "preserves the last successful %s save when refetch is pending and the next save fails",
     async (kind) => {
-      active.backend.kind = kind;
+      selectBackend(kind as "local" | "cloud");
       const secondSkill = { name: CATALOG_SKILL_NAMES[1] } as SkillInfo;
       settings = {
         ...settings,
@@ -210,7 +222,7 @@ describe("useSkillEnablement", () => {
   it.each(["local", "cloud"])(
     "rolls back a failed %s save and allows a later retry",
     async (kind) => {
-      active.backend.kind = kind;
+      selectBackend(kind as "local" | "cloud");
       let rejectSave!: (error: Error) => void;
       const save = vi
         .spyOn(SettingsService, "saveSettings")

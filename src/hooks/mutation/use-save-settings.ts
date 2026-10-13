@@ -59,14 +59,19 @@ const saveSettingsMutationFn = async (settings: SettingsUpdate) => {
   await SettingsService.saveSettings(settingsToSave);
 };
 
-export const useSaveSettings = (
+export const useSaveSettings = <TPersistenceContext = undefined>(
   scope: SettingsScope = "personal",
   {
     retry,
+    onMutate,
     onPersisted,
   }: {
     retry?: number;
-    onPersisted?: (settings: SettingsUpdate) => void;
+    onMutate?: () => TPersistenceContext;
+    onPersisted?: (
+      settings: SettingsUpdate,
+      context: TPersistenceContext | undefined,
+    ) => void;
   } = {},
 ) => {
   const { trackMcpConfigUpdated } = useTracking();
@@ -75,6 +80,9 @@ export const useSaveSettings = (
 
   return useMutation({
     ...(retry === undefined ? {} : { retry }),
+    // Mutation options can change while a write is pending. Keep its original
+    // callback and context together, captured before dispatching the request.
+    onMutate: () => ({ onPersisted, context: onMutate?.() }),
     mutationFn: async (settings: SettingsUpdate) => {
       const nextMcpConfig = settings.mcp_config as MCPConfig | undefined;
       const currentMcpConfig = currentSettings?.mcp_config as
@@ -95,9 +103,9 @@ export const useSaveSettings = (
 
       await saveSettingsMutationFn(settings);
     },
-    onSuccess: async (_data, settings) => {
+    onSuccess: async (_data, settings, dispatched) => {
       // The write is committed even while its settings refetch is pending.
-      onPersisted?.(settings);
+      dispatched?.onPersisted?.(settings, dispatched.context);
       await queryClient.invalidateQueries({
         queryKey: SETTINGS_QUERY_KEYS.byScope(scope),
       });
