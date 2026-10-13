@@ -1749,7 +1749,6 @@ export {
   buildAutomationCommand,
   buildAutomationTelemetryEnv,
   buildConfig,
-  ensureDirectories,
   buildRouteArgs,
   buildViteBackendEnv,
   buildViteFrontendEnv,
