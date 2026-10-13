@@ -44045,24 +44045,6 @@
     "ca": "Mostra a {{provider}}",
     "id": "Lihat di {{provider}}"
   },
-  "CONVERSATION$OVERVIEW_SCOPE_PROJECT_EMPTY_AUTOMATIONS": {
-    "en": "No automations target this repository. Switch to All to see every automation.",
-    "ja": "このリポジトリを対象とする自動化はありません。「すべて」に切り替えて全件を表示してください。",
-    "zh-CN": "没有针对此仓库的自动化。切换到“全部”可查看所有自动化。",
-    "zh-TW": "沒有以這個存放庫為目標的自動化。切換到「全部」可查看所有自動化。",
-    "ko-KR": "이 저장소를 대상으로 하는 자동화가 없습니다. 전체를 보려면 전체로 전환하세요.",
-    "no": "Ingen automatiseringer peker på dette repositoriet. Bytt til Alle for å se alle.",
-    "ar": "لا توجد أتمتة تستهدف هذا المستودع. بدّل إلى الكل لعرض جميع الأتمتات.",
-    "de": "Keine Automatisierungen zielen auf dieses Repository. Wechseln Sie zu Alle, um alle zu sehen.",
-    "fr": "Aucune automatisation ne cible ce dépôt. Passez à Tous pour tout afficher.",
-    "it": "Nessuna automazione punta a questo repository. Passa a Tutti per vederle tutte.",
-    "pt": "Nenhuma automação aponta para este repositório. Mude para Todos para ver todas.",
-    "es": "Ninguna automatización apunta a este repositorio. Cambia a Todos para verlas todas.",
-    "tr": "Bu depoyu hedefleyen otomasyon yok. Tümünü görmek için Tümü'ne geçin.",
-    "uk": "Немає автоматизацій для цього репозиторію. Перейдіть на Усі, щоб побачити всі.",
-    "ca": "Cap automatització apunta a aquest repositori. Canvieu a Tots per veure-les totes.",
-    "id": "Tidak ada otomatisasi yang menyasar repositori ini. Beralih ke Semua untuk melihat semua otomatisasi."
-  },
   "SETUP$REPOSITORY_COUNT": {
     "en": "{{total}} repositories",
     "ja": "{{total}} 個のリポジトリ",

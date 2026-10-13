@@ -113,9 +113,14 @@ describe("ConversationOverviewDrawerContent", () => {
     expect(header).toHaveClass("h-10");
     expect(header).toHaveClass("min-h-10");
     expect(header).toHaveClass("pr-4");
+    const closeButton = within(header as HTMLElement).getByTestId(
+      "conversation-overview-drawer-close",
+    );
+    const title = within(header as HTMLElement).getByRole("heading");
     expect(
-      within(header as HTMLElement).getAllByRole("button")[0],
-    ).toHaveAttribute("data-testid", "conversation-overview-drawer-close");
+      closeButton.compareDocumentPosition(title) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it("lets a menu opened over the drawer take the first Escape", async () => {

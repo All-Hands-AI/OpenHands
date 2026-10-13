@@ -148,7 +148,7 @@ describe("ConversationOverviewPanel", () => {
     localStorage.clear();
   });
 
-  it("renders workspace and git changes without issues", () => {
+  it("renders workspace and git changes but no Issues row", () => {
     renderPanel();
 
     expect(screen.getByTestId("conversation-overview-panel")).toBeInTheDocument();
