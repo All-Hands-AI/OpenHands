@@ -27,6 +27,7 @@ Source: `bin/agent-canvas.mjs`, `scripts/dev-with-automation.mjs`, `scripts/dev-
 - `F26.session-key-pinned`: `LOCAL_BACKEND_API_KEY=<key>` in local mode injects exactly that key into the page and the API accepts only it (the saved generated key gets 401).
 - `F26.frontend-only`: `--frontend-only` serves the SPA; `/server_info`, `/api/*`, `/sockets/*` and `/api/automation/*` answer 503, and a browser new to that origin opens on the **Add a backend** onboarding step without an error toast.
 - `F26.frontend-only-returning`: on a frontend-only origin, a browser that already stores a backend for that origin (the `default-local` entry a full launcher on the same port seeded, or one added there earlier) gets the recovery gate instead of onboarding: `agent-server-onboarding-screen` with Manage backends in recovery mode and the `Local` row `Disconnected` with the 503 detail (the gate itself is F25's recovery-gate row); the failing probes raise generic `An error occurred` toasts there (Known failure, reproduced 2026-10-08: #18160).
+- `F26.tmux-directory`: before starting a local Agent Server, the npm launcher creates the resolved terminal socket directory and preserves a user-provided `TMUX_TMPDIR`; current SDK terminals have distinct socket names.
 - `F26.backend-only`: `--backend-only` serves the APIs (key-protected) and answers 503 `No backend configured for this route` for `/` and static assets.
 - `F26.cross-connect`: a frontend-only UI connects to a separate backend-only instance through **Add a backend**; the shell then shows that backend as Connected and all API traffic goes to it.
 - `F26.remote-backend`: from a normal Canvas, backend selector → **Add Backend** → **Agent-server** → **Remote** shows the self-hosting guidance and connects to another instance (stand-in for a self-hosted VM, `docs/SELF_HOSTING.md`).
@@ -117,7 +118,7 @@ Preconditions:
 - Electron's splash shows each raw service-log line (`agent-server: {"asctime": ...`) as its status text during boot; the named phases only appear between them.
 - `build:lib` from a copy whose `node_modules` is a symlink emits bundled dependencies under `dist/<absolute node_modules path>/...`; that path is an artifact of the copy, not of the product.
 - **Bug candidate (`F26.host-bind-lan-optin`):** `scripts/bind-host.mjs` tells npm users to pass `--allow-lan-session-key`, but neither `bin/agent-canvas.mjs` nor `scripts/dev-with-automation.mjs` parses or forwards it (only `scripts/static-server.mjs` and the Docker entrypoint do), and unknown flags are silently ignored (#17949, whose first item is exactly this; reproduced again on 2026-10-08 at d2c89252d).
-- Known issue #17946: the npm launcher never creates its `TMUX_TMPDIR`, so hand-started instances share one tmux server and a restart of one resets the others' terminals.
+- Historical issue #17946 (SDK 1.50.1) combined a missing terminal directory with a shared fixed socket name. Current SDK 1.54.0 uses unique socket names; the launcher now creates its resolved directory. Long state paths still need a short socket-capable override.
 
 ### Local terminal directory regression
 
@@ -125,6 +126,6 @@ Launch with `--unprepared-tmux` to leave the run-owned short `TMUX_TMPDIR`
 absent before the real npm launcher starts. This preserves an explicit user
 override while avoiding the test harness masking the directory-creation defect.
 
-```sh known-bug F26.npm-launch tmux-directory
+```sh known-bug F26.tmux-directory once
 control-openhands assert --field directoryExists --equals true --bug-shows false -- fixture tmux-directory # bug
 ```
