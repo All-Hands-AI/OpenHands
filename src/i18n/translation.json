@@ -28608,7 +28608,8 @@
     "tr": "Derin Plan",
     "de": "Detaillierter Plan",
     "uk": "Детальний план",
-    "ca": "Pla detallat"
+    "ca": "Pla detallat",
+    "id": "Rencana Mendalam"
   },
   "COMMON$DEEP_PLAN_AGENT_DESCRIPTION": {
     "en": "Build a gated chain of documents, each citing the upstream sections it derives from.",
@@ -28625,7 +28626,8 @@
     "tr": "Her belgenin türediği üst bölümleri alıntıladığı aşamalı bir belge zinciri oluşturun.",
     "de": "Erstelle eine gestufte Dokumentkette, in der jedes Dokument die vorausgehenden Abschnitte zitiert.",
     "uk": "Створіть поетапний ланцюжок документів, кожен з яких посилається на попередні розділи.",
-    "ca": "Crea una cadena de documents per etapes, cadascun citant les seccions anteriors de les quals deriva."
+    "ca": "Crea una cadena de documents per etapes, cadascun citant les seccions anteriors de les quals deriva.",
+    "id": "Bangun rantai dokumen bertahap, masing-masing mengutip bagian hulu yang menjadi asalnya."
   },
   "COMMON$DEEP_PLAN_CONFIRM": {
     "en": "Confirm phase",
@@ -28642,7 +28644,8 @@
     "tr": "Aşamayı onayla",
     "de": "Phase bestätigen",
     "uk": "Підтвердити етап",
-    "ca": "Confirma la fase"
+    "ca": "Confirma la fase",
+    "id": "Konfirmasi fase"
   },
   "COMMON$DEEP_PLAN_UNCOVERED": {
     "en": "Requirements not covered by any task: {{sections}}",
@@ -28659,7 +28662,8 @@
     "tr": "Hiçbir görevin kapsamadığı gereksinimler: {{sections}}",
     "de": "Anforderungen, die keine Aufgabe abdeckt: {{sections}}",
     "uk": "Вимоги, не покриті жодним завданням: {{sections}}",
-    "ca": "Requisits no coberts per cap tasca: {{sections}}"
+    "ca": "Requisits no coberts per cap tasca: {{sections}}",
+    "id": "Persyaratan yang tidak tercakup oleh tugas mana pun: {{sections}}"
   },
   "DEEP_PLAN$PHASE_ANALYSIS": {
     "en": "Analysis",
@@ -28676,7 +28680,8 @@
     "tr": "Analiz",
     "de": "Analyse",
     "uk": "Аналіз",
-    "ca": "Anàlisi"
+    "ca": "Anàlisi",
+    "id": "Analisis"
   },
   "DEEP_PLAN$PHASE_REQUIREMENTS": {
     "en": "Requirements",
@@ -28693,7 +28698,8 @@
     "tr": "Gereksinimler",
     "de": "Anforderungen",
     "uk": "Вимоги",
-    "ca": "Requisits"
+    "ca": "Requisits",
+    "id": "Persyaratan"
   },
   "DEEP_PLAN$PHASE_DATABASE": {
     "en": "Database design",
@@ -28710,7 +28716,8 @@
     "tr": "Veritabanı tasarımı",
     "de": "Datenbankdesign",
     "uk": "Проєктування бази даних",
-    "ca": "Disseny de la base de dades"
+    "ca": "Disseny de la base de dades",
+    "id": "Desain basis data"
   },
   "DEEP_PLAN$PHASE_BACKEND": {
     "en": "Backend design",
@@ -28727,7 +28734,8 @@
     "tr": "Arka uç tasarımı",
     "de": "Backend-Design",
     "uk": "Проєктування бекенду",
-    "ca": "Disseny del backend"
+    "ca": "Disseny del backend",
+    "id": "Desain backend"
   },
   "DEEP_PLAN$PHASE_FRONTEND": {
     "en": "Frontend design",
@@ -28744,7 +28752,8 @@
     "tr": "Ön uç tasarımı",
     "de": "Frontend-Design",
     "uk": "Проєктування фронтенду",
-    "ca": "Disseny del frontend"
+    "ca": "Disseny del frontend",
+    "id": "Desain frontend"
   },
   "DEEP_PLAN$PHASE_TASKS": {
     "en": "Tasks",
@@ -28761,7 +28770,8 @@
     "tr": "Görevler",
     "de": "Aufgaben",
     "uk": "Завдання",
-    "ca": "Tasques"
+    "ca": "Tasques",
+    "id": "Tugas"
   },
   "DEEP_PLAN$PHASE_IMPLEMENTATION": {
     "en": "Implementation",
@@ -28778,7 +28788,8 @@
     "tr": "Uygulama",
     "de": "Implementierung",
     "uk": "Реалізація",
-    "ca": "Implementació"
+    "ca": "Implementació",
+    "id": "Implementasi"
   },
   "DEEP_PLAN$TITLE": {
     "en": "Deep Planning",
@@ -28795,7 +28806,8 @@
     "tr": "Derin Planlama",
     "de": "Detaillierte Planung",
     "uk": "Детальне планування",
-    "ca": "Planificació detallada"
+    "ca": "Planificació detallada",
+    "id": "Perencanaan Mendalam"
   },
   "DEEP_PLAN$EMPTY_MESSAGE": {
     "en": "Start Deep Planning to build a traceable chain of documents, one confirmed phase at a time.",
@@ -28812,7 +28824,8 @@
     "tr": "İzlenebilir bir belge zinciri oluşturmak için Derin Planlamayı başlatın, her seferinde bir onaylı aşama.",
     "de": "Starte die detaillierte Planung, um eine nachvollziehbare Dokumentkette aufzubauen, Phase für Phase bestätigt.",
     "uk": "Почніть детальне планування, щоб створити простежуваний ланцюжок документів, по одному підтвердженому етапу.",
-    "ca": "Inicia la planificació detallada per crear una cadena de documents traçable, una fase confirmada alhora."
+    "ca": "Inicia la planificació detallada per crear una cadena de documents traçable, una fase confirmada alhora.",
+    "id": "Mulai Perencanaan Mendalam untuk membangun rantai dokumen yang dapat ditelusuri, satu fase yang dikonfirmasi setiap kali."
   },
   "DEEP_PLAN$START": {
     "en": "Start deep planning",
@@ -28829,7 +28842,8 @@
     "tr": "Derin planlamayı başlat",
     "de": "Detaillierte Planung starten",
     "uk": "Почати детальне планування",
-    "ca": "Inicia la planificació detallada"
+    "ca": "Inicia la planificació detallada",
+    "id": "Mulai perencanaan mendalam"
   },
   "COMMON$PLAN": {
     "en": "Plan",
@@ -47461,7 +47475,8 @@
     "tr": "AŞAMA: Gereksinim analizi.\nKapsam, aktörler, kısıtlar ve başarı ölçütlerini belirlemek için kullanıcıyla\ngörüşün. Odaklı sorular sorun; henüz dosya yazmayın. Resim tamamlandığında\nözetleyin ve devam etmek için aşamayı onaylamasını kullanıcıya söyleyin.",
     "de": "PHASE: Anforderungsanalyse.\nBefrage den Benutzer, um Umfang, Akteure, Einschränkungen und Erfolgskriterien\nfestzulegen. Stelle gezielte Fragen; schreibe noch keine Dateien. Wenn das Bild\nvollständig ist, fasse es zusammen und bitte den Benutzer, die Phase zu bestätigen, um fortzufahren.",
     "uk": "ФАЗА: Аналіз вимог.\nОпитайте користувача, щоб визначити обсяг, дійових осіб, обмеження та критерії\nуспіху. Ставте конкретні запитання; поки не записуйте файли. Коли картина\nбуде повною, підсумуйте її та попросіть користувача підтвердити фазу, щоб продовжити.",
-    "ca": "FASE: Anàlisi de requisits.\nEntrevista l'usuari per establir l'abast, els actors, les restriccions i els\ncriteris d'èxit. Fes preguntes concretes; no escriguis fitxers encara. Quan el\nquadre estigui complet, resumeix-lo i indica a l'usuari que confirmi la fase per continuar."
+    "ca": "FASE: Anàlisi de requisits.\nEntrevista l'usuari per establir l'abast, els actors, les restriccions i els\ncriteris d'èxit. Fes preguntes concretes; no escriguis fitxers encara. Quan el\nquadre estigui complet, resumeix-lo i indica a l'usuari que confirmi la fase per continuar.",
+    "id": "FASE: Analisis persyaratan.\nWawancarai pengguna untuk menetapkan ruang lingkup, aktor, batasan, dan kriteria\nkeberhasilan. Ajukan pertanyaan yang terarah; jangan menulis file dulu. Saat\ngambaran sudah lengkap, rangkum dan minta pengguna mengonfirmasi fase untuk\nmelanjutkan."
   },
   "DEEP_PLAN$INSTRUCTION_REQUIREMENTS": {
     "en": "PHASE: Requirements.\nWrite `requirements.md` with numbered, SMART requirements. Every requirement\nsection heading carries its number so it can be cited as `[Req X.X]`\ndownstream. Include measurable non-functional requirements, roles and a\nversion history. Chunk long documents (max 3 pages per write).",
@@ -47478,7 +47493,8 @@
     "tr": "AŞAMA: Gereksinimler.\n`requirements.md` dosyasını numaralandırılmış, SMART gereksinimlerle yazın. Her\ngereksinim bölüm başlığı numarasını taşır, böylece aşağı akışta `[Req X.X]` olarak\nalıntılanabilir. Ölçülebilir işlevsel olmayan gereksinimler, roller ve bir sürüm\ngeçmişi ekleyin. Uzun belgeleri parçalayın (yazma başına en fazla 3 sayfa).",
     "de": "PHASE: Anforderungen.\nSchreibe `requirements.md` mit nummerierten SMART-Anforderungen. Jede\nAnforderungsüberschrift trägt ihre Nummer, damit sie nachgelagert als `[Req X.X]`\nzitiert werden kann. Füge messbare nicht-funktionale Anforderungen, Rollen und\neine Versionshistorie hinzu. Unterteile lange Dokumente (max. 3 Seiten pro Schreibvorgang).",
     "uk": "ФАЗА: Вимоги.\nЗапишіть `requirements.md` з пронумерованими SMART-вимогами. Кожен заголовок\nрозділу вимоги несе свій номер, щоб далі на нього можна було посилатися як `[Req X.X]`.\nДодайте вимірювані нефункціональні вимоги, ролі та історію версій.\nРозбивайте довгі документи (макс. 3 сторінки на запис).",
-    "ca": "FASE: Requisits.\nEscriu `requirements.md` amb requisits SMART numerats. Cada encapçalament de\nsecció de requisit porta el seu número per poder citar-se com `[Req X.X]`\naigües avall. Inclou requisits no funcionals mesurables, rols i un historial de\nversions. Divideix els documents llargs (màx. 3 pàgines per escriptura)."
+    "ca": "FASE: Requisits.\nEscriu `requirements.md` amb requisits SMART numerats. Cada encapçalament de\nsecció de requisit porta el seu número per poder citar-se com `[Req X.X]`\naigües avall. Inclou requisits no funcionals mesurables, rols i un historial de\nversions. Divideix els documents llargs (màx. 3 pàgines per escriptura).",
+    "id": "FASE: Persyaratan.\nTulis `requirements.md` dengan persyaratan bernomor yang SMART. Setiap judul\nbagian persyaratan mencantumkan nomornya agar dapat dikutip sebagai `[Req X.X]`\ndi hilir. Sertakan persyaratan non-fungsional yang terukur, peran, dan riwayat\nversi. Pecah dokumen yang panjang (maksimal 3 halaman per penulisan)."
   },
   "DEEP_PLAN$INSTRUCTION_DATABASE": {
     "en": "PHASE: Database design.\nWrite `database-design.md`. Every section cites the requirements it satisfies\nas `[Req X.X]`, and the section number itself is citable as `[DB X.X]`.\nChunk if there are more than 15 tables.",
@@ -47495,7 +47511,8 @@
     "tr": "AŞAMA: Veritabanı tasarımı.\n`database-design.md` yazın. Her bölüm karşıladığı gereksinimleri `[Req X.X]`\nolarak alıntılar ve bölüm numarasının kendisi `[DB X.X]` olarak alıntılanabilir.\n15'ten fazla tablo varsa parçalayın.",
     "de": "PHASE: Datenbankdesign.\nSchreibe `database-design.md`. Jeder Abschnitt zitiert die Anforderungen, die er\nerfüllt, als `[Req X.X]`, und die Abschnittsnummer selbst ist als `[DB X.X]` zitierbar.\nUnterteile, wenn es mehr als 15 Tabellen gibt.",
     "uk": "ФАЗА: Проєктування бази даних.\nЗапишіть `database-design.md`. Кожен розділ посилається на вимоги, які він\nзадовольняє, як `[Req X.X]`, а сам номер розділу можна цитувати як `[DB X.X]`.\nРозбивайте, якщо таблиць більше 15.",
-    "ca": "FASE: Disseny de la base de dades.\nEscriu `database-design.md`. Cada secció cita els requisits que compleix com\n`[Req X.X]`, i el propi número de secció és citable com `[DB X.X]`.\nDivideix si hi ha més de 15 taules."
+    "ca": "FASE: Disseny de la base de dades.\nEscriu `database-design.md`. Cada secció cita els requisits que compleix com\n`[Req X.X]`, i el propi número de secció és citable com `[DB X.X]`.\nDivideix si hi ha més de 15 taules.",
+    "id": "FASE: Desain basis data.\nTulis `database-design.md`. Setiap bagian mengutip persyaratan yang dipenuhinya\nsebagai `[Req X.X]`, dan nomor bagian itu sendiri dapat dikutip sebagai\n`[DB X.X]`. Pecah jika ada lebih dari 15 tabel."
   },
   "DEEP_PLAN$INSTRUCTION_BACKEND": {
     "en": "PHASE: Backend design.\nWrite `backend-design.md`. Every section cites `[Req X.X] [DB X.X]`, and the\nsection number itself is citable as `[BE X.X]`. Chunk if there are more than\n8 API modules.",
@@ -47512,7 +47529,8 @@
     "tr": "AŞAMA: Arka uç tasarımı.\n`backend-design.md` yazın. Her bölüm `[Req X.X] [DB X.X]` alıntılar ve\nbölüm numarasının kendisi `[BE X.X]` olarak alıntılanabilir. 8'den fazla\nAPI modülü varsa parçalayın.",
     "de": "PHASE: Backend-Design.\nSchreibe `backend-design.md`. Jeder Abschnitt zitiert `[Req X.X] [DB X.X]`, und\ndie Abschnittsnummer selbst ist als `[BE X.X]` zitierbar. Unterteile, wenn es mehr als\n8 API-Module gibt.",
     "uk": "ФАЗА: Проєктування бекенду.\nЗапишіть `backend-design.md`. Кожен розділ посилається на `[Req X.X] [DB X.X]`, а\nсам номер розділу можна цитувати як `[BE X.X]`. Розбивайте, якщо модулів API\nбільше 8.",
-    "ca": "FASE: Disseny del backend.\nEscriu `backend-design.md`. Cada secció cita `[Req X.X] [DB X.X]`, i el\npropi número de secció és citable com `[BE X.X]`. Divideix si hi ha més de\n8 mòduls d'API."
+    "ca": "FASE: Disseny del backend.\nEscriu `backend-design.md`. Cada secció cita `[Req X.X] [DB X.X]`, i el\npropi número de secció és citable com `[BE X.X]`. Divideix si hi ha més de\n8 mòduls d'API.",
+    "id": "FASE: Desain backend.\nTulis `backend-design.md`. Setiap bagian mengutip `[Req X.X] [DB X.X]`, dan\nnomor bagian itu sendiri dapat dikutip sebagai `[BE X.X]`. Pecah jika ada lebih\ndari 8 modul API."
   },
   "DEEP_PLAN$INSTRUCTION_FRONTEND": {
     "en": "PHASE: Frontend design.\nWrite `frontend-design.md`. Every section cites `[Req X.X] [DB X.X] [BE X.X]`,\nand the section number itself is citable as `[FE X.X]`. Always chunk: max 3\npages per write.",
@@ -47529,7 +47547,8 @@
     "tr": "AŞAMA: Ön uç tasarımı.\n`frontend-design.md` yazın. Her bölüm `[Req X.X] [DB X.X] [BE X.X]` alıntılar\nve bölüm numarasının kendisi `[FE X.X]` olarak alıntılanabilir. Her zaman parçalayın:\nyazma başına en fazla 3 sayfa.",
     "de": "PHASE: Frontend-Design.\nSchreibe `frontend-design.md`. Jeder Abschnitt zitiert `[Req X.X] [DB X.X] [BE X.X]`,\nund die Abschnittsnummer selbst ist als `[FE X.X]` zitierbar. Immer unterteilen: max 3\nSeiten pro Schreibvorgang.",
     "uk": "ФАЗА: Проєктування фронтенду.\nЗапишіть `frontend-design.md`. Кожен розділ посилається на `[Req X.X] [DB X.X] [BE X.X]`,\nа сам номер розділу можна цитувати як `[FE X.X]`. Завжди розбивайте: макс. 3\nсторінки на запис.",
-    "ca": "FASE: Disseny del frontend.\nEscriu `frontend-design.md`. Cada secció cita `[Req X.X] [DB X.X] [BE X.X]`,\ni el propi número de secció és citable com `[FE X.X]`. Divideix sempre: màx. 3\npàgines per escriptura."
+    "ca": "FASE: Disseny del frontend.\nEscriu `frontend-design.md`. Cada secció cita `[Req X.X] [DB X.X] [BE X.X]`,\ni el propi número de secció és citable com `[FE X.X]`. Divideix sempre: màx. 3\npàgines per escriptura.",
+    "id": "FASE: Desain frontend.\nTulis `frontend-design.md`. Setiap bagian mengutip `[Req X.X] [DB X.X] [BE X.X]`,\ndan nomor bagian itu sendiri dapat dikutip sebagai `[FE X.X]`. Selalu pecah:\nmaksimal 3 halaman per penulisan."
   },
   "DEEP_PLAN$INSTRUCTION_TASKS": {
     "en": "PHASE: Tasks.\nWrite `tasks.md` as an ordered checklist. Every task cites `[Req X.X] [DB X.X]`\n`[BE X.X] [FE X.X]` and carries a priority, an estimate, and mandatory testing\nsub-tasks: Implement, Write unit tests, Write integration tests, Run tests &\nverify. Never mark a task complete while its tests fail.",
@@ -47546,7 +47565,8 @@
     "tr": "AŞAMA: Görevler.\n`tasks.md` dosyasını sıralı bir kontrol listesi olarak yazın. Her görev `[Req X.X] [DB X.X]`\n`[BE X.X] [FE X.X]` alıntılar ve bir öncelik, bir tahmin ve zorunlu test\nalt görevleri taşır: Uygula, Birim testleri yaz, Entegrasyon testleri yaz, Testleri çalıştır ve\ndoğrula. Testleri başarısızken bir görevi asla tamamlandı olarak işaretlemeyin.",
     "de": "PHASE: Aufgaben.\nSchreibe `tasks.md` als geordnete Checkliste. Jede Aufgabe zitiert `[Req X.X] [DB X.X]`\n`[BE X.X] [FE X.X]` und trägt eine Priorität, eine Schätzung und obligatorische Test-\nUnteraufgaben: Implementieren, Unit-Tests schreiben, Integrationstests schreiben, Tests ausführen und\nverifizieren. Markiere eine Aufgabe niemals als abgeschlossen, solange ihre Tests fehlschlagen.",
     "uk": "ФАЗА: Завдання.\nЗапишіть `tasks.md` як упорядкований контрольний список. Кожне завдання посилається на `[Req X.X] [DB X.X]`\n`[BE X.X] [FE X.X]` і містить пріоритет, оцінку та обов'язкові тестові\nпідзавдання: Реалізувати, Написати модульні тести, Написати інтеграційні тести, Запустити тести й\nперевірити. Ніколи не позначайте завдання виконаним, поки його тести не проходять.",
-    "ca": "FASE: Tasques.\nEscriu `tasks.md` com una llista ordenada. Cada tasca cita `[Req X.X] [DB X.X]`\n`[BE X.X] [FE X.X]` i porta una prioritat, una estimació i subtasques de prova\nobligatòries: Implementa, Escriu proves unitàries, Escriu proves d'integració, Executa les proves i\nverifica. No marquis mai una tasca com a completada mentre les seves proves fallin."
+    "ca": "FASE: Tasques.\nEscriu `tasks.md` com una llista ordenada. Cada tasca cita `[Req X.X] [DB X.X]`\n`[BE X.X] [FE X.X]` i porta una prioritat, una estimació i subtasques de prova\nobligatòries: Implementa, Escriu proves unitàries, Escriu proves d'integració, Executa les proves i\nverifica. No marquis mai una tasca com a completada mentre les seves proves fallin.",
+    "id": "FASE: Tugas.\nTulis `tasks.md` sebagai daftar periksa yang berurutan. Setiap tugas mengutip\n`[Req X.X] [DB X.X]` `[BE X.X] [FE X.X]` serta mencantumkan prioritas, perkiraan,\ndan sub-tugas pengujian wajib: Implementasi, Tulis unit test, Tulis integration\ntest, Jalankan test & verifikasi. Jangan pernah menandai tugas selesai selama\ntest-nya masih gagal."
   },
   "DEEP_PLAN$INSTRUCTION_IMPLEMENTATION": {
     "en": "PHASE: Implementation.\nBefore implementing a task, read every section the task cites across all\nupstream documents — not just the task line. Work one task at a time and only\ntick it off once its tests pass.",
@@ -47563,7 +47583,8 @@
     "tr": "AŞAMA: Uygulama.\nBir görevi uygulamadan önce, görevin atıfta bulunduğu her bölümü tüm\nüst belgelerde okuyun — yalnızca görev satırını değil. Aynı anda bir görev üzerinde çalışın ve\nyalnızca testleri geçtiğinde işaretleyin.",
     "de": "PHASE: Implementierung.\nBevor du eine Aufgabe implementierst, lies jeden Abschnitt, den die Aufgabe in allen\nvorausgehenden Dokumenten zitiert – nicht nur die Aufgabenzeile. Arbeite eine Aufgabe nach der anderen und\nhake sie erst ab, wenn ihre Tests bestehen.",
     "uk": "ФАЗА: Реалізація.\nПерш ніж реалізовувати завдання, прочитайте кожен розділ, на який посилається завдання, в усіх\nпопередніх документах — не лише рядок завдання. Працюйте над одним завданням за раз і\nпозначайте його виконаним лише тоді, коли його тести проходять.",
-    "ca": "FASE: Implementació.\nAbans d'implementar una tasca, llegeix cada secció que la tasca cita a tots\nels documents anteriors — no només la línia de la tasca. Treballa una tasca alhora i\nmarca-la només quan les seves proves passin."
+    "ca": "FASE: Implementació.\nAbans d'implementar una tasca, llegeix cada secció que la tasca cita a tots\nels documents anteriors — no només la línia de la tasca. Treballa una tasca alhora i\nmarca-la només quan les seves proves passin.",
+    "id": "FASE: Implementasi.\nSebelum mengimplementasikan sebuah tugas, baca setiap bagian yang dikutip tugas\nitu di semua dokumen hulu - bukan hanya baris tugasnya. Kerjakan satu tugas\npada satu waktu dan centang hanya setelah test-nya lulus."
   },
   "DEEP_PLAN$ISSUE_DANGLING": {
     "en": "{{document}} cites [{{ref}}], which no upstream document defines.",
@@ -47580,7 +47601,8 @@
     "tr": "{{document}}, [{{ref}}] alıntılıyor ancak bunu tanımlayan bir üst belge yok.",
     "de": "{{document}} zitiert [{{ref}}], was kein vorausgehendes Dokument definiert.",
     "uk": "{{document}} посилається на [{{ref}}], який не визначено в жодному попередньому документі.",
-    "ca": "{{document}} cita [{{ref}}], que cap document anterior defineix."
+    "ca": "{{document}} cita [{{ref}}], que cap document anterior defineix.",
+    "id": "{{document}} mengutip [{{ref}}], yang tidak didefinisikan oleh dokumen hulu mana pun."
   },
   "DEEP_PLAN$ISSUE_NOT_UPSTREAM": {
     "en": "{{document}} cites [{{ref}}], which is not an upstream document for this phase.",
@@ -47597,7 +47619,8 @@
     "tr": "{{document}}, bu aşama için üst belge olmayan [{{ref}}] alıntılıyor.",
     "de": "{{document}} zitiert [{{ref}}], was für diese Phase kein vorausgehendes Dokument ist.",
     "uk": "{{document}} посилається на [{{ref}}], який не є попереднім документом для цієї фази.",
-    "ca": "{{document}} cita [{{ref}}], que no és un document anterior per a aquesta fase."
+    "ca": "{{document}} cita [{{ref}}], que no és un document anterior per a aquesta fase.",
+    "id": "{{document}} mengutip [{{ref}}], yang bukan dokumen hulu untuk fase ini."
   },
   "DEEP_PLAN$ISSUE_MISSING_DOCUMENT": {
     "en": "{{document}} cites [{{ref}}], but that document has not been produced yet.",
@@ -47614,7 +47637,8 @@
     "tr": "{{document}}, [{{ref}}] alıntılıyor ancak o belge henüz üretilmedi.",
     "de": "{{document}} zitiert [{{ref}}], aber dieses Dokument wurde noch nicht erstellt.",
     "uk": "{{document}} посилається на [{{ref}}], але цей документ ще не створено.",
-    "ca": "{{document}} cita [{{ref}}], però aquest document encara no s'ha produït."
+    "ca": "{{document}} cita [{{ref}}], però aquest document encara no s'ha produït.",
+    "id": "{{document}} mengutip [{{ref}}], tetapi dokumen itu belum dibuat."
   },
   "DEEP_PLAN$CONFIRM_BLOCKED": {
     "en": "Confirm {{phase}} before continuing.",
@@ -47631,7 +47655,8 @@
     "tr": "Devam etmeden önce {{phase}} aşamasını onaylayın.",
     "de": "Bestätige {{phase}}, bevor du fortfährst.",
     "uk": "Підтвердьте {{phase}}, перш ніж продовжити.",
-    "ca": "Confirma {{phase}} abans de continuar."
+    "ca": "Confirma {{phase}} abans de continuar.",
+    "id": "Konfirmasi {{phase}} sebelum melanjutkan."
   },
   "DEEP_PLAN$CONFIRM_MORE_ISSUES": {
     "en": " (+{{count}} more)",
@@ -47648,7 +47673,8 @@
     "tr": " (+{{count}} tane daha)",
     "de": " (+{{count}} weitere)",
     "uk": " (+{{count}} ще)",
-    "ca": " (+{{count}} més)"
+    "ca": " (+{{count}} més)",
+    "id": " (+{{count}} lagi)"
   },
   "DEEP_PLAN$CONFIRM_MISSING_OUTPUT": {
     "en": "Run the planner to produce {{document}} before confirming this phase.",
@@ -47665,7 +47691,8 @@
     "tr": "Bu aşamayı onaylamadan önce {{document}} dosyasını oluşturmak için planlayıcıyı çalıştırın.",
     "de": "Führe den Planer aus, um {{document}} zu erstellen, bevor du diese Phase bestätigst.",
     "uk": "Запустіть планувальник, щоб створити {{document}}, перш ніж підтвердити цю фазу.",
-    "ca": "Executa el planificador per produir {{document}} abans de confirmar aquesta fase."
+    "ca": "Executa el planificador per produir {{document}} abans de confirmar aquesta fase.",
+    "id": "Jalankan perencana untuk menghasilkan {{document}} sebelum mengonfirmasi fase ini."
   },
   "DEEP_PLAN$CONFIRM_RESTORING": {
     "en": "Restoring {{document}}… confirm once the document is loaded.",
@@ -47682,7 +47709,8 @@
     "tr": "{{document}} geri yükleniyor… belge yüklendiğinde onaylayın.",
     "de": "{{document}} wird wiederhergestellt… bestätige, sobald das Dokument geladen ist.",
     "uk": "Відновлення {{document}}… підтвердьте, коли документ завантажиться.",
-    "ca": "Restaurant {{document}}… confirma quan el document s'hagi carregat."
+    "ca": "Restaurant {{document}}… confirma quan el document s'hagi carregat.",
+    "id": "Memulihkan {{document}}... konfirmasi setelah dokumen dimuat."
   },
   "DEEP_PLAN$CONFIRM_RESTORE_FAILED": {
     "en": "Could not reload {{document}} from disk. Reopen its phase to rewrite it before confirming.",
@@ -47699,7 +47727,8 @@
     "tr": "{{document}} diskten yeniden yüklenemedi. Onaylamadan önce aşamasını yeniden açıp tekrar yazın.",
     "de": "{{document}} konnte nicht von der Festplatte neu geladen werden. Öffne die Phase erneut und schreibe sie neu, bevor du bestätigst.",
     "uk": "Не вдалося повторно завантажити {{document}} з диска. Відкрийте його фазу знову, щоб переписати, перш ніж підтвердити.",
-    "ca": "No s'ha pogut tornar a carregar {{document}} del disc. Torna a obrir la seva fase per reescriure'l abans de confirmar."
+    "ca": "No s'ha pogut tornar a carregar {{document}} del disc. Torna a obrir la seva fase per reescriure'l abans de confirmar.",
+    "id": "Tidak dapat memuat ulang {{document}} dari disk. Buka kembali fasenya untuk menulis ulang sebelum mengonfirmasi."
   },
   "DEEP_PLAN$RESTORE_RETRY": {
     "en": "Retry restoring documents",
@@ -47716,7 +47745,8 @@
     "tr": "Belgeleri geri yüklemeyi yeniden dene",
     "de": "Wiederherstellen der Dokumente erneut versuchen",
     "uk": "Повторити відновлення документів",
-    "ca": "Torna a provar de restaurar els documents"
+    "ca": "Torna a provar de restaurar els documents",
+    "id": "Coba lagi memulihkan dokumen"
   },
   "AUTOMATION_SETUP$TITLE": {
     "ar": "Automation setup",
@@ -49841,7 +49871,8 @@
     "tr": "Belge zincirini göster",
     "de": "Dokumentkette anzeigen",
     "uk": "Показати ланцюжок документів",
-    "ca": "Mostra la cadena de documents"
+    "ca": "Mostra la cadena de documents",
+    "id": "Tampilkan rantai dokumen"
   },
   "BACKEND$REMOVE_MARS_CONFIRMATION": {
     "en": "Remove \"{{name}}\"? This only disconnects it here: the DigitalOcean session keeps running (and billing) and you can reconnect it from Managed Agents. To end it and delete its sandbox, stop the session instead.",
