@@ -3,6 +3,7 @@ import type { MockInstance } from "vitest";
 import { getAcpProvider as getClientAcpProvider } from "@openhands/typescript-client";
 import { CANVAS_UI_CLIENT_TOOL_NAME } from "#/constants/canvas-ui";
 import { LAUNCH_CHILD_CONVERSATION_TOOL_NAME } from "#/constants/child-conversation";
+import { AUTOMATION_FORM_UPDATE_TOOL_NAME } from "#/constants/automation-form";
 
 import {
   ACP_SERVER_TAG_KEY,
@@ -15,6 +16,7 @@ import {
   getDefaultConversationTitle,
   parseRuntimeServicesInfo,
   toAppConversation,
+  toHooksResponse,
   type DirectConversationInfo,
 } from "#/api/agent-server-adapter";
 import SettingsService from "#/api/settings-service/settings-service.api";
@@ -854,6 +856,56 @@ describe("buildStartConversationRequest", () => {
         LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
       ]);
     });
+
+    it("adds automation setup tags to local conversation requests", () => {
+      const payload = buildStartConversationRequest({
+        settings: DEFAULT_SETTINGS,
+        automationSetup: true,
+        automationSetupTags: {
+          automationdraftid: "draft-1",
+          automationmaterializeddraftid: "auto-1",
+        },
+      });
+
+      expect(payload.tags).toEqual(
+        expect.objectContaining({
+          automationsetup: "draft",
+          automationdraftid: "draft-1",
+          automationmaterializeddraftid: "auto-1",
+          clientsource: "agentcanvas",
+        }),
+      );
+    });
+
+    it.each([
+      {
+        automationSetup: false,
+        expectedTools: [
+          CANVAS_UI_CLIENT_TOOL_NAME,
+          LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
+        ],
+      },
+      {
+        automationSetup: true,
+        expectedTools: [
+          CANVAS_UI_CLIENT_TOOL_NAME,
+          LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
+          AUTOMATION_FORM_UPDATE_TOOL_NAME,
+        ],
+      },
+    ])(
+      "builds client tools for automationSetup=$automationSetup",
+      ({ automationSetup, expectedTools }) => {
+        const payload = buildStartConversationRequest({
+          settings: DEFAULT_SETTINGS,
+          automationSetup,
+        });
+
+        expect(payload.client_tools.map((tool) => tool.name)).toEqual(
+          expectedTools,
+        );
+      },
+    );
 
     it("sends the client tool when resuming a conversation", () => {
       const payload = buildStartConversationRequest({
@@ -1943,37 +1995,32 @@ describe("buildStartConversationRequest — ACP discriminator", () => {
     expect(payload.agent_settings.acp_command).toEqual([]);
   });
 
-  it("seeds the provider default when settings contains an empty acp_model", () => {
-    // The form may carry an empty string after a user clears the model
-    // input. Older behavior left ``acp_model`` absent and relied on the
-    // agent-server's own default; the registry-default path
-    // (resolveEffectiveAcpModel) is now authoritative on Canvas's side,
-    // so an empty string resolves to the provider's ``default_model``
-    // before the request leaves the client. Keeps the displayed Settings
-    // → Agent default in sync with what the runtime actually starts.
-    const payload = buildStartConversationRequest({
-      settings: {
-        ...DEFAULT_SETTINGS,
-        agent_settings: {
-          schema_version: 1,
-          agent_kind: "acp",
-          acp_server: "claude-code",
-          acp_command: [],
-          acp_model: "",
+  it.each([
+    ["claude-code", undefined],
+    ["gemini-cli", ACP_VERTEX_SAFE_MODEL],
+  ])(
+    "leaves an empty %s acp_model to the agent unless Canvas prefers one",
+    (acpServer, expected) => {
+      const payload = buildStartConversationRequest({
+        settings: {
+          ...DEFAULT_SETTINGS,
+          agent_settings: {
+            schema_version: 1,
+            agent_kind: "acp",
+            acp_server: acpServer,
+            acp_command: [],
+            acp_model: "",
+          },
         },
-      },
-    }) as {
-      agent_settings: Record<string, unknown> & { acp_model?: unknown };
-    };
+      }) as {
+        agent_settings: Record<string, unknown> & { acp_model?: unknown };
+      };
 
-    expect(payload.agent_settings.acp_model).toBe("opus[1m]");
-  });
+      expect(payload.agent_settings.acp_model).toBe(expected);
+    },
+  );
 
   it("omits acp_model for the custom preset when none is configured", () => {
-    // The Custom preset has no registered ``default_model``, so an empty
-    // ``acp_model`` falls through to ``undefined`` — the agent-server then
-    // applies its own default. Distinct from the built-in providers
-    // which substitute their registry default.
     const payload = buildStartConversationRequest({
       settings: {
         ...DEFAULT_SETTINGS,
@@ -2214,5 +2261,121 @@ describe("buildStartConversationRequestWithEncryptedSettings", () => {
     expect(
       payload.agent_settings?.agent_context?.system_message_suffix ?? "",
     ).not.toContain("ROUTE_AT_CONVERSATION_START");
+  });
+});
+
+describe("toHooksResponse", () => {
+  // Prompt and agent hooks reach Canvas over the wire with `prompt`/`system_prompt`,
+  // which the typed client's `HookDefinition` does not declare yet.
+  const wireHook = (hook: Record<string, unknown>) =>
+    hook as unknown as HookConfig["stop"][number]["hooks"][number];
+
+  it("carries a prompt hook's prompt through", () => {
+    const response = toHooksResponse(
+      makeHookConfig({
+        stop: [
+          {
+            matcher: "*",
+            hooks: [
+              wireHook({
+                type: "prompt",
+                command: "",
+                prompt: "QA_F07 prompt hook",
+                system_prompt: null,
+                timeout: 60,
+                async: false,
+              }),
+            ],
+          },
+        ],
+      }),
+    );
+
+    expect(response.hooks).toEqual([
+      {
+        event_type: "stop",
+        matchers: [
+          {
+            matcher: "*",
+            hooks: [
+              {
+                type: "prompt",
+                command: "",
+                prompt: "QA_F07 prompt hook",
+                timeout: 60,
+                async: false,
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+  });
+
+  it("carries an agent hook's system_prompt through", () => {
+    const response = toHooksResponse(
+      makeHookConfig({
+        session_start: [
+          {
+            matcher: "*",
+            hooks: [
+              wireHook({
+                type: "agent",
+                command: "",
+                prompt: null,
+                system_prompt: "QA_F07 agent hook",
+                timeout: 60,
+                async: false,
+              }),
+            ],
+          },
+        ],
+      }),
+    );
+
+    expect(response.hooks).toEqual([
+      {
+        event_type: "session_start",
+        matchers: [
+          {
+            matcher: "*",
+            hooks: [
+              {
+                type: "agent",
+                command: "",
+                system_prompt: "QA_F07 agent hook",
+                timeout: 60,
+                async: false,
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+  });
+
+  it("keeps command hooks unchanged", () => {
+    const response = toHooksResponse(
+      makeHookConfig({
+        pre_tool_use: [
+          {
+            matcher: "terminal",
+            hooks: [{ type: HookType.COMMAND, command: "true", timeout: 10 }],
+          },
+        ],
+      }),
+    );
+
+    expect(response.hooks).toEqual([
+      {
+        event_type: "pre_tool_use",
+        matchers: [
+          {
+            matcher: "terminal",
+            hooks: [{ type: HookType.COMMAND, command: "true", timeout: 10 }],
+          },
+        ],
+      },
+    ]);
   });
 });

@@ -15,6 +15,7 @@ import {
   setRegisteredBackends,
 } from "#/api/backend-registry/active-store";
 import type { Backend } from "#/api/backend-registry/types";
+import { I18nKey } from "#/i18n/declaration";
 
 const useActiveConversationMock = vi.fn<
   () => {
@@ -260,6 +261,16 @@ describe("ChatInputActions", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("gives the icon-only send button an accessible name", () => {
+    renderWithProviders(<ChatInputActions disabled={false} />);
+
+    expect(
+      screen.getByRole("button", {
+        name: I18nKey.CHAT_INTERFACE$TOOLTIP_SEND_MESSAGE,
+      }),
+    ).toHaveAttribute("data-testid", "submit-button");
+  });
+
   it("hides the Change Agent button on a local backend", () => {
     renderWithProviders(<ChatInputActions disabled={false} />);
 
@@ -493,6 +504,25 @@ describe("ChatInputActions — More input actions overflow menu (#17925)", () =>
     expect(
       screen.queryByTestId("chat-input-overflow-menu"),
     ).not.toBeInTheDocument();
+  });
+
+  it("closes on Escape and returns focus to the trigger", () => {
+    renderWithProviders(<ChatInputActions disabled={false} />);
+
+    clickTrigger();
+    fireEvent.click(screen.getByTestId("overflow-model-button"));
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    expect(getTrigger()).toHaveAttribute("aria-expanded", "false");
+    expect(
+      screen.queryByTestId("chat-input-overflow-menu"),
+    ).not.toBeInTheDocument();
+    expect(getTrigger()).toHaveFocus();
+
+    clickTrigger();
+    expect(
+      screen.getByTestId("overflow-model-submenu").parentElement,
+    ).not.toHaveClass("visible");
   });
 
   it("opens the Model submenu with the profile list", () => {

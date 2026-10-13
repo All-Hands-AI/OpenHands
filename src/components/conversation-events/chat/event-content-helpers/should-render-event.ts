@@ -10,6 +10,7 @@ import {
   isHookExecutionEvent,
   isACPToolCallEvent,
   isStreamingDeltaEvent,
+  isUserRejectObservation,
 } from "#/types/agent-server/type-guards";
 
 // Prefixes of the SDK goal-loop re-prompts (FOLLOWUP_PROMPT / RESUME_PROMPT in
@@ -41,6 +42,14 @@ const isGoalLoopReprompt = (event: MessageEvent): boolean => {
   if (text === null) return false;
   return GOAL_REPROMPT_PREFIXES.some((prefix) => text.startsWith(prefix));
 };
+
+// SDK empty-response nudge (`_send_corrective_nudge`); keep in sync with the SDK.
+const CORRECTIVE_NUDGE_PREFIX =
+  "Your last response did not include a function call or a message.";
+
+export const isCorrectiveNudge = (event: MessageEvent): boolean =>
+  event.source === "environment" &&
+  (userMessageText(event)?.startsWith(CORRECTIVE_NUDGE_PREFIX) ?? false);
 
 // The frontend posts the outcome of a `launch_child_conversation` call back as
 // a `user` message because client tools have no result channel (see
@@ -103,6 +112,12 @@ export const shouldRenderEvent = (event: OpenHandsEvent) => {
       return false;
     }
 
+    return true;
+  }
+
+  // Render the rejection that replaced a rejected action, so the action stays
+  // in the chat marked as rejected instead of vanishing
+  if (isUserRejectObservation(event)) {
     return true;
   }
 
