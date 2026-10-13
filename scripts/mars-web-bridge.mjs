@@ -124,9 +124,11 @@ export function resolveMarsWebKey({
  * - No key on a non-loopback bind: the routes would be open to the LAN with
  *   the DO token behind them.
  *
- * The refusal is a warning only when someone asked for the bridge
- * (`MARS_WEB_KEY` or `MARS_TOKEN` set); a Docker public-mode instance that
- * never uses DigitalOcean gets a debug line, not a warning on every start.
+ * The refusal is a warning only when someone asked for the bridge (the old
+ * `MARS_WEB=1` opt-in, or `MARS_TOKEN` set); a Docker public-mode instance
+ * that never uses DigitalOcean gets a debug line, not a warning on every
+ * start. `MARS_WEB_KEY` is not a signal here: with it set there is a key and
+ * this branch is never reached.
  */
 export function mountMarsWebBridge({
   env = process.env,
@@ -135,10 +137,10 @@ export function mountMarsWebBridge({
   log = (message) => console.warn(`[mars-web] ${message}`),
   debug = (message) => console.debug(`[mars-web] ${message}`),
 } = {}) {
-  if (isMarsWebDisabled(env)) return null;
+  if (isMarsWebDisabled(env, log)) return null;
   const key = resolveMarsWebKey({ env, sessionApiKey });
   if (!key && !isLoopbackBind(host)) {
-    const optedIn = Boolean(env.MARS_WEB_KEY?.trim() || env.MARS_TOKEN?.trim());
+    const optedIn = env.MARS_WEB === "1" || Boolean(env.MARS_TOKEN?.trim());
     (optedIn ? log : debug)(
       `no key and bind host ${host} is not loopback; not mounting /mars/* (set MARS_WEB_KEY or --session-api-key).`,
     );
@@ -148,9 +150,27 @@ export function mountMarsWebBridge({
   return createMarsWebBridge({ env, host, key });
 }
 
-/** `MARS_WEB=0` turns the bridge off for a server that must not host it. */
-export function isMarsWebDisabled(env = process.env) {
-  return env.MARS_WEB === "0";
+const MARS_WEB_OFF = new Set(["0", "false", "off", "no"]);
+const MARS_WEB_ON = new Set(["", "1", "true", "on", "yes"]);
+
+/**
+ * `MARS_WEB=0` (also `false`, `off`, `no`) turns the bridge off for a server
+ * that must not host it. The old `MARS_WEB=1` opt-in and its synonyms mean
+ * on, which is the default anyway. Anything else is a typo in the off switch:
+ * say so once, and stay on, since on is what no value means.
+ */
+export function isMarsWebDisabled(
+  env = process.env,
+  log = (message) => console.warn(`[mars-web] ${message}`),
+) {
+  const value = (env.MARS_WEB ?? "").trim().toLowerCase();
+  if (MARS_WEB_OFF.has(value)) return true;
+  if (!MARS_WEB_ON.has(value)) {
+    log(
+      `MARS_WEB=${JSON.stringify(env.MARS_WEB)} is not recognised (use 0/false/off/no to turn the bridge off); leaving it on.`,
+    );
+  }
+  return false;
 }
 
 function safeEqual(a, b) {
