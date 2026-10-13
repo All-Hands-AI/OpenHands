@@ -36,6 +36,7 @@ export function SettingsSwitch({
     onToggle?.(value);
   };
 
+  // @spec SSW-001 — Native checkbox access with visible keyboard focus.
   const input = (
     <input
       className="sr-only"

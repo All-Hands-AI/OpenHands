@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
 
 describe("SettingsSwitch", () => {
+  // @spec SSW-001 — Expose checked state and native keyboard interaction.
   it("exposes its label and checked state and toggles with the keyboard", async () => {
     const user = userEvent.setup();
     const onToggle = vi.fn();
@@ -25,6 +26,7 @@ describe("SettingsSwitch", () => {
     expect(onToggle).toHaveBeenLastCalledWith(false);
   });
 
+  // @spec SSW-001 — Disabled controls skip Tab and retain controlled state.
   it("skips a disabled switch and keeps its controlled state", async () => {
     const user = userEvent.setup();
     const onToggle = vi.fn();
