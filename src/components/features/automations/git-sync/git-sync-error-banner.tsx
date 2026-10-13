@@ -20,8 +20,9 @@ export function GitSyncErrorBanner({
       role="alert"
       data-testid="git-sync-error-banner"
       className={cn(
-        "rounded-md p-3 text-sm whitespace-pre-wrap break-words dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300",
+        "rounded-md p-3 text-sm whitespace-pre-wrap break-words dark:border-danger/40 dark:bg-danger/5",
         statusToneBannerClassName.danger,
+        "text-feedback-error",
       )}
     >
       <p className="font-medium">
@@ -29,7 +30,7 @@ export function GitSyncErrorBanner({
       </p>
       <p className="mt-1">{error}</p>
       {errorAt && (
-        <p className="mt-1 text-xs text-muted dark:text-red-300/70">
+        <p className="mt-1 text-xs">
           {`${formatTimeDelta(errorAt)} ${t(I18nKey.CONVERSATION$AGO)}`}
         </p>
       )}

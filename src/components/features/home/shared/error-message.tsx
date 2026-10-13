@@ -14,10 +14,7 @@ export function ErrorMessage({
   if (!isError) return null;
 
   return (
-    <div
-      className="text-danger text-sm mt-1 dark:text-red-500"
-      data-testid={testId}
-    >
+    <div className="text-feedback-error text-sm mt-1" data-testid={testId}>
       {message}
     </div>
   );

@@ -8,6 +8,7 @@ import {
 } from "#/utils/status-tone-classes";
 import {
   ALL_THEMES,
+  LIGHT_THEMES,
   PANEL_SURFACES,
   colorUtility,
   contrast,
@@ -39,6 +40,31 @@ describe.each(ALL_THEMES)("%s status badges", (theme) => {
       },
     );
   });
+});
+
+describe.each(LIGHT_THEMES)("%s feedback on status surfaces", (theme) => {
+  it.each([
+    ["success", "text-feedback-success"],
+    ["danger", "text-feedback-error"],
+  ] as const)(
+    "%s feedback clears 4.5:1 on the opaque status fill",
+    (tone, feedback) => {
+      const fill = utilityColor(
+        theme,
+        colorUtility(statusToneBannerClassName[tone], "bg"),
+      );
+      const ink = utilityColor(theme, feedback);
+      for (const surface of PANEL_SURFACES) {
+        const banner = over(fill, surfaceColor(theme, surface));
+        expect
+          .soft(
+            contrast(over(ink, banner), banner),
+            `${feedback} on ${surface}`,
+          )
+          .toBeGreaterThanOrEqual(4.5);
+      }
+    },
+  );
 });
 
 const SRC_ROOT = resolve(__dirname, "../../src");

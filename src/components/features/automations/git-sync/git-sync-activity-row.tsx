@@ -62,12 +62,12 @@ export function GitSyncActivityRow({
         state === "succeeded" &&
           cn(
             statusToneBadgeClassName.success,
-            "dark:bg-green-500/10 dark:text-green-300",
+            "text-feedback-success dark:bg-status-success/10",
           ),
         isFailed &&
           cn(
             statusToneBadgeClassName.danger,
-            "dark:bg-red-500/10 dark:text-red-300",
+            "text-feedback-error dark:bg-status-error/10",
           ),
       )}
     >
