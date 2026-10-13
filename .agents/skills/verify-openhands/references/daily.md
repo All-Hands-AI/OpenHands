@@ -72,7 +72,9 @@ cheaper than the next and catches a different kind of rot.
    results, as [maintenance.md](maintenance.md) step 2 describes. The delta
    pass has a second half: every bullet whose Gotchas or Known failure note
    links an issue that closed since `BASE` (check each linked issue's state)
-   is re-driven too, its row recorded and its note updated. A fix that landed
+   is re-driven too, its row recorded and its note updated (a note with a
+   `known-bug` block is re-driven with `control-openhands bug run <ID>`; an
+   `xpass` goes to map review per [maintenance.md](maintenance.md) step 5). A fix that landed
    in the Agent Server or the automation service shows up only this way. So is
    every open `bug` issue opened since `BASE` that names a mapped feature: it
    is reproduced and gets its note, so bugs filed outside a pass reach the map.
