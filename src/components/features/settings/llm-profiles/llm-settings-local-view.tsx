@@ -112,6 +112,25 @@ export function LlmSettingsLocalView() {
   // embedded form hydrates, so the eventual DB default never replaces it and
   // the user can save the wrong model.
   const isDefaultModelReady = useDefaultModelReady();
+  const createProfileInitialValues = useMemo(
+    () => ({
+      // A fresh profile may inherit options, but no existing credentials.
+      ...Object.fromEntries(
+        (agentSchema?.sections ?? []).flatMap((section) =>
+          section.fields
+            .filter((field) => field.secret)
+            .map((field) => [field.key, ""]),
+        ),
+      ),
+      "llm.model": createProfileDefaultModel,
+      "llm.api_key": "",
+      "llm.base_url": "",
+      [LLM_PROVIDER_CONNECTION_KEY]: "",
+      [LLM_AUTH_TYPE_KEY]: LLM_AUTH_TYPE_API_KEY,
+      [LLM_SUBSCRIPTION_VENDOR_KEY]: OPENAI_SUBSCRIPTION_VENDOR,
+    }),
+    [agentSchema, createProfileDefaultModel],
+  );
 
   // Always hold the freshest schema. `handleEditProfile` awaits a network
   // round-trip before seeding the form, so reading the schema from a ref
@@ -257,15 +276,19 @@ export function LlmSettingsLocalView() {
     let dirtyLlm: Record<string, unknown>;
     try {
       // A new profile has no saved config to merge over, so persist every
-      // value its form displays, using the same schema coercion as edits.
-      // Create-mode overrides already keep credentials and links blank.
+      // non-secret value its form displays, using the same coercion as edits.
+      // Explicit credential edits are included by the dirty payload below.
       const initialPayload =
         viewMode === "create" && agentSchema
           ? buildSdkSettingsPayload(
               agentSchema,
               saveControl.values,
               Object.fromEntries(
-                Object.keys(saveControl.values).map((key) => [key, true]),
+                agentSchema.sections.flatMap((section) =>
+                  section.fields
+                    .filter((field) => field.key in saveControl.values)
+                    .map((field) => [field.key, !field.secret]),
+                ),
               ),
             )
           : {};
@@ -455,16 +478,7 @@ export function LlmSettingsLocalView() {
             viewMode === "edit" && editingProfile?.initialValues
               ? // Edit mode: use the existing profile values
                 editingProfile.initialValues
-              : // Create mode: prefill with the backend-selected default model,
-                // while keeping secret/base URL fields blank for a fresh profile.
-                {
-                  "llm.model": createProfileDefaultModel,
-                  "llm.api_key": "",
-                  "llm.base_url": "",
-                  [LLM_PROVIDER_CONNECTION_KEY]: "",
-                  [LLM_AUTH_TYPE_KEY]: LLM_AUTH_TYPE_API_KEY,
-                  [LLM_SUBSCRIPTION_VENDOR_KEY]: OPENAI_SUBSCRIPTION_VENDOR,
-                }
+              : createProfileInitialValues
           }
           showProviderConnection={supportsConnections}
           onSaveControlChange={handleSaveControlChange}

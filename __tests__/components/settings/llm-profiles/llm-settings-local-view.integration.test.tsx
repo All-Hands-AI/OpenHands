@@ -25,6 +25,35 @@ describe("LLM profile creation with the real embedded form", () => {
     vi.spyOn(ProviderConnectionsService, "list").mockResolvedValue([]);
     vi.spyOn(SettingsService, "getSettings").mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
+      agent_settings_schema: {
+        ...MOCK_DEFAULT_USER_SETTINGS.agent_settings_schema!,
+        sections:
+          MOCK_DEFAULT_USER_SETTINGS.agent_settings_schema!.sections.map(
+            (section) =>
+              section.key === "llm"
+                ? {
+                    ...section,
+                    fields: [
+                      ...section.fields,
+                      {
+                        key: "llm.aws_secret_access_key",
+                        label: "AWS secret access key",
+                        description: "Optional provider credential",
+                        section: "llm",
+                        section_label: "LLM",
+                        value_type: "string" as const,
+                        default: null,
+                        secret: true,
+                        required: false,
+                        depends_on: [],
+                        prominence: "minor" as const,
+                        choices: [],
+                      },
+                    ],
+                  }
+                : section,
+          ),
+      },
       agent_settings: {
         ...MOCK_DEFAULT_USER_SETTINGS.agent_settings,
         llm: {
@@ -32,6 +61,7 @@ describe("LLM profile creation with the real embedded form", () => {
           api_key: "another-profile-key",
           base_url: "https://another-profile.example/v1",
           temperature: 0.4,
+          aws_secret_access_key: "**********",
         },
       },
     });
@@ -51,6 +81,9 @@ describe("LLM profile creation with the real embedded form", () => {
     expect(screen.getByTestId("sdk-settings-llm.temperature")).toHaveValue(0.4);
     expect(screen.getByTestId("llm-api-key-input")).toHaveValue("");
     expect(screen.getByTestId("base-url-input")).toHaveValue("");
+    expect(
+      screen.getByTestId("sdk-settings-llm.aws_secret_access_key"),
+    ).toHaveValue("");
     await user.clear(screen.getByTestId("profile-name-input"));
     await user.type(screen.getByTestId("profile-name-input"), "QA_Inherited");
     await user.type(screen.getByTestId("llm-api-key-input"), "new-profile-key");
@@ -70,5 +103,6 @@ describe("LLM profile creation with the real embedded form", () => {
     expect(save.mock.calls[0][1].llm.base_url).not.toBe(
       "https://another-profile.example/v1",
     );
+    expect(save.mock.calls[0][1].llm.aws_secret_access_key).toBeUndefined();
   });
 });
