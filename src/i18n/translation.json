@@ -1457,6 +1457,24 @@
     "ca": "Afegeix un secret",
     "id": "Tambah rahasia"
   },
+  "SECRETS$REQUEST_TITLE": {
+    "en": "The agent needs a secret",
+    "ja": "エージェントがシークレットを必要としています",
+    "zh-CN": "代理需要一个密钥",
+    "zh-TW": "代理需要一個密鑰",
+    "ko-KR": "에이전트에 시크릿이 필요합니다",
+    "no": "Agenten trenger en hemmelighet",
+    "it": "L'agente ha bisogno di un segreto",
+    "pt": "O agente precisa de um segredo",
+    "es": "El agente necesita un secreto",
+    "ar": "يحتاج الوكيل إلى سر",
+    "fr": "L'agent a besoin d'un secret",
+    "tr": "Ajanın bir gizli anahtara ihtiyacı var",
+    "de": "Der Agent benötigt ein Secret",
+    "uk": "Агенту потрібен секрет",
+    "ca": "L'agent necessita un secret",
+    "id": "Agen membutuhkan secret"
+  },
   "SECRETS$EDIT_SECRET": {
     "en": "Edit secret",
     "ja": "シークレットを編集",
@@ -45359,6 +45377,24 @@
     "ca": "S'està iniciant una conversa filla",
     "id": "Meluncurkan percakapan anak"
   },
+  "ACTION_MESSAGE$REQUEST_SECRET": {
+    "en": "Requesting secret <cmd>{{name}}</cmd>",
+    "ja": "シークレットをリクエスト中: <cmd>{{name}}</cmd>",
+    "zh-CN": "正在请求密钥 <cmd>{{name}}</cmd>",
+    "zh-TW": "正在請求密鑰 <cmd>{{name}}</cmd>",
+    "ko-KR": "시크릿 요청 중 <cmd>{{name}}</cmd>",
+    "no": "Ber om hemmelighet <cmd>{{name}}</cmd>",
+    "it": "Richiesta del segreto <cmd>{{name}}</cmd>",
+    "pt": "Solicitando segredo <cmd>{{name}}</cmd>",
+    "es": "Solicitando secreto <cmd>{{name}}</cmd>",
+    "ar": "جارٍ طلب السر <cmd>{{name}}</cmd>",
+    "fr": "Demande du secret <cmd>{{name}}</cmd>",
+    "tr": "Gizli anahtar isteniyor <cmd>{{name}}</cmd>",
+    "de": "Secret wird angefordert <cmd>{{name}}</cmd>",
+    "uk": "Запит секрету <cmd>{{name}}</cmd>",
+    "ca": "S'està sol·licitant el secret <cmd>{{name}}</cmd>",
+    "id": "Meminta secret <cmd>{{name}}</cmd>"
+  },
   "OBSERVATION_MESSAGE$LAUNCH_CHILD_CONVERSATION": {
     "en": "Requested a child conversation",
     "ja": "子会話をリクエストしました",
@@ -45376,6 +45412,24 @@
     "uk": "Запитано дочірню розмову",
     "ca": "S'ha sol·licitat una conversa filla",
     "id": "Telah meminta percakapan anak"
+  },
+  "OBSERVATION_MESSAGE$REQUEST_SECRET": {
+    "en": "Requested a secret",
+    "ja": "シークレットをリクエストしました",
+    "zh-CN": "已请求密钥",
+    "zh-TW": "已請求密鑰",
+    "ko-KR": "시크릿을 요청했습니다",
+    "no": "Ba om en hemmelighet",
+    "it": "Segreto richiesto",
+    "pt": "Segredo solicitado",
+    "es": "Secreto solicitado",
+    "ar": "تم طلب سر",
+    "fr": "Secret demandé",
+    "tr": "Gizli anahtar istendi",
+    "de": "Secret angefordert",
+    "uk": "Запитано секрет",
+    "ca": "S'ha sol·licitat un secret",
+    "id": "Secret diminta"
   },
   "SIDEBAR$ONBOARDING_CHECKLIST_TITLE": {
     "en": "Getting started",

@@ -13,28 +13,38 @@ import {
 import { BrandButton } from "../brand-button";
 import { useSearchSecrets } from "#/hooks/query/use-get-secrets";
 import { OptionalTag } from "../optional-tag";
+import type { CustomSecretInput } from "#/api/agent-server-adapter";
 
 interface SecretFormProps {
   mode: "add" | "edit";
   selectedSecret: string | null;
   onCancel: () => void;
+  onSaved?: (secret: CustomSecretInput) => void;
+  /** Name to prefill in add mode. */
+  defaultName?: string;
+  /** Keep the form open after a failed save so the user can retry. */
+  keepOpenOnError?: boolean;
 }
 
 export function SecretForm({
   mode,
   selectedSecret,
   onCancel,
+  onSaved,
+  defaultName = "",
+  keepOpenOnError = false,
 }: SecretFormProps) {
   const queryClient = useQueryClient();
   const { t } = useTranslation("openhands");
 
   const { data: secrets } = useSearchSecrets();
-  const { mutate: createSecret } = useCreateSecret();
-  const { mutate: updateSecret } = useUpdateSecret();
+  const { mutate: createSecret, isPending: isCreating } = useCreateSecret();
+  const { mutate: updateSecret, isPending: isUpdating } = useUpdateSecret();
+  const isSaving = isCreating || isUpdating;
 
   const [error, setError] = React.useState<string | null>(null);
   const [name, setName] = React.useState(
-    mode === "edit" && selectedSecret ? selectedSecret : "",
+    mode === "edit" && selectedSecret ? selectedSecret : defaultName,
   );
   const [value, setValue] = React.useState("");
   const [description, setDescription] = React.useState("");
@@ -49,11 +59,15 @@ export function SecretForm({
   const initialName = mode === "edit" && selectedSecret ? selectedSecret : "";
 
   React.useEffect(() => {
-    setName(mode === "edit" && selectedSecret ? selectedSecret : "");
+    setName(mode === "edit" && selectedSecret ? selectedSecret : defaultName);
     setValue("");
     setDescription(secretDescription);
     setError(null);
-  }, [mode, selectedSecret, secretDescription]);
+  }, [mode, selectedSecret, secretDescription, defaultName]);
+
+  const closeUnlessKeptOpen = (_data: unknown, error: Error | null) => {
+    if (!error || !keepOpenOnError) onCancel();
+  };
 
   const invalidateSecrets = () => {
     queryClient.invalidateQueries({
@@ -72,8 +86,11 @@ export function SecretForm({
     createSecret(
       { name, value, description },
       {
-        onSettled: onCancel,
-        onSuccess: invalidateSecrets,
+        onSettled: closeUnlessKeptOpen,
+        onSuccess: () => {
+          invalidateSecrets();
+          onSaved?.({ name, description });
+        },
       },
     );
   };
@@ -87,8 +104,11 @@ export function SecretForm({
     updateSecret(
       { secretToEdit, name, description, value },
       {
-        onSettled: onCancel,
-        onSuccess: invalidateSecrets,
+        onSettled: closeUnlessKeptOpen,
+        onSuccess: () => {
+          invalidateSecrets();
+          onSaved?.({ name, description });
+        },
       },
     );
   };
@@ -211,6 +231,7 @@ export function SecretForm({
           type="button"
           variant="secondary"
           onClick={onCancel}
+          isDisabled={isSaving}
         >
           {t(I18nKey.BUTTON$CANCEL)}
         </BrandButton>
@@ -218,7 +239,7 @@ export function SecretForm({
           testId="submit-button"
           type="submit"
           variant="primary"
-          isDisabled={isSubmitDisabled}
+          isDisabled={isSubmitDisabled || isSaving}
         >
           {mode === "add" && t(I18nKey.SECRETS$ADD_SECRET)}
           {mode === "edit" && t(I18nKey.SECRETS$EDIT_SECRET)}

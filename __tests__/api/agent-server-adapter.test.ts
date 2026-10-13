@@ -3,6 +3,7 @@ import type { MockInstance } from "vitest";
 import { getAcpProvider as getClientAcpProvider } from "@openhands/typescript-client";
 import { CANVAS_UI_CLIENT_TOOL_NAME } from "#/constants/canvas-ui";
 import { LAUNCH_CHILD_CONVERSATION_TOOL_NAME } from "#/constants/child-conversation";
+import { REQUEST_SECRET_TOOL_NAME } from "#/constants/secret-request";
 import { AUTOMATION_FORM_UPDATE_TOOL_NAME } from "#/constants/automation-form";
 
 import {
@@ -854,6 +855,7 @@ describe("buildStartConversationRequest", () => {
       expect(payload.client_tools.map((tool) => tool.name)).toEqual([
         CANVAS_UI_CLIENT_TOOL_NAME,
         LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
+        REQUEST_SECRET_TOOL_NAME,
       ]);
     });
 
@@ -883,6 +885,7 @@ describe("buildStartConversationRequest", () => {
         expectedTools: [
           CANVAS_UI_CLIENT_TOOL_NAME,
           LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
+          REQUEST_SECRET_TOOL_NAME,
         ],
       },
       {
@@ -890,6 +893,7 @@ describe("buildStartConversationRequest", () => {
         expectedTools: [
           CANVAS_UI_CLIENT_TOOL_NAME,
           LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
+          REQUEST_SECRET_TOOL_NAME,
           AUTOMATION_FORM_UPDATE_TOOL_NAME,
         ],
       },
@@ -917,6 +921,7 @@ describe("buildStartConversationRequest", () => {
       expect(payload.client_tools.map((tool) => tool.name)).toEqual([
         CANVAS_UI_CLIENT_TOOL_NAME,
         LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
+        REQUEST_SECRET_TOOL_NAME,
       ]);
     });
 

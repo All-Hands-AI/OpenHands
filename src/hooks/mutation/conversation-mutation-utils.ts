@@ -4,6 +4,10 @@ import type { StartGoalRequest } from "@openhands/typescript-client";
 import { getActiveBackend } from "#/api/backend-registry/active-store";
 import { pauseCloudSandbox } from "#/api/cloud/conversation-service.api";
 import { getAgentServerClientOptions } from "#/api/agent-server-client-options";
+import {
+  buildCustomSecrets,
+  type CustomSecretInput,
+} from "#/api/agent-server-adapter";
 import AgentServerConversationService from "#/api/conversation-service/agent-server-conversation-service.api";
 import { AppConversation } from "#/api/conversation-service/agent-server-conversation-service.types";
 
@@ -112,6 +116,27 @@ export const resumeGoal = async (conversationId: string): Promise<void> => {
   await new ConversationClient(
     getAgentServerClientOptions({ conversationUrl, sessionApiKey }),
   ).resumeGoal(conversationId);
+};
+
+/**
+ * Hand saved secrets to a running conversation. Conversations receive their
+ * secrets once at start, so a secret saved mid-conversation is otherwise
+ * invisible to the agent. Secrets ride as LookupSecrets, never as values.
+ * Cloud resolves secrets server-side, so this is local-only.
+ */
+export const updateConversationSecrets = async (
+  conversationId: string,
+  customSecrets: CustomSecretInput[],
+): Promise<void> => {
+  if (getActiveBackend().backend.kind === "cloud") return;
+  const secrets = buildCustomSecrets(customSecrets);
+  if (!secrets) return;
+
+  const { conversationUrl, sessionApiKey } =
+    await fetchConversationData(conversationId);
+  await new ConversationClient(
+    getAgentServerClientOptions({ conversationUrl, sessionApiKey }),
+  ).updateSecrets(conversationId, { secrets });
 };
 
 export const resumeConversation = async (conversationId: string) => {
