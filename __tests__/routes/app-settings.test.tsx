@@ -65,6 +65,7 @@ describe("AppSettingsScreen", () => {
     activeBackendState.kind = "local";
   });
 
+  // @spec APS-001 — Failed saves retain edits and allow a successful retry.
   it("keeps edits after a failed save and lets the user retry successfully", async () => {
     // Arrange: a real save mutation remains pending until the service rejects.
     const user = userEvent.setup();

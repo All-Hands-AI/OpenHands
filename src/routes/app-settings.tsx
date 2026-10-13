@@ -88,6 +88,7 @@ export function AppSettingsScreen() {
     [llmProfiles?.profiles, freeModels, t],
   );
 
+  // @spec APS-001 — Clear the application draft only after a successful save.
   const formAction = (formData: FormData) => {
     const languageLabel = formData.get("language-input")?.toString();
     const languageValue = AvailableLanguages.find(
@@ -178,6 +179,7 @@ export function AppSettingsScreen() {
     !gitUserNameHasChanged &&
     !gitUserEmailHasChanged;
 
+  // @spec APS-001 — Pending saves retain the mounted, disabled form.
   const shouldBeLoading = !settings || isLoading || areLlmProfilesLoading;
 
   return (
