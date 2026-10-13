@@ -15,6 +15,13 @@ interface DeleteConfirmationModalProps {
   isOpen: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  /** Overrides the default automation copy, e.g. for a saved draft. */
+  title?: string;
+  message?: string;
+  confirmLabel?: string;
+  confirmTestId?: string;
+  /** Disables Delete while the deletion is in flight. */
+  isConfirming?: boolean;
 }
 
 export function DeleteConfirmationModal({
@@ -22,6 +29,11 @@ export function DeleteConfirmationModal({
   isOpen,
   onConfirm,
   onCancel,
+  title: titleOverride,
+  message,
+  confirmLabel,
+  confirmTestId,
+  isConfirming = false,
 }: DeleteConfirmationModalProps) {
   const { t } = useTranslation("openhands");
   const cancelButtonRef = React.useRef<HTMLButtonElement>(null);
@@ -34,7 +46,7 @@ export function DeleteConfirmationModal({
 
   if (!isOpen) return null;
 
-  const title = t(I18nKey.AUTOMATIONS$DELETE_CONFIRM_TITLE);
+  const title = titleOverride ?? t(I18nKey.AUTOMATIONS$DELETE_CONFIRM_TITLE);
 
   // ModalBackdrop exposes the named `role="dialog"` with `aria-modal` and
   // closes on Escape or a backdrop click.
@@ -58,9 +70,10 @@ export function DeleteConfirmationModal({
 
         <h2 className={modalTitleLgMediumClassName}>{title}</h2>
         <p className="mt-2 text-sm text-muted">
-          {t(I18nKey.AUTOMATIONS$DELETE_CONFIRM_MESSAGE, {
-            name: automationName,
-          })}
+          {message ??
+            t(I18nKey.AUTOMATIONS$DELETE_CONFIRM_MESSAGE, {
+              name: automationName,
+            })}
         </p>
 
         <div className="mt-6 flex justify-end gap-3">
@@ -74,10 +87,12 @@ export function DeleteConfirmationModal({
           </button>
           <button
             type="button"
+            data-testid={confirmTestId}
             onClick={onConfirm}
-            className="rounded-lg bg-danger px-4 py-2 text-sm text-white hover:bg-danger/80"
+            disabled={isConfirming}
+            className="rounded-lg bg-danger px-4 py-2 text-sm text-white hover:bg-danger/80 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {t(I18nKey.AUTOMATIONS$DELETE)}
+            {confirmLabel ?? t(I18nKey.AUTOMATIONS$DELETE)}
           </button>
         </div>
       </div>
