@@ -81,13 +81,8 @@ export function CustomChatInput({
   }, [submittedMessage, disabled, setSubmittedMessage]);
 
   // Custom hooks
-  const {
-    chatInputRef,
-    messageToSend,
-    checkIsContentEmpty,
-    clearEmptyContentHandler,
-    saveDraft,
-  } = useChatInputLogic();
+  const { chatInputRef, messageToSend, checkIsContentEmpty, saveDraft } =
+    useChatInputLogic();
 
   const syncCanSubmit = React.useCallback(() => {
     const text = chatInputRef.current?.innerText ?? "";
@@ -140,7 +135,6 @@ export function CustomChatInput({
       smartResize,
       increaseHeightForEmptyContent,
       checkIsContentEmpty,
-      clearEmptyContentHandler,
       onFocus,
       onBlur,
     );

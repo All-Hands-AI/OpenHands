@@ -14,7 +14,7 @@ which changes name, prompt, agent and LLM profile, timeout and the trigger. A
 DRAFT-state test automation (materialized by a draft Test, F21.saved-drafts)
 shows a **Draft** badge and no on/off switch.
 
-Source: `src/routes/automation-detail.tsx`, `src/components/features/automations/detail/`, `src/hooks/use-open-automation-editor.ts`, `src/utils/automation-edit-draft.ts`, `src/utils/automation-state.ts`, `src/components/features/automations/setup/automation-setup-panel.tsx` (edit mode), `src/components/features/automations/delete-confirmation-modal.tsx`, `src/hooks/query/use-automation-detail.ts`, `src/utils/automation-preset-sources.ts`, `src/hooks/query/use-bash-command-logs.ts`, `src/hooks/query/use-automation-tarball-files.ts`, `src/utils/automation-schedule.ts`, `src/utils/automation-timeout.ts`, `src/utils/automation-disabled-reason.ts`, `src/utils/automation-activity-log-export.ts`.
+Source: `src/routes/automation-detail.tsx`, `src/components/features/automations/detail/`, `src/hooks/use-open-automation-editor.ts`, `src/utils/automation-edit-draft.ts`, `src/utils/automation-state.ts`, `src/components/features/automations/setup/automation-setup-panel.tsx` (edit mode), `src/components/features/automations/delete-confirmation-modal.tsx`, `src/hooks/query/use-automation-detail.ts`, `src/utils/automation-preset-sources.ts`, `src/hooks/query/use-bash-command-logs.ts`, `src/hooks/query/use-automation-tarball-files.ts`, `src/utils/automation-schedule.ts`, `src/utils/automation-disabled-reason.ts`, `src/utils/automation-activity-log-export.ts`.
 
 ## Sub-features
 
