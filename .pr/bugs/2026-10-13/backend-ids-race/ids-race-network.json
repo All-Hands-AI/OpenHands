@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "total": 1,
+  "byOrigin": {
+    "http://127.0.0.1:18810": 1
+  },
+  "recent": [
+    {
+      "ts": "2026-10-13T09:27:40.537Z",
+      "origin": "http://127.0.0.1:18810",
+      "path": "/api/conversations",
+      "query": "?ids=bc2d3ebc-0fc8-4f31-bd92-b07db600ab93",
+      "method": "GET",
+      "type": "fetch",
+      "app": false,
+      "status": 200
+    }
+  ]
+}
