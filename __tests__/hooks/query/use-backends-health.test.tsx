@@ -216,6 +216,35 @@ describe("useBackendsHealth", () => {
     expect(getCurrentCloudApiKeyMock).not.toHaveBeenCalled();
   });
 
+  it("polls cloud health less frequently than local health", async () => {
+    vi.useFakeTimers();
+    getCurrentCloudApiKeyMock.mockResolvedValue({
+      orgId: "org-1",
+      isLegacyKey: false,
+    });
+
+    const { result } = renderHook(() => useBackendsHealth([cloudBackend]), {
+      wrapper,
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+      await Promise.resolve();
+    });
+    expect(result.current[cloudBackend.id].isConnected).toBe(true);
+    expect(getCurrentCloudApiKeyMock).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+    expect(getCurrentCloudApiKeyMock).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(270_000);
+    });
+    expect(getCurrentCloudApiKeyMock).toHaveBeenCalledTimes(2);
+  });
+
   it("reports disconnected when the cloud probe throws", async () => {
     getCurrentCloudApiKeyMock.mockRejectedValue(new Error("Network Error"));
 
@@ -300,6 +329,41 @@ describe("useBackendsHealth", () => {
       consecutiveFailures: 1,
       disabled: false,
     });
+  });
+
+  it("keeps polling ordinary backends but stops re-probing MARS sessions the user is not on", async () => {
+    // Arrange — every probe of a MARS session tunnels into its sandbox, so
+    // polling an idle one would keep it from auto-pausing.
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    getSettingsMock.mockResolvedValue({});
+    const idleMarsBackend: Backend = {
+      id: "mars-idle",
+      name: "Web agent · fix-login",
+      host: "http://127.0.0.1:51000",
+      apiKey: "",
+      kind: "local",
+      marsSessionId: "sess_idle",
+    };
+    const probesOf = (host: string) =>
+      vi
+        .mocked(SettingsClient)
+        .mock.calls.filter(([options]) => options?.host === host).length;
+    renderHook(() => useBackendsHealth([localBackend, idleMarsBackend]), {
+      wrapper,
+    });
+    await waitFor(() => {
+      expect(probesOf(localBackend.host)).toBe(1);
+      expect(probesOf(idleMarsBackend.host)).toBe(1);
+    });
+
+    // Act
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(65_000);
+    });
+
+    // Assert
+    expect(probesOf(localBackend.host)).toBeGreaterThan(1);
+    expect(probesOf(idleMarsBackend.host)).toBe(1);
   });
 
   it("does not probe a backend whose disabled state was persisted before the GUI mounted (refresh case)", async () => {

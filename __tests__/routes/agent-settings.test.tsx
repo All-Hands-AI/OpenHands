@@ -12,10 +12,20 @@ import SettingsService from "#/api/settings-service/settings-service.api";
 import { SecretsService } from "#/api/secrets-service";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 import { Settings } from "#/types/settings";
-import { ACP_PROVIDERS } from "#/constants/acp-providers";
+import {
+  ACP_PROVIDERS,
+  ACP_VERTEX_SAFE_MODEL,
+} from "#/constants/acp-providers";
+import {
+  __resetActiveStoreForTests,
+  setActiveSelection,
+  setRegisteredBackends,
+} from "#/api/backend-registry/active-store";
+import { ActiveBackendProvider } from "#/contexts/active-backend-context";
 import { parseCommand } from "#/utils/acp-command";
 const CLAUDE_COMMAND = getClientAcpProvider("claude-code")!.default_command;
 const CODEX_COMMAND = getClientAcpProvider("codex")!.default_command;
+const OPENCODE_PROVIDER = getClientAcpProvider("opencode")!;
 
 // Stub the login-detection probe so the ACP credentials section doesn't spin a
 // subprocess; default to no detected session so existing tests are unaffected.
@@ -23,6 +33,23 @@ const acpAuthStatusMock = vi.hoisted(() => vi.fn());
 vi.mock("#/hooks/query/use-acp-auth-status", () => ({
   useAcpAuthStatus: (...args: unknown[]) => acpAuthStatusMock(...args),
 }));
+
+// What the provider's own server reports; empty unless a test sets it.
+const acpModelDiscoveryMock = vi.hoisted(() => vi.fn());
+vi.mock("#/hooks/query/use-acp-model-discovery", () => ({
+  useAcpModelDiscovery: (...args: unknown[]) => acpModelDiscoveryMock(...args),
+}));
+const NO_DISCOVERY = {
+  discovery: null,
+  models: [],
+  source: "none",
+  defaultModelId: null,
+  isDiscovering: false,
+};
+const CLAUDE_MODELS = [
+  { id: "default", label: "Default (recommended)" },
+  { id: "haiku", label: "Haiku" },
+];
 
 const profileSupportsSecretRefsMock = vi.hoisted(() => vi.fn(() => true));
 const profileSupportsInstructionsMock = vi.hoisted(() => vi.fn(() => false));
@@ -110,6 +137,7 @@ describe("AgentSettingsScreen", () => {
       isChecking: false,
       isSupported: true,
     });
+    acpModelDiscoveryMock.mockReturnValue(NO_DISCOVERY);
     toastMocks.success.mockClear();
     toastMocks.error.mockClear();
     toastMocks.warning.mockClear();
@@ -142,9 +170,7 @@ describe("AgentSettingsScreen", () => {
     });
   });
 
-  it("opens a stored ACP profile on its command and custom model", async () => {
-    // A model ID outside the provider's suggestions falls through to the
-    // custom input; known IDs go through the dropdown instead.
+  it("opens a stored ACP profile on its command and saved model", async () => {
     renderAgentSettingsScreen({
       agentSettingsOverride: {
         ...CLAUDE_PROFILE,
@@ -159,22 +185,80 @@ describe("AgentSettingsScreen", () => {
     expect(commandInput.value).toBe(
       "npx -y @agentclientprotocol/claude-agent-acp",
     );
-    const modelInput = screen.getByTestId(
-      "agent-model-input",
-    ) as HTMLInputElement;
-    expect(modelInput.value).toBe("my-pinned-fork-model");
+    expect(screen.getByLabelText("SETTINGS$AGENT_MODEL")).toHaveValue(
+      "my-pinned-fork-model",
+    );
+    expect(screen.queryByTestId("agent-model-input")).toBeNull();
   });
 
-  it("defaults built-in ACP providers to a suggested model when none is saved", async () => {
-    renderAgentSettingsScreen({ agentSettingsOverride: CLAUDE_PROFILE });
+  it("starts a built-in provider on the agent's own default before any model list", async () => {
+    const { control } = renderAgentSettingsScreen({
+      agentSettingsOverride: CLAUDE_PROFILE,
+    });
 
     await screen.findByTestId("agent-command-input");
     expect(screen.getByLabelText("SETTINGS$AGENT_MODEL")).toHaveValue(
-      "Claude Opus (1M)",
+      "SETTINGS$AGENT_MODEL_AGENT_DEFAULT",
     );
+    expect(
+      screen.getByTestId("agent-model-list-after-first-conversation"),
+    ).toBeInTheDocument();
+    expect(control().buildAgentProfileFields()).toMatchObject({
+      acp_model: null,
+    });
+  });
+
+  it("says when the models come from the last conversation", async () => {
+    acpModelDiscoveryMock.mockReturnValue({
+      ...NO_DISCOVERY,
+      models: CLAUDE_MODELS,
+      source: "remembered",
+    });
+    renderAgentSettingsScreen({ agentSettingsOverride: CLAUDE_PROFILE });
+
+    expect(
+      await screen.findByTestId("agent-model-list-remembered"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("agent-model-list-after-first-conversation"),
+    ).toBeNull();
+  });
+
+  it("keeps Gemini on its Vertex-safe model instead of offering its own default", async () => {
+    const user = userEvent.setup();
+    renderAgentSettingsScreen({
+      agentSettingsOverride: { ...CLAUDE_PROFILE, acp_server: "gemini-cli" },
+    });
+
+    await screen.findByTestId("agent-command-input");
+    expect(screen.getByLabelText("SETTINGS$AGENT_MODEL")).toHaveValue(
+      ACP_VERTEX_SAFE_MODEL,
+    );
+    await user.click(screen.getByLabelText("SETTINGS$AGENT_MODEL"));
+    expect(
+      screen.queryByRole("option", {
+        name: "SETTINGS$AGENT_MODEL_AGENT_DEFAULT",
+      }),
+    ).toBeNull();
+  });
+
+  it("puts the credentials before the model, since the models depend on them", async () => {
+    renderAgentSettingsScreen({ agentSettingsOverride: CLAUDE_PROFILE });
+
+    const model = await screen.findByTestId("agent-model-selector");
+    const credentials = screen.getByText("SETTINGS$ACP_CREDENTIALS_TITLE");
+    expect(
+      credentials.compareDocumentPosition(model) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it("builds the selected built-in ACP model", async () => {
+    acpModelDiscoveryMock.mockReturnValue({
+      ...NO_DISCOVERY,
+      models: CLAUDE_MODELS,
+      source: "live",
+    });
     const user = userEvent.setup();
     const { control } = renderAgentSettingsScreen({
       agentSettingsOverride: CLAUDE_PROFILE,
@@ -182,12 +266,110 @@ describe("AgentSettingsScreen", () => {
 
     await screen.findByTestId("agent-command-input");
     await user.click(screen.getByLabelText("SETTINGS$AGENT_MODEL"));
-    await user.click(await screen.findByText("Claude Haiku"));
+    await user.click(await screen.findByText("Haiku"));
 
     expect(control().buildAgentProfileFields()).toMatchObject({
       acp_model: "haiku",
     });
   });
+
+  it("offers OpenCode and leaves its default command to the profile resolver", async () => {
+    const user = userEvent.setup();
+    const { control } = renderAgentSettingsScreen({
+      agentSettingsOverride: CLAUDE_PROFILE,
+    });
+    await screen.findByTestId("agent-command-input");
+    await user.click(screen.getByTestId("agent-preset-selector"));
+    await user.click(await screen.findByRole("option", { name: "OpenCode" }));
+
+    expect(screen.getByTestId("agent-command-input")).toHaveValue(
+      OPENCODE_PROVIDER.default_command.join(" "),
+    );
+    expect(screen.getByLabelText("SETTINGS$AGENT_MODEL")).toHaveValue(
+      "SETTINGS$AGENT_MODEL_AGENT_DEFAULT",
+    );
+
+    expect(control().buildAgentProfileFields()).toMatchObject({
+      agent_kind: "acp",
+      acp_server: "opencode",
+      acp_command: null,
+      acp_args: null,
+      acp_model: null,
+    });
+  });
+
+  it.each([null, [...OPENCODE_PROVIDER.default_command]])(
+    "reloads OpenCode with command %j without losing its preset or model",
+    async (command) => {
+      const { control } = renderAgentSettingsScreen({
+        agentSettingsOverride: {
+          agent_kind: "acp",
+          acp_server: "opencode",
+          acp_command: command,
+          acp_model: "opencode/big-pickle",
+        },
+      });
+
+      expect(await screen.findByTestId("agent-preset-selector")).toHaveValue(
+        "OpenCode",
+      );
+      expect(screen.getByTestId("agent-command-input")).toHaveValue(
+        OPENCODE_PROVIDER.default_command.join(" "),
+      );
+      expect(screen.getByLabelText("SETTINGS$AGENT_MODEL")).toHaveValue(
+        "opencode/big-pickle",
+      );
+      // Old explicit defaults are cleared on the next save; new profiles
+      // resolve the current registry command rather than pinning a CLI version.
+      expect(control().buildAgentProfileFields()).toMatchObject({
+        acp_server: "opencode",
+        acp_command: null,
+        acp_model: "opencode/big-pickle",
+      });
+    },
+  );
+
+  it.each(["opencode-go/kimi-k3"])(
+    "preserves the OpenCode preset when reopening and changing Go model %s",
+    async (model) => {
+      const user = userEvent.setup();
+      const { control } = renderAgentSettingsScreen({
+        agentSettingsOverride: {
+          agent_kind: "acp",
+          acp_server: "opencode",
+          acp_command: null,
+          acp_model: model,
+        },
+      });
+
+      expect(await screen.findByTestId("agent-preset-selector")).toHaveValue(
+        "OpenCode",
+      );
+      expect(screen.getByLabelText("SETTINGS$AGENT_MODEL")).toHaveValue(model);
+      expect(control().buildAgentProfileFields()).toMatchObject({
+        acp_server: "opencode",
+        acp_command: null,
+        acp_model: model,
+      });
+
+      // Changing the model must not turn the provider into a Custom ACP command.
+      await user.click(screen.getByLabelText("SETTINGS$AGENT_MODEL"));
+      await user.click(
+        await screen.findByRole("option", {
+          name: "SETTINGS$AGENT_PRESET_CUSTOM",
+        }),
+      );
+      await user.type(
+        screen.getByTestId("agent-model-input"),
+        "opencode-go/deepseek-v4-flash",
+      );
+      expect(control().buildAgentProfileFields()).toMatchObject({
+        acp_server: "opencode",
+        acp_command: null,
+        acp_model: "opencode-go/deepseek-v4-flash",
+      });
+    },
+  );
 
   it("clears the model when switching from a built-in provider to Custom", async () => {
     // Picking Custom must not leak the built-in default model onto an
@@ -198,7 +380,7 @@ describe("AgentSettingsScreen", () => {
     });
     await screen.findByTestId("agent-command-input");
     expect(screen.getByLabelText("SETTINGS$AGENT_MODEL")).toHaveValue(
-      "Claude Opus (1M)",
+      "SETTINGS$AGENT_MODEL_AGENT_DEFAULT",
     );
 
     await user.click(screen.getByTestId("agent-preset-selector"));
@@ -218,12 +400,233 @@ describe("AgentSettingsScreen", () => {
     });
   });
 
+  it("offers the Pi preset and leaves its model to Pi", async () => {
+    const pi = getClientAcpProvider("pi")!;
+    const user = userEvent.setup();
+    const { control } = renderAgentSettingsScreen({
+      agentSettingsOverride: CLAUDE_PROFILE,
+    });
+    await screen.findByTestId("agent-command-input");
+
+    await user.click(screen.getByTestId("agent-preset-selector"));
+    await user.click(await screen.findByRole("option", { name: "Pi" }));
+
+    expect(screen.getByTestId("agent-command-input")).toHaveValue(
+      pi.default_command.join(" "),
+    );
+    expect(control().buildAgentProfileFields()).toMatchObject({
+      acp_server: "pi",
+      acp_command: null,
+      acp_model: null,
+    });
+  });
+
+  it("lists the models the agent reports and names its own default", async () => {
+    acpModelDiscoveryMock.mockReturnValue({
+      ...NO_DISCOVERY,
+      source: "live",
+      models: [
+        { id: "default", label: "Default (recommended)" },
+        { id: "claude-fable-5[1m]", label: "Fable 5 (1M)" },
+        { id: "sonnet", label: "Sonnet" },
+      ],
+      defaultModelId: "default",
+    });
+    const user = userEvent.setup();
+    const { control } = renderAgentSettingsScreen({
+      agentSettingsOverride: CLAUDE_PROFILE,
+    });
+    await screen.findByTestId("agent-command-input");
+    expect(acpModelDiscoveryMock).toHaveBeenLastCalledWith("claude-code", {
+      secretRefs: null,
+    });
+
+    await user.click(screen.getByLabelText("SETTINGS$AGENT_MODEL"));
+    await user.click(
+      await screen.findByRole("option", { name: "Fable 5 (1M)" }),
+    );
+    expect(control().buildAgentProfileFields()).toMatchObject({
+      acp_model: "claude-fable-5[1m]",
+    });
+
+    await user.click(screen.getByLabelText("SETTINGS$AGENT_MODEL"));
+    await user.click(
+      await screen.findByRole("option", {
+        name: "SETTINGS$AGENT_MODEL_AGENT_DEFAULT_IS",
+      }),
+    );
+    expect(control().buildAgentProfileFields()).toMatchObject({
+      acp_model: null,
+    });
+  });
+
+  it("keeps a saved model selectable when the agent no longer lists it", async () => {
+    acpModelDiscoveryMock.mockReturnValue({
+      ...NO_DISCOVERY,
+      source: "live",
+      models: [{ id: "gpt-6-astra", label: "GPT-6 Astra" }],
+      defaultModelId: "gpt-6-astra",
+    });
+    renderAgentSettingsScreen({
+      agentSettingsOverride: {
+        ...CLAUDE_PROFILE,
+        acp_server: "codex",
+        acp_model: "gpt-5.5",
+      },
+    });
+
+    await screen.findByTestId("agent-command-input");
+    expect(screen.getByLabelText("SETTINGS$AGENT_MODEL")).toHaveValue(
+      "gpt-5.5",
+    );
+    expect(screen.queryByTestId("agent-model-input")).toBeNull();
+  });
+
+  it("offers Pi's own default and saves no model for it", async () => {
+    acpModelDiscoveryMock.mockReturnValue({
+      ...NO_DISCOVERY,
+      models: [
+        { id: "anthropic/claude-opus-4-8", label: "Claude Opus 4.8" },
+        { id: "anthropic/claude-sonnet-5", label: "Claude Sonnet 5" },
+      ],
+      defaultModelId: "anthropic/claude-opus-4-8",
+    });
+    const user = userEvent.setup();
+    const { control } = renderAgentSettingsScreen({
+      agentSettingsOverride: { ...CLAUDE_PROFILE, acp_server: "pi" },
+    });
+
+    await screen.findByTestId("agent-command-input");
+    expect(screen.getByLabelText("SETTINGS$AGENT_MODEL")).toHaveValue(
+      "SETTINGS$AGENT_MODEL_AGENT_DEFAULT_IS",
+    );
+    expect(control().buildAgentProfileFields()).toMatchObject({
+      acp_server: "pi",
+      acp_model: null,
+    });
+
+    await user.click(screen.getByLabelText("SETTINGS$AGENT_MODEL"));
+    await user.click(
+      await screen.findByRole("option", { name: "Claude Sonnet 5" }),
+    );
+    expect(control().buildAgentProfileFields()).toMatchObject({
+      acp_model: "anthropic/claude-sonnet-5",
+    });
+  });
+
+  it("asks for models with only the secrets the profile allows", async () => {
+    renderAgentSettingsScreen({
+      agentSettingsOverride: {
+        ...CLAUDE_PROFILE,
+        secret_refs: ["ANTHROPIC_API_KEY"],
+      },
+    });
+
+    await screen.findByTestId("agent-command-input");
+    expect(acpModelDiscoveryMock).toHaveBeenLastCalledWith("claude-code", {
+      secretRefs: ["ANTHROPIC_API_KEY"],
+    });
+  });
+
+  it("does not ask a custom command for its models", async () => {
+    renderAgentSettingsScreen({
+      agentSettingsOverride: {
+        ...CLAUDE_PROFILE,
+        acp_server: "custom",
+        acp_command: ["my-acp-wrapper"],
+      },
+    });
+
+    await screen.findByTestId("agent-command-input");
+    expect(acpModelDiscoveryMock).toHaveBeenLastCalledWith(null, {
+      secretRefs: null,
+    });
+  });
+
+  it("asks for credentials when the agent needs a login to list models", async () => {
+    acpModelDiscoveryMock.mockReturnValue({
+      ...NO_DISCOVERY,
+      discovery: {
+        agent_name: null,
+        agent_version: null,
+        current_model_id: null,
+        available_models: [],
+        supports_runtime_model_switch: false,
+        error: { code: "ACPAuthRequired", detail: "log in" },
+      },
+    });
+    acpAuthStatusMock.mockReturnValue({
+      status: "authenticated",
+      isChecking: false,
+      isSupported: true,
+    });
+    renderAgentSettingsScreen({
+      agentSettingsOverride: { ...CLAUDE_PROFILE, acp_server: "gemini-cli" },
+    });
+
+    expect(
+      await screen.findByTestId("agent-model-discovery-needs-auth"),
+    ).toBeInTheDocument();
+    // The agent refused the login a local file check counted as signed in.
+    expect(screen.queryByTestId("settings-acp-auth-detected")).toBeNull();
+  });
+
+  it("hides the local-only presets on a cloud backend", async () => {
+    __resetActiveStoreForTests();
+    setRegisteredBackends([
+      {
+        id: "cloud-1",
+        name: "Cloud",
+        host: "https://app.example.com",
+        apiKey: "key",
+        kind: "cloud",
+      },
+    ]);
+    setActiveSelection({ backendId: "cloud-1", orgId: null });
+    try {
+      render(
+        <AgentSettingsScreen
+          agentSettingsOverride={CLAUDE_PROFILE}
+          onSaveControlChange={() => {}}
+        />,
+        {
+          wrapper: ({ children }) => (
+            <MemoryRouter>
+              <QueryClientProvider
+                client={
+                  new QueryClient({
+                    defaultOptions: { queries: { retry: false } },
+                  })
+                }
+              >
+                <ActiveBackendProvider>{children}</ActiveBackendProvider>
+              </QueryClientProvider>
+            </MemoryRouter>
+          ),
+        },
+      );
+      await screen.findByTestId("agent-command-input");
+      await userEvent
+        .setup()
+        .click(screen.getByTestId("agent-preset-selector"));
+
+      expect(
+        await screen.findByRole("option", { name: "Codex" }),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("option", { name: "Pi" })).toBeNull();
+      expect(screen.queryByRole("option", { name: "OpenCode" })).toBeNull();
+    } finally {
+      window.localStorage.clear();
+      __resetActiveStoreForTests();
+    }
+  });
+
   it("reconciles the model when the command is retyped to a different provider", async () => {
     // The textarea is the other way to change provider, so it must drop the
     // previous provider's model just like the preset dropdown does.
     const user = userEvent.setup();
     const { control } = renderAgentSettingsScreen({
-      agentSettingsOverride: CLAUDE_PROFILE,
+      agentSettingsOverride: { ...CLAUDE_PROFILE, acp_model: "haiku" },
     });
     await screen.findByTestId("agent-command-input");
 
@@ -231,13 +634,10 @@ describe("AgentSettingsScreen", () => {
     await user.clear(commandInput);
     await user.type(commandInput, CODEX_COMMAND.join(" "));
 
-    expect(screen.getByLabelText("SETTINGS$AGENT_MODEL")).toHaveValue(
-      "GPT-5.5",
-    );
     expect(control().buildAgentProfileFields()).toMatchObject({
       acp_server: "codex",
       acp_command: null,
-      acp_model: "gpt-5.5",
+      acp_model: null,
     });
   });
 
@@ -265,7 +665,7 @@ describe("AgentSettingsScreen", () => {
       // The default command is left to the registry rather than pinned.
       acp_command: null,
       acp_args: null,
-      acp_model: "opus[1m]",
+      acp_model: null,
     });
   });
 
