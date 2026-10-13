@@ -2,6 +2,8 @@ import { expect, test } from "@playwright/test";
 
 for (const theme of [
   "openhands-neutral",
+  "openhands-deepsea",
+  "openhands-neo",
   "light-plus",
   "solarized-light",
 ] as const) {
@@ -104,7 +106,7 @@ for (const theme of [
       // Let this browser normalize color-mix(), avoiding differences in color
       // serialization between Chromium, Firefox, and WebKit.
       reference.style.borderColor =
-        colorTheme === "openhands-neutral"
+        colorTheme !== "light-plus" && colorTheme !== "solarized-light"
           ? "var(--oh-border)"
           : "var(--oh-border-input)";
       const restingBorder = getComputedStyle(reference).borderTopColor;
