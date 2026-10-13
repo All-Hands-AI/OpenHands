@@ -259,6 +259,25 @@ describe("extractReferences", () => {
       { label: "Req", section: "9.9" },
     ]);
   });
+
+  it("ignores an image whose alt text looks like a citation", () => {
+    // Image syntax shares the bracket-and-parenthesis shape of a link, but the
+    // bracketed text is alt text, not a reference.
+    expect(
+      extractReferences("![Req 9.9](https://example.com/error.png)"),
+    ).toEqual([]);
+  });
+
+  it("ignores an escaped link that renders literally", () => {
+    expect(extractReferences("\\[Req 9.9](https://example.com)")).toEqual([]);
+  });
+
+  it("still counts a prose citation immediately after an image", () => {
+    // The image is consumed whole, so a following prose citation is not lost.
+    expect(
+      extractReferences("![alt](https://example.com/a.png) see [Req 3.1]"),
+    ).toEqual([{ label: "Req", section: "3.1" }]);
+  });
 });
 
 describe("validateDocumentChain", () => {
@@ -427,6 +446,25 @@ describe("validateDocumentChain", () => {
     const covered = validateDocumentChain(documents, "tasks");
     expect(covered.ok).toBe(true);
     expect(covered.uncovered).toEqual([]);
+  });
+
+  it("ignores a citation-looking image caption at the checkpoint", () => {
+    // An image alt text such as `![Req 9.9](…)` labels an image; it must not
+    // block the checkpoint as a dangling reference...
+    const documents: DeepPlanDocuments = {
+      requirements: "## 3.1 Login",
+      tasks: "- [ ] Illustrate the error ![Req 9.9](https://example.com/e.png)",
+    };
+
+    const blocked = validateDocumentChain(documents, "tasks");
+    expect(blocked.ok).toBe(true);
+    expect(blocked.issues).toEqual([]);
+
+    // ...nor hide an uncovered requirement by naming it.
+    documents.tasks = "- [ ] Illustrate ![Req 3.1](https://example.com/e.png)";
+    const uncovered = validateDocumentChain(documents, "tasks");
+    expect(uncovered.ok).toBe(true);
+    expect(uncovered.uncovered).toEqual(["3.1"]);
   });
 
   it("rejects a citation to a section only an unnumbered heading cites", () => {
@@ -666,6 +704,14 @@ describe("linkifyCitations", () => {
     // the renderer must not nest or retarget it.
     const out = linkifyCitations("[Req 3.1](https://example.com)", "backend");
     expect(out).toBe("[Req 3.1](https://example.com)");
+  });
+
+  it("leaves an image with citation-looking alt text untouched", () => {
+    const out = linkifyCitations(
+      "![Req 3.1](https://example.com/a.png)",
+      "backend",
+    );
+    expect(out).toBe("![Req 3.1](https://example.com/a.png)");
   });
 
   it("still links a real citation outside a protected span", () => {

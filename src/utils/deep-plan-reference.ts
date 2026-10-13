@@ -47,19 +47,23 @@ export interface RefReport {
  * One scan shared by validation and rendering, so the two can never disagree
  * about what a citation is. Alternatives, in order:
  *
- *  1. A Markdown link whose whole label is a citation — `[Req 3.1](https://…)`.
+ *  1. Image alt text or escaped markup — `![Req 3.1](url)` or
+ *     `\[Req 3.1](url)`. The bracketed text is not a citation (it labels an
+ *     image, or renders literally), so the whole span is consumed with no
+ *     capture group and both consumers ignore it.
+ *  2. A Markdown link whose whole label is a citation — `[Req 3.1](https://…)`.
  *     The label is a real reference the validator must check, but the link is
  *     authored markup, so it must stay as written when rendering.
- *  2. Any other verbatim span: fenced code (``` / ~~~), an inline code span, or
+ *  3. Any other verbatim span: fenced code (``` / ~~~), an inline code span, or
  *     a Markdown link. A citation-looking marker inside one of these is an
  *     illustrative example, not a dependency.
- *  3. A bare citation in prose — `[Req 3.1]`.
+ *  4. A bare citation in prose — `[Req 3.1]`.
  *
  * Groups: 1/2 direct-link label/section, 3 protected span, 4/5 prose
- * label/section.
+ * label/section. The image/escaped alternative deliberately captures nothing.
  */
 const CITATION_OR_PROTECTED =
-  /\[(Req|DB|BE|FE)\s+([0-9]+(?:\.[0-9]+)*)\]\([^)\n]*\)|(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`|\[(?:[^[\]\n]|\[[^\]\n]*\])*\]\([^)\n]*\))|\[(Req|DB|BE|FE)\s+([0-9]+(?:\.[0-9]+)*)\]/g;
+  /(?:[!\\])\[(?:Req|DB|BE|FE)\s+[0-9]+(?:\.[0-9]+)*\]\([^)\n]*\)|\[(Req|DB|BE|FE)\s+([0-9]+(?:\.[0-9]+)*)\]\([^)\n]*\)|(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`|\[(?:[^[\]\n]|\[[^\]\n]*\])*\]\([^)\n]*\))|\[(Req|DB|BE|FE)\s+([0-9]+(?:\.[0-9]+)*)\]/g;
 const HEADING_PATTERN = /^#{1,6}\s+(.*)$/;
 /**
  * An inline Markdown delimiter that may wrap a heading's leading section
