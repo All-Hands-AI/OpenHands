@@ -1153,6 +1153,69 @@ async function cmdStatus({ flags }) {
   });
 }
 
+async function cmdLauncher({ positional, flags }) {
+  if (positional[0] !== "busy-port")
+    usage(
+      "launcher busy-port probes this run's occupied ingress",
+      "control-openhands launcher busy-port",
+    );
+  const run = loadRun(flags);
+  if (!groupAlive(run.launcherPgid) || !(await portOpen(run.ports.ingress)))
+    throw new CliError(
+      "The run's ingress must be alive before the busy-port probe.",
+      { code: 3 },
+    );
+  const saved = JSON.parse(
+    readFileSync(join(run.dir, "private", "launcher-env.json"), "utf8"),
+  );
+  const encryption = readFileSync(
+    join(run.dir, "private", "encryption-key"),
+    "utf8",
+  ).trim();
+  const hostIndex = run.launcherArgs.indexOf("--host");
+  const host = hostIndex < 0 ? "127.0.0.1" : run.launcherArgs[hostIndex + 1];
+  const result = spawnSync(
+    process.execPath,
+    [
+      join(repoRoot, "bin", "agent-canvas.mjs"),
+      "--backend-only",
+      "--port",
+      String(run.ports.ingress),
+      "--host",
+      host,
+    ],
+    {
+      cwd: repoRoot,
+      encoding: "utf8",
+      timeout: 30_000,
+      env: {
+        ...launcherEnvFor(saved, process.env, PASS_ENV),
+        LOCAL_BACKEND_API_KEY: sessionKey(run),
+        OH_SECRET_KEY: encryption,
+        OH_CANVAS_SAFE_STATE_DIR: join(run.dir, "private", "busy-port-probe"),
+      },
+    },
+  );
+  if (result.error) throw new CliError(result.error.message, { code: 3 });
+  const output = `${result.stdout}${result.stderr}`
+    .replace(/\x1b\[[0-9;]*m/g, "")
+    .replaceAll(sessionKey(run), "[REDACTED]")
+    .replaceAll(encryption, "[REDACTED]")
+    .replaceAll(repoRoot, "<checkout>")
+    .replaceAll(run.dir, "<run>");
+  out({
+    ok: result.status === 1,
+    exitCode: result.status,
+    messageCount: (
+      output.match(/Cannot start: the following ports are already in use/g) ??
+      []
+    ).length,
+    hasStackTrace: /\n\s+at /.test(output),
+    mentionsPortFlag: output.includes("--port <other>"),
+    output,
+  });
+}
+
 async function cmdDoctor({ flags }) {
   const run = loadRun(flags);
   const checks = [];
@@ -4517,6 +4580,7 @@ Lifecycle
   launch        Build this checkout if needed, start an isolated stack + browser
   doctor        Read-only health check; run first and after any surprise
   status        Show the current run's ports, revision and liveness
+  launcher      busy-port — observe the real launcher's occupied-port failure
   restart       Restart this run's stack in place (same state); --rotate-key for stale-key states
   service       status | stop|pause|resume automation|agent-server|frontend (unavailable/slow states)
   stop          Stop this run's browser and launcher process group (keeps evidence)
@@ -4603,6 +4667,12 @@ Read-only. Checks launcher group and ports, served build revision, unauthenticat
 rejection, authenticated settings, agent-server version vs config/defaults.json
 (pin, and the UI's minimum Agent Server version), automation health, LLM configuration (info) and a throwaway-tab UI probe.
 Exit 3 when any check fails.
+`,
+  launcher: `control-openhands launcher busy-port
+
+Runs this checkout's real npm launcher against this run's occupied ingress.
+No replacement service starts. Returns the exit code, message count, stack-trace
+presence and redacted terminal output; private probe state stays in this run.
 `,
   stop: `control-openhands stop [--purge-private]
 
@@ -4859,6 +4929,7 @@ check also verifies every Source: path exists and the baseline line's shape.
 const COMMANDS = {
   launch: cmdLaunch,
   status: cmdStatus,
+  launcher: cmdLauncher,
   doctor: cmdDoctor,
   stop: cmdStop,
   env: cmdEnv,

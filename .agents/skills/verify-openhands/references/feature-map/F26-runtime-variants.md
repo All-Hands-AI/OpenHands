@@ -118,3 +118,36 @@ Preconditions:
 - `build:lib` from a copy whose `node_modules` is a symlink emits bundled dependencies under `dist/<absolute node_modules path>/...`; that path is an artifact of the copy, not of the product.
 - **Bug candidate (`F26.host-bind-lan-optin`):** `scripts/bind-host.mjs` tells npm users to pass `--allow-lan-session-key`, but neither `bin/agent-canvas.mjs` nor `scripts/dev-with-automation.mjs` parses or forwards it (only `scripts/static-server.mjs` and the Docker entrypoint do), and unknown flags are silently ignored (#17949, whose first item is exactly this; reproduced again on 2026-10-08 at d2c89252d).
 - Known issue #17946: the npm launcher never creates its `TMUX_TMPDIR`, so hand-started instances share one tmux server and a restart of one resets the others' terminals.
+
+## Launcher flag regression recipes
+
+Run these on a fresh `control-openhands launch --new --host 0.0.0.0
+--allow-lan-session-key` stack. They observe only whether a disposable key was
+injected, never its value. The baseline ignores the flag and opens Add a backend;
+the corrected launcher opens the normal agent onboarding step.
+
+```sh known-bug F26.host-bind-lan-optin desktop
+control-openhands browser viewport 1440x900
+control-openhands browser goto /
+control-openhands browser wait 'role=dialog' --timeout 30000
+control-openhands browser screenshot --feature F26.host-bind-lan-optin --name desktop
+control-openhands assert --field value --equals true --bug-shows false -- browser eval 'Boolean(window.__AGENT_CANVAS_SESSION_API_KEY__)' # bug
+```
+
+```sh known-bug F26.host-bind-lan-optin phone
+control-openhands browser viewport 390x844
+control-openhands browser goto /
+control-openhands browser wait 'role=dialog' --timeout 30000
+control-openhands browser screenshot --feature F26.host-bind-lan-optin --name phone
+control-openhands assert --field value --equals true --bug-shows false -- browser eval 'Boolean(window.__AGENT_CANVAS_SESSION_API_KEY__)' # bug
+```
+
+```sh known-bug F26.cli-port-in-use once
+control-openhands assert --field messageCount --equals 1 --bug-shows 2 -- launcher busy-port # bug
+```
+
+For the metadata block, launch a separate `--backend-only` run.
+
+```sh known-bug F26.backend-only metadata
+control-openhands assert --field value --equals 'Unified entry point. Routes /api/automation/* to the automation backend, /api/* and /sockets to the agent-server.' --bug-shows 'Unified entry point. Routes /api/automation/* to the automation backend, /api/* and /sockets to the agent-server, and /* to the frontend.' -- api GET /server_info --pick runtime_services.services.ingress.description # bug
+```
