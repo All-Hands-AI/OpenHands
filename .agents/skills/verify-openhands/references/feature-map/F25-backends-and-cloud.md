@@ -112,7 +112,21 @@ Preconditions:
 - The device-flow popup survives errors: every failed attempt leaves an `about:blank` tab (#17953). Cancel closes it; after an error close it with `browser close-tab`.
 - With the default host the device flow talks to the real `app.all-hands.dev` (`POST /oauth/device/authorize`, then token polling). Starting and cancelling is harmless; never approve a code.
 - While the second stack's agent server is stopped or restarting, its ingress answers without CORS headers, so the browser logs `Access to fetch at '<second-url>/api/settings' ... blocked by CORS policy` (also `/server_info`, `/api/conversations/search`, `/api/llm/models/verified`). That is the dead upstream, not a CORS bug; a healthy second stack sends `access-control-allow-origin` for this origin.
-- Expected: Escape never clears the backend selector. Known failure (reproduced 2026-10-09, #18233): Escape on the focused backend selector while its menu is closed (a second Escape after the one that closes the menu, and sometimes the Escape that closes Manage Backends opened from it) clears the selection: the closed selector shows the active backend's name as an italic placeholder (`browser value 'testid=backend-selector >> role=combobox'` is `""`) and its status dot is gone, so `browser wait 'testid=backend-selector >> role=status[name="Disconnected"]'` times out although the backend is down; a reload restores it. Reload before a closed-selector status check, as the Edit bullet does. Repro: `browser click 'testid=backend-selector'`, `browser press Escape` twice (#18233; fix PR #18235).
+- Expected: Escape never clears the backend selector. Known failure (reproduced 2026-10-09 and 2026-10-12, #18233): Escape on the focused backend selector while its menu is closed (a second Escape after the one that closes the menu, and sometimes the Escape that closes Manage Backends opened from it) clears the selection: the closed selector shows the active backend's name as an italic placeholder (`browser value 'testid=backend-selector >> role=combobox'` is `""`) and its status dot is gone, so `browser wait 'testid=backend-selector >> role=status[name="Disconnected"]'` times out although the backend is down; a reload restores it. Reload before a closed-selector status check, as the Edit bullet does. Repro: `browser click 'testid=backend-selector'`, `browser press Escape` twice (#18233). On 2026-10-12 `bug proof` verified fix PR #18238 at 77de0ad24 against main f07aebdf5 (two `xfail`, two `xpass`, desktop). `control-openhands bug run F25.selector-dropdown` replays it (desktop, after a reload with the mouse off the selector: a reload under a mouse left on it opens its menu and empties its field, which would look like the bug) and reports `xfail` while the bug lasts:
+
+  ```sh known-bug F25.selector-dropdown escape-closed
+  control-openhands browser viewport desktop
+  control-openhands browser goto /
+  control-openhands browser hover 'testid=root-layout'
+  control-openhands browser reload
+  control-openhands browser wait 'testid=backend-selector >> role=status[name="Connected"]' --timeout 15000
+  control-openhands assert --field value --equals Local -- browser value 'testid=backend-selector >> role=combobox'
+  control-openhands browser click 'testid=backend-selector'
+  control-openhands browser press Escape
+  control-openhands browser press Escape
+  control-openhands browser screenshot 'testid=backend-selector' --feature F25.selector-dropdown --name escape-closed
+  control-openhands assert --field value --equals Local --bug-shows '' -- browser value 'testid=backend-selector >> role=combobox'  # bug
+  ```
 - Local and remote backends are probed every 30 s (settings + server_info), Cloud backends every 5 min (#18128), so allow up to 40 s for a local dot to change. `browser network --clear`, wait about 70 s, then `browser network --filter server_info` shows two probes per local origin 30 s apart. While the active backend is down, any reload lands on the recovery gate: drive the disconnected rows on the page that was already loaded.
 - `/oauth/device/verify` is a Cloud page that also ships in Canvas: on a local stack its POST target does not exist, so Authorize always ends in `Error`. The "Authentication Required" state is unreachable (`useIsAuthed` always resolves `true`).
 - `/shared/conversations/<id>` on a local backend also raises a raw toast `HTTP request failed (404 Not Found): {"detail":"Not Found"}` next to `Conversation not found` (#17953).
