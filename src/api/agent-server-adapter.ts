@@ -240,13 +240,6 @@ async function fetchBackendServerInfo(): Promise<AgentServerInfo | null> {
   }
 }
 
-export async function fetchBackendRuntimeServicesInfo(): Promise<RuntimeServicesInfo | null> {
-  const serverInfo = await fetchBackendServerInfo();
-  return parseRuntimeServicesInfo(
-    (serverInfo as { runtime_services?: unknown } | null)?.runtime_services,
-  );
-}
-
 export async function fetchBackendExecutionRuntime(): Promise<
   AgentServerInfo["execution_runtime"]
 > {

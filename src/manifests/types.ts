@@ -155,11 +155,6 @@ export interface SetupActions {
   upload?: SetupUploadAction;
 }
 
-export type SetupAction =
-  | SetupPromptAction
-  | SetupPluginAction
-  | SetupUploadAction;
-
 export interface SetupBlock {
   version: typeof SETUP_VERSION;
   mode: SetupMode;
