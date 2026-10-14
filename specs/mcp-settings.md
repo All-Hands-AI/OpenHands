@@ -6,8 +6,14 @@
 
 - [x] Adding, updating, or deleting an MCP server shall issue exactly one
       dedicated MCP settings request containing only the affected server.
+      On a cloud backend, an add or update first reads the stored catalog and
+      writes it back in full, because the cloud replaces the whole catalog for
+      an `mcp_config` map without `null` entries (OHE-3248).
 - [x] An MCP mutation shall never use redacted or encrypted settings snapshots
-      as its mutation base.
+      as its mutation base. On a cloud backend, untouched sibling servers are
+      resent verbatim from the redacted settings read (the cloud restores their
+      secrets by key); redacted values are still never used as input for the
+      mutated server.
 - [x] Untouched sibling servers and credentials shall survive add, update,
       delete, concurrent different-key updates, and failed mutations.
 
@@ -26,3 +32,11 @@
       or arguments.
 - [x] Rename shall use one atomic map patch, reject collisions, and reject
       hidden-secret renames that could lose credentials.
+
+### MCP-004: Form feedback follows readable theme text roles
+
+- [x] Custom-server validation and connection feedback, and catalog-install
+      errors, use the selected theme's error/success text roles.
+- [x] Both text roles meet 4.5:1 against the modal surface in every built-in
+      palette, independently of the danger/success control colors.
+- [x] Embedded host overrides for those roles survive palette changes.

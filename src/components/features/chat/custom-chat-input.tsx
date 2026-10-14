@@ -16,6 +16,13 @@ export interface CustomChatInputProps {
   isNewConversationPending?: boolean;
   hasStartedConversation?: boolean;
   showButton?: boolean;
+  /** Overrides the input's default placeholder text. */
+  placeholder?: string;
+  /**
+   * Whether this composer saves and restores a draft. Defaults to true; turn
+   * it off for composers that must not share the Home draft.
+   */
+  persistDraft?: boolean;
   onSubmit: (message: string) => void;
   onFocus?: () => void;
   onBlur?: () => void;
@@ -32,6 +39,8 @@ export function CustomChatInput({
   isNewConversationPending = false,
   hasStartedConversation,
   showButton = true,
+  placeholder,
+  persistDraft = true,
   onSubmit,
   onFocus,
   onBlur,
@@ -78,13 +87,8 @@ export function CustomChatInput({
   }, [submittedMessage, disabled, setSubmittedMessage]);
 
   // Custom hooks
-  const {
-    chatInputRef,
-    messageToSend,
-    checkIsContentEmpty,
-    clearEmptyContentHandler,
-    saveDraft,
-  } = useChatInputLogic();
+  const { chatInputRef, messageToSend, checkIsContentEmpty, saveDraft } =
+    useChatInputLogic({ persistDraft });
 
   const syncCanSubmit = React.useCallback(() => {
     const text = chatInputRef.current?.innerText ?? "";
@@ -137,7 +141,6 @@ export function CustomChatInput({
       smartResize,
       increaseHeightForEmptyContent,
       checkIsContentEmpty,
-      clearEmptyContentHandler,
       onFocus,
       onBlur,
     );
@@ -193,6 +196,7 @@ export function CustomChatInput({
           showButton={showButton}
           buttonClassName={buttonClassName}
           chatInputRef={chatInputRef}
+          placeholder={placeholder}
           handleFileIconClick={handleFileIconClick}
           handleSubmit={handleSubmitAndSync}
           onDragOver={handleDragOver}

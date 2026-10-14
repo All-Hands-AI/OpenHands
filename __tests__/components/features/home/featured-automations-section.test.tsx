@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import React from "react";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -7,6 +7,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AutomationService from "#/api/automation-service/automation-service.api";
 import AgentServerConversationService from "#/api/conversation-service/agent-server-conversation-service.api";
 import type { AppConversation } from "#/api/conversation-service/agent-server-conversation-service.types";
+import ProfilesService from "#/api/profiles-service/profiles-service.api";
+import {
+  __resetActiveStoreForTests,
+  setActiveSelection,
+  setRegisteredBackends,
+} from "#/api/backend-registry/active-store";
+import type { Backend } from "#/api/backend-registry/types";
+import { ActiveBackendProvider } from "#/contexts/active-backend-context";
 import { PinnedAutomationsDashboard } from "#/components/features/home/featured-automations/pinned-automations-dashboard";
 import { RunningAutomationsList } from "#/components/features/home/featured-automations/running-automations-list";
 import { NavigationProvider } from "#/context/navigation-context";
@@ -18,6 +26,17 @@ import {
   type AutomationRun,
 } from "#/types/automation";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
+
+const homeMocks = vi.hoisted(() => ({
+  createConversationMutate: vi.fn(),
+  navigate: vi.fn(),
+}));
+
+vi.mock("#/hooks/mutation/use-create-conversation", () => ({
+  useCreateConversation: () => ({
+    mutate: homeMocks.createConversationMutate,
+  }),
+}));
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -38,6 +57,12 @@ vi.mock("#/api/automation-service/automation-service.api", () => ({
     dispatchAutomation: vi.fn(),
     toggleAutomation: vi.fn(),
     cancelAutomationRun: vi.fn(),
+  },
+}));
+
+vi.mock("#/api/profiles-service/profiles-service.api", () => ({
+  default: {
+    listProfiles: vi.fn(),
   },
 }));
 
@@ -136,7 +161,7 @@ function renderHomeAutomations(ui: React.ReactElement) {
           currentPath: "/",
           conversationId: null,
           isNavigating: false,
-          navigate: vi.fn(),
+          navigate: homeMocks.navigate,
         }}
       >
         {ui}
@@ -164,6 +189,10 @@ beforeEach(() => {
   vi.mocked(
     AgentServerConversationService.batchGetAppConversations,
   ).mockResolvedValue([]);
+  vi.mocked(ProfilesService.listProfiles).mockResolvedValue({
+    profiles: [],
+    active_profile: null,
+  });
 });
 
 describe("home automations composer layout", () => {
@@ -258,7 +287,7 @@ describe("home automations composer layout", () => {
     );
   });
 
-  it("lists enabled automations with live run status and conversation links", async () => {
+  it("lists enabled automations with live run status and automation links", async () => {
     vi.mocked(AutomationService.getAutomations).mockResolvedValue({
       automations: [
         makeAutomation({ id: "auto-1", name: "Daily digest" }),
@@ -302,7 +331,7 @@ describe("home automations composer layout", () => {
 
     expect(screen.getByRole("link", { name: /Daily digest/ })).toHaveAttribute(
       "href",
-      "/conversations/conv-1",
+      "/automations/auto-1",
     );
     expect(screen.getByRole("link", { name: /PR review/ })).toHaveAttribute(
       "href",
@@ -418,7 +447,7 @@ describe("home automations composer layout", () => {
     );
     expect(pinnedCard.className).toContain("extension-module-card-interactive");
     expect(pinnedCard.className).toContain("bg-base-secondary");
-    expect(pinnedCard.className).not.toContain("border-[var(--oh-border)]");
+    expect(pinnedCard.className).not.toContain("border-border");
     expect(pinnedCard).toBeInTheDocument();
     expect(
       within(dashboard).getByTestId("pinned-automation-pills-auto-1-wrap"),
@@ -538,5 +567,43 @@ describe("home automations composer layout", () => {
     await waitFor(() => {
       expect(displayErrorToast).toHaveBeenCalled();
     });
+  });
+});
+
+describe("home automations on a cloud backend", () => {
+  const cloudBackend: Backend = {
+    id: "cloud-1",
+    name: "Production",
+    host: "https://app.all-hands.dev",
+    apiKey: "bearer-key",
+    kind: "cloud",
+  };
+
+  afterEach(() => {
+    __resetActiveStoreForTests();
+  });
+
+  it("opens the setup page from a row menu", async () => {
+    // Arrange — make a cloud backend active before mounting.
+    setRegisteredBackends([cloudBackend]);
+    setActiveSelection({ backendId: cloudBackend.id });
+    const user = userEvent.setup();
+    renderHomeAutomations(
+      <ActiveBackendProvider>
+        <RunningAutomationsList />
+      </ActiveBackendProvider>,
+    );
+    await screen.findByTestId("running-automations-list");
+
+    // Act — pick Edit from the row menu.
+    await user.click(screen.getByTestId("running-automation-menu-auto-1"));
+    await user.click(screen.getByTestId("running-automation-edit-auto-1"));
+
+    // Assert — Edit opens the setup form for this row rather than the modal.
+    expect(homeMocks.createConversationMutate).not.toHaveBeenCalled();
+    expect(homeMocks.navigate).toHaveBeenCalledWith("/automations/setup?automationId=auto-1");
+    expect(
+      screen.queryByTestId("edit-automation-name"),
+    ).not.toBeInTheDocument();
   });
 });

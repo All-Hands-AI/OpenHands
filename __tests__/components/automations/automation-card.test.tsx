@@ -113,7 +113,26 @@ describe("AutomationCard", () => {
     const card = screen.getByTestId("automation-card-automation-1");
     expect(card.className).toContain("extension-module-card-interactive");
     expect(card.className).toContain("bg-base-secondary");
-    expect(card.className).not.toContain("border-[var(--oh-border)]");
+    expect(card.className).not.toContain("border-border");
+  });
+
+  it("marks draft automations without labeling them inactive", () => {
+    render(
+      <AutomationCard
+        automation={{ ...automation, enabled: false, state: "DRAFT" }}
+        onToggle={vi.fn()}
+        onRunNow={vi.fn()}
+        onExport={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("active-status-badge-draft")).toHaveTextContent(
+      I18nKey.AUTOMATIONS$DETAIL$DRAFT,
+    );
+    expect(
+      screen.queryByTestId("active-status-badge-inactive"),
+    ).not.toBeInTheDocument();
   });
 
   it("renders title, description, and overflow pills", () => {

@@ -13,6 +13,7 @@ import * as useActivateLlmProfileHook from "#/hooks/mutation/use-activate-llm-pr
 import * as useSaveLlmProfileHook from "#/hooks/mutation/use-save-llm-profile";
 import ProfilesService from "#/api/profiles-service/profiles-service.api";
 import * as activeBackendContext from "#/contexts/active-backend-context";
+import { useFreeModelsStore } from "#/stores/free-models-store";
 import type { Backend } from "#/api/backend-registry/types";
 
 const mockCloudBackend: Backend = {
@@ -72,6 +73,7 @@ vi.mock("#/routes/llm-settings", async () => {
           "llm.model": model,
           "llm.api_key": apiKey,
           "llm.base_url": baseUrl,
+          "llm.temperature": temperature,
         };
         onSaveControlChange?.({
           save: vi.fn(),
@@ -212,6 +214,10 @@ describe("LlmSettingsLocalView", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    useFreeModelsStore.getState().setFlags({
+      freeModels: new Set(),
+      defaultModel: null,
+    });
 
     vi.mocked(useLlmProfilesHook.useLlmProfiles).mockReturnValue(
       createMockLlmProfilesReturn(),
@@ -364,6 +370,23 @@ describe("LlmSettingsLocalView", () => {
       );
     });
 
+    it("prefills the DB-selected OpenHands default when creating a new profile", async () => {
+      useFreeModelsStore.getState().setFlags({
+        freeModels: new Set(["openhands/gpt-5.2"]),
+        defaultModel: "openhands/gpt-5.2",
+      });
+
+      const user = userEvent.setup();
+      renderWithProviders(<LlmSettingsLocalView />);
+
+      await user.click(screen.getByTestId("add-llm-profile"));
+
+      expect(screen.getByTestId("profile-name-input")).toHaveValue("gpt-5.2");
+      expect(screen.getByTestId("mock-basic-model-input")).toHaveValue(
+        "openhands/gpt-5.2",
+      );
+    });
+
     it("uses unique key for create mode to ensure form remounts", async () => {
       const user = userEvent.setup();
       renderWithProviders(<LlmSettingsLocalView />);
@@ -405,6 +428,144 @@ describe("LlmSettingsLocalView", () => {
 
       // The key "new-profile" should be used, ensuring a fresh form mount
       // that doesn't inherit any existing profile data
+    });
+
+    it("shows a skeleton until the DB default query settles, then mounts the form with the resolved default", async () => {
+      // Start with the flags unset (hydrator has not resolved yet), so the
+      // create form must wait instead of mounting with the static fallback.
+      useFreeModelsStore.getState().resetFlags();
+
+      const user = userEvent.setup();
+      renderWithProviders(<LlmSettingsLocalView />);
+
+      await user.click(screen.getByTestId("add-llm-profile"));
+
+      // While the DB default is unresolved, the form is replaced by a skeleton
+      // (no model input / save control to accept yet).
+      expect(screen.getByTestId("app-settings-skeleton")).toBeInTheDocument();
+      expect(
+        screen.queryByTestId("mock-basic-model-input"),
+      ).not.toBeInTheDocument();
+
+      // The DB default resolves to a concrete model.
+      useFreeModelsStore.getState().setFlags({
+        freeModels: new Set(["openhands/gpt-5.2"]),
+        defaultModel: "openhands/gpt-5.2",
+      });
+
+      // The keyed form now mounts with the resolved default, not the static
+      // fallback.
+      await waitFor(() => {
+        expect(screen.getByTestId("mock-basic-model-input")).toHaveValue(
+          "openhands/gpt-5.2",
+        );
+      });
+      expect(
+        screen.queryByTestId("app-settings-skeleton"),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  describe("create mode profile name auto-fill", () => {
+    const changeModel = (model: string) =>
+      fireEvent.change(screen.getByTestId("mock-basic-model-input"), {
+        target: { value: model },
+      });
+
+    it("keeps the untouched name following the selected model", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<LlmSettingsLocalView />);
+      await user.click(screen.getByTestId("add-llm-profile"));
+      const nameInput = screen.getByTestId("profile-name-input");
+      expect(nameInput).toHaveValue("gpt-5.6-sol");
+
+      changeModel("deepseek/deepseek-chat");
+      expect(nameInput).toHaveValue("deepseek-chat");
+
+      changeModel("anthropic/claude-sonnet-5");
+      expect(nameInput).toHaveValue("claude-sonnet-5");
+    });
+
+    it("stops following the model once the user types a name, and resumes after the name is cleared", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<LlmSettingsLocalView />);
+      await user.click(screen.getByTestId("add-llm-profile"));
+      const nameInput = screen.getByTestId("profile-name-input");
+
+      fireEvent.change(nameInput, { target: { value: "my-profile" } });
+      changeModel("deepseek/deepseek-chat");
+      expect(nameInput).toHaveValue("my-profile");
+
+      fireEvent.change(nameInput, { target: { value: "" } });
+      changeModel("anthropic/claude-sonnet-5");
+      expect(nameInput).toHaveValue("claude-sonnet-5");
+    });
+
+    it("clears the auto-filled name instead of using an existing profile's name", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<LlmSettingsLocalView />);
+      await user.click(screen.getByTestId("add-llm-profile"));
+      const nameInput = screen.getByTestId("profile-name-input");
+      expect(nameInput).toHaveValue("gpt-5.6-sol");
+
+      // "gpt-4-profile" is an existing profile's name.
+      changeModel("openai/gpt-4-profile");
+      expect(nameInput).toHaveValue("");
+      expect(screen.getByTestId("save-profile-btn")).toBeDisabled();
+    });
+  });
+
+  describe("duplicate profile name", () => {
+    it("tells the user a new profile's name is taken until it is unique", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<LlmSettingsLocalView />);
+      await user.click(screen.getByTestId("add-llm-profile"));
+      const nameInput = screen.getByTestId("profile-name-input");
+
+      await user.clear(nameInput);
+      await user.type(nameInput, "claude-profile");
+
+      expect(nameInput).toHaveAttribute("aria-invalid", "true");
+      expect(nameInput).toHaveAccessibleDescription(
+        "SETTINGS$LLM_PROFILE_NAME_TAKEN",
+      );
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "SETTINGS$LLM_PROFILE_NAME_TAKEN",
+      );
+      expect(screen.getByTestId("save-profile-btn")).toBeDisabled();
+
+      await user.type(nameInput, "-2");
+
+      expect(nameInput).toHaveAttribute("aria-invalid", "false");
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      expect(screen.getByTestId("save-profile-btn")).toBeEnabled();
+    });
+
+    it("flags a rename to another profile's name but not the profile's own name", async () => {
+      const user = userEvent.setup();
+      vi.mocked(ProfilesService.getProfile).mockResolvedValue({
+        name: "gpt-4-profile",
+        api_key_set: true,
+        config: { model: "openai/gpt-4" },
+      });
+
+      renderWithProviders(<LlmSettingsLocalView />);
+      await user.click(screen.getAllByTestId("profile-menu-trigger")[0]);
+      await user.click(screen.getByTestId("profile-edit"));
+      const nameInput = await screen.findByTestId("profile-name-input");
+      await waitFor(() => expect(nameInput).toHaveValue("gpt-4-profile"));
+
+      expect(nameInput).toHaveAttribute("aria-invalid", "false");
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+
+      await user.clear(nameInput);
+      await user.type(nameInput, "claude-profile");
+
+      expect(nameInput).toHaveAttribute("aria-invalid", "true");
+      expect(nameInput).toHaveAccessibleDescription(
+        "SETTINGS$LLM_PROFILE_NAME_TAKEN",
+      );
+      expect(screen.getByTestId("save-profile-btn")).toBeDisabled();
     });
   });
 
@@ -530,6 +691,10 @@ describe("LlmSettingsLocalView", () => {
       await waitFor(() => {
         expect(screen.getByTestId("save-profile-btn")).not.toBeDisabled();
       });
+      // Changing the model never renames an existing profile.
+      expect(screen.getByTestId("profile-name-input")).toHaveValue(
+        "gpt-4-profile",
+      );
     });
   });
 
@@ -881,6 +1046,40 @@ describe("LlmSettingsLocalView", () => {
     });
   });
 
+  describe("create mode save", () => {
+    it("saves a new profile with the prefilled default model even though the model was never touched", async () => {
+      // Arrange — the model is prefilled and left alone; only an unrelated
+      // field is edited, so the dirty payload carries no model at all.
+      const user = userEvent.setup();
+      mockSaveMutateAsync.mockResolvedValueOnce({ success: true });
+      renderWithProviders(<LlmSettingsLocalView />);
+      await user.click(screen.getByTestId("add-llm-profile"));
+      await waitFor(() =>
+        expect(screen.getByTestId("profile-name-input")).toHaveValue(
+          "gpt-5.6-sol",
+        ),
+      );
+
+      // Act — go to the All tab (whose dirty payload is temperature only) and save.
+      await user.click(await screen.findByTestId("sdk-section-all-toggle"));
+      const temperatureInput = await screen.findByTestId(
+        "sdk-settings-llm.temperature",
+      );
+      await user.clear(temperatureInput);
+      await user.type(temperatureInput, "0.3");
+      await waitFor(() => {
+        expect(screen.getByTestId("save-profile-btn")).not.toBeDisabled();
+      });
+      await user.click(screen.getByTestId("save-profile-btn"));
+
+      // Assert — the prefilled model rides along instead of a "Model is required" refusal.
+      await waitFor(() => expect(mockSaveMutateAsync).toHaveBeenCalled());
+      const savedLlm = mockSaveMutateAsync.mock.calls[0][0].request.llm;
+      expect(savedLlm.model).toBe("openai/gpt-5.6-sol");
+      expect(savedLlm.temperature).toBe(0.3);
+    });
+  });
+
   describe("All tab save", () => {
     it("persists a changed minor field without wiping untouched fields", async () => {
       // Arrange — a profile with a minor field (temperature) plus fields the
@@ -979,6 +1178,13 @@ describe("LlmSettingsLocalView - OpenHands provider on cloud", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Mark the DB default query as settled so the create-mode form mounts
+    // (the gate renders a skeleton until `defaultModelReady` is true).
+    useFreeModelsStore.getState().setFlags({
+      freeModels: new Set(),
+      defaultModel: null,
+    });
 
     vi.mocked(useLlmProfilesHook.useLlmProfiles).mockReturnValue(
       createMockLlmProfilesReturn({
