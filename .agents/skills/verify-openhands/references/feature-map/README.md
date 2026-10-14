@@ -256,8 +256,9 @@ How to write and prove new entries: [../mapping.md](../mapping.md).
 | F25 | [Backends, Cloud and sharing](F25-backends-and-cloud.md) | add, edit, remove and switch backends, per-backend consent, Cloud login, shared pages | backend selector | a second stack; Cloud account (blocked) | 33 |
 | F26 | [Launcher modes, Docker, desktop and library](F26-runtime-variants.md) | launcher flags, partial stacks, LAN bind, Docker, Electron, embeddable library | a terminal | Docker/Electron where available | 33 |
 | F27 | [Workspace tools](F27-workspace-tools.md) | terminal, browser, planner, task list, usage, `canvas_ui_control` | drawer tabs | LLM | 30 |
+| F28 | [Automation setup page](F28-automation-setup-page.md) | blank form, kind toggle, schedule presets, event fields, timeout, draft save and validation, draft Test, Create, edit-mode Test | **Add Automation → Create Automation**, `/automations/setup`, draft Resume, kebab Edit | automation service; no LLM | 15 |
 
-27 families, 760 sub-features. `control-openhands map ids` lists every ID with its file.
+28 families, 775 sub-features. `control-openhands map ids` lists every ID with its file.
 
 ### Neighbouring families
 
@@ -266,7 +267,7 @@ Several pages are shared. Each behavior has one owner; the others reference its 
 - Conversation page: the composer is F05, what the agent produces is F06, the header and its menus are F07, the drawer is F08 (files, changes) and F27 (tools).
 - Starting work: Home is F03; the recommended-automation launcher is shared by F01 (onboarding), F03 (rail) and F22 (templates), and owned by F22.
 - LLM settings: profiles are F10, provider connections F11 (same page), routers F12, agent profiles F13.
-- Automations: dashboard F21, creation F22, detail and runs F23, Git Sync F24.
+- Automations: dashboard F21, creation F22, detail and runs F23, Git Sync F24; the setup page's form, drafts and Test are F28 (F22 keeps the agent-assisted recipes, F23 the edit rows).
 - Customize: MCP F17, skills F18, plugins F19, apps F20; the hub and its navigation are in F17.
 - Backends: adding and switching backends is F25; launcher flags that create them are F26.
 
