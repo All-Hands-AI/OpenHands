@@ -35,6 +35,7 @@ export function ModalBody({
       data-testid={testID}
       className={cn(
         "bg-base-secondary flex flex-col gap-6 items-center p-6 rounded-xl",
+        MODAL_MAX_WIDTH_VIEWPORT,
         modalWidthClassName(width),
         className,
       )}
