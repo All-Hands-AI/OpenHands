@@ -38,6 +38,7 @@ import {
   classifyAttempt,
   judgeAssertion,
   knownBugBlocks,
+  parseBugPredicate,
   proofVerdict,
 } from "./lib/known-bug.mjs";
 import { routePattern } from "./lib/route-pattern.mjs";
@@ -3398,6 +3399,16 @@ async function cmdAssert({ positional, flags }) {
       "assert needs --field PATH, one of --equals VALUE or --matches REGEX, and -- <control-openhands command>",
       "control-openhands assert --field enabled --equals true --bug-shows false -- browser enabled 'testid=submit-button'",
     );
+  const bug =
+    flags.bug === undefined || flags.bug === true
+      ? undefined
+      : String(flags.bug);
+  const bugProblems = bug === undefined ? [] : parseBugPredicate(bug).problems;
+  if (bugProblems.length)
+    usage(
+      `--bug ${bugProblems.join("; ")}`,
+      `control-openhands assert --field status --equals 200 --bug 'status eq 500 && body.error contains "has no attribute"' -- api GET /api/...`,
+    );
   const env = { ...process.env };
   if (flags.run && flags.run !== true) env.OH_VERIFY_RUN = resolve(flags.run);
   const child = runSelf(positional.map(String), { env });
@@ -3411,6 +3422,7 @@ async function cmdAssert({ positional, flags }) {
       flags["bug-shows"] === undefined || flags["bug-shows"] === true
         ? undefined
         : String(flags["bug-shows"]),
+    bug,
   });
   const result = {
     ok: judged.kind === "hold",
@@ -3418,18 +3430,20 @@ async function cmdAssert({ positional, flags }) {
     field: flags.field,
     expected: hasEquals ? String(flags.equals) : `/${flags.matches}/`,
     bugShows: flags["bug-shows"] === true ? undefined : flags["bug-shows"],
+    bug,
     command: positional.join(" "),
     output:
       judged.kind === "error"
         ? (child.json ?? child.stdout.slice(-2000))
         : undefined,
   };
-  // Under `bug run` every assertion is logged, so the runner can tell the
-  // marked assertion's mismatch from an error at the same line.
+  // Under `bug run` every assertion is logged with the recipe line that ran
+  // it, so the runner reads the marked command's own result, never one a
+  // later cleanup step logged.
   if (process.env.OH_VERIFY_ASSERT_LOG)
     appendFileSync(
       process.env.OH_VERIFY_ASSERT_LOG,
-      `${JSON.stringify({ ts: new Date().toISOString(), ...result, output: undefined })}\n`,
+      `${JSON.stringify({ ts: new Date().toISOString(), line: process.env.OH_VERIFY_LINE, ...result, output: undefined })}\n`,
     );
   out(result);
   if (judged.kind === "error") process.exitCode = child.code || 1;
@@ -3475,10 +3489,15 @@ function selectBlocks(id, flags) {
 }
 
 function runBlock(run, block, { timeoutMs, logFile, failureFile, scriptFile }) {
+  // The DEBUG trap tags every command (and the asserts it runs) with its
+  // line. The ERR trap keeps the first failure only, and retags what runs
+  // after it (an EXIT trap's cleanup), so neither overwrites the observation.
   const preamble = [
     "set -eo pipefail",
     `cd ${JSON.stringify(repoRoot)}`,
-    `trap 'printf "%s\\t%s\\n" "$LINENO" "$BASH_COMMAND" > ${JSON.stringify(failureFile)}' ERR`,
+    "export OH_VERIFY_LINE=",
+    "trap 'OH_VERIFY_LINE=$LINENO' DEBUG",
+    `trap '[ -e ${JSON.stringify(failureFile)} ] || printf "%s\\t%s\\n" "$LINENO" "$BASH_COMMAND" > ${JSON.stringify(failureFile)}; OH_VERIFY_LINE=after-failure' ERR`,
   ];
   writeFileSync(scriptFile, `${preamble.join("\n")}\n${block.script}\n`);
   const env = {
@@ -3521,6 +3540,7 @@ function runBlock(run, block, { timeoutMs, logFile, failureFile, scriptFile }) {
         failedCommand = cmd.join("\t").slice(0, 500);
       }
       done({
+        lineOffset: preamble.length,
         exitCode: timedOut ? null : code,
         timedOut,
         failedLine,
@@ -3600,8 +3620,16 @@ async function cmdBug({ positional, flags }) {
             failureFile,
             scriptFile: join(work, `${stamp}.sh`),
           });
-        const asserts = readJsonl(logFile);
-        const assertion = asserts.at(-1);
+        const asserts = readJsonl(logFile).map((a) => ({
+          ...a,
+          line: /^\d+$/.test(a.line ?? "")
+            ? Number(a.line) - exec.lineOffset
+            : a.line,
+        }));
+        const [start, end] = block.bugRanges[0];
+        const assertion = asserts
+          .filter((a) => a.line >= start && a.line <= end)
+          .at(-1);
         const doctorAfter =
           exec.exitCode !== 0 && doctorBefore !== false ? doctor() : undefined;
         const { status, reason } = classifyAttempt({
@@ -3611,6 +3639,7 @@ async function cmdBug({ positional, flags }) {
           timedOut: exec.timedOut,
           failedLine: exec.failedLine,
           bugLines: block.bugLines,
+          bugRanges: block.bugRanges,
           assertion,
         });
         const page = daemonInfo(run)
@@ -3653,6 +3682,8 @@ async function cmdBug({ positional, flags }) {
                 expected: assertion.expected,
                 actual: assertion.actual,
                 bugShows: assertion.bugShows,
+                bug: assertion.bug,
+                bugChecks: assertion.bugChecks,
               }
             : undefined,
           doctorBefore,
@@ -4514,7 +4545,7 @@ Drive and observe
 
 Evidence and map
   evidence      add | list | report — the run's pass/fail/blocked/not-run ledger
-  assert        --field F --equals V [--bug-shows B] -- <command> — check one value of a command's output
+  assert        --field F --equals V [--bug-shows B | --bug P] -- <command> — check one value of a command's output
   bug           list | run ID --attempts 2 | proof ID — known bugs as executable expected failures
   map           check | coverage | ids | routes | affected | testids | baseline — keep the feature map honest
 
@@ -4764,15 +4795,20 @@ first (a daily pass against yesterday's run). --json prints the same data.
 Rows from \`bug run\` add xfail (a known bug reproduced) and xpass (it stopped
 reproducing); xpass rows sort right after fail rows.
 `,
-  assert: `control-openhands assert --field PATH (--equals VALUE | --matches REGEX) [--bug-shows VALUE] -- <control-openhands command...>
+  assert: `control-openhands assert --field PATH (--equals VALUE | --matches REGEX) [--bug-shows VALUE] [--bug PREDICATE] -- <control-openhands command...>
 
 Runs the command, reads PATH (dotted, e.g. value, viewport.width) from its JSON
 output and compares it: strings as they are, other values as JSON. Exit 0 when
 it holds; 1 on a mismatch; the command's own code when it fails or has no such
-field (kind "error": no value was compared). --bug-shows names the value a known
-bug produces: a mismatch with any other value is kind "other-symptom".
+field (kind "error": no value was compared). --bug-shows and --bug name what a
+known bug produces; a mismatch that does not match them is kind "other-symptom".
+--bug-shows V is short for "--bug 'PATH eq V'". --bug takes "PATH OP [VALUE]"
+clauses joined by "&&", on any field of the output, with OP one of eq, ne,
+contains, not-contains, matches (regex), exists, missing; quote a VALUE with
+spaces. The result lists each clause under bugChecks.
 
   control-openhands assert --field enabled --equals true -- browser enabled 'testid=submit-button'
+  control-openhands assert --field text --equals Saved --bug 'text contains "An error occurred"' -- browser text 'testid=toast'
 `,
   bug: `control-openhands bug list [--file PATH]
 control-openhands bug run ID [--name N] [--attempts N] [--label L] [--timeout SEC] [--no-doctor] [--file PATH]
@@ -4780,11 +4816,12 @@ control-openhands bug proof ID --baseline RUN_DIR --fix RUN_DIR [--baseline-labe
 
 A known bug in the map can carry a fenced block, opened with
 "\`\`\`sh known-bug <ID> [name]", whose commands assert the correct behavior. Its one
-line ending in "# bug" is a "control-openhands assert ... --bug-shows <value>".
+command ending in "# bug" (continued lines ending in "\\" count as one) is a
+"control-openhands assert ... --bug-shows <value>" or "... --bug <predicate>".
 
 'run' executes the block in bash (set -eo pipefail) against the run, each
 attempt after a passing doctor, and classifies it:
-  xfail  the "# bug" assertion failed and saw the bug's value (reproduced)
+  xfail  the "# bug" assertion failed and saw the bug's symptom (reproduced)
   xpass  every command held (the bug did not reproduce: review the map note)
   fail   anything else: doctor failed before (setup) or after (backend), a
          timeout, an earlier line (setup) or a later one, the bug line's command
@@ -4792,6 +4829,9 @@ attempt after a passing doctor, and classifies it:
 Each attempt is appended to evidence/known-bugs/attempts.jsonl (revision,
 backend, viewport, recipe hash, failing line, assertion, transcript) and to the
 ledger as an xfail/xpass/fail row. Exit 0 only when every attempt is xfail.
+Each assertion is logged with the recipe line that ran it, and the first
+failure is the one kept, so a cleanup step (an EXIT trap) cannot replace the
+marked command's observation.
 
 'proof' compares the attempts of the current recipe on a baseline run and a fix
 run: verified only when the baseline has at least two attempts, all xfail, the
