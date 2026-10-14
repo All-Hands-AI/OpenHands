@@ -496,7 +496,7 @@ async function buildConfig(args, env = process.env) {
     env:
       env.OH_BIND_HOST ||
       (env.OH_CONVERSATION_RUNTIME === "docker" ||
-      env.OH_CONVERSATION_RUNTIME_SELECTABLE
+      env.OH_CONVERSATION_RUNTIME_SELECTABLE === "1"
         ? "0.0.0.0"
         : undefined),
   });

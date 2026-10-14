@@ -6,7 +6,10 @@ import {
   getAgentServerClientOptions,
   type AgentServerClientOverrides,
 } from "./agent-server-client-options";
-import { getCachedAgentServerInfo } from "./agent-server-compatibility";
+import {
+  getCachedAgentServerInfo,
+  type AgentServerInfo,
+} from "./agent-server-compatibility";
 import {
   buildConversationWorkingDirForBackend,
   getWorkspaceRootForBackend,
@@ -23,17 +26,14 @@ export function usesIsolatedWorkspace(
 
 /** Whether a start request may pick `conversation_runtime: "docker"`. */
 export function supportsDockerConversations(
-  info: ServerInfo | null | undefined,
+  info: AgentServerInfo | null | undefined,
 ): boolean {
-  const runtimes = (
-    info as { available_conversation_runtimes?: string[] } | null | undefined
-  )?.available_conversation_runtimes;
-  return !!runtimes?.includes("docker");
+  return !!info?.available_conversation_runtimes?.includes("docker");
 }
 
 export async function getConversationServerInfo(
   overrides: AgentServerClientOverrides = {},
-): Promise<ServerInfo | null> {
+): Promise<AgentServerInfo | null> {
   const options = getAgentServerClientOptions(overrides);
   const cached = getCachedAgentServerInfo({ host: options.host });
   if (cached) return cached;
@@ -54,6 +54,7 @@ export async function resolveNewConversationWorkspace(options: {
   workingDir?: string;
   selectedRepository?: string | null;
   parentConversationId?: string;
+  inContainer?: boolean;
 }) {
   const clientOptions = getAgentServerClientOptions();
   const info = await getConversationServerInfo(clientOptions);
@@ -82,10 +83,10 @@ export async function resolveNewConversationWorkspace(options: {
       clientOptions.host,
     );
   const workingDir = await resolveAbsoluteAgentServerPath(base);
-  const hooksProjectDir = await resolveHooksProjectDir(
-    options.workingDir,
-    clientOptions.host,
-  );
+  // A container does not see host paths, so host hooks do not apply.
+  const hooksProjectDir = options.inContainer
+    ? null
+    : await resolveHooksProjectDir(options.workingDir, clientOptions.host);
   return { workingDir, hooksProjectDir, isolated: false };
 }
 
@@ -106,12 +107,14 @@ function resolveHooksProjectDir(
 /**
  * The hooks project dir of an existing conversation, resolved as
  * `resolveNewConversationWorkspace()` resolved it at start from the workspace
- * the user attached. `null` on an isolated (Docker) backend, whose
- * conversations never load host hooks.
+ * the user attached. `null` on an isolated (Docker) backend or for a
+ * conversation in its own container, which never load host hooks.
  */
 export async function resolveConversationHooksProjectDir(
   selectedWorkspace: string | null | undefined,
+  inContainer = false,
 ): Promise<string | null> {
+  if (inContainer) return null;
   const clientOptions = getAgentServerClientOptions();
   const info = await getConversationServerInfo(clientOptions);
   if (usesIsolatedWorkspace(info)) return null;
