@@ -8,7 +8,11 @@ the tiers that have fields), hides fields whose parent switch is off, and saves
 through one **Save Changes** button that stays disabled until a value differs
 from the stored one.
 
-Source: `src/routes/condenser-settings.tsx`, `src/routes/agent-context-settings.tsx`, `src/routes/verification-settings.tsx`, `src/components/features/settings/sdk-settings/`, `src/utils/sdk-settings-schema.ts`.
+The **Runtime** page renders the conversation schema's `runtime` section the
+same way: the worktree branch point, plus container memory, CPU and browser
+when the server can run Docker conversations.
+
+Source: `src/routes/condenser-settings.tsx`, `src/routes/agent-context-settings.tsx`, `src/routes/verification-settings.tsx`, `src/routes/runtime-settings.tsx`, `src/components/features/settings/sdk-settings/`, `src/utils/sdk-settings-schema.ts`.
 
 ## Sub-features
 
@@ -26,6 +30,7 @@ Source: `src/routes/condenser-settings.tsx`, `src/routes/agent-context-settings.
 - `F15.verification-critic-fields`: Confirmation Mode reveals Security Analyzer (Advanced); Enable Critic reveals Iterative Refinement and Critic API Key (Basic) plus mode, server URL and model (All); Iterative Refinement reveals threshold and max iterations.
 - `F15.confirmation-mode-save`: Confirmation Mode and Security Analyzer (conversation settings) persist after reload, alongside the agent-settings fields on the same page.
 - `F15.confirmation-mode-effect`: with Confirmation Mode on and Security Analyzer **None**, a new conversation stops before its first command with **Do you want to continue with this action?** and Cancel/Continue; Continue runs it.
+- `F15.runtime-page`: Runtime shows **Create worktrees from** (`Default branch`, `Current HEAD`); the container memory, CPU and browser fields appear only on a server whose `server_info` lists `docker` or runs Docker-only, and saved values reach the next conversation's start request as `worktree_base` and `container`.
 - `F15.critic-tuning`: Critic Mode is a dropdown (`Finish and Message`, `All Actions`); the mode, Critic Threshold and Max Refinement Iterations persist after reload, and an out-of-range threshold (`1.5`) is refused with the 422 toast.
 - `F15.critic-save`: critic text fields persist after reload; the Critic API Key comes back masked; clearing the fields and turning the critic off restores the defaults.
 - `F15.agent-context-effect`: with Persistent Agent Memory on, a new conversation's system prompt carries the `.openhands/memory/` instructions; with it off, it does not.
@@ -39,7 +44,7 @@ Source: `src/routes/condenser-settings.tsx`, `src/routes/agent-context-settings.
 ## How to get to it (user POV)
 
 - Sidebar settings gear (`backend-selector-settings-link`, lands on `/settings/agents`), then **Condenser**, **Agent Context** or **Verification** in the settings navigation (`sidebar-settings-/settings/condenser`, `sidebar-settings-/settings/agent-context`, `sidebar-settings-/settings/verification`).
-- Direct URLs `/settings/condenser`, `/settings/agent-context`, `/settings/verification`.
+- Direct URLs `/settings/condenser`, `/settings/agent-context`, `/settings/verification`, `/settings/runtime`.
 - Command menu (`Control+k` or `Meta+k`, or `command-menu-trigger` in the sidebar): **Condenser settings**, **Agent Context** and **Verification settings**; "memory" finds both Condenser settings and Agent Context.
 - The effects show up in new conversations only: the confirmation prompt in the chat, and the memory instructions in the conversation's system prompt.
 
