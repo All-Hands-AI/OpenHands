@@ -1,0 +1,1053 @@
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "urn:openhands:vex:pltf-3723:agent-server-1.49.5-agent-canvas-1.23.0:2026-10-14:1",
+  "author": "OpenHands",
+  "timestamp": "2026-10-14T10:36:03Z",
+  "version": 1,
+  "statements": [
+    {
+      "vulnerability": {
+        "name": "CVE-2018-7408"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/agent-server@sha256:9e2aac069abd749316f03bf79ce82c2c6a2dcf1e77b158f994e33c1301573349?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/npm@1.0.1"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:a6e7ae5c62675c58a39d44494064928be986527137a12d04674cc17134d7e3b3?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/npm@1.0.1"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:8fbadd5fa8e0a15742c06ad50a6e3df9eaae9a6cc9202170fe48e1e393d5d944?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/npm@1.0.1"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:bd44c427df30a664f774bdd6b17a926489edccf02cd62d9dabeda8d8678c1c1d?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/npm@1.0.1"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:02ecf48fd74e4d7f8c5fc23e8bb7d02bbb4d4c28e7c539768947bb1949659622?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/npm@1.0.1"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:562d743ec3dac75b2d06f701e03bd247adc3be374f425064f6d0958be10bbac4?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/npm@1.0.1"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "component_not_present",
+      "impact_statement": "The scanner match is the VS Code built-in extension manifest at /openhands/.openvscode-server/extensions/npm/package.json (name=npm, version=1.0.1, publisher=vscode). It is a language/task extension manifest, not the unrelated npm library of the same name; the vulnerable npm package code is not present at that path."
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2019-16775"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/agent-server@sha256:9e2aac069abd749316f03bf79ce82c2c6a2dcf1e77b158f994e33c1301573349?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/npm@1.0.1"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:a6e7ae5c62675c58a39d44494064928be986527137a12d04674cc17134d7e3b3?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/npm@1.0.1"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:8fbadd5fa8e0a15742c06ad50a6e3df9eaae9a6cc9202170fe48e1e393d5d944?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/npm@1.0.1"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:bd44c427df30a664f774bdd6b17a926489edccf02cd62d9dabeda8d8678c1c1d?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/npm@1.0.1"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:02ecf48fd74e4d7f8c5fc23e8bb7d02bbb4d4c28e7c539768947bb1949659622?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/npm@1.0.1"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:562d743ec3dac75b2d06f701e03bd247adc3be374f425064f6d0958be10bbac4?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/npm@1.0.1"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "component_not_present",
+      "impact_statement": "The scanner match is the VS Code built-in extension manifest at /openhands/.openvscode-server/extensions/npm/package.json (name=npm, version=1.0.1, publisher=vscode). It is a language/task extension manifest, not the unrelated npm library of the same name; the vulnerable npm package code is not present at that path."
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2019-16776"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/agent-server@sha256:9e2aac069abd749316f03bf79ce82c2c6a2dcf1e77b158f994e33c1301573349?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/npm@1.0.1"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:a6e7ae5c62675c58a39d44494064928be986527137a12d04674cc17134d7e3b3?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/npm@1.0.1"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:8fbadd5fa8e0a15742c06ad50a6e3df9eaae9a6cc9202170fe48e1e393d5d944?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/npm@1.0.1"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:bd44c427df30a664f774bdd6b17a926489edccf02cd62d9dabeda8d8678c1c1d?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/npm@1.0.1"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:02ecf48fd74e4d7f8c5fc23e8bb7d02bbb4d4c28e7c539768947bb1949659622?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/npm@1.0.1"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:562d743ec3dac75b2d06f701e03bd247adc3be374f425064f6d0958be10bbac4?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/npm@1.0.1"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "component_not_present",
+      "impact_statement": "The scanner match is the VS Code built-in extension manifest at /openhands/.openvscode-server/extensions/npm/package.json (name=npm, version=1.0.1, publisher=vscode). It is a language/task extension manifest, not the unrelated npm library of the same name; the vulnerable npm package code is not present at that path."
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2019-16777"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/agent-server@sha256:9e2aac069abd749316f03bf79ce82c2c6a2dcf1e77b158f994e33c1301573349?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/npm@1.0.1"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:a6e7ae5c62675c58a39d44494064928be986527137a12d04674cc17134d7e3b3?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/npm@1.0.1"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:8fbadd5fa8e0a15742c06ad50a6e3df9eaae9a6cc9202170fe48e1e393d5d944?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/npm@1.0.1"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:bd44c427df30a664f774bdd6b17a926489edccf02cd62d9dabeda8d8678c1c1d?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/npm@1.0.1"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:02ecf48fd74e4d7f8c5fc23e8bb7d02bbb4d4c28e7c539768947bb1949659622?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/npm@1.0.1"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:562d743ec3dac75b2d06f701e03bd247adc3be374f425064f6d0958be10bbac4?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/npm@1.0.1"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "component_not_present",
+      "impact_statement": "The scanner match is the VS Code built-in extension manifest at /openhands/.openvscode-server/extensions/npm/package.json (name=npm, version=1.0.1, publisher=vscode). It is a language/task extension manifest, not the unrelated npm library of the same name; the vulnerable npm package code is not present at that path."
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2019-19919"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/agent-server@sha256:9e2aac069abd749316f03bf79ce82c2c6a2dcf1e77b158f994e33c1301573349?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:a6e7ae5c62675c58a39d44494064928be986527137a12d04674cc17134d7e3b3?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:8fbadd5fa8e0a15742c06ad50a6e3df9eaae9a6cc9202170fe48e1e393d5d944?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:bd44c427df30a664f774bdd6b17a926489edccf02cd62d9dabeda8d8678c1c1d?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:02ecf48fd74e4d7f8c5fc23e8bb7d02bbb4d4c28e7c539768947bb1949659622?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:562d743ec3dac75b2d06f701e03bd247adc3be374f425064f6d0958be10bbac4?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "component_not_present",
+      "impact_statement": "The scanner match is the VS Code built-in extension manifest at /openhands/.openvscode-server/extensions/handlebars/package.json (name=handlebars, version=1.0.0, publisher=vscode). It is a language/task extension manifest, not the unrelated npm library of the same name; the vulnerable npm package code is not present at that path."
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2019-20920"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/agent-server@sha256:9e2aac069abd749316f03bf79ce82c2c6a2dcf1e77b158f994e33c1301573349?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:a6e7ae5c62675c58a39d44494064928be986527137a12d04674cc17134d7e3b3?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:8fbadd5fa8e0a15742c06ad50a6e3df9eaae9a6cc9202170fe48e1e393d5d944?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:bd44c427df30a664f774bdd6b17a926489edccf02cd62d9dabeda8d8678c1c1d?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:02ecf48fd74e4d7f8c5fc23e8bb7d02bbb4d4c28e7c539768947bb1949659622?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:562d743ec3dac75b2d06f701e03bd247adc3be374f425064f6d0958be10bbac4?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "component_not_present",
+      "impact_statement": "The scanner match is the VS Code built-in extension manifest at /openhands/.openvscode-server/extensions/handlebars/package.json (name=handlebars, version=1.0.0, publisher=vscode). It is a language/task extension manifest, not the unrelated npm library of the same name; the vulnerable npm package code is not present at that path."
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2020-7712"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/agent-server@sha256:9e2aac069abd749316f03bf79ce82c2c6a2dcf1e77b158f994e33c1301573349?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/json@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:a6e7ae5c62675c58a39d44494064928be986527137a12d04674cc17134d7e3b3?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/json@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:8fbadd5fa8e0a15742c06ad50a6e3df9eaae9a6cc9202170fe48e1e393d5d944?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/json@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:bd44c427df30a664f774bdd6b17a926489edccf02cd62d9dabeda8d8678c1c1d?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/json@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:02ecf48fd74e4d7f8c5fc23e8bb7d02bbb4d4c28e7c539768947bb1949659622?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/json@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:562d743ec3dac75b2d06f701e03bd247adc3be374f425064f6d0958be10bbac4?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/json@1.0.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "component_not_present",
+      "impact_statement": "The scanner match is the VS Code built-in extension manifest at /openhands/.openvscode-server/extensions/json/package.json (name=json, version=1.0.0, publisher=vscode). It is a language/task extension manifest, not the unrelated npm library of the same name; the vulnerable npm package code is not present at that path."
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2020-7729"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/agent-server@sha256:9e2aac069abd749316f03bf79ce82c2c6a2dcf1e77b158f994e33c1301573349?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/grunt@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:a6e7ae5c62675c58a39d44494064928be986527137a12d04674cc17134d7e3b3?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/grunt@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:8fbadd5fa8e0a15742c06ad50a6e3df9eaae9a6cc9202170fe48e1e393d5d944?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/grunt@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:bd44c427df30a664f774bdd6b17a926489edccf02cd62d9dabeda8d8678c1c1d?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/grunt@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:02ecf48fd74e4d7f8c5fc23e8bb7d02bbb4d4c28e7c539768947bb1949659622?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/grunt@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:562d743ec3dac75b2d06f701e03bd247adc3be374f425064f6d0958be10bbac4?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/grunt@1.0.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "component_not_present",
+      "impact_statement": "The scanner match is the VS Code built-in extension manifest at /openhands/.openvscode-server/extensions/grunt/package.json (name=grunt, version=1.0.0, publisher=vscode). It is a language/task extension manifest, not the unrelated npm library of the same name; the vulnerable npm package code is not present at that path."
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2020-7788"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/agent-server@sha256:9e2aac069abd749316f03bf79ce82c2c6a2dcf1e77b158f994e33c1301573349?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/ini@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:a6e7ae5c62675c58a39d44494064928be986527137a12d04674cc17134d7e3b3?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/ini@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:8fbadd5fa8e0a15742c06ad50a6e3df9eaae9a6cc9202170fe48e1e393d5d944?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/ini@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:bd44c427df30a664f774bdd6b17a926489edccf02cd62d9dabeda8d8678c1c1d?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/ini@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:02ecf48fd74e4d7f8c5fc23e8bb7d02bbb4d4c28e7c539768947bb1949659622?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/ini@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:562d743ec3dac75b2d06f701e03bd247adc3be374f425064f6d0958be10bbac4?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/ini@1.0.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "component_not_present",
+      "impact_statement": "The scanner match is the VS Code built-in extension manifest at /openhands/.openvscode-server/extensions/ini/package.json (name=ini, version=1.0.0, publisher=vscode). It is a language/task extension manifest, not the unrelated npm library of the same name; the vulnerable npm package code is not present at that path."
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2021-23369"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/agent-server@sha256:9e2aac069abd749316f03bf79ce82c2c6a2dcf1e77b158f994e33c1301573349?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:a6e7ae5c62675c58a39d44494064928be986527137a12d04674cc17134d7e3b3?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:8fbadd5fa8e0a15742c06ad50a6e3df9eaae9a6cc9202170fe48e1e393d5d944?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:bd44c427df30a664f774bdd6b17a926489edccf02cd62d9dabeda8d8678c1c1d?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:02ecf48fd74e4d7f8c5fc23e8bb7d02bbb4d4c28e7c539768947bb1949659622?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:562d743ec3dac75b2d06f701e03bd247adc3be374f425064f6d0958be10bbac4?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "component_not_present",
+      "impact_statement": "The scanner match is the VS Code built-in extension manifest at /openhands/.openvscode-server/extensions/handlebars/package.json (name=handlebars, version=1.0.0, publisher=vscode). It is a language/task extension manifest, not the unrelated npm library of the same name; the vulnerable npm package code is not present at that path."
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2021-23383"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/agent-server@sha256:9e2aac069abd749316f03bf79ce82c2c6a2dcf1e77b158f994e33c1301573349?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:a6e7ae5c62675c58a39d44494064928be986527137a12d04674cc17134d7e3b3?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:8fbadd5fa8e0a15742c06ad50a6e3df9eaae9a6cc9202170fe48e1e393d5d944?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:bd44c427df30a664f774bdd6b17a926489edccf02cd62d9dabeda8d8678c1c1d?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:02ecf48fd74e4d7f8c5fc23e8bb7d02bbb4d4c28e7c539768947bb1949659622?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:562d743ec3dac75b2d06f701e03bd247adc3be374f425064f6d0958be10bbac4?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "component_not_present",
+      "impact_statement": "The scanner match is the VS Code built-in extension manifest at /openhands/.openvscode-server/extensions/handlebars/package.json (name=handlebars, version=1.0.0, publisher=vscode). It is a language/task extension manifest, not the unrelated npm library of the same name; the vulnerable npm package code is not present at that path."
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2022-1537"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/agent-server@sha256:9e2aac069abd749316f03bf79ce82c2c6a2dcf1e77b158f994e33c1301573349?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/grunt@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:a6e7ae5c62675c58a39d44494064928be986527137a12d04674cc17134d7e3b3?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/grunt@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:8fbadd5fa8e0a15742c06ad50a6e3df9eaae9a6cc9202170fe48e1e393d5d944?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/grunt@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:bd44c427df30a664f774bdd6b17a926489edccf02cd62d9dabeda8d8678c1c1d?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/grunt@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:02ecf48fd74e4d7f8c5fc23e8bb7d02bbb4d4c28e7c539768947bb1949659622?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/grunt@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:562d743ec3dac75b2d06f701e03bd247adc3be374f425064f6d0958be10bbac4?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/grunt@1.0.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "component_not_present",
+      "impact_statement": "The scanner match is the VS Code built-in extension manifest at /openhands/.openvscode-server/extensions/grunt/package.json (name=grunt, version=1.0.0, publisher=vscode). It is a language/task extension manifest, not the unrelated npm library of the same name; the vulnerable npm package code is not present at that path."
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2025-47273"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/agent-server@sha256:9e2aac069abd749316f03bf79ce82c2c6a2dcf1e77b158f994e33c1301573349?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:pypi/setuptools@70.3.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:a6e7ae5c62675c58a39d44494064928be986527137a12d04674cc17134d7e3b3?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:pypi/setuptools@70.3.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:8fbadd5fa8e0a15742c06ad50a6e3df9eaae9a6cc9202170fe48e1e393d5d944?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:pypi/setuptools@70.3.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:bd44c427df30a664f774bdd6b17a926489edccf02cd62d9dabeda8d8678c1c1d?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:pypi/setuptools@70.3.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:02ecf48fd74e4d7f8c5fc23e8bb7d02bbb4d4c28e7c539768947bb1949659622?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:pypi/setuptools@70.3.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:562d743ec3dac75b2d06f701e03bd247adc3be374f425064f6d0958be10bbac4?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:pypi/setuptools@70.3.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The scanner match is pip 26.2.1's vendored pkg_resources metadata under /usr/local/lib/python3.13/site-packages/pip/_vendor/pkg_resources. A filesystem check of the final images found no setuptools package_index.py under pip/_vendor; the vulnerable setuptools PackageIndex code is not present."
+    },
+    {
+      "vulnerability": {
+        "name": "GHSA-2cf5-4w76-r9qv"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/agent-server@sha256:9e2aac069abd749316f03bf79ce82c2c6a2dcf1e77b158f994e33c1301573349?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:a6e7ae5c62675c58a39d44494064928be986527137a12d04674cc17134d7e3b3?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:8fbadd5fa8e0a15742c06ad50a6e3df9eaae9a6cc9202170fe48e1e393d5d944?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:bd44c427df30a664f774bdd6b17a926489edccf02cd62d9dabeda8d8678c1c1d?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:02ecf48fd74e4d7f8c5fc23e8bb7d02bbb4d4c28e7c539768947bb1949659622?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:562d743ec3dac75b2d06f701e03bd247adc3be374f425064f6d0958be10bbac4?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "component_not_present",
+      "impact_statement": "The scanner match is the VS Code built-in extension manifest at /openhands/.openvscode-server/extensions/handlebars/package.json (name=handlebars, version=1.0.0, publisher=vscode). It is a language/task extension manifest, not the unrelated npm library of the same name; the vulnerable npm package code is not present at that path."
+    },
+    {
+      "vulnerability": {
+        "name": "GHSA-g9r4-xpmj-mj65"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/agent-server@sha256:9e2aac069abd749316f03bf79ce82c2c6a2dcf1e77b158f994e33c1301573349?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:a6e7ae5c62675c58a39d44494064928be986527137a12d04674cc17134d7e3b3?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:8fbadd5fa8e0a15742c06ad50a6e3df9eaae9a6cc9202170fe48e1e393d5d944?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:bd44c427df30a664f774bdd6b17a926489edccf02cd62d9dabeda8d8678c1c1d?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:02ecf48fd74e4d7f8c5fc23e8bb7d02bbb4d4c28e7c539768947bb1949659622?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:562d743ec3dac75b2d06f701e03bd247adc3be374f425064f6d0958be10bbac4?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "component_not_present",
+      "impact_statement": "The scanner match is the VS Code built-in extension manifest at /openhands/.openvscode-server/extensions/handlebars/package.json (name=handlebars, version=1.0.0, publisher=vscode). It is a language/task extension manifest, not the unrelated npm library of the same name; the vulnerable npm package code is not present at that path."
+    },
+    {
+      "vulnerability": {
+        "name": "GHSA-h6ch-v84p-w6p9"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/agent-server@sha256:9e2aac069abd749316f03bf79ce82c2c6a2dcf1e77b158f994e33c1301573349?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/diff@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:a6e7ae5c62675c58a39d44494064928be986527137a12d04674cc17134d7e3b3?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/diff@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:8fbadd5fa8e0a15742c06ad50a6e3df9eaae9a6cc9202170fe48e1e393d5d944?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/diff@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:bd44c427df30a664f774bdd6b17a926489edccf02cd62d9dabeda8d8678c1c1d?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/diff@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:02ecf48fd74e4d7f8c5fc23e8bb7d02bbb4d4c28e7c539768947bb1949659622?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/diff@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:562d743ec3dac75b2d06f701e03bd247adc3be374f425064f6d0958be10bbac4?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/diff@1.0.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "component_not_present",
+      "impact_statement": "The scanner match is the VS Code built-in extension manifest at /openhands/.openvscode-server/extensions/diff/package.json (name=diff, version=1.0.0, publisher=vscode). It is a language/task extension manifest, not the unrelated npm library of the same name; the vulnerable npm package code is not present at that path."
+    },
+    {
+      "vulnerability": {
+        "name": "GHSA-q2c6-c6pm-g3gh"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/agent-server@sha256:9e2aac069abd749316f03bf79ce82c2c6a2dcf1e77b158f994e33c1301573349?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:a6e7ae5c62675c58a39d44494064928be986527137a12d04674cc17134d7e3b3?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:8fbadd5fa8e0a15742c06ad50a6e3df9eaae9a6cc9202170fe48e1e393d5d944?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:bd44c427df30a664f774bdd6b17a926489edccf02cd62d9dabeda8d8678c1c1d?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:02ecf48fd74e4d7f8c5fc23e8bb7d02bbb4d4c28e7c539768947bb1949659622?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:562d743ec3dac75b2d06f701e03bd247adc3be374f425064f6d0958be10bbac4?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "component_not_present",
+      "impact_statement": "The scanner match is the VS Code built-in extension manifest at /openhands/.openvscode-server/extensions/handlebars/package.json (name=handlebars, version=1.0.0, publisher=vscode). It is a language/task extension manifest, not the unrelated npm library of the same name; the vulnerable npm package code is not present at that path."
+    },
+    {
+      "vulnerability": {
+        "name": "GHSA-q42p-pg8m-cqh6"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/agent-server@sha256:9e2aac069abd749316f03bf79ce82c2c6a2dcf1e77b158f994e33c1301573349?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:a6e7ae5c62675c58a39d44494064928be986527137a12d04674cc17134d7e3b3?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-server@sha256:8fbadd5fa8e0a15742c06ad50a6e3df9eaae9a6cc9202170fe48e1e393d5d944?repository_url=ghcr.io/openhands/agent-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:bd44c427df30a664f774bdd6b17a926489edccf02cd62d9dabeda8d8678c1c1d?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:02ecf48fd74e4d7f8c5fc23e8bb7d02bbb4d4c28e7c539768947bb1949659622?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/agent-canvas@sha256:562d743ec3dac75b2d06f701e03bd247adc3be374f425064f6d0958be10bbac4?repository_url=ghcr.io/openhands/agent-canvas",
+          "subcomponents": [
+            {
+              "@id": "pkg:npm/handlebars@1.0.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "component_not_present",
+      "impact_statement": "The scanner match is the VS Code built-in extension manifest at /openhands/.openvscode-server/extensions/handlebars/package.json (name=handlebars, version=1.0.0, publisher=vscode). It is a language/task extension manifest, not the unrelated npm library of the same name; the vulnerable npm package code is not present at that path."
+    }
+  ]
+}
