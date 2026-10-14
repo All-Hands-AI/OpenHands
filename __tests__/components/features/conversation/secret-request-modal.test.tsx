@@ -4,6 +4,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SecretsService } from "#/api/secrets-service";
 import { SecretRequestModal } from "#/components/features/conversation/secret-request-modal";
 import {
+  MODAL_MAX_WIDTH_VIEWPORT,
+  MODAL_WIDTH_CLASS,
+} from "#/components/shared/modals/modal-body";
+import {
   type SecretRequest,
   useSecretRequestStore,
 } from "#/stores/secret-request-store";
@@ -51,6 +55,14 @@ describe("SecretRequestModal", () => {
     expect(screen.getByText(request.reason!)).toBeInTheDocument();
     expect(screen.getByTestId("name-input")).toHaveValue("GITHUB_TOKEN");
     expect(screen.getByTestId("value-input")).toHaveValue("");
+  });
+
+  it("caps the 520px dialog at 90vw so phone viewports cannot clip it", async () => {
+    await renderModal();
+
+    const modal = screen.getByTestId("secret-request-modal");
+    expect(modal).toHaveClass(MODAL_WIDTH_CLASS.md);
+    expect(modal).toHaveClass(MODAL_MAX_WIDTH_VIEWPORT);
   });
 
   it("ignores requests from other conversations", async () => {
