@@ -371,14 +371,11 @@ interface AgentSettingsScreenProps {
   /** `agent_settings`-shaped profile fields the form opens on. */
   agentSettingsOverride?: Record<string, SettingsValue> | null;
   onSaveControlChange: (control: AgentSettingsSaveControl) => void;
-  /** Local launches route the `default` profile around its stored prompt and tools. */
-  isDefaultProfile?: boolean;
 }
 
 export function AgentSettingsScreen({
   agentSettingsOverride = null,
   onSaveControlChange,
-  isDefaultProfile = false,
 }: AgentSettingsScreenProps) {
   const { t } = useTranslation("openhands");
   const { data: settings, isLoading } = useSettings();
@@ -420,12 +417,11 @@ export function AgentSettingsScreen({
     initialTools.mode === "custom" ? initialTools.selected : null,
   );
   const toolsSupported = agentProfileSupportsTools();
-  const toolsEditable = toolsSupported && !isDefaultProfile;
   const {
     data: toolCatalog,
     isError: toolCatalogFailed,
     refetch: refetchToolCatalog,
-  } = useToolCatalog({ enabled: toolsEditable });
+  } = useToolCatalog({ enabled: toolsSupported });
   // Only a loaded catalog may write `tools`.
   const toolCatalogLoaded = toolCatalog !== undefined;
   const standardToolNames = React.useMemo(
@@ -465,7 +461,6 @@ export function AgentSettingsScreen({
 
   // --- System prompt (OpenHands path) ---
   const instructionsSupported = agentProfileSupportsInstructions();
-  const showSystemPrompt = instructionsSupported && !isDefaultProfile;
   const initialSystemPrompt = React.useMemo(
     () => readSystemPromptSeed(agentSettingsOverride),
     [agentSettingsOverride],
@@ -522,14 +517,12 @@ export function AgentSettingsScreen({
     [mcpCatalog, selectedMcpServers],
   );
   // --- Skills (OpenHands; the selection a profile launch loads) ---
-  // `default` launches with the Skills page selection instead.
   const skillsSupported = agentProfileSupportsSkills();
-  const skillsEditable = skillsSupported && !isDefaultProfile;
   const {
     data: skillCatalog,
     isError: skillCatalogFailed,
     refetch: refetchSkillCatalog,
-  } = useSkillCatalog({ enabled: skillsEditable });
+  } = useSkillCatalog({ enabled: skillsSupported });
   const isPublicSkill = React.useMemo(
     () => publicSkillTest(skillCatalog),
     [skillCatalog],
@@ -581,7 +574,7 @@ export function AgentSettingsScreen({
     [initialSkills, isPublicSkill],
   );
   // A seeded or stored list is written back; an unset one only once edited.
-  const skillsToSave = skillsEditable
+  const skillsToSave = skillsSupported
     ? (editedSkills ?? (hasStoredSkillList ? initialSkills : undefined))
     : undefined;
   const skillsDirty =
@@ -774,8 +767,6 @@ export function AgentSettingsScreen({
   }, [initialSecretRefs]);
 
   // --- Condenser and verification (OpenHands; stored on the profile) ---
-  // A local `default` launches from the global settings, so its own copy would be ignored.
-  const behaviorEditable = !isDefaultProfile || backendKind === "cloud";
   const [behaviorControls, setBehaviorControls] = useState<
     Partial<Record<ProfileBehaviorSection, SdkSectionSaveControl>>
   >({});
@@ -852,24 +843,20 @@ export function AgentSettingsScreen({
       >,
     [storedBehavior],
   );
-  const behaviorDirty =
-    behaviorEditable &&
-    Boolean(
-      behaviorControls.condenser?.isDirty ||
-      behaviorControls.verification?.isDirty,
-    );
+  const behaviorDirty = Boolean(
+    behaviorControls.condenser?.isDirty ||
+    behaviorControls.verification?.isDirty,
+  );
   const behaviorToSave = (section: ProfileBehaviorSection) => {
     const control = behaviorControls[section];
-    if (!behaviorEditable || !control) return undefined;
+    if (!control) return undefined;
     if (!control.isDirty && storedBehavior[section]) return undefined;
     return fromBehaviorFormValues(schema, section, control.values);
   };
   // --- Model Router (OpenHands; stored on the profile) ---
-  // `default` launches with the router chosen on the Model Router page instead.
   const routerSupported = agentProfileSupportsRouter();
-  const routerEditable = routerSupported && !isDefaultProfile;
   const { data: metaProfilesData } = useMetaProfiles({
-    enabled: routerEditable,
+    enabled: routerSupported,
   });
   // On without a name means the server picks the alphabetically first router.
   let initialRouter: string | null = null;
@@ -923,19 +910,19 @@ export function AgentSettingsScreen({
   const secretScopeDirty =
     secretsMode !== initialSecretRefs.mode ||
     !sameScopeSelection(orderedSelectedSecrets, initialSecretRefs.selected);
-  const routerDirty = routerEditable && router !== initialRouter;
+  const routerDirty = routerSupported && router !== initialRouter;
   const toolSelectionDirty =
     toolsMode !== initialTools.mode ||
     (toolsMode === "custom" &&
       !sameScopeSelection(orderedSelectedTools, initialTools.selected));
   const systemPromptDirty =
-    showSystemPrompt &&
+    instructionsSupported &&
     (systemPromptMode !== initialSystemPrompt.mode ||
       (systemPromptMode !== "standard" &&
         systemPromptText !== initialSystemPrompt.text));
   const systemPromptMissing =
     agentType === "openhands" &&
-    showSystemPrompt &&
+    instructionsSupported &&
     systemPromptMode !== "standard" &&
     !systemPromptText.trim();
   const settingsDirty =
@@ -1073,7 +1060,7 @@ export function AgentSettingsScreen({
       router: routerDirty ? router : undefined,
       systemPromptMode,
       systemPromptText,
-      systemPromptEditable: showSystemPrompt,
+      systemPromptEditable: instructionsSupported,
       condenser: behaviorToSave("condenser"),
       verification: behaviorToSave("verification"),
     });
@@ -1126,90 +1113,73 @@ export function AgentSettingsScreen({
           <Typography.Text className="text-sm">
             {t(I18nKey.SETTINGS$AGENT_PROFILE_SYSTEM_PROMPT)}
           </Typography.Text>
-          {isDefaultProfile ? (
+          <SettingsDropdownInput
+            testId="agent-settings-system-prompt-mode"
+            name="agent-system-prompt-mode"
+            label=""
+            items={[
+              {
+                key: "standard",
+                label: t(I18nKey.SETTINGS$AGENT_PROFILE_SYSTEM_PROMPT_STANDARD),
+              },
+              {
+                key: "append",
+                label: t(I18nKey.SETTINGS$AGENT_PROFILE_SYSTEM_PROMPT_APPEND),
+              },
+              {
+                key: "custom",
+                label: t(I18nKey.SETTINGS$AGENT_PROFILE_SYSTEM_PROMPT_CUSTOM),
+              },
+            ]}
+            selectedKey={systemPromptMode}
+            isDisabled={isSaving}
+            onSelectionChange={(key) => {
+              if (key) setSystemPromptMode(key as SystemPromptMode);
+            }}
+          />
+          {systemPromptMode !== "standard" ? (
+            <textarea
+              data-testid="agent-settings-system-prompt"
+              aria-label={t(I18nKey.SETTINGS$AGENT_PROFILE_SYSTEM_PROMPT)}
+              className={cn(
+                formControlMultilineFieldClassName,
+                "min-h-48 font-mono placeholder:italic",
+                "disabled:bg-surface-raised disabled:border-border-subtle",
+              )}
+              value={systemPromptText}
+              maxLength={SYSTEM_PROMPT_MAX_LENGTH}
+              placeholder={t(
+                systemPromptMode === "custom"
+                  ? I18nKey.SETTINGS$AGENT_PROFILE_SYSTEM_PROMPT_PLACEHOLDER
+                  : I18nKey.SETTINGS$AGENT_PROFILE_SYSTEM_PROMPT_APPEND_PLACEHOLDER,
+              )}
+              disabled={isSaving}
+              onChange={(e) => setSystemPromptText(e.target.value)}
+            />
+          ) : null}
+          {systemPromptMissing ? (
             <Typography.Text
-              testId="agent-settings-system-prompt-default-profile"
-              className="text-xs text-tertiary-alt"
+              testId="agent-settings-system-prompt-required"
+              className="text-xs text-danger"
             >
-              {t(I18nKey.SETTINGS$AGENT_PROFILE_SYSTEM_PROMPT_DEFAULT_PROFILE)}
+              {t(I18nKey.SETTINGS$AGENT_PROFILE_SYSTEM_PROMPT_REQUIRED)}
             </Typography.Text>
-          ) : (
-            <>
-              <SettingsDropdownInput
-                testId="agent-settings-system-prompt-mode"
-                name="agent-system-prompt-mode"
-                label=""
-                items={[
-                  {
-                    key: "standard",
-                    label: t(
-                      I18nKey.SETTINGS$AGENT_PROFILE_SYSTEM_PROMPT_STANDARD,
-                    ),
-                  },
-                  {
-                    key: "append",
-                    label: t(
-                      I18nKey.SETTINGS$AGENT_PROFILE_SYSTEM_PROMPT_APPEND,
-                    ),
-                  },
-                  {
-                    key: "custom",
-                    label: t(
-                      I18nKey.SETTINGS$AGENT_PROFILE_SYSTEM_PROMPT_CUSTOM,
-                    ),
-                  },
-                ]}
-                selectedKey={systemPromptMode}
-                isDisabled={isSaving}
-                onSelectionChange={(key) => {
-                  if (key) setSystemPromptMode(key as SystemPromptMode);
-                }}
-              />
-              {systemPromptMode !== "standard" ? (
-                <textarea
-                  data-testid="agent-settings-system-prompt"
-                  aria-label={t(I18nKey.SETTINGS$AGENT_PROFILE_SYSTEM_PROMPT)}
-                  className={cn(
-                    formControlMultilineFieldClassName,
-                    "min-h-48 font-mono placeholder:italic",
-                    "disabled:bg-surface-raised disabled:border-border-subtle",
-                  )}
-                  value={systemPromptText}
-                  maxLength={SYSTEM_PROMPT_MAX_LENGTH}
-                  placeholder={t(
-                    systemPromptMode === "custom"
-                      ? I18nKey.SETTINGS$AGENT_PROFILE_SYSTEM_PROMPT_PLACEHOLDER
-                      : I18nKey.SETTINGS$AGENT_PROFILE_SYSTEM_PROMPT_APPEND_PLACEHOLDER,
-                  )}
-                  disabled={isSaving}
-                  onChange={(e) => setSystemPromptText(e.target.value)}
-                />
-              ) : null}
-              {systemPromptMissing ? (
-                <Typography.Text
-                  testId="agent-settings-system-prompt-required"
-                  className="text-xs text-danger"
-                >
-                  {t(I18nKey.SETTINGS$AGENT_PROFILE_SYSTEM_PROMPT_REQUIRED)}
-                </Typography.Text>
-              ) : null}
-              <Typography.Text
-                testId="agent-settings-system-prompt-hint"
-                className="text-xs text-tertiary-alt"
-              >
-                {t(
-                  {
-                    standard:
-                      I18nKey.SETTINGS$AGENT_PROFILE_SYSTEM_PROMPT_STANDARD_HINT,
-                    append:
-                      I18nKey.SETTINGS$AGENT_PROFILE_SYSTEM_PROMPT_APPEND_HINT,
-                    custom:
-                      I18nKey.SETTINGS$AGENT_PROFILE_SYSTEM_PROMPT_CUSTOM_HINT,
-                  }[systemPromptMode],
-                )}
-              </Typography.Text>
-            </>
-          )}
+          ) : null}
+          <Typography.Text
+            testId="agent-settings-system-prompt-hint"
+            className="text-xs text-tertiary-alt"
+          >
+            {t(
+              {
+                standard:
+                  I18nKey.SETTINGS$AGENT_PROFILE_SYSTEM_PROMPT_STANDARD_HINT,
+                append:
+                  I18nKey.SETTINGS$AGENT_PROFILE_SYSTEM_PROMPT_APPEND_HINT,
+                custom:
+                  I18nKey.SETTINGS$AGENT_PROFILE_SYSTEM_PROMPT_CUSTOM_HINT,
+              }[systemPromptMode],
+            )}
+          </Typography.Text>
         </div>
       ) : null}
 
@@ -1221,59 +1191,48 @@ export function AgentSettingsScreen({
           <Typography.Text className="text-sm">
             {t(I18nKey.SETTINGS$NAV_META_LLM)}
           </Typography.Text>
-          {routerEditable ? (
-            <>
-              <SettingsDropdownInput
-                testId="agent-settings-router-select"
-                name="agent-router"
-                label=""
-                items={[
-                  {
-                    key: ROUTER_OFF_KEY,
-                    label: t(I18nKey.SETTINGS$AGENT_PROFILE_ROUTER_OFF),
-                  },
-                  ...(initialRouter === ROUTER_FIRST_KEY
-                    ? [
-                        {
-                          key: ROUTER_FIRST_KEY,
-                          label: t(I18nKey.SETTINGS$AGENT_PROFILE_ROUTER_FIRST),
-                        },
-                      ]
-                    : []),
-                  ...[
-                    ...routerNames,
-                    ...(routerDangling && router ? [router] : []),
-                  ].map((name) => ({ key: name, label: name })),
-                ]}
-                selectedKey={router ?? ROUTER_OFF_KEY}
-                isDisabled={isSaving}
-                onSelectionChange={(key) => {
-                  if (key === null || key === undefined) return;
-                  setRouter(key === ROUTER_OFF_KEY ? null : String(key));
-                }}
-              />
-              {routerDangling ? (
-                <Typography.Text
-                  testId="agent-settings-router-dangling"
-                  className="text-xs text-danger"
-                >
-                  {t(I18nKey.SETTINGS$AGENT_PROFILE_ROUTER_DANGLING, {
-                    name: router,
-                  })}
-                </Typography.Text>
-              ) : null}
-              <Typography.Text className="text-xs text-tertiary-alt">
-                {t(I18nKey.SETTINGS$AGENT_PROFILE_ROUTER_HINT)}
-              </Typography.Text>
-            </>
-          ) : (
+          <SettingsDropdownInput
+            testId="agent-settings-router-select"
+            name="agent-router"
+            label=""
+            items={[
+              {
+                key: ROUTER_OFF_KEY,
+                label: t(I18nKey.SETTINGS$AGENT_PROFILE_ROUTER_OFF),
+              },
+              ...(initialRouter === ROUTER_FIRST_KEY
+                ? [
+                    {
+                      key: ROUTER_FIRST_KEY,
+                      label: t(I18nKey.SETTINGS$AGENT_PROFILE_ROUTER_FIRST),
+                    },
+                  ]
+                : []),
+              ...[
+                ...routerNames,
+                ...(routerDangling && router ? [router] : []),
+              ].map((name) => ({ key: name, label: name })),
+            ]}
+            selectedKey={router ?? ROUTER_OFF_KEY}
+            isDisabled={isSaving}
+            onSelectionChange={(key) => {
+              if (key === null || key === undefined) return;
+              setRouter(key === ROUTER_OFF_KEY ? null : String(key));
+            }}
+          />
+          {routerDangling ? (
             <Typography.Text
-              testId="agent-settings-router-default-profile"
-              className="text-xs text-tertiary-alt"
+              testId="agent-settings-router-dangling"
+              className="text-xs text-danger"
             >
-              {t(I18nKey.SETTINGS$AGENT_PROFILE_ROUTER_DEFAULT_PROFILE)}
+              {t(I18nKey.SETTINGS$AGENT_PROFILE_ROUTER_DANGLING, {
+                name: router,
+              })}
             </Typography.Text>
-          )}
+          ) : null}
+          <Typography.Text className="text-xs text-tertiary-alt">
+            {t(I18nKey.SETTINGS$AGENT_PROFILE_ROUTER_HINT)}
+          </Typography.Text>
         </div>
       ) : null}
       {!isAcp && toolConcurrencyField ? (
@@ -1284,20 +1243,7 @@ export function AgentSettingsScreen({
           onChange={setToolConcurrency}
         />
       ) : null}
-      {!isAcp && toolsSupported && isDefaultProfile ? (
-        <div className="flex flex-col gap-2.5">
-          <Typography.Text className="text-sm">
-            {t(I18nKey.SETTINGS$AGENT_PROFILE_TOOLS)}
-          </Typography.Text>
-          <Typography.Text
-            testId="agent-settings-tools-default-profile"
-            className="text-xs text-tertiary-alt"
-          >
-            {t(I18nKey.SETTINGS$AGENT_PROFILE_TOOLS_DEFAULT_PROFILE)}
-          </Typography.Text>
-        </div>
-      ) : null}
-      {!isAcp && toolsEditable ? (
+      {!isAcp && toolsSupported ? (
         <div className="flex flex-col gap-2.5">
           <Typography.Text className="text-sm">
             {t(I18nKey.SETTINGS$AGENT_PROFILE_TOOLS)}
@@ -1461,31 +1407,22 @@ export function AgentSettingsScreen({
               <Typography.Text className="text-sm">
                 {t(titleKey)}
               </Typography.Text>
-              {behaviorEditable ? (
-                <SdkSectionPage
-                  settingsSources={[
-                    {
-                      settingsSource: "agent_settings",
-                      sectionKeys: [section],
-                      excludeKeys: GLOBAL_BEHAVIOR_FIELD_KEYS,
-                    },
-                  ]}
-                  embedded
-                  hideSaveButton
-                  markInitialOverridesDirty={false}
-                  initialValueOverrides={behaviorInitialValues[section]}
-                  getInitialView={behaviorInitialView[section]}
-                  onSaveControlChange={behaviorControlHandlers[section]}
-                  testId={`agent-settings-${section}-fields`}
-                />
-              ) : (
-                <Typography.Text
-                  testId={`agent-settings-${section}-default-profile`}
-                  className="text-xs text-tertiary-alt"
-                >
-                  {t(I18nKey.SETTINGS$AGENT_PROFILE_BEHAVIOR_DEFAULT_PROFILE)}
-                </Typography.Text>
-              )}
+              <SdkSectionPage
+                settingsSources={[
+                  {
+                    settingsSource: "agent_settings",
+                    sectionKeys: [section],
+                    excludeKeys: GLOBAL_BEHAVIOR_FIELD_KEYS,
+                  },
+                ]}
+                embedded
+                hideSaveButton
+                markInitialOverridesDirty={false}
+                initialValueOverrides={behaviorInitialValues[section]}
+                getInitialView={behaviorInitialView[section]}
+                onSaveControlChange={behaviorControlHandlers[section]}
+                testId={`agent-settings-${section}-fields`}
+              />
             </div>
           ))
         : null}
@@ -1560,56 +1497,45 @@ export function AgentSettingsScreen({
           <Typography.Text className="text-sm">
             {t(I18nKey.SETTINGS$AGENT_PROFILE_SKILLS)}
           </Typography.Text>
-          {!skillsEditable ? (
-            <Typography.Text
-              testId="agent-settings-skills-default-profile"
-              className="text-xs text-tertiary-alt"
+          {skillCatalog && currentSkills ? (
+            <div className="max-h-80 overflow-y-auto pr-1">
+              <ProfileScopeList
+                testId="agent-settings-skills"
+                items={skillCatalog.map((skill) => ({
+                  name: skill.name,
+                  description: t(
+                    skill.origin === "public"
+                      ? I18nKey.SETTINGS$SKILL_ORIGIN_PUBLIC
+                      : I18nKey.SETTINGS$SKILL_ORIGIN_USER,
+                  ),
+                }))}
+                selected={enabledSkillNames}
+                isDisabled={isSaving}
+                onToggle={toggleProfileSkill}
+              />
+            </div>
+          ) : null}
+          {skillCatalogFailed ? (
+            <div
+              className="flex items-center gap-2"
+              data-testid="agent-settings-skills-load-failed"
             >
-              {t(I18nKey.SETTINGS$AGENT_PROFILE_SKILLS_DEFAULT_PROFILE)}
-            </Typography.Text>
-          ) : (
-            <>
-              {skillCatalog && currentSkills ? (
-                <div className="max-h-80 overflow-y-auto pr-1">
-                  <ProfileScopeList
-                    testId="agent-settings-skills"
-                    items={skillCatalog.map((skill) => ({
-                      name: skill.name,
-                      description: t(
-                        skill.origin === "public"
-                          ? I18nKey.SETTINGS$SKILL_ORIGIN_PUBLIC
-                          : I18nKey.SETTINGS$SKILL_ORIGIN_USER,
-                      ),
-                    }))}
-                    selected={enabledSkillNames}
-                    isDisabled={isSaving}
-                    onToggle={toggleProfileSkill}
-                  />
-                </div>
-              ) : null}
-              {skillCatalogFailed ? (
-                <div
-                  className="flex items-center gap-2"
-                  data-testid="agent-settings-skills-load-failed"
-                >
-                  <Typography.Text className="text-xs text-feedback-error">
-                    {t(I18nKey.SETTINGS$AGENT_PROFILE_SKILLS_LOAD_FAILED)}
-                  </Typography.Text>
-                  <BrandButton
-                    testId="agent-settings-skills-retry"
-                    type="button"
-                    variant="secondary"
-                    onClick={() => refetchSkillCatalog()}
-                  >
-                    {t(I18nKey.SETTINGS$AGENT_PROFILE_TOOLS_RETRY)}
-                  </BrandButton>
-                </div>
-              ) : null}
-              <Typography.Text className="text-xs text-tertiary-alt">
-                {t(I18nKey.SETTINGS$AGENT_PROFILE_SKILLS_HINT)}
+              <Typography.Text className="text-xs text-feedback-error">
+                {t(I18nKey.SETTINGS$AGENT_PROFILE_SKILLS_LOAD_FAILED)}
               </Typography.Text>
-            </>
-          )}
+              <BrandButton
+                testId="agent-settings-skills-retry"
+                type="button"
+                variant="secondary"
+                onClick={() => refetchSkillCatalog()}
+              >
+                {t(I18nKey.SETTINGS$AGENT_PROFILE_TOOLS_RETRY)}
+              </BrandButton>
+            </div>
+          ) : null}
+          <Typography.Text className="text-xs text-tertiary-alt">
+            {t(I18nKey.SETTINGS$AGENT_PROFILE_SKILLS_HINT)}
+          </Typography.Text>
         </div>
       ) : null}
 

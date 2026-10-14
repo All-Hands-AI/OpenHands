@@ -1518,31 +1518,6 @@ describe("AgentSettingsScreen — skills", () => {
       "public_skills",
     );
   });
-
-  it("points the default profile to the Skills page", async () => {
-    let control: AgentSettingsSaveControl | null = null;
-    renderAgentSettingsScreen({
-      agentSettingsOverride: {
-        agent_kind: "openhands",
-        public_skills: ["alpha"],
-        disabled_skills: [],
-      },
-      isDefaultProfile: true,
-      onSaveControlChange: (next) => {
-        control = next;
-      },
-    });
-
-    expect(
-      await screen.findByTestId("agent-settings-skills-default-profile"),
-    ).toHaveTextContent("SETTINGS$AGENT_PROFILE_SKILLS_DEFAULT_PROFILE");
-    expect(
-      screen.queryByTestId("agent-settings-skills-list"),
-    ).not.toBeInTheDocument();
-    expect(control!.buildAgentProfileFields()).not.toHaveProperty(
-      "public_skills",
-    );
-  });
 });
 
 describe("AgentSettingsScreen — condenser and verification", () => {
@@ -1606,69 +1581,6 @@ describe("AgentSettingsScreen — condenser and verification", () => {
     expect(
       screen.queryByTestId("sdk-settings-verification.critic_api_key"),
     ).not.toBeInTheDocument();
-  });
-
-  it("points the default profile to the global pages", async () => {
-    const { control } = renderAgentSettingsScreen({
-      agentSettingsOverride: STORED,
-      isDefaultProfile: true,
-    });
-
-    expect(
-      await screen.findByTestId("agent-settings-condenser-default-profile"),
-    ).toHaveTextContent("SETTINGS$AGENT_PROFILE_BEHAVIOR_DEFAULT_PROFILE");
-    expect(
-      screen.queryByTestId("sdk-settings-condenser.condenser_max_size"),
-    ).not.toBeInTheDocument();
-    expect(control().buildAgentProfileFields()).not.toHaveProperty("condenser");
-  });
-
-  it("lets the default profile edit its own values on a cloud backend", async () => {
-    __resetActiveStoreForTests();
-    setRegisteredBackends([
-      {
-        id: "cloud-1",
-        name: "Cloud",
-        host: "https://app.example.com",
-        apiKey: "key",
-        kind: "cloud",
-      },
-    ]);
-    setActiveSelection({ backendId: "cloud-1", orgId: null });
-    try {
-      render(
-        <AgentSettingsScreen
-          agentSettingsOverride={STORED}
-          isDefaultProfile
-          onSaveControlChange={() => {}}
-        />,
-        {
-          wrapper: ({ children }) => (
-            <MemoryRouter>
-              <QueryClientProvider
-                client={
-                  new QueryClient({
-                    defaultOptions: { queries: { retry: false } },
-                  })
-                }
-              >
-                <ActiveBackendProvider>{children}</ActiveBackendProvider>
-              </QueryClientProvider>
-            </MemoryRouter>
-          ),
-        },
-      );
-
-      expect(
-        await screen.findByTestId("sdk-settings-condenser.condenser_max_size"),
-      ).toHaveValue(100);
-      expect(
-        screen.queryByTestId("agent-settings-condenser-default-profile"),
-      ).not.toBeInTheDocument();
-    } finally {
-      window.localStorage.clear();
-      __resetActiveStoreForTests();
-    }
   });
 });
 
@@ -1800,23 +1712,6 @@ describe("AgentSettingsScreen — Model Router", () => {
     expect(
       await screen.findByTestId("agent-settings-router-dangling"),
     ).toHaveTextContent("SETTINGS$AGENT_PROFILE_ROUTER_DANGLING");
-  });
-
-  it("points the default profile to the Model Router page", async () => {
-    const { control } = renderAgentSettingsScreen({
-      agentSettingsOverride: WITH_ROUTER,
-      isDefaultProfile: true,
-    });
-
-    expect(
-      await screen.findByTestId("agent-settings-router-default-profile"),
-    ).toHaveTextContent("SETTINGS$AGENT_PROFILE_ROUTER_DEFAULT_PROFILE");
-    expect(
-      screen.queryByTestId("agent-settings-router-select"),
-    ).not.toBeInTheDocument();
-    expect(control().buildAgentProfileFields()).not.toHaveProperty(
-      "meta_profile_ref",
-    );
   });
 });
 
@@ -1961,26 +1856,5 @@ describe("AgentSettingsScreen — system prompt", () => {
       persona: null,
       system_message_suffix: null,
     });
-  });
-
-  it("explains instead of editing on the default profile, and leaves both fields alone", async () => {
-    const { control } = renderAgentSettingsScreen({
-      agentSettingsOverride: {
-        ...OPENHANDS_PROFILE,
-        persona: "Set through the API.",
-        system_message_suffix: "Also set through the API.",
-      },
-      isDefaultProfile: true,
-    });
-
-    expect(
-      await screen.findByTestId("agent-settings-system-prompt-default-profile"),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByTestId("agent-settings-system-prompt-mode"),
-    ).not.toBeInTheDocument();
-    const fields = control().buildAgentProfileFields();
-    expect(fields).not.toHaveProperty("persona");
-    expect(fields).not.toHaveProperty("system_message_suffix");
   });
 });
