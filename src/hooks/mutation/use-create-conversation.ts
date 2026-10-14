@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import AgentServerConversationService from "#/api/conversation-service/agent-server-conversation-service.api";
 import { PluginSpec } from "#/api/conversation-service/agent-server-conversation-service.types";
 import { SuggestedTask } from "#/utils/types";
 import { Provider } from "#/types/settings";
@@ -13,14 +12,10 @@ import PluginsManagementService, {
   type InstalledPluginInfo,
 } from "#/api/plugins-management-service";
 import { PLUGINS_QUERY_KEYS } from "#/hooks/query/query-keys";
-import {
-  launchProfileOptions,
-  resolveConversationLaunch,
-} from "#/hooks/mutation/resolve-conversation-launch";
+import { launchConversation } from "#/hooks/mutation/resolve-conversation-launch";
 import { pluginReferenceKey } from "#/utils/plugin-display";
 import {
-  getStoredConversationMetadata,
-  setStoredConversationMetadata,
+  mergeStoredConversationMetadata,
   toPluginCoordinates,
   type WorkspaceMode,
 } from "#/api/conversation-metadata-store";
@@ -70,17 +65,13 @@ export const useCreateConversation = ({
 }: UseCreateConversationOptions = {}) => {
   const queryClient = useQueryClient();
   const { trackConversationCreated } = useTracking();
-  // Cache-warm on the home page (the profile picker reads the same query).
-  // Stamped onto the conversation at creation so the switcher can show the
-  // exact profile even when several profiles share a model (#1082).
-  const { data: llmProfiles } = useLlmProfiles();
-  // Warm the agent-profiles cache too — the launch path below awaits the same
-  // query via ensureQueryData, so a warm cache makes home-launch instant. The
-  // hook's maybe-unresolved data is deliberately NOT read at launch time:
-  // activation is pointer-only (it never writes agent_settings), so racing a
-  // cold cache into the agent_settings fallback would silently launch the
-  // wrong agent.
+  // Warm the profile caches — the launch awaits the same queries via
+  // ensureQueryData, so a warm cache makes home-launch instant. The hooks'
+  // maybe-unresolved data is deliberately NOT read at launch time: activation
+  // is pointer-only (it never writes agent_settings), so racing a cold cache
+  // into the agent_settings fallback would silently launch the wrong agent.
   const { backend, orgId } = useActiveBackend();
+  useLlmProfiles();
   useAgentProfiles();
   // Read the "Run on first message" toggle from the warmed settings
   // query so the cloud path can stamp the router instruction without a
@@ -113,20 +104,17 @@ export const useCreateConversation = ({
       } = variables;
 
       // The active AgentProfile is the default launch profile for new
-      // conversations (#3727), on both local and cloud.
-      const launch = await resolveConversationLaunch({
-        queryClient,
-        backendId: backend.id,
-        orgId,
-        isCloud: backend.kind === "cloud",
-        agentProfileId,
-      });
-
-      // Only extend the call with the profile fields when launching from a
-      // profile, so a plain create stays byte-identical to the legacy
-      // agent_settings path (#3727). sandboxId is unused here.
-      const conversation =
-        await AgentServerConversationService.createConversation({
+      // conversations (#3727), on both local and cloud. sandboxId is unused
+      // here.
+      const conversation = await launchConversation(
+        {
+          queryClient,
+          backendId: backend.id,
+          orgId,
+          isCloud: backend.kind === "cloud",
+          agentProfileId,
+        },
+        {
           initialUserMsg: query,
           automationSetup,
           ...(automationSetupTags ? { automationSetupTags } : {}),
@@ -143,7 +131,6 @@ export const useCreateConversation = ({
           workspaceMode,
           parentConversationId,
           agentType,
-          ...launchProfileOptions(launch),
           // Only stamp the toggle when it's on so the default path stays
           // byte-identical to the legacy launch (and the e2e snapshot tests
           // that assert the exact createConversation payload). The active
@@ -155,13 +142,11 @@ export const useCreateConversation = ({
                 hasActiveMetaProfile: !!metaProfiles?.active_meta_profile,
               }
             : {}),
-        });
+        },
+      );
 
-      // Stamp the active LLM profile onto the (local) conversation so the
-      // chat switcher shows the exact profile even when several profiles
-      // share a model (#1082). Cloud conversations don't use local profiles
-      // (app_conversation_id stays null until the sandbox is READY). Merge so
-      // the repo/workspace metadata the service just persisted is preserved.
+      // Cloud conversations have no app_conversation_id until the sandbox is
+      // READY.
       const localConversationId = conversation.app_conversation_id;
       // Snapshot the conversation's plugins into client-side metadata so the
       // in-conversation plugins view can show what's loaded (coordinates only
@@ -199,26 +184,10 @@ export const useCreateConversation = ({
           .filter((plugin) => !seen.has(pluginReferenceKey(plugin)));
         attachedPlugins = [...explicitPlugins, ...enabledInstalled];
       }
-      // Stamp the LLM profile the conversation runs so the switcher pill names
-      // it exactly (#1082). agent_settings launches run the active LLM; ACP
-      // profiles carry none (unused by the ACP model chip).
-      const activeProfile =
-        launch.llmProfile ??
-        launch.activeLlmProfile ??
-        llmProfiles?.active_profile ??
-        null;
-      if (localConversationId && (activeProfile || attachedPlugins.length)) {
-        const prev = getStoredConversationMetadata(localConversationId);
-        setStoredConversationMetadata(localConversationId, {
-          selected_repository: prev?.selected_repository ?? null,
-          selected_branch: prev?.selected_branch ?? null,
-          git_provider: prev?.git_provider ?? null,
-          selected_workspace: prev?.selected_workspace ?? null,
-          workspace_mode: prev?.workspace_mode ?? null,
-          active_profile: activeProfile ?? prev?.active_profile ?? null,
-          plugins: attachedPlugins.length
-            ? attachedPlugins
-            : (prev?.plugins ?? null),
+      // Merge so the metadata the launch just persisted is preserved.
+      if (localConversationId && attachedPlugins.length) {
+        mergeStoredConversationMetadata(localConversationId, {
+          plugins: attachedPlugins,
         });
       }
 

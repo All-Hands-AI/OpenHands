@@ -6,7 +6,11 @@ import AgentProfilesService, {
 } from "#/api/agent-profiles-service/agent-profiles-service.api";
 import ProfilesService from "#/api/profiles-service/profiles-service.api";
 import { backendSupportsLaunchLlmOverride } from "#/api/agent-server-adapter";
-import type { CreateConversationOptions } from "#/api/conversation-service/agent-server-conversation-service.api";
+import AgentServerConversationService, {
+  type CreateConversationOptions,
+} from "#/api/conversation-service/agent-server-conversation-service.api";
+import type { AppConversationStartTask } from "#/api/conversation-service/agent-server-conversation-service.types";
+import { mergeStoredConversationMetadata } from "#/api/conversation-metadata-store";
 import {
   AGENT_PROFILES_QUERY_KEYS,
   AGENT_PROFILES_RETRY_OPTIONS,
@@ -19,13 +23,11 @@ export interface ConversationLaunch {
   agentProfileKind?: AgentKind;
   /** Runs the agent profile with this LLM profile instead of its own. */
   llmProfileOverride?: string;
-  /** The LLM profile an OpenHands profile launch runs. */
+  /** The LLM profile the launch runs, when Canvas can tell. */
   llmProfile?: string;
-  /** The account-wide active LLM profile, when resolution read it. */
-  activeLlmProfile: string | null;
 }
 
-interface ResolveConversationLaunchOptions {
+export interface ResolveConversationLaunchOptions {
   queryClient: QueryClient;
   backendId: string;
   orgId: string | null | undefined;
@@ -58,6 +60,18 @@ export async function resolveConversationLaunch({
       meta: { disableToast: true },
     });
 
+  // Await the list rather than a render snapshot: a send fired before the
+  // LLM-profile query loads must still validate the ref.
+  const readLlmProfiles = () =>
+    queryClient
+      .ensureQueryData({
+        queryKey: [...LLM_PROFILES_QUERY_KEYS.all, backendId, orgId],
+        queryFn: ProfilesService.listProfiles,
+        retry: false,
+        meta: { disableToast: true },
+      })
+      .catch(() => null);
+
   const requestedAgentProfileId =
     agentProfileId ?? agentProfiles.active_agent_profile_id ?? undefined;
   const profile = requestedAgentProfileId
@@ -81,23 +95,11 @@ export async function resolveConversationLaunch({
     // is active. Scoped to local: cloud always resolves `default` server-side.
     prefersAgentSettings = true;
   } else if (profile?.agent_kind === "openhands" && profile.llm_profile_ref) {
-    // Await the list rather than a render snapshot: a send fired before the
-    // LLM-profile query loads must still validate the ref.
-    let llmProfileExists = false;
-    try {
-      const llm = await queryClient.ensureQueryData({
-        queryKey: [...LLM_PROFILES_QUERY_KEYS.all, backendId, orgId],
-        queryFn: ProfilesService.listProfiles,
-        retry: false,
-        meta: { disableToast: true },
-      });
-      llmProfileExists = llm.profiles.some(
-        (p) => p.name === profile.llm_profile_ref,
-      );
-      activeLlmProfile = llm.active_profile ?? null;
-    } catch {
-      // Unvalidated; handled below.
-    }
+    const llm = await readLlmProfiles();
+    // An unreadable list leaves the ref unvalidated; handled below.
+    const llmProfileExists =
+      llm?.profiles.some((p) => p.name === profile.llm_profile_ref) ?? false;
+    activeLlmProfile = llm?.active_profile ?? null;
     // The home LLM pill shows and activates the account-wide active LLM
     // profile, never the pinned ref (#16539), so an implicit launch runs that
     // selection. An explicit pick keeps its pinned ref unless the ref is gone.
@@ -160,7 +162,11 @@ export async function resolveConversationLaunch({
     !requestedAgentProfileId ||
     (prefersAgentSettings && profileAllowsAgentSettings)
   ) {
-    return { activeLlmProfile };
+    // An agent_settings launch runs the active LLM profile.
+    if (!activeLlmProfile && !isCloud) {
+      activeLlmProfile = (await readLlmProfiles())?.active_profile ?? null;
+    }
+    return { llmProfile: activeLlmProfile ?? undefined };
   }
   return {
     agentProfileId: requestedAgentProfileId,
@@ -170,12 +176,34 @@ export async function resolveConversationLaunch({
       profile?.agent_kind === "openhands"
         ? (llmProfileOverride ?? profile.llm_profile_ref ?? undefined)
         : undefined,
-    activeLlmProfile,
   };
 }
 
-/** The `createConversation` options that carry a resolved launch. */
-export function launchProfileOptions(
+/** Create a conversation from the resolved launch and record the LLM it runs. */
+export async function launchConversation(
+  { agentProfileId, llmProfile, ...context }: ResolveConversationLaunchOptions,
+  options: CreateConversationOptions,
+): Promise<AppConversationStartTask> {
+  const launch = await resolveConversationLaunch({
+    ...context,
+    agentProfileId,
+    llmProfile,
+  });
+  const task = await AgentServerConversationService.createConversation({
+    ...options,
+    ...launchProfileOptions(launch),
+  });
+  // The chat LLM picker names this profile even when several share a model
+  // (#1082). Cloud conversations don't use local LLM profiles.
+  if (!context.isCloud && task.app_conversation_id && launch.llmProfile) {
+    mergeStoredConversationMetadata(task.app_conversation_id, {
+      active_profile: launch.llmProfile,
+    });
+  }
+  return task;
+}
+
+function launchProfileOptions(
   launch: ConversationLaunch,
 ): Partial<CreateConversationOptions> {
   if (!launch.agentProfileId) return {};

@@ -5,7 +5,11 @@ import {
   LAUNCH_CHILD_CONVERSATION_ACTION_KIND,
   LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
 } from "#/constants/child-conversation";
-import { setStoredConversationMetadata } from "#/api/conversation-metadata-store";
+import {
+  getStoredConversationMetadata,
+  setStoredConversationMetadata,
+} from "#/api/conversation-metadata-store";
+import { getQueryClient } from "#/query-client-config";
 import { useGoalStore } from "#/stores/goal-store";
 import type { LaunchChildConversationAction } from "#/types/agent-server/core";
 import { isLaunchChildConversationActionEvent } from "#/types/agent-server/type-guards";
@@ -26,7 +30,9 @@ const {
   mockGetSettings,
   mockListMetaProfiles,
   mockBatchGetAppConversations,
-  mockResolveConversationLaunch,
+  mockListAgentProfiles,
+  mockListLlmProfiles,
+  mockSupportsLaunchLlmOverride,
 } = vi.hoisted(() => ({
   mockCreateConversation: vi.fn(),
   mockResolveWorkingDir: vi.fn(),
@@ -39,7 +45,9 @@ const {
   mockGetSettings: vi.fn(),
   mockListMetaProfiles: vi.fn(),
   mockBatchGetAppConversations: vi.fn(),
-  mockResolveConversationLaunch: vi.fn(),
+  mockListAgentProfiles: vi.fn(),
+  mockListLlmProfiles: vi.fn(),
+  mockSupportsLaunchLlmOverride: vi.fn(),
 }));
 
 vi.mock(
@@ -56,14 +64,23 @@ vi.mock(
 );
 
 vi.mock(
-  "#/hooks/mutation/resolve-conversation-launch",
+  "#/api/agent-profiles-service/agent-profiles-service.api",
   async (importOriginal) => ({
     ...(await importOriginal<
-      typeof import("#/hooks/mutation/resolve-conversation-launch")
+      typeof import("#/api/agent-profiles-service/agent-profiles-service.api")
     >()),
-    resolveConversationLaunch: mockResolveConversationLaunch,
+    default: { listProfiles: mockListAgentProfiles, getProfile: vi.fn() },
   }),
 );
+
+vi.mock("#/api/profiles-service/profiles-service.api", () => ({
+  default: { listProfiles: mockListLlmProfiles },
+}));
+
+vi.mock("#/api/agent-server-adapter", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("#/api/agent-server-adapter")>()),
+  backendSupportsLaunchLlmOverride: mockSupportsLaunchLlmOverride,
+}));
 
 vi.mock("#/api/cloud/conversation-service.api", () => ({
   createCloudAppConversation: mockCreateCloudAppConversation,
@@ -168,7 +185,16 @@ describe("handleLaunchChildConversationAction", () => {
       active_meta_profile: null,
     });
     mockBatchGetAppConversations.mockResolvedValue([]);
-    mockResolveConversationLaunch.mockResolvedValue({ activeLlmProfile: null });
+    getQueryClient().clear();
+    mockListAgentProfiles.mockResolvedValue({
+      profiles: [],
+      active_agent_profile_id: null,
+    });
+    mockListLlmProfiles.mockResolvedValue({
+      profiles: [],
+      active_profile: null,
+    });
+    mockSupportsLaunchLlmOverride.mockResolvedValue(true);
   });
 
   describe("parameter validation", () => {
@@ -258,12 +284,22 @@ describe("handleLaunchChildConversationAction", () => {
           },
         },
       ]);
-      mockResolveConversationLaunch.mockResolvedValue({
-        agentProfileId: "profile-1",
-        agentProfileKind: "openhands",
-        llmProfileOverride: "fast",
-        llmProfile: "fast",
-        activeLlmProfile: "slow",
+      mockListAgentProfiles.mockResolvedValue({
+        profiles: [
+          {
+            id: "profile-1",
+            name: "reviewer",
+            agent_kind: "openhands",
+            revision: 3,
+            llm_profile_ref: "slow",
+            mcp_server_refs: null,
+          },
+        ],
+        active_agent_profile_id: null,
+      });
+      mockListLlmProfiles.mockResolvedValue({
+        profiles: [{ name: "slow" }, { name: "fast" }],
+        active_profile: "slow",
       });
 
       await handleLaunchChildConversationAction(
@@ -272,13 +308,6 @@ describe("handleLaunchChildConversationAction", () => {
         nextToolCallId(),
       );
 
-      expect(mockResolveConversationLaunch).toHaveBeenCalledWith(
-        expect.objectContaining({
-          agentProfileId: "profile-1",
-          llmProfile: "fast",
-          isCloud: false,
-        }),
-      );
       expect(mockCreateConversation).toHaveBeenCalledWith(
         expect.objectContaining({
           agentProfileId: "profile-1",
@@ -286,6 +315,9 @@ describe("handleLaunchChildConversationAction", () => {
           agentLlmProfileOverride: "fast",
           parentConversationId: PARENT_ID,
         }),
+      );
+      expect(getStoredConversationMetadata("child-id")?.active_profile).toBe(
+        "fast",
       );
     });
 

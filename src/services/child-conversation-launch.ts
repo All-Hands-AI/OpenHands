@@ -18,10 +18,7 @@ import AgentServerConversationService from "#/api/conversation-service/agent-ser
 import type { AppConversationStartTask } from "#/api/conversation-service/agent-server-conversation-service.types";
 import { buildRouterAtStartSystemSuffix } from "#/api/agent-server-adapter";
 import { getActiveBackend } from "#/api/backend-registry/active-store";
-import {
-  launchProfileOptions,
-  resolveConversationLaunch,
-} from "#/hooks/mutation/resolve-conversation-launch";
+import { launchConversation } from "#/hooks/mutation/resolve-conversation-launch";
 import { getQueryClient } from "#/query-client-config";
 import SettingsService from "#/api/settings-service/settings-service.api";
 import MetaProfilesService from "#/api/meta-profiles-service/meta-profiles-service.api";
@@ -280,13 +277,13 @@ const SHARED_FALLBACK_CONSEQUENCE =
   "The child was launched in this conversation's directory instead, so it can see work in progress here and the two agents may conflict over the same files.";
 
 /** The parent's Agent Profile and current LLM, so the child stays in its scope. */
-async function parentProfileLaunchOptions(parentConversationId: string) {
+async function parentProfileLaunch(parentConversationId: string) {
   const [parent] =
     await AgentServerConversationService.batchGetAppConversations([
       parentConversationId,
     ]);
   const { backend, orgId } = getActiveBackend();
-  const launch = await resolveConversationLaunch({
+  return {
     queryClient: getQueryClient(),
     backendId: backend.id,
     orgId,
@@ -294,8 +291,7 @@ async function parentProfileLaunchOptions(parentConversationId: string) {
     agentProfileId: parent?.launched_agent_profile?.agent_profile_id,
     llmProfile:
       parent?.agent_kind === "openhands" ? parent.active_profile : null,
-  });
-  return launchProfileOptions(launch);
+  };
 }
 
 async function launchLocalChild(
@@ -310,11 +306,10 @@ async function launchLocalChild(
       parentConversationId,
     );
   const parentMetadata = getStoredConversationMetadata(parentConversationId);
-  const profileOptions = await parentProfileLaunchOptions(parentConversationId);
+  const profileLaunch = await parentProfileLaunch(parentConversationId);
 
   const createChild = (isolation: ChildConversationIsolation) =>
-    AgentServerConversationService.createConversation({
-      ...profileOptions,
+    launchConversation(profileLaunch, {
       initialUserMsg: params.task,
       metadata: parentMetadata
         ? {
