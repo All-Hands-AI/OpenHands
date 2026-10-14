@@ -1,5 +1,0 @@
-http://127.0.0.1:25800/
-- dialog:
-  - text: Delete all conversations Are you sure you want to delete 23 conversations? This action cannot be undone.
-  - button "Cancel"
-  - button "Confirm Delete"
