@@ -4,6 +4,7 @@ import {
   HookType,
 } from "@openhands/typescript-client";
 import type {
+  ACPModelInfo,
   ConversationRuntimeInfo,
   HookConfig,
 } from "@openhands/typescript-client";
@@ -16,6 +17,7 @@ import {
   getAcpPreferredDefaultModel,
   getAcpProvider,
   resolveEffectiveAcpModel,
+  toAcpModelOptions,
 } from "#/constants/acp-providers";
 import { getAgentServerClientOptions } from "./agent-server-client-options";
 import {
@@ -34,6 +36,13 @@ import {
   SandboxStatus,
 } from "./conversation-service/agent-server-conversation-service.types";
 import { combineUsageMetrics } from "#/utils/conversation-metrics";
+import {
+  AUTOMATION_DRAFT_ID_TAG_KEY,
+  AUTOMATION_EDIT_ID_TAG_KEY,
+  AUTOMATION_MATERIALIZED_DRAFT_ID_TAG_KEY,
+  AUTOMATION_SETUP_TAG_KEY,
+  buildAutomationSetupModeTags,
+} from "#/utils/automation-draft-tags";
 import {
   buildSkillEnablementFilter,
   findInvokedCatalogSkill,
@@ -59,6 +68,8 @@ import {
   LAUNCH_CHILD_CONVERSATION_CLIENT_TOOL,
   LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
 } from "./launch-child-conversation-client-tool";
+import { AUTOMATION_FORM_UPDATE_CLIENT_TOOL } from "./automation-form-client-tool";
+import { REQUEST_SECRET_CLIENT_TOOL } from "./request-secret-client-tool";
 import {
   buildPlanPath,
   LOCAL_PLANNER_PARENT_TAG_KEY,
@@ -120,6 +131,7 @@ export interface DirectConversationInfo {
   } | null;
   current_model_id?: string | null;
   current_model_name?: string | null;
+  available_models?: ACPModelInfo[] | null;
   workspace?: {
     working_dir?: string | null;
   } | null;
@@ -135,6 +147,7 @@ export interface DirectConversationInfo {
   launched_agent_profile?: {
     agent_profile_id: string;
     revision: number;
+    secret_refs?: string[] | null;
   } | null;
   /**
    * Server-owned, derived from the catalog's ``parent_conversation_id`` link
@@ -226,13 +239,6 @@ async function fetchBackendServerInfo(): Promise<AgentServerInfo | null> {
   } catch {
     return null;
   }
-}
-
-export async function fetchBackendRuntimeServicesInfo(): Promise<RuntimeServicesInfo | null> {
-  const serverInfo = await fetchBackendServerInfo();
-  return parseRuntimeServicesInfo(
-    (serverInfo as { runtime_services?: unknown } | null)?.runtime_services,
-  );
 }
 
 export async function fetchBackendExecutionRuntime(): Promise<
@@ -431,6 +437,9 @@ export function toAppConversation(
     pr_number: [],
     agent_kind: isAcp ? "acp" : "openhands",
     acp_server: acpServer,
+    acp_available_models: isAcp
+      ? toAcpModelOptions(info.available_models)
+      : null,
     tags: info.tags ?? null,
     launched_agent_profile: info.launched_agent_profile ?? null,
     // Chip path: omit ``providerDefault`` so that when no concrete model
@@ -576,6 +585,12 @@ export const AUTOMATION_TAG_KEYS: readonly string[] = [
  *   stay out of it — and users can't edit or spoof automation classification.
  * - ``localplannerparent`` → internal routing for the local planner; already
  *   surfaced by the hidden-from-list planner filter
+ * - ``automationsetup`` → user-visible setup-mode marker so users can find
+ *   setup conversations and filter by them
+ * - ``automationdraftid`` / ``automationmaterializeddraftid`` → internal
+ *   routing for resuming server-backed automation setup drafts (the last one
+ *   links a resumed conversation to the automation materialized from its draft)
+ * - ``automationeditid`` → the saved automation this setup page is editing
  */
 export const RESERVED_CONVERSATION_TAG_KEYS: ReadonlySet<string> = new Set([
   ACP_SERVER_TAG_KEY,
@@ -584,6 +599,9 @@ export const RESERVED_CONVERSATION_TAG_KEYS: ReadonlySet<string> = new Set([
   AUTOMATION_ID_TAG_KEY,
   AUTOMATION_NAME_TAG_KEY,
   AUTOMATION_RUN_ID_TAG_KEY,
+  AUTOMATION_DRAFT_ID_TAG_KEY,
+  AUTOMATION_MATERIALIZED_DRAFT_ID_TAG_KEY,
+  AUTOMATION_EDIT_ID_TAG_KEY,
   "title",
   "git_provider",
   "repo_name",
@@ -598,10 +616,14 @@ export const RESERVED_CONVERSATION_TAG_KEYS: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * High-signal tag keys shown first in the chip row (before A–Z). Automations
- * often stamp ``origin``; remaining free-form tags sort alphabetically.
+ * High-signal tag keys shown first in the chip row (before A–Z). Automation
+ * setup mode should be easy to spot and filter; automations often stamp
+ * ``origin``; remaining free-form tags sort alphabetically.
  */
-export const PRIORITY_CONVERSATION_TAG_KEYS: readonly string[] = ["origin"];
+export const PRIORITY_CONVERSATION_TAG_KEYS: readonly string[] = [
+  AUTOMATION_SETUP_TAG_KEY,
+  "origin",
+];
 
 /**
  * User-facing subset of a conversation's server-side tags: everything except
@@ -1010,12 +1032,8 @@ function buildConfiguredAcpAgentSettings(
     payload.mcp_config = mcpConfig;
   }
 
-  // Saved settings may carry ``acp_model: null`` (existing users predating
-  // the default-model registry, or saved fields the agent-server stripped).
-  // Fall back to the *preferred* default (Vertex-safe for Gemini) so the
-  // conversation starts with whatever the Settings → Agent UI shows — without
-  // that, the form's displayed default would silently not take effect at
-  // runtime until the user re-saved the page.
+  // A saved ``acp_model: null`` leaves the agent on its own default, unless
+  // Canvas prefers another (see getAcpPreferredDefaultModel).
   const serverKey =
     typeof agentSettings.acp_server === "string"
       ? agentSettings.acp_server
@@ -1153,7 +1171,7 @@ interface LookupSecret {
 }
 
 /** A custom secret's public identity — name + optional description, no value. */
-type CustomSecretInput = { name: string; description?: string };
+export type CustomSecretInput = { name: string; description?: string };
 
 type StartConversationPayloadBase = Record<string, unknown> & {
   workspace: WorkspacePayload;
@@ -1196,6 +1214,8 @@ type RawAgentStartConversationPayload = StartConversationPayloadBase & {
 export interface StartConversationOptions {
   settings: Settings;
   query?: string;
+  automationSetup?: boolean;
+  automationSetupTags?: Record<string, string>;
   conversationInstructions?: string;
   plugins?: PluginSpec[];
   conversationId?: string;
@@ -1239,7 +1259,7 @@ export interface StartConversationOptions {
  * loopback fetch can't deadlock. Returns `undefined` when there are no custom
  * secrets so callers can omit the field.
  */
-function buildCustomSecrets(
+export function buildCustomSecrets(
   customSecrets: CustomSecretInput[] | undefined,
 ): Record<string, LookupSecret> | undefined {
   if (!customSecrets?.length) return undefined;
@@ -1356,7 +1376,14 @@ export function buildStartConversationRequest(
     // conversations can start.
     client_tools:
       launchAgentKind === "openhands"
-        ? [CANVAS_UI_CLIENT_TOOL, LAUNCH_CHILD_CONVERSATION_CLIENT_TOOL]
+        ? [
+            CANVAS_UI_CLIENT_TOOL,
+            LAUNCH_CHILD_CONVERSATION_CLIENT_TOOL,
+            REQUEST_SECRET_CLIENT_TOOL,
+            ...(options.automationSetup
+              ? [AUTOMATION_FORM_UPDATE_CLIENT_TOOL]
+              : []),
+          ]
         : [],
     confirmation_policy:
       getConversationConfirmationPolicy(conversationSettings),
@@ -1376,13 +1403,20 @@ export function buildStartConversationRequest(
   // conversation to Canvas in telemetry (conversation_source = "canvas").
   // A profile launch resolves the ACP server server-side, so don't stamp the
   // tag from current settings (it may not match the launched profile).
+  const baseTags = options.automationSetup
+    ? buildAutomationSetupModeTags(options.automationSetupTags)
+    : {};
   if (!options.agentProfileId && acpServerTag) {
     payload.tags = {
+      ...baseTags,
       [ACP_SERVER_TAG_KEY]: acpServerTag,
       [CLIENT_SOURCE_TAG_KEY]: AGENT_CANVAS_SOURCE,
     };
   } else {
-    payload.tags = { [CLIENT_SOURCE_TAG_KEY]: AGENT_CANVAS_SOURCE };
+    payload.tags = {
+      ...baseTags,
+      [CLIENT_SOURCE_TAG_KEY]: AGENT_CANVAS_SOURCE,
+    };
   }
 
   // ``secrets_encrypted`` makes the agent-server decrypt request secrets at
@@ -1713,6 +1747,8 @@ export async function assertSubscriptionAuthReady(
 export async function buildStartConversationRequestWithEncryptedSettings(options: {
   settings: Settings;
   query?: string;
+  automationSetup?: boolean;
+  automationSetupTags?: Record<string, string>;
   conversationInstructions?: string;
   plugins?: PluginSpec[];
   conversationId?: string;
@@ -1792,12 +1828,22 @@ export function toHooksResponse(
         matchers: hookConfig[eventType].map(({ matcher, hooks }) => ({
           // The SDK's own defaults for fields a hooks.json may omit.
           matcher: matcher ?? "*",
-          hooks: hooks.map((hook) => ({
-            type: hook.type ?? HookType.COMMAND,
-            command: hook.command,
-            timeout: hook.timeout,
-            async: hook.async,
-          })),
+          hooks: hooks.map((hook) => {
+            // `prompt` and `system_prompt` reach Canvas over the wire but lag in
+            // the client's HookDefinition; the server sends them as null when absent.
+            const wireHook = hook as typeof hook & {
+              prompt?: string | null;
+              system_prompt?: string | null;
+            };
+            return {
+              type: hook.type ?? HookType.COMMAND,
+              command: hook.command,
+              prompt: wireHook.prompt ?? undefined,
+              system_prompt: wireHook.system_prompt ?? undefined,
+              timeout: hook.timeout,
+              async: hook.async,
+            };
+          }),
         })),
       })),
   };

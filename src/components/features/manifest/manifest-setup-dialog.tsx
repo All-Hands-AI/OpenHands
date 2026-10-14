@@ -12,6 +12,7 @@ import { cn } from "#/utils/utils";
 import { modalTitleLgClassName } from "#/utils/modal-classes";
 import { getApiErrorBody } from "#/utils/api-error-message";
 import { useTracking } from "#/hooks/use-tracking";
+import { notifySuperAdminSetupStep } from "#/components/features/setup-guide/super-admin-setup-step-event";
 import { useSetupCapabilities } from "#/hooks/query/use-manifest-capabilities";
 import { useSetupPrerequisites } from "#/hooks/query/use-manifest-prerequisites";
 import { useLlmProfiles } from "#/hooks/query/use-llm-profiles";
@@ -381,6 +382,8 @@ export function SetupDialog({ entry, onClose }: SetupDialogProps) {
         automationId: entry.id,
         setupMode,
       });
+      // An assisted setup only starts the conversation that creates it.
+      if (setupMode === "direct") notifySuperAdminSetupStep("first-automation");
       const destination = getDestination(response);
       if (destination) navigate(destination, { replace: true });
       else onClose();
@@ -545,8 +548,11 @@ export function SetupDialog({ entry, onClose }: SetupDialogProps) {
               )}
               {canSelectAgentProfile && (
                 <AutomationAgentProfileSelector
+                  // The form stores "no profile" as "", but the selector only
+                  // reads null/undefined as Default; "" would render it blank.
                   value={
-                    typeof values.agent_profile_id === "string"
+                    typeof values.agent_profile_id === "string" &&
+                    values.agent_profile_id !== ""
                       ? values.agent_profile_id
                       : null
                   }
@@ -595,7 +601,7 @@ export function SetupDialog({ entry, onClose }: SetupDialogProps) {
               key={message}
               role="alert"
               data-testid="setup-form-error"
-              className="pt-4 text-sm text-red-400"
+              className="pt-4 text-sm text-feedback-error"
             >
               {message}
             </p>
