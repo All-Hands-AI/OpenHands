@@ -119,5 +119,5 @@ Preconditions:
 - The All tab logs many `[i18n] Missing translation for key "SCHEMA$LLM$..."` console warnings; they are not page errors.
 - The list follows the server's order, which sorts by profile file name: `QA_pro-copy-1` lists before `QA_pro-copy` (`-` sorts before `.json`'s `.`). Do not assert a strict alphabetical order on names that are prefixes of each other.
 - Toasts last only a few seconds. A `browser screenshot` taken after a slow command can miss them, so assert with `browser wait-text` or `browser toasts`.
-- A new profile keeps the inherited LLM options the editor shows, such as temperature, since #18422 (closed #17955; verified 2026-10-14 on desktop and phone, two attempts each). A checkout without it saves them as `null` and Edit → All shows them empty (`F10.create-prefill`).
+- A new profile keeps the inherited LLM options the editor shows, such as temperature.
 - `Subscription models are not loaded yet.` is translated in every language (`SETTINGS$SUBSCRIPTION_MODELS_NOT_LOADED`, #18308; source check 2026-10-13, not driven live). It shows when a subscription profile is saved before `GET /api/llm/subscription/openai/models` answers, in the settings save (`src/routes/llm-settings.tsx`) and in onboarding's LLM step. No recipe drives it, since it needs that request to be slow or to fail.
