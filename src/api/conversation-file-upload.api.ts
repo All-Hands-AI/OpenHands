@@ -82,8 +82,15 @@ function requireCloudRuntime(
  * `path must be inside the conversation workspace`. Reading the runtime's
  * reported value makes the destination authoritative instead of guessed.
  *
- * Returns `null` (never throws) when the runtime is unreachable or reports no
- * absolute working dir, so the caller can fall back to the local resolution.
+ * Only an **absolute** runtime value is authoritative. The guard resolves a
+ * relative stored dir against the server's own process directory, which Canvas
+ * cannot know (it anchors relative dirs against `/api/file/home`), so adopting
+ * a relative runtime value would point the upload somewhere the guard rejects
+ * and would override an already-correct absolute local value.
+ *
+ * Returns `null` (never throws) when the runtime is unreachable, reports no
+ * working dir, or reports a relative one, so the caller can fall back to the
+ * local resolution.
  */
 async function readRuntimeWorkingDir(
   runtime: ConversationRuntimeContext,
@@ -133,22 +140,29 @@ export async function uploadFilesToConversation(
       ? (currentConversation.conversation_url ?? runtime.conversationUrl)
       : runtime.conversationUrl;
 
-  if (isCloud) {
-    // Validate before the (slower) working-dir read so a not-yet-ready sandbox
-    // still surfaces the clear "still starting" message.
-    requireCloudRuntime({ conversationUrl, sessionApiKey });
-  }
+  // Cloud conversations must be fully provisioned before any runtime read or
+  // upload. Validate before the (slower) working-dir read so a not-yet-ready
+  // sandbox still surfaces the clear "still starting" message, and carry the
+  // validated URL/key forward so the rest of the flow uses the same values.
+  const runtimeCtx = isCloud
+    ? requireCloudRuntime({ conversationUrl, sessionApiKey })
+    : { conversationUrl, sessionApiKey };
 
   // @spec WUP-002 — the agent-server's upload guard resolves the destination
-  // against the working dir *it* stored for the conversation. Prefer that
-  // runtime-reported value over the locally-derived one (a relative default or
-  // an assumed Cloud path), which can fall outside the workspace and trip the
-  // 422 guard. Only fall back to the local resolution (lazily, so its own
-  // network read is skipped when the runtime already answered) when the runtime
-  // read is unavailable.
+  // against the working dir *it* stored for the conversation. When the runtime
+  // reports an absolute value, prefer it over the locally-derived one (a
+  // relative default or an assumed Cloud path) which can fall outside the
+  // workspace and trip the 422 guard. Otherwise — no runtime value, or a
+  // relative one Canvas cannot resolve identically to the guard — keep the
+  // local resolution, which preserves an already-correct absolute conversation
+  // workspace (lazily evaluated, so its own network read is skipped when the
+  // runtime already answered with an absolute value).
   const workingDir =
     (await readRuntimeWorkingDir(
-      { conversationUrl, sessionApiKey },
+      {
+        conversationUrl: runtimeCtx.conversationUrl,
+        sessionApiKey: runtimeCtx.sessionApiKey,
+      },
       conversationId,
     )) ??
     (await resolveConversationUploadWorkingDir(
@@ -160,8 +174,8 @@ export async function uploadFilesToConversation(
     conversationId,
     files,
     workingDir,
-    conversationUrl,
-    sessionApiKey,
+    conversationUrl: runtimeCtx.conversationUrl,
+    sessionApiKey: runtimeCtx.sessionApiKey,
   });
 }
 
