@@ -1023,8 +1023,9 @@ describe("ConversationWebSocketProvider — conversation-scoped event store", ()
     });
 
     it("keys a planning full_state update to the planning conversation", async () => {
-      const planningConversation =
-        makePlanningConversation("planning-full-state");
+      const planningConversation = makePlanningConversation(
+        "planning-full-state",
+      );
 
       render(
         <QueryClientProvider client={queryClient}>
@@ -1042,7 +1043,7 @@ describe("ConversationWebSocketProvider — conversation-scoped event store", ()
 
       act(() => {
         wsCapture.planningOnMessage!({
-          data: JSON.stringify(
+          data: durable(
             makeStateUpdate("full_state", {
               execution_status: ExecutionStatus.RUNNING,
             }),
@@ -1078,7 +1079,7 @@ describe("ConversationWebSocketProvider — conversation-scoped event store", ()
 
       act(() => {
         wsCapture.planningOnMessage!({
-          data: JSON.stringify(
+          data: durable(
             makeStateUpdate("stats", {
               usage_to_metrics: {
                 planning: {
@@ -1147,16 +1148,16 @@ describe("ConversationWebSocketProvider — conversation-scoped event store", ()
 
       act(() => {
         wsCapture.planningOnMessage!({
-          data: JSON.stringify(makeStateUpdate("goal", goalStatus)),
+          data: durable(makeStateUpdate("goal", goalStatus)),
         });
       });
 
       // Goal status from the planning socket is scoped to the MAIN conversation
       // (conversationId), not the planning sub-conversation — the source code
       // intentionally uses `conversationId` here (not `planningConversationId`).
-      expect(
-        useGoalStore.getState().statusByConversation["conv-main"],
-      ).toEqual(goalStatus);
+      expect(useGoalStore.getState().statusByConversation["conv-main"]).toEqual(
+        goalStatus,
+      );
       expect(
         useGoalStore.getState().statusByConversation["planning-goal"],
       ).toBeUndefined();
