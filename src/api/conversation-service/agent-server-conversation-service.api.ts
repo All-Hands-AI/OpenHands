@@ -72,6 +72,7 @@ import { buildAutomationSetupModeTags } from "#/utils/automation-draft-tags";
 import { AUTOMATION_FORM_UPDATE_CLIENT_TOOL } from "../automation-form-client-tool";
 import { CANVAS_UI_CLIENT_TOOL } from "../canvas-ui-client-tool";
 import { LAUNCH_CHILD_CONVERSATION_CLIENT_TOOL } from "../launch-child-conversation-client-tool";
+import { REQUEST_SECRET_CLIENT_TOOL } from "../request-secret-client-tool";
 import type {
   GetHooksResponse,
   PluginSpec,
@@ -570,12 +571,18 @@ class AgentServerConversationService {
         ...(automationSetup
           ? { tags: buildAutomationSetupModeTags(automationSetupTags) }
           : {}),
-        ...(automationSetup && agentProfileKind !== "acp"
+        // The app server rejects client tools on ACP launches.
+        ...(agentProfileKind !== "acp"
           ? {
               client_tools: [
-                CANVAS_UI_CLIENT_TOOL,
-                LAUNCH_CHILD_CONVERSATION_CLIENT_TOOL,
-                AUTOMATION_FORM_UPDATE_CLIENT_TOOL,
+                REQUEST_SECRET_CLIENT_TOOL,
+                ...(automationSetup
+                  ? [
+                      CANVAS_UI_CLIENT_TOOL,
+                      LAUNCH_CHILD_CONVERSATION_CLIENT_TOOL,
+                      AUTOMATION_FORM_UPDATE_CLIENT_TOOL,
+                    ]
+                  : []),
               ],
             }
           : {}),

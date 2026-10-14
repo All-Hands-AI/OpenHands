@@ -1173,6 +1173,9 @@ interface LookupSecret {
 /** A custom secret's public identity — name + optional description, no value. */
 export type CustomSecretInput = { name: string; description?: string };
 
+/** A secret the user just saved; its value is only known at entry time. */
+export type SavedSecretInput = CustomSecretInput & { value?: string };
+
 type StartConversationPayloadBase = Record<string, unknown> & {
   workspace: WorkspacePayload;
   confirmation_policy: SettingsRecord;

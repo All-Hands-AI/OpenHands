@@ -1487,9 +1487,32 @@ describe("AgentServerConversationService", () => {
         automationmaterializeddraftid: "auto-1",
       });
       expect(body.client_tools.map((tool) => tool.name)).toEqual([
+        "request_secret",
         "canvas_ui_control",
         "launch_child_conversation",
         "automation_form_update",
+      ]);
+    });
+
+    it("registers only the secret request tool on plain cloud OpenHands conversations", async () => {
+      const requests = captureRequests(["post"], {
+        id: "task-plain",
+        status: "WORKING",
+        app_conversation_id: null,
+        agent_server_url: null,
+        request: {},
+        created_at: "2024-01-01",
+        updated_at: "2024-01-01",
+      });
+
+      await AgentServerConversationService.createConversation({
+        initialUserMsg: "Push this branch to GitHub",
+        agentProfileKind: "openhands",
+      });
+
+      const body = requests[0].body as { client_tools: Array<{ name: string }> };
+      expect(body.client_tools.map((tool) => tool.name)).toEqual([
+        "request_secret",
       ]);
     });
 

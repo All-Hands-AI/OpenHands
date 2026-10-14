@@ -1,4 +1,7 @@
-import type { CustomSecretInput } from "#/api/agent-server-adapter";
+import type {
+  CustomSecretInput,
+  SavedSecretInput,
+} from "#/api/agent-server-adapter";
 import { SecretsService } from "#/api/secrets-service";
 import {
   REQUEST_SECRET_TOOL_NAME,
@@ -69,7 +72,7 @@ export async function handleRequestSecretAction(
 
 async function resolveResult(
   request: SecretRequest,
-  savedSecret: CustomSecretInput | null,
+  savedSecret: SavedSecretInput | null,
 ): Promise<SecretRequestResult> {
   if (!savedSecret) {
     return {
@@ -104,7 +107,7 @@ async function resolveResult(
  */
 export async function completeSecretRequest(
   request: SecretRequest,
-  savedSecret: CustomSecretInput | null,
+  savedSecret: SavedSecretInput | null,
 ): Promise<void> {
   const store = useSecretRequestStore.getState();
   if (!store.requests.some((r) => r.toolCallId === request.toolCallId)) return;

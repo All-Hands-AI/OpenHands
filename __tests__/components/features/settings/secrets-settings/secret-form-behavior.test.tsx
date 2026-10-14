@@ -284,6 +284,7 @@ describe("Secret form behavior", () => {
     expect(onSaved).toHaveBeenCalledExactlyOnceWith({
       name: "NEW_SECRET",
       description: "for deployments",
+      value: "secret value",
     });
     expect(onCancel).not.toHaveBeenCalled();
 
