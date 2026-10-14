@@ -7,6 +7,8 @@ import {
 } from "test-utils";
 import { Messages } from "#/components/conversation-events/chat/messages";
 import type { ActionEvent, OpenHandsEvent } from "#/types/agent-server/core";
+import type { MCPAppArtifacts } from "#/types/mcp-app";
+import { MCPAppHostProvider } from "#/components/features/mcp-apps/mcp-app-host-context";
 
 const { recordEventMessage } = vi.hoisted(() => ({
   recordEventMessage: vi.fn(),
@@ -119,5 +121,48 @@ describe("Messages stable EventMessage props", () => {
 
     expect(latestPropsFor("plan-1").showPlanPreview).toBe(false);
     expect(latestPropsFor("plan-2").showPlanPreview).toBe(true);
+  });
+
+  // @spec MCA-002 — Sidecar changes update grouping with stable event arrays.
+  it("ungroups an App when its independently owned sidecar arrives and groups it again when removed", () => {
+    const first = makeBashObservation("before-app", "first-action");
+    const observation: OpenHandsEvent = {
+      id: "mcp-result",
+      timestamp: "2026-10-14T00:00:00Z",
+      source: "environment",
+      tool_name: "chart",
+      tool_call_id: "chart-call",
+      action_id: "chart-action",
+      observation: {
+        kind: "MCPToolObservation",
+        tool_name: "chart",
+        content: [{ type: "text", text: "Chart ready" }],
+        is_error: false,
+      },
+    };
+    const events = [first, observation];
+    const renderMessages = (artifacts?: MCPAppArtifacts) => (
+      <MCPAppHostProvider host={null} scope={null} artifacts={artifacts}>
+        <Messages messages={events} allEvents={events} />
+      </MCPAppHostProvider>
+    );
+    const { queryByTestId, rerender } = renderWithProviders(renderMessages());
+    expect(queryByTestId("event-mcp-result")).not.toBeInTheDocument();
+
+    const artifacts: MCPAppArtifacts = new Map([
+      [
+        observation.id,
+        {
+          tool: { name: "chart", _meta: { ui: { resourceUri: "ui://chart" } } },
+          toolInput: {},
+          toolResult: { content: [] },
+        },
+      ],
+    ]);
+    rerender(renderMessages(artifacts));
+    expect(queryByTestId("event-mcp-result")).toBeInTheDocument();
+
+    rerender(renderMessages());
+    expect(queryByTestId("event-mcp-result")).not.toBeInTheDocument();
   });
 });

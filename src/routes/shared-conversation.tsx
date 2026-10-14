@@ -13,6 +13,7 @@ import { handleEventForUI } from "#/utils/handle-event-for-ui";
 import { OpenHandsEvent } from "#/types/agent-server/core";
 import OpenHandsLogo from "#/assets/branding/openhands-logo.svg?react";
 import { useInfiniteScroll } from "#/hooks/use-infinite-scroll";
+import { MCPAppHostProvider } from "#/components/features/mcp-apps/mcp-app-host-context";
 
 /**
  * Resolve the creator's email through the active cloud org, following the
@@ -149,10 +150,13 @@ export default function SharedConversation() {
       >
         <div className="max-w-4xl mx-auto p-4 border border-border-subtle rounded">
           {renderableEvents.length > 0 ? (
-            <Messages
-              messages={renderableEvents}
-              allEvents={conversationEvents}
-            />
+            // @spec MCA-004 — Public history cannot inherit a live MCP host.
+            <MCPAppHostProvider host={null} scope={null}>
+              <Messages
+                messages={renderableEvents}
+                allEvents={conversationEvents}
+              />
+            </MCPAppHostProvider>
           ) : (
             <div className="flex items-center justify-center h-full">
               <div className="text-center text-muted py-8">

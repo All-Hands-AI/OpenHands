@@ -14,6 +14,7 @@ import { useModelStore } from "#/stores/model-store";
 import { ModelMessages } from "#/components/features/chat/model-messages";
 import { useOptionalConversationId } from "#/hooks/use-conversation-id";
 import { ConversationConfirmationButtons } from "#/components/shared/buttons/conversation-confirmation-buttons";
+import { useMCPAppHost } from "#/components/features/mcp-apps/mcp-app-host-context";
 
 interface MessagesProps {
   messages: OpenHandsEvent[]; // UI events (actions replaced by observations)
@@ -26,6 +27,7 @@ const getLastEvent = (events: OpenHandsEvent[]) => events.at(-1);
 export const Messages: React.FC<MessagesProps> = React.memo(
   ({ messages, allEvents }) => {
     const { conversationId } = useOptionalConversationId();
+    const { artifacts } = useMCPAppHost();
     // Get the set of event IDs that should render PlanPreview
     // This ensures only one preview per user message "phase"
     const planPreviewEventIds = usePlanPreviewEvents(allEvents);
@@ -73,8 +75,8 @@ export const Messages: React.FC<MessagesProps> = React.memo(
     // hoisted out as their own rendered item so they always show up in the
     // message pane and a thought between actions starts a fresh group.
     const renderedItems = React.useMemo(
-      () => groupEvents(messages, undefined, allEvents),
-      [messages, allEvents],
+      () => groupEvents(messages, undefined, allEvents, artifacts),
+      [messages, allEvents, artifacts],
     );
 
     const renderEventMessage = (

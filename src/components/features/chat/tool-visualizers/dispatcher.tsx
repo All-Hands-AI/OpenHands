@@ -1,10 +1,17 @@
 import React from "react";
-import { OpenHandsEvent, ActionEvent } from "#/types/agent-server/core";
+import {
+  OpenHandsEvent,
+  ActionEvent,
+  ObservationEvent,
+} from "#/types/agent-server/core";
 import {
   isActionEvent,
   isObservationEvent,
 } from "#/types/agent-server/type-guards";
 import { actionVisualizers, observationVisualizers } from "./index";
+import type { MCPToolObservation } from "#/types/agent-server/core/base/observation";
+import type { MCPAppDescriptor } from "#/types/mcp-app";
+import { MCPBody } from "./mcp/mcp";
 
 /**
  * Returns the React body for an action/observation event when a tool visualizer
@@ -19,6 +26,7 @@ import { actionVisualizers, observationVisualizers } from "./index";
 export function resolveVisualizerBody(
   event: OpenHandsEvent,
   correspondingAction?: ActionEvent,
+  mcpAppDescriptor?: MCPAppDescriptor | null,
 ): React.ReactNode | null {
   if (isActionEvent(event)) {
     const visualizer = actionVisualizers.get(event.action.kind);
@@ -26,6 +34,15 @@ export function resolveVisualizerBody(
       return <visualizer.Body action={event} />;
     }
   } else if (isObservationEvent(event)) {
+    // @spec MCA-001 — Plain MCP observations keep the existing markdown path.
+    if (event.observation.kind === "MCPToolObservation") {
+      return mcpAppDescriptor ? (
+        <MCPBody
+          observation={event as ObservationEvent<MCPToolObservation>}
+          descriptor={mcpAppDescriptor}
+        />
+      ) : null;
+    }
     const visualizer = observationVisualizers.get(event.observation.kind);
     if (visualizer) {
       return (

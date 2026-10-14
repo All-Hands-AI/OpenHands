@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OPEN 模拟行情</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --background: #171b24;
+        --surface: #21252f;
+        --border: #383f50;
+        --foreground: #e5e7eb;
+        --secondary: #aeb4c2;
+        --accent: #c9b974;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--background);
+        color: var(--foreground);
+        font:
+          14px/1.5 "Segoe UI",
+          "Microsoft YaHei",
+          "PingFang SC",
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .panel {
+        padding: 24px;
+      }
+      .header {
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .eyebrow {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--secondary);
+        font-size: 12px;
+      }
+      .symbol-mark {
+        display: grid;
+        place-items: center;
+        width: 24px;
+        height: 24px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--accent);
+        font-weight: 600;
+      }
+      h2 {
+        margin: 8px 0 0;
+        font-size: 16px;
+        font-weight: 600;
+        text-wrap: balance;
+      }
+      .badge {
+        margin-top: 2px;
+        padding: 3px 8px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        color: var(--secondary);
+        font-size: 11px;
+        white-space: nowrap;
+      }
+      .metric {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 8px;
+        margin: 20px 0 0;
+        font-variant-numeric: tabular-nums;
+      }
+      .metric strong {
+        font-size: 40px;
+        line-height: 1.1;
+        font-weight: 600;
+      }
+      .unit {
+        color: var(--secondary);
+        font-size: 12px;
+      }
+      .change {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-left: auto;
+        color: var(--accent);
+        font-size: 13px;
+        font-weight: 500;
+      }
+      .change svg {
+        width: 14px;
+        height: 14px;
+      }
+      .chart {
+        margin: 24px 0 20px;
+      }
+      .chart svg {
+        display: block;
+        width: 100%;
+        height: 128px;
+        overflow: visible;
+      }
+      .grid-line {
+        stroke: var(--border);
+        stroke-width: 1;
+        stroke-dasharray: 3 6;
+      }
+      .chart-line {
+        fill: none;
+        stroke: var(--accent);
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .chart-area {
+        fill: var(--accent);
+        opacity: 0.06;
+      }
+      .axis {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 8px;
+        color: var(--secondary);
+        font-size: 11px;
+        font-variant-numeric: tabular-nums;
+      }
+      .meta {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin: 0;
+        padding: 16px 0;
+        border-top: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+      }
+      .meta dt {
+        color: var(--secondary);
+        font-size: 11px;
+      }
+      .meta dd {
+        margin: 5px 0 0;
+        font-size: 12px;
+        font-weight: 500;
+        overflow-wrap: anywhere;
+        font-variant-numeric: tabular-nums;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 20px;
+      }
+      button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 36px;
+        padding: 8px 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: transparent;
+        color: var(--foreground);
+        font: inherit;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: var(--surface);
+      }
+      button:focus-visible {
+        outline: 2px solid var(--foreground);
+        outline-offset: 3px;
+      }
+      button.primary {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: #0b0e14;
+        font-weight: 600;
+      }
+      button.primary:hover {
+        background: #dacb8b;
+      }
+      button svg {
+        width: 14px;
+        height: 14px;
+      }
+      #status {
+        min-height: 18px;
+        margin: 12px 0 0;
+        color: var(--secondary);
+        font-size: 11px;
+        text-wrap: pretty;
+      }
+      @media (max-width: 480px) {
+        .panel {
+          padding: 18px;
+        }
+        .header {
+          gap: 8px;
+        }
+        .metric strong {
+          font-size: 36px;
+        }
+        .chart svg {
+          height: 108px;
+        }
+        .meta {
+          gap: 12px;
+        }
+        .actions {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+        }
+        .actions .primary {
+          grid-column: 1 / -1;
+        }
+        button {
+          min-height: 40px;
+          padding-inline: 8px;
+        }
+      }
+      @media (max-width: 330px) {
+        .meta {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+        .meta div {
+          display: flex;
+          align-items: baseline;
+          justify-content: space-between;
+          gap: 12px;
+        }
+        .meta dd {
+          margin: 0;
+        }
+        .actions {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="panel">
+      <div class="header">
+        <div>
+          <div class="eyebrow">
+            <span class="symbol-mark" aria-hidden="true">O</span> OPEN / USD
+          </div>
+          <h2>本地交互式行情</h2>
+        </div>
+        <span class="badge">模拟数据</span>
+      </div>
+      <div class="metric">
+        <strong id="price">128.40</strong>
+        <span class="unit">USD</span>
+        <span class="change">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            aria-hidden="true"
+          >
+            <path d="m7 17 10-10M7 7h10v10" />
+          </svg>
+          +3.18%
+        </span>
+      </div>
+      <figure class="chart" aria-label="模拟日内走势，上涨 3.18%">
+        <svg
+          viewBox="0 0 620 128"
+          preserveAspectRatio="none"
+          role="img"
+          aria-label="模拟走势"
+        >
+          <path class="grid-line" d="M0 20H620 M0 64H620 M0 108H620" />
+          <path
+            class="chart-area"
+            d="M0 106 36 97 56 100 86 77 108 84 142 69 165 74 195 86 224 65 255 70 286 45 309 49 330 31 357 41 390 29 421 35 455 19 484 24 519 10 545 22 576 15 620 3V128H0Z"
+          />
+          <path
+            class="chart-line"
+            d="M0 106 36 97 56 100 86 77 108 84 142 69 165 74 195 86 224 65 255 70 286 45 309 49 330 31 357 41 390 29 421 35 455 19 484 24 519 10 545 22 576 15 620 3"
+          />
+          <circle cx="620" cy="3" r="3.5" fill="var(--accent)" />
+        </svg>
+        <div class="axis" aria-hidden="true">
+          <span>09:30</span><span>11:00</span><span>13:00</span
+          ><span>15:00</span>
+        </div>
+      </figure>
+      <dl class="meta">
+        <div>
+          <dt>工具输入</dt>
+          <dd id="symbol">等待中</dd>
+        </div>
+        <div>
+          <dt>私有结果</dt>
+          <dd id="private">等待中</dd>
+        </div>
+        <div>
+          <dt>沙箱状态</dt>
+          <dd id="isolation">检查中</dd>
+        </div>
+      </dl>
+      <div class="actions">
+        <button class="primary" id="refresh" type="button">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            aria-hidden="true"
+          >
+            <path
+              d="M20 7v5h-5M4 17v-5h5M6.1 6.1A8 8 0 0 1 20 12M4 12a8 8 0 0 0 13.9 5.9"
+            />
+          </svg>
+          刷新数据
+        </button>
+        <button id="context" type="button">加入模型上下文</button>
+        <button id="message" type="button">发送后续消息</button>
+      </div>
+      <p id="status" role="status">正在初始化…</p>
+    </main>
+    <script>
+      (() => {
+        let nextId = 0;
+        let initialized = false;
+        const pending = new Map();
+        const post = (message) => parent.postMessage(message, "*");
+        const notify = (method, params = {}) =>
+          post({ jsonrpc: "2.0", method, params });
+        const request = (method, params, action) => {
+          const id = String(++nextId);
+          pending.set(id, action);
+          post({ jsonrpc: "2.0", id, method, params });
+        };
+        const status = (text) => {
+          document.getElementById("status").textContent = text;
+        };
+        const reportSize = () => {
+          if (initialized)
+            notify("ui/notifications/size-changed", {
+              height: Math.ceil(document.body.getBoundingClientRect().height),
+            });
+        };
+
+        try {
+          localStorage.setItem("mcp-app-probe", "1");
+          document.cookie = "mcp_app_probe=1";
+          document.getElementById("isolation").textContent = "未隔离";
+        } catch {
+          document.getElementById("isolation").textContent = "已隔离";
+        }
+
+        addEventListener("message", (event) => {
+          if (event.source !== parent) return;
+          const message = event.data;
+          if (!message || message.jsonrpc !== "2.0") return;
+          if ("id" in message && ("result" in message || "error" in message)) {
+            const action = pending.get(String(message.id));
+            pending.delete(String(message.id));
+            if (message.error) {
+              status("请求被拒绝：" + message.error.message);
+            } else if (action === "initialize") {
+              initialized = true;
+              notify("ui/notifications/initialized");
+              status("Host 握手完成");
+              reportSize();
+            } else if (action === "refresh") {
+              document.getElementById("price").textContent =
+                message.result.structuredContent.price;
+              status("数据已刷新");
+            } else if (action === "context") {
+              status("已加入模型上下文");
+            } else if (action === "message") {
+              status("后续消息已发送");
+            }
+            return;
+          }
+          if (message.method === "ui/notifications/tool-input") {
+            document.getElementById("symbol").textContent =
+              message.params.arguments.symbol;
+          }
+          if (message.method === "ui/notifications/tool-result") {
+            document.getElementById("private").textContent =
+              message.params._meta.privateSelection;
+          }
+        });
+
+        new ResizeObserver(reportSize).observe(document.body);
+        document
+          .getElementById("refresh")
+          .addEventListener("click", () =>
+            request(
+              "tools/call",
+              { name: "refresh_market", arguments: { symbol: "OPEN" } },
+              "refresh",
+            ),
+          );
+        document
+          .getElementById("context")
+          .addEventListener("click", () =>
+            request(
+              "ui/update-model-context",
+              { content: [{ type: "text", text: "Selected OPEN" }] },
+              "context",
+            ),
+          );
+        document.getElementById("message").addEventListener("click", () =>
+          request(
+            "ui/message",
+            {
+              role: "user",
+              content: [{ type: "text", text: "Explain this movement" }],
+            },
+            "message",
+          ),
+        );
+        request(
+          "ui/initialize",
+          {
+            protocolVersion: "2026-01-26",
+            appInfo: { name: "openhands-mcp-app-demo", version: "1.0.0" },
+            appCapabilities: {},
+          },
+          "initialize",
+        );
+      })();
+    </script>
+  </body>
+</html>

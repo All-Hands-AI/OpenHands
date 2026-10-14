@@ -1,0 +1,16 @@
+/* The review fixture inherits the same semantic theme as Agent Canvas. */
+body {
+  min-width: 320px;
+  background: var(--oh-color-base);
+  color: var(--oh-foreground);
+  font-family: "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+}
+
+[data-mcp-demo-card] .markdown-body {
+  color: var(--oh-text-secondary);
+}
+
+[data-mcp-demo-card] .markdown-body p {
+  margin-block: 0.5rem 1rem;
+  line-height: 1.75;
+}

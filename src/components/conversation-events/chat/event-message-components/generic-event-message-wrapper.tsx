@@ -27,6 +27,8 @@ import { getInvokeSkillItems } from "../event-content-helpers/get-invoke-skill-i
 import { SkillReadyContentList } from "./skill-ready-content-list";
 import SkillsIcon from "#/icons/skills.svg?react";
 import { isMarkdownFileEditorEvent } from "#/components/features/chat/tool-visualizers/primitives/markdown-file-preview";
+import { getMCPAppDescriptor } from "#/utils/mcp-app-descriptor";
+import { useMCPAppHost } from "#/components/features/mcp-apps/mcp-app-host-context";
 
 interface GenericEventMessageWrapperProps {
   event: OpenHandsEvent | SkillReadyEvent;
@@ -71,7 +73,18 @@ export function GenericEventMessageWrapper({
   correspondingAction,
 }: GenericEventMessageWrapperProps) {
   const { t } = useTranslation("openhands");
-  const { title, details } = getEventContent(event, correspondingAction);
+  const { artifacts } = useMCPAppHost();
+  const mcpAppDescriptor = isSkillReadyEvent(event)
+    ? null
+    : getMCPAppDescriptor(
+        event,
+        event.id ? artifacts.get(event.id) : undefined,
+      );
+  const { title, details } = getEventContent(
+    event,
+    correspondingAction,
+    mcpAppDescriptor,
+  );
 
   // TaskTrackerObservation has its own rendering
   if (
@@ -105,15 +118,16 @@ export function GenericEventMessageWrapper({
     details
   );
 
-  // Markdown file-editor cards carry a clipped preview; expand them by
-  // default so the artifact is visible without an extra chevron click.
+  // @spec MCA-002 — Show artifact cards without an extra chevron click.
   const initiallyExpanded =
     !isSkillReadyEvent(event) &&
-    isMarkdownFileEditorEvent(event, correspondingAction);
+    (isMarkdownFileEditorEvent(event, correspondingAction) ||
+      !!mcpAppDescriptor);
 
   return (
     <div>
       <GenericEventMessage
+        key={mcpAppDescriptor?.resourceUri ?? event.id}
         title={title}
         details={bodyDetails}
         success={success}

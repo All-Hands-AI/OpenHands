@@ -30,6 +30,7 @@ import { SkillReadyEvent, isSkillReadyEvent } from "./create-skill-ready-event";
 import { resolveVisualizerBody } from "../../../features/chat/tool-visualizers/dispatcher";
 import i18n from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
+import type { MCPAppDescriptor } from "#/types/mcp-app";
 import {
   getActionEventTitleDescriptor,
   getActionSummaryTitle,
@@ -315,6 +316,7 @@ const getCanvasUIClientObservationContent = (
 export const getEventContent = (
   event: OpenHandsEvent | SkillReadyEvent,
   correspondingAction?: ActionEvent,
+  mcpAppDescriptor?: MCPAppDescriptor | null,
 ) => {
   let title: React.ReactNode = "";
   let details: string | React.ReactNode = "";
@@ -346,7 +348,9 @@ export const getEventContent = (
     } else {
       details =
         getCanvasUIClientObservationContent(event, correspondingAction) ??
-        resolveVisualizerBody(event, correspondingAction) ??
+        (mcpAppDescriptor
+          ? resolveVisualizerBody(event, correspondingAction, mcpAppDescriptor)
+          : resolveVisualizerBody(event, correspondingAction)) ??
         getObservationContent(event);
     }
   } else if (isUserRejectObservation(event)) {
