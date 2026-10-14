@@ -1,4 +1,5 @@
 import { CHILD_CONVERSATION_RESULT_PREFIX } from "#/constants/child-conversation";
+import { SECRET_REQUEST_RESULT_PREFIX } from "#/constants/secret-request";
 import { MessageEvent, OpenHandsEvent } from "#/types/agent-server/core";
 import {
   isActionEvent,
@@ -51,13 +52,24 @@ export const isCorrectiveNudge = (event: MessageEvent): boolean =>
   event.source === "environment" &&
   (userMessageText(event)?.startsWith(CORRECTIVE_NUDGE_PREFIX) ?? false);
 
-// The frontend posts the outcome of a `launch_child_conversation` call back as
-// a `user` message because client tools have no result channel (see
-// `services/child-conversation-launch.ts`). It is a JSON payload addressed to
-// the agent, which reports the child's id and link in its own reply, so the
-// raw message does not belong in the chat.
-const isChildConversationResult = (event: MessageEvent): boolean =>
-  userMessageText(event)?.startsWith(CHILD_CONVERSATION_RESULT_PREFIX) ?? false;
+// The frontend posts the outcome of a `launch_child_conversation` or
+// `request_secret` call back as a `user` message because client tools have no
+// result channel (see `services/child-conversation-launch.ts` and
+// `services/secret-request.ts`). It is a JSON payload addressed to the agent,
+// which relays the outcome in its own reply, so the raw message does not
+// belong in the chat.
+const CLIENT_TOOL_RESULT_PREFIXES = [
+  CHILD_CONVERSATION_RESULT_PREFIX,
+  SECRET_REQUEST_RESULT_PREFIX,
+];
+
+const isClientToolResult = (event: MessageEvent): boolean => {
+  const text = userMessageText(event);
+  return (
+    text !== null &&
+    CLIENT_TOOL_RESULT_PREFIXES.some((prefix) => text.startsWith(prefix))
+  );
+};
 
 export const shouldRenderEvent = (event: OpenHandsEvent) => {
   if (isConversationStateUpdateEvent(event)) {
@@ -124,10 +136,10 @@ export const shouldRenderEvent = (event: OpenHandsEvent) => {
   // Render message events (user and assistant messages), except the goal loop's
   // injected re-prompts — the judge feedback they carry is shown in the goal
   // banner, so otherwise they leak into the chat as fake user turns — and the
-  // child-conversation launch results, which are machine payloads the agent
-  // relays in its own reply.
+  // client tool results, which are machine payloads the agent relays in its
+  // own reply.
   if (isMessageEvent(event)) {
-    return !isGoalLoopReprompt(event) && !isChildConversationResult(event);
+    return !isGoalLoopReprompt(event) && !isClientToolResult(event);
   }
 
   // Render agent error events

@@ -12,6 +12,7 @@ import {
   resumeGoal,
   startGoal,
   stopGoal,
+  updateConversationSecrets,
 } from "#/hooks/mutation/conversation-mutation-utils";
 import { ExecutionStatus } from "#/types/agent-server/core/base/common";
 
@@ -26,6 +27,7 @@ const mocks = vi.hoisted(() => ({
   runConversation: vi.fn(),
   startGoal: vi.fn(),
   stopGoal: vi.fn(),
+  updateSecrets: vi.fn(),
 }));
 
 vi.mock("@openhands/typescript-client/clients", () => ({
@@ -37,12 +39,14 @@ vi.mock("@openhands/typescript-client/clients", () => ({
       runConversation: mocks.runConversation,
       startGoal: mocks.startGoal,
       stopGoal: mocks.stopGoal,
+      updateSecrets: mocks.updateSecrets,
     };
   }),
 }));
 
 vi.mock("#/api/backend-registry/active-store", () => ({
   getActiveBackend: mocks.getActiveBackend,
+  getEffectiveLocalBackend: () => null,
 }));
 
 vi.mock("#/api/cloud/conversation-service.api", () => ({
@@ -260,6 +264,40 @@ describe("conversation runtime commands", () => {
     expectRuntimeClient(CONV_ID, conversation);
     expect(mocks.runConversation).toHaveBeenCalledOnce();
     expect(mocks.runConversation).toHaveBeenCalledWith(CONV_ID);
+  });
+  it("hands saved secrets to a local conversation as value-free lookups", async () => {
+    const conversation = prepareRuntimeConversation();
+    mocks.getActiveBackend.mockReturnValueOnce({ backend: { kind: "local" } });
+    mocks.updateSecrets.mockResolvedValueOnce({ success: true });
+
+    await expect(
+      updateConversationSecrets(CONV_ID, [
+        { name: "GITHUB_TOKEN", description: "Factory repo access" },
+      ]),
+    ).resolves.toBeUndefined();
+
+    expectRuntimeClient(CONV_ID, conversation);
+    expect(mocks.updateSecrets).toHaveBeenCalledOnce();
+    expect(mocks.updateSecrets).toHaveBeenCalledWith(CONV_ID, {
+      secrets: {
+        GITHUB_TOKEN: {
+          kind: "LookupSecret",
+          url: "/api/settings/secrets/GITHUB_TOKEN",
+          description: "Factory repo access",
+        },
+      },
+    });
+  });
+
+  it("leaves cloud conversations to resolve secrets server-side", async () => {
+    mocks.getActiveBackend.mockReturnValueOnce({ backend: { kind: "cloud" } });
+
+    await expect(
+      updateConversationSecrets(CONV_ID, [{ name: "GITHUB_TOKEN" }]),
+    ).resolves.toBeUndefined();
+
+    expect(mocks.batchGetAppConversations).not.toHaveBeenCalled();
+    expect(mocks.updateSecrets).not.toHaveBeenCalled();
   });
 });
 

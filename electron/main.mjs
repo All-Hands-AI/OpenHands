@@ -684,6 +684,9 @@ async function startStack() {
     staticDir: buildDir,
     mode: "agent-canvas",
     isPublic: false,
+    // The preload provides window.marsBridge; the stack's ingress must not
+    // host a second, separate one.
+    marsWebBridge: false,
     skipNpmCheck: true,
     agentServerReadyTimeoutMs: 10 * 60_000,
     onServiceLog: handleServiceLog,

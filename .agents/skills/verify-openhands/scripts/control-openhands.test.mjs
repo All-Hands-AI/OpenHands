@@ -57,6 +57,7 @@ import {
   classifyAttempt,
   judgeAssertion,
   knownBugBlocks,
+  parseBugPredicate,
   proofVerdict,
 } from "./lib/known-bug.mjs";
 
@@ -1909,8 +1910,37 @@ test("known-bug blocks parse with their bug line, and malformed ones say why", (
   );
   assert.match(
     problems("control-openhands assert --field a --equals 1 -- status  # bug"),
-    /must name the bug's value with --bug-shows/,
+    /must name what the bug shows with --bug-shows or --bug/,
   );
+  assert.match(
+    problems(
+      "control-openhands assert --field a --equals 1 --bug 'a is 0' -- status  # bug",
+    ),
+    /--bug `a is 0` is not PATH OP \[VALUE\]/,
+  );
+  assert.match(
+    problems(
+      "control-openhands assert --field a --equals 1 --bug 'a eq' -- status  # bug",
+    ),
+    /needs a value/,
+  );
+  assert.deepEqual(
+    knownBugBlocks(
+      block(
+        "control-openhands assert --field a --equals 1 --bug 'a eq 0 && b.c contains \"no such\"' -- status  # bug",
+      ),
+    )[0].problems,
+    [],
+  );
+  // A command continued over several lines is one marked command.
+  const [continued] = knownBugBlocks(
+    block(
+      "true\ncontrol-openhands assert --field a --equals 1 \\\n  --bug-shows 0 \\\n  -- status  # bug\ntrue",
+    ),
+  );
+  assert.deepEqual(continued.problems, []);
+  assert.deepEqual(continued.bugLines, [4]);
+  assert.deepEqual(continued.bugRanges, [[2, 4]]);
   assert.match(
     knownBugBlocks(
       "```sh known-bug F14.create\ncontrol-openhands status\n",
@@ -1938,6 +1968,56 @@ test("an assertion tells the bug's value from another value and from an error", 
   assert.equal(judge({ field: "nope" }).kind, "error");
   assert.equal(judge({ exitCode: 1 }).kind, "error");
   assert.equal(judge({ equals: undefined, matches: "^$" }).kind, "hold");
+  // --bug clauses name the symptom on any field; all must hold.
+  const api = {
+    status: 500,
+    response: { body: { exception: "'int' object has no attribute 'pop'" } },
+  };
+  const bug = (predicate) =>
+    judgeAssertion({
+      exitCode: 0,
+      json: api,
+      field: "status",
+      equals: "422",
+      bug: predicate,
+    });
+  const reproduced = bug(
+    "status eq 500 && response.body.exception contains 'has no attribute'",
+  );
+  assert.equal(reproduced.kind, "mismatch");
+  assert.deepEqual(
+    reproduced.bugChecks.map((c) => c.ok),
+    [true, true],
+  );
+  assert.equal(
+    bug("status eq 500 && response.body.exception contains timeout").kind,
+    "other-symptom",
+  );
+  assert.equal(bug("status eq 503").kind, "other-symptom");
+  assert.equal(bug("response.body.exception matches ^'int'").kind, "mismatch");
+  assert.equal(bug("response.body.detail missing").kind, "mismatch");
+  assert.equal(bug("status ne 500").kind, "other-symptom");
+});
+
+test("bug predicates parse PATH OP [VALUE] clauses joined by &&", () => {
+  assert.deepEqual(
+    parseBugPredicate(
+      `status eq 500 && body.error contains "no such file" && body.x exists`,
+    ).clauses,
+    [
+      { path: "status", op: "eq", value: "500" },
+      { path: "body.error", op: "contains", value: "no such file" },
+      { path: "body.x", op: "exists" },
+    ],
+  );
+  assert.deepEqual(parseBugPredicate("value eq ''").clauses, [
+    { path: "value", op: "eq", value: "" },
+  ]);
+  assert.match(parseBugPredicate("value matches (").problems[0], /Invalid/);
+  assert.match(
+    parseBugPredicate("value exists 1").problems[0],
+    /takes no value/,
+  );
 });
 
 test("only a mismatch at the bug line on a healthy stack counts as reproducing", () => {
@@ -1975,6 +2055,11 @@ test("only a mismatch at the bug line on a healthy stack counts as reproducing",
   );
   assert.match(c({ assertion: undefined }).reason, /no assertion result/);
   assert.match(c({ failedLine: null }).reason, /unknown/);
+  // A continued marked command spans lines; bash reports its first one.
+  const span = { bugLines: [6], bugRanges: [[4, 6]] };
+  assert.deepEqual(c(span), { status: "xfail" });
+  assert.match(c({ ...span, failedLine: 3 }).reason, /^setup: line 3/);
+  assert.match(c({ ...span, failedLine: 7 }).reason, /after the `# bug`/);
   for (const o of [
     { doctorBefore: false },
     { doctorAfter: false },
@@ -2089,6 +2174,22 @@ test("bug run classifies live attempts and bug proof turns two runs into a verdi
       /after the `# bug` assertion held/,
     ],
     timeout: [`sleep 5\n${bugLine()}`, "fail", /^timeout$/, ["--timeout", "1"]],
+    predicate: [`true\n${bugLine("--equals 1 --bug 'count eq 0'")}`, "xfail"],
+    "predicate-symptom": [
+      `true\n${bugLine("--equals 1 --bug 'count eq 0 && count ne 0'")}`,
+      "fail",
+      /^wrong symptom/,
+    ],
+    continued: [
+      `true\ncontrol-openhands assert --field count \\\n  --equals 1 --bug-shows 0 \\\n  -- evidence list --feature QA  # bug`,
+      "xfail",
+    ],
+    // A cleanup trap's later assertions, passing or failing, do not replace
+    // the marked command's observation.
+    cleanup: [
+      `trap 'control-openhands assert --field count --equals 0 -- evidence list --feature QA; control-openhands assert --field count --equals 5 -- evidence list --feature QA; false' EXIT\ntrue\n${bugLine()}`,
+      "xfail",
+    ],
   };
   for (const [name, [body, status, reason, extra = []]] of Object.entries(
     cases,

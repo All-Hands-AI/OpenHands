@@ -142,5 +142,3 @@ export const CONFIG_CACHE_OPTIONS = {
   staleTime: 1000 * 60 * 5, // 5 minutes
   gcTime: 1000 * 60 * 15, // 15 minutes
 } as const;
-
-export type QueryKeys = (typeof QUERY_KEYS)[keyof typeof QUERY_KEYS];

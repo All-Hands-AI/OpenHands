@@ -28,9 +28,10 @@ import {
   type ChildConversationIsolation,
   type ChildConversationTarget,
 } from "#/constants/child-conversation";
-import { useGoalStore } from "#/stores/goal-store";
 import type { LaunchChildConversationAction } from "#/types/agent-server/core";
 import { buildAgentCanvasUrl } from "#/utils/base-path";
+import { claimClientToolCall } from "#/utils/claim-client-tool-call";
+import { postClientToolResult } from "./client-tool-result";
 import {
   displayErrorToast,
   displaySuccessToastWithLink,
@@ -197,39 +198,6 @@ function validateLaunchParams(
       isolation: isolation ?? "worktree",
     },
   };
-}
-
-/**
- * Remember which tool calls have already been acted on.
- *
- * Unlike the Canvas UI tool, a launch is not idempotent: replaying its
- * ActionEvent (a socket reconnect that falls back to `resend_mode: "all"`, or a
- * REST/WebSocket race after a reload) would start a second — on Cloud, billable
- * — conversation. Claim the tool call before any network work so a replay that
- * arrives mid-flight is dropped too.
- */
-function claimToolCall(parentConversationId: string, toolCallId: string) {
-  const key = `${LEDGER_STORAGE_KEY_PREFIX}${parentConversationId}`;
-  let handled: string[] = [];
-  try {
-    const raw = window.localStorage.getItem(key);
-    const parsed: unknown = raw ? JSON.parse(raw) : null;
-    if (Array.isArray(parsed)) {
-      handled = parsed.filter((id): id is string => typeof id === "string");
-    }
-  } catch {
-    // A corrupt ledger must not block the launch; start a fresh one.
-  }
-
-  if (handled.includes(toolCallId)) return false;
-
-  try {
-    window.localStorage.setItem(key, JSON.stringify([...handled, toolCallId]));
-  } catch {
-    // Storage full or unavailable — proceed, accepting replay risk over never
-    // launching at all.
-  }
-  return true;
 }
 
 function absoluteCanvasUrl(path: string) {
@@ -504,22 +472,12 @@ async function reportLaunchResult(
     );
   }
 
-  // The agent-server cancels an active `/goal` loop on any inbound message, so
-  // a launch must not silently end one. The toast above still tells the user
-  // what happened.
-  const goalStatus =
-    useGoalStore.getState().statusByConversation[parentConversationId];
-  if (goalStatus?.active) return;
-
-  await AgentServerConversationService.sendMessage(parentConversationId, {
-    role: "user",
-    content: [
-      {
-        type: "text",
-        text: `${CHILD_CONVERSATION_RESULT_PREFIX}${JSON.stringify(result)}`,
-      },
-    ],
-  });
+  // Skipped during a `/goal` loop; the toast above still tells the user.
+  await postClientToolResult(
+    parentConversationId,
+    CHILD_CONVERSATION_RESULT_PREFIX,
+    result,
+  );
 }
 
 /**
@@ -533,7 +491,16 @@ export async function handleLaunchChildConversationAction(
   parentConversationId: string,
   toolCallId: string,
 ): Promise<void> {
-  if (!claimToolCall(parentConversationId, toolCallId)) return;
+  // A launch is not idempotent — on Cloud, a replay would start a second,
+  // billable conversation.
+  if (
+    !claimClientToolCall(
+      `${LEDGER_STORAGE_KEY_PREFIX}${parentConversationId}`,
+      toolCallId,
+    )
+  ) {
+    return;
+  }
 
   const validation = validateLaunchParams(action);
   let result: LaunchChildConversationResult;
