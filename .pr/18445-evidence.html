@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  body { margin: 0; background: #0d1117; color: #c9d1d9; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+  .wrap { padding: 18px 20px 24px; }
+  h1 { font-size: 15px; margin: 0 0 4px; color: #e6edf3; font-family: system-ui, sans-serif; }
+  .sub { color: #8b949e; font-family: system-ui, sans-serif; font-size: 12px; margin-bottom: 14px; }
+  .panel { border: 1px solid #30363d; border-radius: 8px; margin-bottom: 14px; overflow: hidden; }
+  .bar { padding: 6px 10px; font-size: 12px; font-weight: 600; font-family: system-ui, sans-serif; }
+  .before .bar { background: #3d1418; color: #ff7b72; border-bottom: 1px solid #30363d; }
+  .after  .bar { background: #12261a; color: #3fb950; border-bottom: 1px solid #30363d; }
+  pre { margin: 0; padding: 10px 12px; white-space: pre-wrap; line-height: 1.5; }
+  .fail { color: #ff7b72; }
+  .pass { color: #3fb950; }
+  .dim  { color: #8b949e; }
+  .cmd  { color: #79c0ff; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Issue #18445 &mdash; completed conversation opens with empty history (silent empty-page fallback on events/search)</h1>
+  <div class="sub">Regression suite: <span class="cmd">npx vitest run src/api/event-service/event-service.api.test.ts __tests__/hooks/query/use-conversation-history.test.tsx __tests__/contexts/conversation-websocket-context.test.tsx</span></div>
+
+  <div class="panel before">
+    <div class="bar">BEFORE (base main) &mdash; the failure condition is reproduced; the 3 new regression tests fail</div>
+<pre><span class="fail">&times;</span> src/api/event-service/event-service.api.test.ts &gt; EventService &gt; searchEvents &gt; rethrows a sort-only cloud failure so the initial tail load is not silently empty
+    <span class="fail">AssertionError: promise resolved "{ items: [], next_page_id: null }" instead of rejecting</span>
+    <span class="dim"># the failed initial tail search is swallowed into an empty page (no throw)</span>
+
+<span class="fail">&times;</span> __tests__/hooks/query/use-conversation-history.test.tsx &gt; session-socket resume cursor (afterSeq) &gt; leaves the resume cursor unset when the tail page is empty but the count succeeds (#18445)
+    <span class="fail">AssertionError: expected 325 to be null</span>
+    <span class="dim"># count = 326 succeeded, page empty =&gt; afterSeq wrongly = 325 (count - 1)</span>
+
+<span class="fail">&times;</span> __tests__/contexts/conversation-websocket-context.test.tsx &gt; session socket resume cursor &gt; replays the whole log when the initial tail fetch fails while the count succeeds (#18445)
+    <span class="fail">AssertionError: expected '325' to be '-1'</span>
+    <span class="dim"># the session socket subscribes after_seq="325", skipping the entire history =&gt; silently empty chat</span>
+
+<span class="dim">Test Files  3 failed (3)</span>
+<span class="fail">Tests  3 failed | 63 passed (66)</span></pre>
+  </div>
+
+  <div class="panel after">
+    <div class="bar">AFTER (PR head) &mdash; same suite, all green</div>
+<pre><span class="pass">&check;</span> src/api/event-service/event-service.api.test.ts &gt; EventService &gt; searchEvents &gt; rethrows a sort-only cloud failure so the initial tail load is not silently empty
+<span class="pass">&check;</span> __tests__/hooks/query/use-conversation-history.test.tsx &gt; session-socket resume cursor (afterSeq) &gt; leaves the resume cursor unset when the tail page is empty but the count succeeds (#18445)
+<span class="pass">&check;</span> __tests__/contexts/conversation-websocket-context.test.tsx &gt; session socket resume cursor &gt; replays the whole log when the initial tail fetch fails while the count succeeds (#18445)
+
+<span class="dim">Test Files  3 passed (3)</span>
+<span class="pass">Tests  66 passed (66)</span></pre>
+  </div>
+
+  <div class="sub">Full verification on the PR head: <span class="cmd">npm run lint</span> &rarr; 0 errors &nbsp;&bull;&nbsp; <span class="cmd">npm test</span> &rarr; 8016 passed &nbsp;&bull;&nbsp; <span class="cmd">npm run build</span> &amp; <span class="cmd">npm run build:lib</span> &rarr; exit 0</div>
+</div>
+</body>
+</html>

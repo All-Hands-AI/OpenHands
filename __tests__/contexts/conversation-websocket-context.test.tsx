@@ -1292,6 +1292,25 @@ describe("ConversationWebSocketProvider — conversation-scoped event store", ()
       await waitFor(() => expect(mainAfterSeq()).toBe("41"));
     });
 
+    it("replays the whole log when the initial tail fetch fails while the count succeeds (#18445)", async () => {
+      // The cloud `events/search` tail request fails (e.g. one un-serializable
+      // event) and is swallowed into an empty page, while `events/count` still
+      // succeeds. Before the fix the socket resumed at `count - 1`, skipping
+      // the entire history — a silently empty conversation.
+      vi.mocked(EventService.getEventCount).mockResolvedValue(326);
+      vi.mocked(EventService.searchEvents).mockResolvedValue({
+        items: [],
+        next_page_id: null,
+      });
+
+      renderProviderWithUrl("conv-failed-tail");
+      await waitFor(() => expect(wsCapture.mainOptions).not.toBeNull());
+
+      // Nothing was seeded, so the socket must replay from the start.
+      await waitFor(() => expect(mainAfterSeq()).toBe("-1"));
+      expect(useEventStore.getState().events).toEqual([]);
+    });
+
     it("advances past each durable frame, so a reconnect resumes there", async () => {
       renderProviderWithUrl("conv-advance");
       await waitFor(() => expect(wsCapture.mainOnMessage).not.toBeNull());
