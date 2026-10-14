@@ -18,6 +18,11 @@ export interface CustomChatInputProps {
   showButton?: boolean;
   /** Overrides the input's default placeholder text. */
   placeholder?: string;
+  /**
+   * Whether this composer saves and restores a draft. Defaults to true; turn
+   * it off for composers that must not share the Home draft.
+   */
+  persistDraft?: boolean;
   onSubmit: (message: string) => void;
   onFocus?: () => void;
   onBlur?: () => void;
@@ -35,6 +40,7 @@ export function CustomChatInput({
   hasStartedConversation,
   showButton = true,
   placeholder,
+  persistDraft = true,
   onSubmit,
   onFocus,
   onBlur,
@@ -82,7 +88,7 @@ export function CustomChatInput({
 
   // Custom hooks
   const { chatInputRef, messageToSend, checkIsContentEmpty, saveDraft } =
-    useChatInputLogic();
+    useChatInputLogic({ persistDraft });
 
   const syncCanSubmit = React.useCallback(() => {
     const text = chatInputRef.current?.innerText ?? "";
