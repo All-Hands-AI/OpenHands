@@ -29174,7 +29174,8 @@
     "no": "Docker-container",
     "tr": "Docker kapsayıcısı",
     "uk": "Контейнер Docker",
-    "ca": "Contenidor Docker"
+    "ca": "Contenidor Docker",
+    "id": "Kontainer Docker"
   },
   "COMMON$OPEN_REPOSITORY": {
     "en": "Open Repository",
