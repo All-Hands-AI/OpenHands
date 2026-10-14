@@ -5,12 +5,7 @@ import type {
   MCPServerPatch,
 } from "@openhands/typescript-client";
 import { DEFAULT_SETTINGS } from "#/services/settings";
-import {
-  ConversationRuntimeSettings,
-  Settings,
-  SettingsSchema,
-  SettingsValue,
-} from "#/types/settings";
+import { Settings, SettingsSchema, SettingsValue } from "#/types/settings";
 import {
   applyMcpServerPatch,
   getSdkMcpServerMap,
@@ -39,7 +34,6 @@ export const APP_PREFERENCE_FIELDS = [
   "git_user_name",
   "git_user_email",
   "title_llm_profile",
-  "default_workspace_mode",
   "disabled_skills",
   "enabled_skills",
   "run_router_at_conversation_start",
@@ -60,7 +54,6 @@ export type AppPreferences = Partial<Pick<Settings, AppPreferenceField>>;
  */
 export interface MiscSettings {
   app_preferences?: AppPreferences;
-  runtime?: ConversationRuntimeSettings;
 }
 
 /**
@@ -508,9 +501,6 @@ const transformApiResponse = (
   // entirely; the migration helper invoked from `getSettings` promotes any
   // leftover localStorage values to the server on first run, so the omitted
   // case just falls back to defaults.
-  if (response.misc_settings?.runtime) {
-    partial.runtime_settings = response.misc_settings.runtime;
-  }
   const prefs = response.misc_settings?.app_preferences;
   if (prefs) {
     for (const key of APP_PREFERENCE_FIELDS) {
@@ -829,15 +819,8 @@ class SettingsService {
       payload.conversation_settings_diff = conversationSettingsDiff;
     }
 
-    // Local-only: the cloud has no conversation runtimes to configure.
-    const runtimeSettings = rest.runtime_settings as
-      | ConversationRuntimeSettings
-      | undefined;
-    if (hasAppPreferences || runtimeSettings) {
-      payload.misc_settings_diff = {
-        ...(hasAppPreferences && { app_preferences: appPreferences }),
-        ...(runtimeSettings && { runtime: runtimeSettings }),
-      };
+    if (hasAppPreferences) {
+      payload.misc_settings_diff = { app_preferences: appPreferences };
     }
 
     const isCloud = getActiveBackend().backend.kind === "cloud";
