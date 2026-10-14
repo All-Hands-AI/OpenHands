@@ -10,7 +10,8 @@ MCP integrations, or seeds a conversation with the entry's launch prompt.
 **Add Automation → Create Automation** opens the agent-assisted setup page at
 `/automations/setup`, where the form opens before a conversation exists. Saving a server-backed
 draft and testing its generated custom script need no LLM; sending a prompt
-starts genuine model assistance through `automation_form_update`. **Add Automation → Import automation** reads
+starts genuine model assistance through `automation_form_update`. The setup page's own fields,
+draft validation, Test and Create each have their own IDs in F28. **Add Automation → Import automation** reads
 an exported JSON file, previews it and creates it disabled.
 
 Source: `src/routes/automation-templates.tsx`, `src/routes/automation-setup-route.tsx`, `src/routes/automation-setup-new.tsx`, `src/components/features/automations/` (`recommended-automations-launcher.tsx`, `recommended-automations-section.tsx`, `responder-deployment-modal.tsx`, `create-instructions.tsx`, `import-automation-modal.tsx`, `agent-profile-selector.tsx`, `setup/`), `src/components/features/conversation/conversation-main/conversation-main.tsx`, `src/components/features/manifest/`, `src/manifests/`, `src/hooks/use-start-automation-setup.ts`, `src/hooks/use-launch-skill-in-chat.ts`, `src/hooks/use-responder-url-secret.ts`, `src/utils/automation-export.ts`, `src/api/automation-service/automation-service.api.ts`, `src/api/automation-form-client-tool.ts`, `src/api/automation-form-session.ts`, `src/services/automation-form.ts`, `src/constants/automation-form.ts`, `node_modules/@openhands/extensions/automations/`.
