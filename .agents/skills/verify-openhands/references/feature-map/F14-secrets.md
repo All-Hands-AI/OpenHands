@@ -57,7 +57,7 @@ Preconditions:
 - Edit forms intentionally show an empty value; that is not data loss.
 - The invalid-name check is native browser validation. It shows a tooltip that screenshots do not capture, and it leaves any earlier `Secret already exists` paragraph on screen. Assert with `validationMessage` and the API, not the paragraph.
 - The model is the weak link in the agent checks, not the product: asked to print a secret's length or last characters, deepseek-flash replies "I can't run that one" and runs nothing, and even for the equality check it may refuse to repeat `True` in its reply. Use the equality prompt and read the terminal `ObservationEvent`; `conversation events` truncates message text to about 160 characters.
-- The conversation Overview has a Secrets drawer (`conversation-overview-secrets-panel`, `conversation-overview-secrets-add-button`) built on the same form, but no UI opens it: the Overview "..." menu (`conversation-overview-ellipsis`) offers Workspace and Git sections only. It is not a user entry point today.
+- The conversation Overview has no Secrets entry point: its "..." menu (`conversation-overview-ellipsis`) offers Workspace and Git sections only.
 - There is no empty state to reach safely: `secrets-empty` renders only with zero secrets, which means deleting the launcher-seeded key (see below).
 - Secrets reach only conversations started after the save. Reuse an older conversation and the variable is missing.
 - At 390 px the name column truncates long names (`OPEN…`); use `browser text` on the row rather than the screenshot to read a name.
