@@ -17,10 +17,11 @@ import {
 } from "./api-error-message";
 
 // react-hot-toast accepts only CSSProperties via the style option — cannot use className
+// @spec TN-001 — Every toast uses the theme's high-emphasis ink on its surface
 const TOAST_STYLE: CSSProperties = {
   background: "var(--oh-color-tertiary)",
   border: "1px solid var(--oh-border-input)",
-  color: "#fff",
+  color: "var(--oh-contrast)",
   borderRadius: "var(--oh-radius)",
   maxWidth: "400px",
   wordBreak: "break-word",
@@ -31,11 +32,6 @@ const TOAST_STYLE: CSSProperties = {
 export const TOAST_OPTIONS: ToastOptions = {
   position: "top-right",
   style: TOAST_STYLE,
-};
-
-const ERROR_TOAST_STYLE: CSSProperties = {
-  ...TOAST_STYLE,
-  color: "var(--oh-muted)",
 };
 
 /** Icon + message row; center icon for single-line text, top-align when wrapped. */
@@ -95,7 +91,6 @@ export function ErrorToastContent({ message }: { message: ReactNode }) {
 export const ERROR_TOAST_OPTIONS: ToastOptions = {
   ...TOAST_OPTIONS,
   icon: null,
-  style: ERROR_TOAST_STYLE,
 };
 
 function showErrorToast(message: string) {
