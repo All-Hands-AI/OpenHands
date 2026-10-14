@@ -413,6 +413,22 @@ function startAutomationBackend(config) {
   );
 }
 
+/**
+ * One MARS web bridge per stack, on the server the browser reaches: the
+ * ingress, guarded by the stack's session key (the same one the page holds).
+ * The static child behind it gets `MARS_WEB=0`: a second bridge there would
+ * answer /mars/* with its own, separate sign-in state for anyone who opens
+ * that port directly. Without the key the ingress bridge would take
+ * destroySession and savePat from any local process, the agent's shell
+ * included, so a stack with no session key mounts nothing.
+ */
+export function buildMarsWebEnv(role, config) {
+  if (role === "static") return { MARS_WEB: "0" };
+  return config.sessionApiKey
+    ? { MARS_WEB_KEY: config.sessionApiKey }
+    : { MARS_WEB: "0" };
+}
+
 function startStaticServer(config) {
   // Reuse `vitePort` as the upstream port name so the ingress route table
   // below stays identical to dev-with-automation.mjs.
@@ -471,6 +487,7 @@ function startStaticServer(config) {
     {
       cwd: config.canvasPath,
       color: c.magenta,
+      env: buildMarsWebEnv("static", config),
     },
   );
 }
@@ -504,6 +521,7 @@ function startIngress(config) {
     {
       cwd: projectRoot,
       color: c.yellow,
+      env: buildMarsWebEnv("ingress", config),
     },
   );
 }

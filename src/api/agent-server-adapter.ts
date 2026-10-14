@@ -69,6 +69,7 @@ import {
   LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
 } from "./launch-child-conversation-client-tool";
 import { AUTOMATION_FORM_UPDATE_CLIENT_TOOL } from "./automation-form-client-tool";
+import { REQUEST_SECRET_CLIENT_TOOL } from "./request-secret-client-tool";
 import {
   buildPlanPath,
   LOCAL_PLANNER_PARENT_TAG_KEY,
@@ -238,13 +239,6 @@ async function fetchBackendServerInfo(): Promise<AgentServerInfo | null> {
   } catch {
     return null;
   }
-}
-
-export async function fetchBackendRuntimeServicesInfo(): Promise<RuntimeServicesInfo | null> {
-  const serverInfo = await fetchBackendServerInfo();
-  return parseRuntimeServicesInfo(
-    (serverInfo as { runtime_services?: unknown } | null)?.runtime_services,
-  );
 }
 
 export async function fetchBackendExecutionRuntime(): Promise<
@@ -1385,6 +1379,7 @@ export function buildStartConversationRequest(
         ? [
             CANVAS_UI_CLIENT_TOOL,
             LAUNCH_CHILD_CONVERSATION_CLIENT_TOOL,
+            REQUEST_SECRET_CLIENT_TOOL,
             ...(options.automationSetup
               ? [AUTOMATION_FORM_UPDATE_CLIENT_TOOL]
               : []),
