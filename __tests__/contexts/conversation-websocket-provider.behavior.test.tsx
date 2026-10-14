@@ -24,6 +24,7 @@ import { useFilesTabStore } from "#/stores/files-tab-store";
 import EventService from "#/api/event-service/event-service.api";
 import { SERVER_CONNECTION_ERROR_MESSAGE } from "#/constants/server-connection-error";
 import { getStoredConversationMetadata } from "#/api/conversation-metadata-store";
+import { hashDeepPlanDocument } from "#/utils/deep-plan-machine";
 import {
   getConversationState,
   setConversationState,
@@ -895,6 +896,62 @@ describe("Conversation websocket behavior", () => {
     expect(socketCapture.reconnectMain).toHaveBeenCalledOnce();
   });
 
+  // Either socket can raise the same connection banner, so when both fail a
+  // single "last error source" cannot represent the state: retrying only the
+  // one that failed last leaves the other closed. Both failure orders must
+  // retry both sockets.
+  for (const [label, first, second] of [
+    ["the planner then the main socket", "planning", "main"],
+    ["the main socket then the planner", "main", "planning"],
+  ] as const) {
+    it(`retries both sockets when ${label} fails`, async () => {
+      vi.spyOn(EventService, "getEventCount").mockResolvedValue(0);
+      renderProvider({ subConversations: [makeSubConversation()] });
+      await act(async () => {
+        mainOptions().onOpen?.(new Event("open"));
+        await planningOptions().onOpen?.(new Event("open"));
+      });
+
+      act(() => {
+        const options =
+          first === "planning" ? planningOptions() : mainOptions();
+        options.onError?.(new Event("error"));
+        const secondOptions =
+          second === "planning" ? planningOptions() : mainOptions();
+        secondOptions.onError?.(new Event("error"));
+      });
+      expect(useErrorMessageStore.getState().errorMessage).toBe(
+        SERVER_CONNECTION_ERROR_MESSAGE,
+      );
+
+      act(() => contextCapture.current?.reconnect());
+
+      expect(useErrorMessageStore.getState().errorMessage).toBeNull();
+      expect(socketCapture.reconnectMain).toHaveBeenCalledOnce();
+      expect(socketCapture.reconnectPlanning).toHaveBeenCalledOnce();
+    });
+  }
+
+  it("does not retry a failed socket that has since recovered", async () => {
+    vi.spyOn(EventService, "getEventCount").mockResolvedValue(0);
+    renderProvider({ subConversations: [makeSubConversation()] });
+    await act(async () => {
+      mainOptions().onOpen?.(new Event("open"));
+      await planningOptions().onOpen?.(new Event("open"));
+    });
+    act(() => {
+      planningOptions().onError?.(new Event("error"));
+      mainOptions().onError?.(new Event("error"));
+    });
+    // The main socket recovers on its own before the user hits Retry.
+    act(() => mainOptions().onOpen?.(new Event("open")));
+
+    act(() => contextCapture.current?.reconnect());
+
+    expect(socketCapture.reconnectPlanning).toHaveBeenCalledOnce();
+    expect(socketCapture.reconnectMain).not.toHaveBeenCalled();
+  });
+
   it("uses sockets and reconnect routing introduced after the first render", async () => {
     const view = renderProvider();
     const mainSocket = makeSocket(WebSocket.OPEN);
@@ -1746,6 +1803,392 @@ describe("Conversation websocket behavior", () => {
       ),
     );
     expect(useConversationStore.getState().planContent).toBe("# Live plan");
+  });
+
+  it("reads a deep-plan phase document into the store so a checkpoint can validate it", async () => {
+    vi.spyOn(EventService, "getEventCount").mockResolvedValue(0);
+    useConversationStore.setState({
+      deepPlan: { activePhase: null, confirmed: [], documents: {} },
+    });
+    socketCapture.readConversationFile.mockImplementation(
+      (_variables, callbacks) => callbacks.onSuccess("## 3.1 Authentication\n"),
+    );
+    renderProvider({
+      subConversations: [makeSubConversation()],
+      subConversationIds: ["conv-planning"],
+    });
+    await act(async () => {
+      await planningOptions().onOpen?.(new Event("open"));
+    });
+
+    dispatchPlanning(
+      makeObservationEvent(
+        "60",
+        {
+          kind: "PlanningFileEditorObservation",
+          content: [],
+          is_error: false,
+          command: "create",
+          path: "/workspace/requirements.md",
+          prev_exist: false,
+          old_content: null,
+          new_content: "## 3.1 Authentication\n",
+        },
+        "planning_file_editor",
+      ),
+    );
+
+    expect(socketCapture.readConversationFile).toHaveBeenCalledWith(
+      {
+        conversationId: "conv-planning",
+        filePath: "/workspace/requirements.md",
+      },
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
+    expect(
+      useConversationStore.getState().deepPlan.documents.requirements,
+    ).toBe("## 3.1 Authentication\n");
+    // A phase document must not also be treated as PLAN.md.
+    expect(useConversationStore.getState().planContent).toBeNull();
+  });
+
+  it("re-reads the newest deep-plan document of each phase after history replay", async () => {
+    vi.spyOn(EventService, "getEventCount").mockResolvedValue(2);
+    useConversationStore.setState({
+      deepPlan: { activePhase: null, confirmed: [], documents: {} },
+    });
+    socketCapture.readConversationFile.mockImplementation(
+      (_variables, callbacks) => callbacks.onSuccess("# Loaded database"),
+    );
+    renderProvider({
+      subConversations: [makeSubConversation()],
+      subConversationIds: ["conv-planning"],
+    });
+
+    await act(async () => {
+      await planningOptions().onOpen?.(new Event("open"));
+    });
+
+    const deepPlanObservation = (id: string, path: string) =>
+      makeObservationEvent(
+        id,
+        {
+          kind: "PlanningFileEditorObservation",
+          content: [{ type: "text", text: "history" }],
+          is_error: false,
+          command: "create",
+          path,
+          prev_exist: false,
+          old_content: null,
+          new_content: "history",
+        },
+        "planning_file_editor",
+      );
+
+    // While history is still replaying, writes are only remembered — the file
+    // may be overwritten again before the stream ends.
+    dispatchPlanning(
+      deepPlanObservation("61", "/workspace/database-design.md"),
+    );
+    expect(socketCapture.readConversationFile).not.toHaveBeenCalled();
+
+    // The second observation completes the replayed count, which ends the
+    // history load; both writes were for the same phase, so only the newest is
+    // re-read.
+    dispatchPlanning(
+      deepPlanObservation("62", "/workspace/database-design.md"),
+    );
+
+    await waitFor(() =>
+      expect(socketCapture.readConversationFile).toHaveBeenCalledWith(
+        {
+          conversationId: "conv-planning",
+          filePath: "/workspace/database-design.md",
+        },
+        expect.objectContaining({ onSuccess: expect.any(Function) }),
+      ),
+    );
+    expect(socketCapture.readConversationFile).toHaveBeenCalledOnce();
+    expect(useConversationStore.getState().deepPlan.documents.database).toBe(
+      "# Loaded database",
+    );
+  });
+
+  it("re-reads a phase document through the planner pinned to that phase", async () => {
+    // Deep Planning runs one planner per phase, each tagged with the phase it
+    // writes. `subConversations[0]` may be another phase's planner, so reading
+    // the database document through it would fetch from the wrong owner.
+    vi.spyOn(EventService, "getEventCount").mockResolvedValue(0);
+    useConversationStore.setState({
+      deepPlan: { activePhase: null, confirmed: [], documents: {} },
+    });
+    socketCapture.readConversationFile.mockImplementation(
+      (_variables, callbacks) => callbacks.onSuccess("# Loaded database"),
+    );
+    renderProvider({
+      subConversations: [
+        makeSubConversation({
+          id: "conv-planning-req",
+          tags: { plannerparent: "conv-main", plannerphase: "requirements" },
+        }),
+        makeSubConversation({
+          id: "conv-planning-db",
+          tags: { plannerparent: "conv-main", plannerphase: "database" },
+        }),
+      ],
+      subConversationIds: ["conv-planning-req", "conv-planning-db"],
+    });
+
+    await act(async () => {
+      await planningOptions().onOpen?.(new Event("open"));
+    });
+
+    dispatchPlanning(
+      makeObservationEvent(
+        "70",
+        {
+          kind: "PlanningFileEditorObservation",
+          content: [],
+          is_error: false,
+          command: "create",
+          path: "/workspace/database-design.md",
+          prev_exist: false,
+          old_content: null,
+          new_content: "## 2.1 Users [Req 3.1]\n",
+        },
+        "planning_file_editor",
+      ),
+    );
+
+    expect(socketCapture.readConversationFile).toHaveBeenCalledWith(
+      {
+        conversationId: "conv-planning-db",
+        filePath: "/workspace/database-design.md",
+      },
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
+    expect(useConversationStore.getState().deepPlan.documents.database).toBe(
+      "# Loaded database",
+    );
+  });
+
+  it("restores every persisted phase document that history replay did not", async () => {
+    // Reload regression: after a reload the store holds only hashes, and the
+    // planner wrapper replays only the *active* planner. An upstream phase's
+    // body is never re-read, so the checkpoint reported its valid citation as a
+    // missing document. The provider must read every vouched-for document back
+    // from disk.
+    vi.spyOn(EventService, "getEventCount").mockResolvedValue(0);
+    const requirementsBody = "## 3.1 Authentication\n";
+    useConversationStore.setState({
+      conversationMode: "deep-plan",
+      deepPlan: {
+        activePhase: "database",
+        confirmed: ["analysis", "requirements"],
+        documents: {},
+        documentHashes: {
+          requirements: hashDeepPlanDocument(requirementsBody),
+        },
+      },
+    });
+    socketCapture.readConversationFile.mockImplementation(
+      (variables, callbacks) => {
+        if (variables.filePath.endsWith("requirements.md")) {
+          callbacks.onSuccess(requirementsBody);
+        } else {
+          callbacks.onError(new Error("not found"));
+        }
+      },
+    );
+
+    renderProvider({
+      subConversations: [makeSubConversation()],
+      subConversationIds: ["conv-planning"],
+      deepPlanWorkingDir: "/workspace/project",
+    });
+
+    await act(async () => {
+      await planningOptions().onOpen?.(new Event("open"));
+    });
+
+    expect(socketCapture.readConversationFile).toHaveBeenCalledWith(
+      {
+        conversationId: "conv-planning",
+        filePath: "/workspace/project/.agents_tmp/requirements.md",
+      },
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
+    expect(
+      useConversationStore.getState().deepPlan.documents.requirements,
+    ).toBe(requirementsBody);
+  });
+
+  it("restores persisted phase documents at a phase that has no planner", async () => {
+    // Reload regression at Implementation: the wrapper selects only the active
+    // phase's planner, and Implementation runs in the code agent, so there is no
+    // planner and `subConversationIds` is empty. The upstream documents still
+    // have to be re-read from disk, so the restore must fall back to the parent
+    // conversation (which shares the workspace) instead of bailing out — before
+    // the fix `targetIds.length === 0` returned early and left `documents`
+    // empty, permanently disabling the checkpoint.
+    vi.spyOn(EventService, "getEventCount").mockResolvedValue(0);
+    const requirementsBody = "## 3.1 Authentication\n";
+    useConversationStore.setState({
+      conversationMode: "deep-plan",
+      deepPlan: {
+        activePhase: "implementation",
+        confirmed: [
+          "analysis",
+          "requirements",
+          "database",
+          "backend",
+          "frontend",
+          "tasks",
+        ],
+        documents: {},
+        documentHashes: {
+          requirements: hashDeepPlanDocument(requirementsBody),
+        },
+      },
+    });
+    socketCapture.readConversationFile.mockImplementation(
+      (_variables, callbacks) => callbacks.onSuccess(requirementsBody),
+    );
+
+    renderProvider({
+      subConversations: [],
+      subConversationIds: [],
+      deepPlanWorkingDir: "/workspace/project",
+    });
+
+    await waitFor(() =>
+      expect(socketCapture.readConversationFile).toHaveBeenCalledWith(
+        {
+          conversationId: "conv-main",
+          filePath: "/workspace/project/.agents_tmp/requirements.md",
+        },
+        expect.objectContaining({ onSuccess: expect.any(Function) }),
+      ),
+    );
+    expect(
+      useConversationStore.getState().deepPlan.documents.requirements,
+    ).toBe(requirementsBody);
+  });
+
+  it("drops a restore that lands after the conversation switched", async () => {
+    // A read can settle after the user navigated to another conversation. The
+    // late result must not be written into the new conversation's `deepPlan`:
+    // doing so would store the old body under the new id and, because the hash
+    // does not match, drop the confirmations the new chain already earned.
+    const requirementsBody = "## 3.1 Authentication\n";
+    useConversationStore.setState({
+      conversationMode: "deep-plan",
+      deepPlan: {
+        activePhase: "database",
+        confirmed: ["analysis", "requirements"],
+        documents: {},
+        documentHashes: {
+          requirements: hashDeepPlanDocument(requirementsBody),
+        },
+      },
+    });
+
+    const successCallbacks: Array<(content: string) => void> = [];
+    socketCapture.readConversationFile.mockImplementation((_variables, cbs) => {
+      successCallbacks.push(cbs.onSuccess);
+    });
+
+    const view = renderProvider({
+      subConversations: [],
+      subConversationIds: [],
+      deepPlanWorkingDir: "/workspace/project",
+    });
+
+    await waitFor(() => expect(successCallbacks.length).toBeGreaterThan(0));
+
+    // The user switches conversations before the read settles. The new
+    // conversation has its own confirmed chain and no upstream document yet.
+    view.rerender(
+      <QueryClientProvider client={view.queryClient}>
+        <ConversationWebSocketProvider
+          conversationId="conv-next"
+          conversationUrl="http://localhost:8000/api/conversations/conv-next"
+          subConversations={[]}
+          subConversationIds={[]}
+          deepPlanWorkingDir="/workspace/project"
+        >
+          <ContextProbe />
+        </ConversationWebSocketProvider>
+      </QueryClientProvider>,
+    );
+    act(() => {
+      useConversationStore.setState({
+        deepPlan: {
+          activePhase: "database",
+          confirmed: ["analysis", "requirements"],
+          documents: { database: "## 2.1 Users [Req 3.1]\n" },
+          documentHashes: { database: "db-hash" },
+        },
+      });
+    });
+
+    // The first read was issued for `conv-main`; it resolves now.
+    act(() => {
+      successCallbacks[0](requirementsBody);
+    });
+
+    const deepPlan = useConversationStore.getState().deepPlan;
+    expect(deepPlan.documents.requirements).toBeUndefined();
+    expect(deepPlan.confirmed).toEqual(["analysis", "requirements"]);
+  });
+
+  it("re-reads a phase document after a failed restore is retried", async () => {
+    // A transient read failure must not lock the checkpoint permanently: the
+    // retry action clears `restoreFailed` and the provider re-issues the read
+    // for the same phase, which then succeeds.
+    const requirementsBody = "## 3.1 Authentication\n";
+    useConversationStore.setState({
+      conversationMode: "deep-plan",
+      deepPlan: {
+        activePhase: "database",
+        confirmed: ["analysis", "requirements"],
+        documents: {},
+        documentHashes: {
+          requirements: hashDeepPlanDocument(requirementsBody),
+        },
+      },
+    });
+
+    let attempt = 0;
+    socketCapture.readConversationFile.mockImplementation((_variables, cbs) => {
+      attempt += 1;
+      if (attempt === 1) cbs.onError(new Error("offline"));
+      else cbs.onSuccess(requirementsBody);
+    });
+
+    renderProvider({
+      subConversations: [],
+      subConversationIds: [],
+      deepPlanWorkingDir: "/workspace/project",
+    });
+
+    await waitFor(() =>
+      expect(useConversationStore.getState().deepPlan.restoreFailed).toEqual([
+        "requirements",
+      ]),
+    );
+
+    act(() => {
+      useConversationStore.getState().retryDeepPlanDocumentRestore();
+    });
+
+    await waitFor(() =>
+      expect(
+        useConversationStore.getState().deepPlan.documents.requirements,
+      ).toBe(requirementsBody),
+    );
+    expect(socketCapture.readConversationFile).toHaveBeenCalledTimes(2);
+    expect(useConversationStore.getState().deepPlan.restoreFailed).toEqual([]);
   });
 
   it("falls through planning history when event counting fails", async () => {

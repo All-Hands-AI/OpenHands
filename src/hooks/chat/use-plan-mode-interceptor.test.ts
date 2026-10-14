@@ -5,21 +5,29 @@ import { AgentState } from "#/types/agent-state";
 import type { WebSocketConnectionState } from "#/contexts/conversation-websocket-context";
 
 const setConversationMode = vi.fn();
+const startDeepPlan = vi.fn();
 const handlePlanClick = vi.fn();
 let isCreatingConversation = false;
 let hasPlanner = false;
+let hasDeepPlanPlanner = false;
 let mainWebSocketStatus: WebSocketConnectionState = "OPEN";
 let unifiedWebSocketStatus: WebSocketConnectionState = "OPEN";
 let isPlanningAgentRunning = false;
+let backendKind: "local" | "cloud" = "local";
+
+vi.mock("#/contexts/active-backend-context", () => ({
+  useActiveBackend: () => ({ backend: { kind: backendKind }, orgId: null }),
+}));
 
 vi.mock("#/stores/conversation-store", () => ({
   useConversationStore: (selector: (s: unknown) => unknown) =>
-    selector({ setConversationMode }),
+    selector({ setConversationMode, startDeepPlan }),
 }));
 vi.mock("#/hooks/use-handle-plan-click", () => ({
   useHandlePlanClick: () => ({
     handlePlanClick,
     hasPlanner,
+    hasDeepPlanPlanner,
     isCreatingConversation,
   }),
 }));
@@ -49,9 +57,11 @@ describe("usePlanModeInterceptor", () => {
     vi.clearAllMocks();
     isCreatingConversation = false;
     hasPlanner = false;
+    hasDeepPlanPlanner = false;
     mainWebSocketStatus = "OPEN";
     unifiedWebSocketStatus = "OPEN";
     isPlanningAgentRunning = false;
+    backendKind = "local";
   });
 
   it("passes a non-command message straight through to onSubmit", () => {
@@ -185,5 +195,60 @@ describe("usePlanModeInterceptor", () => {
     expect(setConversationMode).not.toHaveBeenCalled();
     expect(onSubmit).not.toHaveBeenCalled();
     expect(handlePlanClick).not.toHaveBeenCalled();
+  });
+
+  it("opens deep plan mode for /deep-plan", () => {
+    const { intercept, onSubmit } = setup(CONV);
+    intercept("/deep-plan");
+    expect(startDeepPlan).toHaveBeenCalledOnce();
+    expect(handlePlanClick).toHaveBeenCalledWith(
+      undefined,
+      undefined,
+      "deep-plan",
+    );
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("creates the planner with the task for /deep-plan <task> when none exists", () => {
+    const { intercept, onSubmit } = setup(CONV);
+    intercept("/deep-plan   design the schema  ");
+    expect(startDeepPlan).toHaveBeenCalledOnce();
+    expect(handlePlanClick).toHaveBeenCalledWith(
+      undefined,
+      "design the schema",
+      "deep-plan",
+    );
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("passes /deep-plan through as a plain message on Cloud", () => {
+    // Cloud cannot provision the per-phase local planner, so the command must
+    // not be intercepted as a mode switch; it is sent to the agent instead.
+    backendKind = "cloud";
+    const { intercept, onSubmit } = setup(CONV);
+    intercept("/deep-plan design the schema");
+    expect(startDeepPlan).not.toHaveBeenCalled();
+    expect(handlePlanClick).not.toHaveBeenCalled();
+    expect(onSubmit).toHaveBeenCalledWith("/deep-plan design the schema");
+  });
+
+  it("swallows /deep-plan while a planning conversation is already being created", () => {
+    isCreatingConversation = true;
+    const { intercept, onSubmit } = setup(CONV);
+    intercept("/deep-plan");
+    expect(startDeepPlan).not.toHaveBeenCalled();
+    expect(handlePlanClick).not.toHaveBeenCalled();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("sends /deep-plan <task> straight to the phase planner when one exists", () => {
+    hasDeepPlanPlanner = true;
+    const { intercept, onSubmit } = setup(CONV);
+    intercept("/deep-plan   refine the schema  ");
+    expect(startDeepPlan).toHaveBeenCalledOnce();
+    // A phase planner already owns the right document, so no new planner is
+    // created; the task goes through the normal send path (which routes to it).
+    expect(handlePlanClick).not.toHaveBeenCalled();
+    expect(onSubmit).toHaveBeenCalledExactlyOnceWith("refine the schema");
   });
 });

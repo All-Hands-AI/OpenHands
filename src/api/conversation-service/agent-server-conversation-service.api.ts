@@ -68,6 +68,7 @@ import {
 import { resolveTitleLlmProfile } from "#/utils/title-llm-profile";
 import { toAcpModelOptions } from "#/constants/acp-providers";
 import { isPlannerConversationOf } from "#/utils/plan-file";
+import type { DeepPlanPhaseId } from "#/utils/deep-plan";
 import { buildAutomationSetupModeTags } from "#/utils/automation-draft-tags";
 import { AUTOMATION_FORM_UPDATE_CLIENT_TOOL } from "../automation-form-client-tool";
 import { CANVAS_UI_CLIENT_TOOL } from "../canvas-ui-client-tool";
@@ -672,6 +673,8 @@ class AgentServerConversationService {
   static async createLocalPlanningConversation(
     parentConversationId: string,
     initialMessage?: string,
+    deepPlanPhase?: DeepPlanPhaseId | null,
+    deepPlanGuidance?: string | null,
   ): Promise<AppConversation> {
     if (getActiveBackend().backend.kind === "cloud") {
       throw new Error("Local planning conversations require a local backend.");
@@ -707,6 +710,8 @@ class AgentServerConversationService {
         parentAgentProfileId:
           parent?.launched_agent_profile?.agent_profile_id ?? null,
         initialMessage,
+        deepPlanPhase,
+        deepPlanGuidance,
       });
 
     const data = await new ConversationClient(
@@ -716,9 +721,12 @@ class AgentServerConversationService {
     // Client-side fallback only: agent-servers >= 1.37.1 persist the link via
     // `parent_conversation_id` and hand it back on the parent's
     // `sub_conversation_ids`, which is the source of truth. This hint covers
-    // older backends that ignore the field.
+    // older backends that ignore the field. The phase is stored alongside the
+    // id so a refresh restores the planner for the *matching* phase, never one
+    // pinned to a different phase's document.
     mergeStoredConversationMetadata(parentConversationId, {
       local_planning_conversation_id: data.id,
+      local_planning_planner_phase: deepPlanPhase ?? null,
     });
 
     return toAppConversation(data);

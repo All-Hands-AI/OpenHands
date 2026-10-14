@@ -1,9 +1,18 @@
 import type { AppConversation } from "#/api/conversation-service/agent-server-conversation-service.types";
+import {
+  DEEP_PLAN_PHASE_IDS,
+  getDeepPlanPhase,
+  type DeepPlanPhaseId,
+} from "#/utils/deep-plan";
 
 export const PLAN_RELATIVE_PATH = ".agents_tmp/PLAN.md";
 export const PLANNING_SYSTEM_PROMPT_FILENAME = "system_prompt_planning.j2";
 export const PLANNING_FILE_EDITOR_TOOL_NAME = "planning_file_editor";
 export const LOCAL_PLANNER_PARENT_TAG_KEY = "plannerparent";
+/** Tags a Deep Planning planner with the phase whose document it writes. */
+export const DEEP_PLAN_PHASE_TAG_KEY = "plannerphase";
+/** Directory the planner and the phase documents live under. */
+export const AGENTS_TMP_DIR = ".agents_tmp";
 
 const PLAN_FILENAME_UPPER = "PLAN.MD";
 
@@ -39,6 +48,36 @@ export const PLAN_STRUCTURE_TEXT = [
   "   * This section should describe what success looks like — expected outputs, behaviors, or conditions.",
 ].join("\n");
 
+/**
+ * The `plan_structure` injected into a Deep Planning phase planner, replacing
+ * the plain single-`PLAN.md` structure. A phase document is not a generic plan:
+ * it is a chain link whose numbered sections are cited by the documents
+ * downstream. The plain OBJECTIVE/CONTEXT/APPROACH/IMPLEMENTATION/TESTING
+ * skeleton competes with the phase guidance and leaks into the phase document
+ * (the live planner produced exactly that skeleton for `database-design.md`),
+ * so a phase planner is given this format instead — numbered, citable sections
+ * and inline upstream citations, with the phase guidance naming the sections.
+ */
+export const DEEP_PLAN_STRUCTURE_TEXT = [
+  "The document must follow the structure the phase guidance describes exactly:",
+  "",
+  "1. TITLE",
+  "   * A single top-level heading naming the document.",
+  "",
+  "2. NUMBERED, CITABLE SECTIONS",
+  "   * Every section heading leads with its own number (e.g. `## 3.1 Authentication`).",
+  "   * That number is the section's citation id; downstream documents cite it as `[<Label> 3.1]`.",
+  "   * Order the sections by the part of the system they describe.",
+  "",
+  "3. INLINE UPSTREAM CITATIONS",
+  "   * Each section cites the upstream sections it derives from as `[Req 1.1]`, `[DB 2.1]`, and so on.",
+  "   * Place each citation in the sentence that depends on it.",
+  "",
+  "Do NOT use the generic plan headings OBJECTIVE, CONTEXT SUMMARY, APPROACH",
+  "OVERVIEW, IMPLEMENTATION STEPS, or TESTING AND VALIDATION; the numbered",
+  "sections above replace them.",
+].join("\n");
+
 // System-prompt suffix for the local planning agent (mirrors the OpenHands
 // app-server's PLANNING_AGENT_INSTRUCTION). The planner's directive + boundaries
 // live in the system prompt; the planning conversation is created idle, so the
@@ -61,6 +100,21 @@ export const PLANNING_AGENT_INSTRUCTION = [
 export function buildPlanPath(workingDir: string): string {
   const normalized = workingDir.replace(/\/+$/, "");
   return `${normalized}/${PLAN_RELATIVE_PATH}`;
+}
+
+/**
+ * The `plan_path` a Deep Planning planner is pinned to. The planning tool only
+ * edits its `plan_path`, so each phase's planner is pointed at that phase's own
+ * document — that is what lets the chain actually be produced. Pure-conversation
+ * phases (`analysis`, `implementation`) have no output file and keep `PLAN.md`.
+ */
+export function buildPhasePlanPath(
+  workingDir: string,
+  phase: DeepPlanPhaseId,
+): string {
+  const normalized = workingDir.replace(/\/+$/, "");
+  const outputFile = getDeepPlanPhase(phase).outputFile;
+  return `${normalized}/${AGENTS_TMP_DIR}/${outputFile ?? "PLAN.md"}`;
 }
 
 export function isPlanFilePath(path: string | null | undefined): boolean {
@@ -97,5 +151,79 @@ export function findPlannerConversationId(
     subConversations?.find((sub) =>
       isPlannerConversationOf(sub, parentConversationId),
     )?.id ?? null
+  );
+}
+
+/**
+ * The Deep Planning phase a planner was created for, or `null` for a plain
+ * `plan`-mode planner (which carries no phase tag). Lets the socket layer tell
+ * a deep-plan planner pinned to `requirements.md` from one pinned to
+ * `database-design.md` — they share the parent and the `plannerparent` tag.
+ */
+export function plannerPhaseOf(
+  conversation: Pick<AppConversation, "tags"> | null | undefined,
+): DeepPlanPhaseId | null {
+  const phase = conversation?.tags?.[DEEP_PLAN_PHASE_TAG_KEY];
+  return phase && (DEEP_PLAN_PHASE_IDS as readonly string[]).includes(phase)
+    ? (phase as DeepPlanPhaseId)
+    : null;
+}
+
+/**
+ * Finds the planner helper for a specific Deep Planning phase. Falls back to
+ * the plain planner when no phase is given, so `plan` mode is unchanged.
+ */
+export function findPhasePlannerConversationId(
+  subConversations: (AppConversation | null)[] | null | undefined,
+  parentConversationId: string | null | undefined,
+  phase: DeepPlanPhaseId | null,
+): string | null {
+  if (!parentConversationId) return null;
+  const planners = (subConversations ?? []).filter(
+    (sub): sub is AppConversation =>
+      sub !== null && isPlannerConversationOf(sub, parentConversationId),
+  );
+  if (phase) {
+    return planners.find((sub) => plannerPhaseOf(sub) === phase)?.id ?? null;
+  }
+  // Plain planner: one without a phase tag.
+  return planners.find((sub) => plannerPhaseOf(sub) === null)?.id ?? null;
+}
+
+/**
+ * Whether a stored planner id may stand in for `parentConversationId`'s
+ * planner for `phase` — the check every store-id fallback must pass.
+ *
+ * The store id is a single unscoped value that can still hold another
+ * conversation's planner right after a navigation; unless we verify its owner
+ * and phase, a fallback would route messages into a planner pinned to a
+ * different document (or another conversation entirely).
+ *
+ * `recordedPhase` is the phase the store stamped when it wrote the id (the
+ * store's `deepPlanPlannerPhase`; `null` for a plain planner). The fetched
+ * `plannerparent` tag is authoritative when present; otherwise the id is trusted
+ * only when its recorded phase matches and the list holds no planner for that
+ * phase that would contradict it.
+ */
+export function isFallbackPlannerId(
+  subConversations: (AppConversation | null)[] | null | undefined,
+  parentConversationId: string | null | undefined,
+  localPlanningConversationId: string | null | undefined,
+  phase: DeepPlanPhaseId | null,
+  recordedPhase: DeepPlanPhaseId | null,
+): boolean {
+  if (!parentConversationId || !localPlanningConversationId) return false;
+  const planners = (subConversations ?? []).filter(
+    (sub): sub is AppConversation =>
+      sub !== null && isPlannerConversationOf(sub, parentConversationId),
+  );
+  const match = planners.find((sub) => sub.id === localPlanningConversationId);
+  if (match) return plannerPhaseOf(match) === phase;
+  // The tagged child is not in the fetched list. Trust the store id only when
+  // it was recorded for this exact phase and no listed planner claims that
+  // phase — a deep-plan phase must be proven, never assumed.
+  return (
+    recordedPhase === phase &&
+    !planners.some((sub) => plannerPhaseOf(sub) === phase)
   );
 }

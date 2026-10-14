@@ -1,0 +1,464 @@
+/**
+ * Reference-chain validator for Deep Planning (#17819).
+ *
+ * Documents in the chain cite upstream sections inline as `[Req 3.1]`,
+ * `[DB 2.1]`, `[BE 4.2]`, `[FE 1.1]`. A chain is valid when every citation
+ * resolves to a section that actually exists in an *upstream* document, and
+ * every requirement is picked up by at least one task.
+ *
+ * Kept pure (no React, no store) so it can be unit-tested in both directions —
+ * a validator that only ever returns `ok` would be indistinguishable from one
+ * that is not running at all.
+ */
+
+import {
+  DEEP_PLAN_LABEL_TO_PHASE,
+  DEEP_PLAN_PHASE_IDS,
+  DEEP_PLAN_PHASES,
+  type DeepPlanLabel,
+  type DeepPlanPhaseId,
+  upstreamPhasesOf,
+} from "#/utils/deep-plan";
+
+export type RefIssueReason =
+  /** The cited section does not exist in the upstream document. */
+  | "dangling"
+  /** The cited label belongs to a phase that is not upstream of this document. */
+  | "not-upstream"
+  /** The cited label has no document in the chain at all. */
+  | "missing-document";
+
+export interface RefIssue {
+  /** Document the bad citation appears in. */
+  from: DeepPlanPhaseId;
+  /** The citation as written, e.g. `DB 2.5.1`. */
+  ref: string;
+  reason: RefIssueReason;
+}
+
+export interface RefReport {
+  ok: boolean;
+  issues: RefIssue[];
+  /** Requirements sections no task cites. */
+  uncovered: string[];
+}
+
+/**
+ * One scan shared by validation and rendering, so the two can never disagree
+ * about what a citation is. Alternatives, in order:
+ *
+ *  1. A verbatim span: fenced code (``` / ~~~) or an inline code span. A
+ *     citation-looking marker inside one is an illustrative example.
+ *  2. A Markdown link whose whole label is a citation — `[Req 3.1](https://…)`.
+ *     The label is a real reference the validator must check, but the link is
+ *     authored markup, so it must stay as written when rendering.
+ *  3. Any other Markdown link. A citation-looking marker nested in its text is
+ *     part of the link, not a dependency.
+ *  4. A bare citation in prose — `[Req 3.1]`.
+ *
+ * Whether alternative 2 is actually a link is decided by
+ * {@link isImageOrEscapedLink} from the match's surrounding bytes: the same
+ * bracket-and-parenthesis shape also spells image alt text (`![Req 3.1](url)`)
+ * and escaped markup (`\[Req 3.1](url)`), and Markdown backslash parity means
+ * that cannot be told from the matched text alone.
+ *
+ * Groups: 1 code span, 2/3 direct-link label/section, 4 other link,
+ * 5/6 prose label/section.
+ */
+const CITATION_OR_PROTECTED =
+  /(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`)|\[(Req|DB|BE|FE)\s+([0-9]+(?:\.[0-9]+)*)\]\([^)\n]*\)|(\[(?:[^[\]\n]|\[[^\]\n]*\])*\]\([^)\n]*\))|\[(Req|DB|BE|FE)\s+([0-9]+(?:\.[0-9]+)*)\]/g;
+
+/**
+ * Counts the backslashes immediately before `index`. Markdown escapes by
+ * backslash parity: a run of n backslashes escapes the next character only
+ * when n is odd.
+ */
+function backslashesBefore(content: string, index: number): number {
+  let count = 0;
+  let i = index - 1;
+  while (i >= 0 && content[i] === "\\") {
+    count += 1;
+    i -= 1;
+  }
+  return count;
+}
+
+/**
+ * Whether the citation link starting at `index` is image alt text or escaped
+ * markup rather than a real link.
+ *
+ * `\[Req 3.1](url)` renders a literal bracket (an odd backslash count escapes
+ * it); `\\[Req 3.1](url)` renders a backslash followed by a real link (even
+ * count). The same parity applies to the `!` that makes image syntax:
+ * `\![Req 3.1](url)` renders `!` then a real link, while `\\![Req 3.1](url)`
+ * renders a backslash then an image.
+ */
+function isImageOrEscapedLink(content: string, index: number): boolean {
+  const backslashes = backslashesBefore(content, index);
+  if (backslashes % 2 === 1) return true;
+  if (backslashes > 0) return false;
+  const bangIndex = index - 1;
+  if (bangIndex < 0 || content[bangIndex] !== "!") return false;
+  return backslashesBefore(content, bangIndex) % 2 === 0;
+}
+
+const HEADING_PATTERN = /^#{1,6}\s+(.*)$/;
+/**
+ * An inline Markdown delimiter that may wrap a heading's leading section
+ * number: bold (`**`/`__`), italic (`*`/`_`) or a code span (`` ` ``).
+ */
+const LEADING_MARKDOWN_WRAPPER = /^(\*\*|__|\*|_|`)/;
+/**
+ * A heading that leads with its section number, e.g. `## 3.1 Authentication`
+ * defines `3.1`. Only a *leading* number counts, and it must be a standalone
+ * number: a title like `## 3.1 Response under 200 ms` defines `3.1`, not
+ * `200`, and `## Version 1.2` defines nothing.
+ *
+ * The number must not be glued to a following letter or digit — the packed
+ * number already consumes every `.digit` group, so this rejects `## 3D Rendering`
+ * and `## 3.1beta Authentication`, which are words rather than sections. It must
+ * also not be continued by punctuation that keeps building a numeric
+ * expression: `## 3,000 concurrent users` (a quantity) and `## 3-4 servers`
+ * (a range) define nothing. The lookahead `(?:[,./-]?\d)` rejects a digit that
+ * follows a numeric separator, and also blocks the engine from backtracking to
+ * a shorter number and treating the dot of a larger one (`3.1beta` → `3`) as a
+ * delimiter. Any real delimiter is fine: whitespace, the end of the heading, a
+ * supported closing Markdown marker (`*`/`_`/`` ` ``, left by unwrapping a
+ * wrapped number) or section separators such as `## 3.1: Authentication`,
+ * `## 3.1) Authentication` and `## 3. Response`. Unicode-aware, so a non-ASCII
+ * letter also blocks the number.
+ */
+const LEADING_NUMBER_HEADING =
+  /^([0-9]+(?:\.[0-9]+)*)(?![\p{L}\p{N}]|[,./-]?\d)/u;
+/**
+ * A heading that leads with its label and the section number, e.g.
+ * `## Req 1.1 — Resource exposure`. The live planner writes upstream references
+ * this way (a bare, unbracketed label). The label is captured with the number
+ * so a definition can be attributed to the phase that owns that label — a
+ * database document heading `## Req 1.1 …` is *citing* a requirement, not
+ * defining a DB section, so it must not register `1.1` under the database
+ * phase. The number keeps the same trailing guard as the leading-number form so
+ * a word (`## Req 1.1beta`) or a longer number (`## Req 1.12`) is not sliced.
+ */
+const LEADING_LABEL_HEADING =
+  /^(Req|DB|BE|FE)\s+([0-9]+(?:\.[0-9]+)*)(?![\p{L}\p{N}]|[,./-]?\d)/u;
+/**
+ * A heading that spells its own label out at the start, e.g.
+ * `## [Req 3.1] Users` — the citation *is* the section number here.
+ */
+const OWN_LABEL_HEADING = /^\[(?:Req|DB|BE|FE)\s+([0-9]+(?:\.[0-9]+)*)\]/;
+
+const PHASE_OWNS_LABEL = (
+  phase: DeepPlanPhaseId,
+  label: DeepPlanLabel,
+): boolean => DEEP_PLAN_LABEL_TO_PHASE[label] === phase;
+
+export type DeepPlanDocuments = Partial<Record<DeepPlanPhaseId, string>>;
+
+/**
+ * The section number a heading defines, or `null` when it defines none.
+ *
+ * A heading leads with its number (`## 3.1 Authentication` defines `3.1`), leads
+ * with its own label (`## Req 3.1 Authentication` inside `requirements.md`), or
+ * spells its own label out (`## [Req 3.1] Authentication`). Only a *leading*
+ * number counts, so prose numbers (`## 3.1 Response under 200 ms` → `3.1`, not
+ * `200`) and version-like titles (`## Version 1.2` → nothing) are ignored.
+ *
+ * `ownPhase` is the phase the document belongs to, when known. A label-leading
+ * heading is a definition only when the label is that phase's own — in a design
+ * document `## Req 3.1 …` is a citation of an upstream section, not a section
+ * this document defines, and counting it would let a downstream `[DB 3.1]`
+ * resolve against a database section that does not exist. Without an owning
+ * phase (the renderer, or a bare title) the label-leading form defines nothing;
+ * the leading-number and bracketed forms are unambiguous and always count.
+ *
+ * Shared by {@link extractDefinedSections} and the document-chain renderer so
+ * both agree on which sections exist.
+ */
+export function definedSectionOfHeading(
+  rawTitle: string,
+  ownPhase?: DeepPlanPhaseId,
+): string | null {
+  const title = stripClosedWrapper(rawTitle.trimStart());
+  const leadingNumber = LEADING_NUMBER_HEADING.exec(title);
+  if (leadingNumber) return leadingNumber[1];
+  const leadingLabel = LEADING_LABEL_HEADING.exec(title);
+  if (
+    leadingLabel &&
+    ownPhase !== undefined &&
+    PHASE_OWNS_LABEL(ownPhase, leadingLabel[1] as DeepPlanLabel)
+  ) {
+    return leadingLabel[2];
+  }
+  const ownLabel = OWN_LABEL_HEADING.exec(title);
+  if (ownLabel) return ownLabel[1];
+  return null;
+}
+
+/** The section number a single line defines, or `null` when it is not a heading. */
+export function sectionHeadingOfLine(
+  line: string,
+  ownPhase?: DeepPlanPhaseId,
+): string | null {
+  const heading = HEADING_PATTERN.exec(line);
+  if (!heading) return null;
+  return definedSectionOfHeading(heading[1], ownPhase);
+}
+
+/**
+ * Strips leading inline Markdown delimiters so the leading-token check sees the
+ * rendered heading. A delimiter is only a wrapper when it actually forms a span
+ * under Markdown's closing rules: a code span closes at the next backtick, and
+ * an emphasis marker closes only at a right-flanking run — one preceded by a
+ * non-whitespace character — and at the *first* later run, since an inner span
+ * binds first. This rejects a literal marker followed by separate emphasis,
+ * e.g. `## *3.1 Authentication *notes*`, where the leading `*` cannot pair with
+ * the `*` before `notes` and so stays visible. An unmatched marker
+ * (`## *3.1 Authentication`) is likewise shown literally and not stripped.
+ */
+function stripClosedWrapper(title: string): string {
+  let visible = title;
+  for (;;) {
+    const marker = LEADING_MARKDOWN_WRAPPER.exec(visible)?.[1];
+    if (!marker) return visible;
+    const rest = visible.slice(marker.length);
+    const closesAt = rest.indexOf(marker);
+    if (closesAt <= 0) return visible;
+    // A code span ignores flanking; an emphasis closer must not be preceded by
+    // whitespace.
+    if (marker !== "`" && /\s/.test(rest[closesAt - 1])) return visible;
+    visible = rest;
+  }
+}
+
+/**
+ * Section numbers a document defines, taken from its numbered headings
+ * (`## 3.1 Authentication` defines `3.1`; `### 3.1.1 Login` defines `3.1.1`).
+ * Only a number that *leads* the heading is a definition, so prose numbers in
+ * a title (`## 3.1 Response under 200 ms` → `3.1`, not `200`) and version-like
+ * titles (`## Version 1.2` → nothing) are ignored. A supported inline Markdown
+ * wrapper — around the number (`## **3.1** Authentication`) or the whole title
+ * (`## **3.1 Authentication**`) — does not hide it, since the rendered heading
+ * still starts with the number; an unmatched marker stays literal and defines
+ * nothing.
+ *
+ * A heading may instead spell its own label out (`## [Req 3.1] Authentication`),
+ * in which case the leading citation is the definition, or lead with the label
+ * and number (`## Req 3.1 — Authentication`). The label-leading form counts only
+ * when `ownPhase` says the document owns that label, so a design document cannot
+ * register an upstream section (`## Req 3.1 …` in `database-design.md`) as one of
+ * its own. An unnumbered heading that merely cites upstream (`## Users
+ * [Req 3.1]`) defines nothing — counting it would let a downstream `[DB 3.1]`
+ * resolve against a section this document never defines.
+ */
+export function extractDefinedSections(
+  content: string,
+  ownPhase?: DeepPlanPhaseId,
+): Set<string> {
+  const sections = new Set<string>();
+  for (const line of content.split("\n")) {
+    const section = sectionHeadingOfLine(line, ownPhase);
+    if (section !== null) sections.add(section);
+  }
+  return sections;
+}
+
+/**
+ * Every citation in a document's prose, in order of appearance. A citation
+ * written inside code (an example marker such as `` `[Req 9.9]` ``) or nested
+ * in another Markdown link's text is skipped: those spans are illustrative, not
+ * dependencies, so counting them would reject a checkpoint the planner never
+ * meant to fail. A link whose whole label is a citation is still a reference —
+ * the label names a section the chain must check — so it is counted here even
+ * though `linkifyCitations` leaves the authored link untouched.
+ */
+export function extractReferences(
+  content: string,
+): { label: DeepPlanLabel; section: string }[] {
+  const refs: { label: DeepPlanLabel; section: string }[] = [];
+  for (const match of content.matchAll(CITATION_OR_PROTECTED)) {
+    const directLabel = match[2] as DeepPlanLabel | undefined;
+    const directSection = match[3];
+    if (directLabel !== undefined && directSection !== undefined) {
+      if (!isImageOrEscapedLink(content, match.index ?? 0)) {
+        refs.push({ label: directLabel, section: directSection });
+      }
+      continue;
+    }
+    const label = match[5] as DeepPlanLabel | undefined;
+    const section = match[6];
+    if (label === undefined || section === undefined) continue;
+    refs.push({ label, section });
+  }
+  return refs;
+}
+
+/**
+ * Custom URL scheme for citation links. A scheme (rather than an in-page `#`
+ * fragment) keeps a citation from resolving against the host page's own URL;
+ * the renderer's anchor handler intercepts it and scrolls to the cited
+ * document in the chain.
+ */
+export const DEEP_PLAN_CITATION_SCHEME = "deep-plan-doc:";
+
+/** DOM id of a document's wrapper in the chain. */
+export const deepPlanDocumentId = (phase: DeepPlanPhaseId): string =>
+  `deep-plan-document-${phase}`;
+
+/** DOM id of a cited section heading within a phase document. */
+export const deepPlanSectionId = (
+  phase: DeepPlanPhaseId,
+  section: string,
+): string => `deep-plan-section-${phase}-${section}`;
+
+/** The `deep-plan-doc:<phase>#<section>` href a citation link carries. */
+export const deepPlanCitationHref = (
+  phase: DeepPlanPhaseId,
+  section: string,
+): string => `${DEEP_PLAN_CITATION_SCHEME}${phase}#${section}`;
+
+/** Parse a citation href back to its target; `null` when it is not one. */
+export function parseDeepPlanCitation(
+  href: string | undefined,
+): { phase: DeepPlanPhaseId; section: string } | null {
+  if (!href?.startsWith(DEEP_PLAN_CITATION_SCHEME)) return null;
+  const rest = href.slice(DEEP_PLAN_CITATION_SCHEME.length);
+  const hash = rest.indexOf("#");
+  const phase = (hash === -1 ? rest : rest.slice(0, hash)) as DeepPlanPhaseId;
+  if (!DEEP_PLAN_PHASE_IDS.includes(phase)) return null;
+  return { phase, section: hash === -1 ? "" : rest.slice(hash + 1) };
+}
+
+/**
+ * Rewrites every real citation in `content` into a Markdown link that targets
+ * the document and section that owns the cited label. A citation the validator
+ * would reject (`not-upstream`, or the document's own label, which is a
+ * self-definition rather than a dependency) is left untouched, so the chain
+ * only offers links the checkpoint agrees are valid.
+ */
+export function linkifyCitations(
+  content: string,
+  from: DeepPlanPhaseId,
+): string {
+  const upstream = new Set(upstreamPhasesOf(from));
+  return content.replace(
+    CITATION_OR_PROTECTED,
+    (
+      match,
+      codeSpan: string | undefined,
+      directLabel: DeepPlanLabel | undefined,
+      _directSection: string | undefined,
+      otherLink: string | undefined,
+      label: DeepPlanLabel | undefined,
+      section: string | undefined,
+    ) => {
+      // Code spans and any link the author already wrote stay exactly as they
+      // are; only a bare prose citation is rewritten into a chain link.
+      if (
+        codeSpan !== undefined ||
+        directLabel !== undefined ||
+        otherLink !== undefined
+      )
+        return match;
+      if (label === undefined || section === undefined) return match;
+      const target = DEEP_PLAN_LABEL_TO_PHASE[label];
+      if (target === from) return match;
+      if (!upstream.has(target)) return match;
+      return `[${match}](${deepPlanCitationHref(target, section)})`;
+    },
+  );
+}
+
+export function validateDocumentChain(
+  documents: DeepPlanDocuments,
+  /**
+   * Only validate documents up to and including this phase. A checkpoint
+   * validates the document it is confirming; later documents are validated at
+   * their own checkpoints. Validating the whole chain here would let a stale
+   * citation in a document the user has not reached block an upstream
+   * reconfirmation they have no way to repair from that checkpoint.
+   */
+  throughPhase?: DeepPlanPhaseId,
+): RefReport {
+  const issues: RefIssue[] = [];
+  const sectionsByPhase = new Map<DeepPlanPhaseId, Set<string>>();
+
+  const lastIndex = throughPhase
+    ? DEEP_PLAN_PHASE_IDS.indexOf(throughPhase)
+    : DEEP_PLAN_PHASE_IDS.length - 1;
+
+  for (const phase of DEEP_PLAN_PHASES) {
+    const content = documents[phase.id];
+    if (content !== undefined) {
+      sectionsByPhase.set(phase.id, extractDefinedSections(content, phase.id));
+    }
+  }
+
+  for (const phase of DEEP_PLAN_PHASES) {
+    const content = documents[phase.id];
+    if (content === undefined) continue;
+    if (DEEP_PLAN_PHASE_IDS.indexOf(phase.id) > lastIndex) continue;
+
+    const upstream = new Set(upstreamPhasesOf(phase.id));
+
+    for (const { label, section } of extractReferences(content)) {
+      const ref = `${label} ${section}`;
+      const target = DEEP_PLAN_LABEL_TO_PHASE[label];
+
+      // A document citing its own label is spelling out a section it defines
+      // (`### 3.1 Create Endpoint [Req 3.1]`, `## [Req 3.1] Users`), not
+      // depending on an upstream phase. `extractDefinedSections` already takes
+      // the definition from that same heading, so validating the label again
+      // would only re-derive it — and, because requirements has no upstream at
+      // all, every self-label would otherwise read as `not-upstream` and block
+      // the checkpoint meant to confirm the very sections it names.
+      //
+      // A self-label that names a section the document never defines is still a
+      // broken citation, though: `[DB 9.9]` in a body that has no `9.9` heading
+      // must be reported rather than waved through as a self-definition.
+      if (target === phase.id) {
+        if (!sectionsByPhase.get(phase.id)?.has(section)) {
+          issues.push({ from: phase.id, ref, reason: "dangling" });
+        }
+        continue;
+      }
+
+      if (!upstream.has(target)) {
+        issues.push({ from: phase.id, ref, reason: "not-upstream" });
+        continue;
+      }
+
+      const defined = sectionsByPhase.get(target);
+      if (!defined) {
+        issues.push({ from: phase.id, ref, reason: "missing-document" });
+        continue;
+      }
+
+      if (!defined.has(section)) {
+        issues.push({ from: phase.id, ref, reason: "dangling" });
+      }
+    }
+  }
+
+  // Requirements coverage: every requirement section must be cited by a task.
+  // Only meaningful once the tasks document is inside the validated range;
+  // before that, "uncovered" would flag requirements the user simply has not
+  // written tasks for yet.
+  const uncovered: string[] = [];
+  const requirementSections = sectionsByPhase.get("requirements");
+  const tasks = documents.tasks;
+  const tasksInRange = DEEP_PLAN_PHASE_IDS.indexOf("tasks") <= lastIndex;
+  if (requirementSections && tasks !== undefined && tasksInRange) {
+    const citedByTasks = new Set(
+      extractReferences(tasks)
+        .filter((ref) => ref.label === "Req")
+        .map((ref) => ref.section),
+    );
+    for (const section of requirementSections) {
+      if (!citedByTasks.has(section)) uncovered.push(section);
+    }
+    uncovered.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  }
+
+  return { ok: issues.length === 0, issues, uncovered };
+}

@@ -177,6 +177,26 @@ describe("MarkdownRenderer", () => {
     expect(container.textContent).toContain("world");
   });
 
+  it("drops a custom scheme unless it is explicitly allowed", () => {
+    const md = "[cite](deep-plan-doc:requirements)";
+    const { container } = render(<MarkdownRenderer>{md}</MarkdownRenderer>);
+    const href = container.querySelector("a")?.getAttribute("href");
+    expect(href).not.toBe("deep-plan-doc:requirements");
+  });
+
+  it("keeps an explicitly allowed extra href protocol through both the URL transform and the sanitizer", () => {
+    const md = "[cite](deep-plan-doc:requirements)";
+    const { container } = render(
+      <MarkdownRenderer extraHrefProtocols={["deep-plan-doc"]}>
+        {md}
+      </MarkdownRenderer>,
+    );
+    expect(container.querySelector("a")?.getAttribute("href")).toBe(
+      "deep-plan-doc:requirements",
+    );
+  });
+
+
   describe("GitHub-style alert blockquotes", () => {
     const ALERT_CASES: Array<{ marker: string; label: string }> = [
       { marker: "NOTE", label: "Note" },

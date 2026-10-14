@@ -7,6 +7,12 @@ import { ComboboxCaretInline } from "#/ui/combobox-caret";
 import LessonPlanIcon from "#/icons/lesson-plan.svg?react";
 import { CodePillIcon } from "#/icons/code-pill";
 import { useConversationStore } from "#/stores/conversation-store";
+import {
+  CONVERSATION_MODE_CYCLE,
+  CONVERSATION_MODE_LABEL_KEYS,
+} from "#/utils/constants";
+import { isDeepPlanSupported } from "#/utils/deep-plan";
+import { useActiveBackend } from "#/contexts/active-backend-context";
 import { ChangeAgentContextMenu } from "./change-agent-context-menu";
 import { cn } from "#/utils/utils";
 import {
@@ -25,8 +31,12 @@ import { StyledTooltip } from "#/components/shared/buttons/styled-tooltip";
 export function ChangeAgentButton() {
   const [contextMenuOpen, setContextMenuOpen] = useState<boolean>(false);
 
-  const { conversationMode, setConversationMode, subConversationTaskId } =
-    useConversationStore();
+  const {
+    conversationMode,
+    setConversationMode,
+    subConversationTaskId,
+    startDeepPlan,
+  } = useConversationStore();
 
   const { conversationId } = useOptionalConversationId();
 
@@ -39,6 +49,11 @@ export function ChangeAgentButton() {
   const { curAgentState } = useAgentState();
 
   const { t } = useTranslation("openhands");
+  const { backend } = useActiveBackend();
+  // Deep Planning provisions a per-phase local planner, so it is only offered
+  // on local backends. On Cloud it is skipped in the Shift+Tab cycle and its
+  // menu entry is hidden (the context menu receives the same gate below).
+  const deepPlanSupported = isDeepPlanSupported(backend.kind);
 
   const isAgentRunning = curAgentState === AgentState.RUNNING;
 
@@ -108,10 +123,17 @@ export function ChangeAgentButton() {
         event.preventDefault();
         event.stopPropagation();
 
-        // Cycle between modes: code -> plan -> code
-        const nextMode = conversationMode === "code" ? "plan" : "code";
+        // Cycle through modes: code -> plan -> deep-plan -> code. Deep Plan is
+        // skipped on Cloud, where it cannot be provisioned.
+        const cycle = CONVERSATION_MODE_CYCLE[conversationMode];
+        const nextMode =
+          cycle === "deep-plan" && !deepPlanSupported
+            ? CONVERSATION_MODE_CYCLE["deep-plan"]
+            : cycle;
         if (nextMode === "plan") {
           handlePlanClick(event);
+        } else if (nextMode === "deep-plan") {
+          startDeepPlan();
         } else {
           setConversationMode(nextMode);
         }
@@ -128,6 +150,8 @@ export function ChangeAgentButton() {
     conversationMode,
     setConversationMode,
     handlePlanClick,
+    startDeepPlan,
+    deepPlanSupported,
   ]);
 
   const handleButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -142,14 +166,18 @@ export function ChangeAgentButton() {
     setConversationMode("code");
   };
 
+  const handleDeepPlanClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    startDeepPlan();
+  };
+
   const isExecutionAgent = conversationMode === "code";
 
-  const buttonLabel = useMemo(() => {
-    if (isExecutionAgent) {
-      return t(I18nKey.COMMON$CODE);
-    }
-    return t(I18nKey.COMMON$PLAN);
-  }, [isExecutionAgent, t]);
+  const buttonLabel = useMemo(
+    () => t(I18nKey[CONVERSATION_MODE_LABEL_KEYS[conversationMode]]),
+    [conversationMode, t],
+  );
 
   const buttonIcon = useMemo(() => {
     if (isExecutionAgent) {
@@ -197,6 +225,8 @@ export function ChangeAgentButton() {
           onClose={() => setContextMenuOpen(false)}
           onCodeClick={handleCodeClick}
           onPlanClick={handlePlanClick}
+          onDeepPlanClick={handleDeepPlanClick}
+          showDeepPlan={deepPlanSupported}
         />
       )}
     </div>

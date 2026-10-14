@@ -1,5 +1,9 @@
 import React from "react";
-import Markdown, { Components } from "react-markdown";
+import Markdown, {
+  Components,
+  UrlTransform,
+  defaultUrlTransform,
+} from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
@@ -117,6 +121,14 @@ interface MarkdownRendererProps {
    * blocks, anchor targets, etc.).
    */
   allowHtml?: boolean;
+  /**
+   * Additional URL schemes to permit on links, beyond the defaults
+   * (`http`, `https`, `mailto`, `tel`). Both react-markdown's URL transform
+   * and the sanitize schema are extended, so an authored link with this
+   * scheme survives to the DOM. The scheme must carry no remote fetch; the
+   * caller is responsible for intercepting it.
+   */
+  extraHrefProtocols?: string[];
 }
 
 /**
@@ -139,6 +151,7 @@ function MarkdownRendererComponent({
   includeStandard = false,
   includeHeadings = false,
   allowHtml = true,
+  extraHrefProtocols,
 }: MarkdownRendererProps) {
   // Build the components object with defaults and optional additions
   const components: Components = {
@@ -171,9 +184,35 @@ function MarkdownRendererComponent({
   // `rehype-raw` parses raw HTML embedded in the markdown into the rehype
   // tree. `rehype-sanitize` then strips anything dangerous (scripts,
   // event handlers, `javascript:` URLs, etc.). The order matters: sanitize
-  // must run *after* raw so it sees the parsed HTML nodes.
+  // must run *after* raw so it sees the parsed HTML nodes. Extra href
+  // protocols are layered onto the schema so an authorized custom scheme
+  // survives.
+  const sanitizeSchema: Schema = extraHrefProtocols?.length
+    ? {
+        ...MARKDOWN_SANITIZE_SCHEMA,
+        protocols: {
+          ...MARKDOWN_SANITIZE_SCHEMA.protocols,
+          href: [
+            ...(MARKDOWN_SANITIZE_SCHEMA.protocols?.href ?? []),
+            ...extraHrefProtocols,
+          ],
+        },
+      }
+    : MARKDOWN_SANITIZE_SCHEMA;
   const rehypePlugins: PluggableList | undefined = allowHtml
-    ? [rehypeRaw, [rehypeSanitize, MARKDOWN_SANITIZE_SCHEMA]]
+    ? [rehypeRaw, [rehypeSanitize, sanitizeSchema]]
+    : undefined;
+
+  // react-markdown applies `defaultUrlTransform` before sanitize and drops any
+  // scheme outside its own allowlist, so an authorized custom scheme has to be
+  // added there too.
+  const urlTransform: UrlTransform | undefined = extraHrefProtocols?.length
+    ? (url) => {
+        if (extraHrefProtocols.some((proto) => url.startsWith(`${proto}:`))) {
+          return url;
+        }
+        return defaultUrlTransform(url);
+      }
     : undefined;
 
   return (
@@ -182,6 +221,7 @@ function MarkdownRendererComponent({
         components={components}
         remarkPlugins={[remarkGithubAlerts, remarkGfm, remarkBreaks]}
         rehypePlugins={rehypePlugins}
+        urlTransform={urlTransform}
       >
         {markdownContent}
       </Markdown>

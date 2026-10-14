@@ -29,6 +29,7 @@ const mocks = vi.hoisted(() => ({
     },
   ),
   invalidateQueries: vi.fn(),
+  backendKind: "local" as "local" | "cloud",
 }));
 
 vi.mock("#/components/shared/buttons/styled-tooltip", () => ({
@@ -59,7 +60,12 @@ vi.mock("#/icons/code-pill", () => ({
 }));
 
 vi.mock("#/hooks/use-unified-websocket-status", () => ({
+  useMainWebSocketStatus: () => mocks.webSocketStatus,
   useUnifiedWebSocketStatus: () => mocks.webSocketStatus,
+}));
+
+vi.mock("#/contexts/active-backend-context", () => ({
+  useActiveBackend: () => ({ backend: { kind: mocks.backendKind } }),
 }));
 
 vi.mock("#/hooks/use-agent-state", () => ({
@@ -118,6 +124,7 @@ type RenderOverrides = {
   isCreatingConversation?: boolean;
   taskStatus?: string;
   subConversationId?: string;
+  backendKind?: "local" | "cloud";
 };
 
 function renderButton(overrides: RenderOverrides = {}) {
@@ -135,6 +142,7 @@ function renderButton(overrides: RenderOverrides = {}) {
   mocks.taskStatus = overrides.taskStatus;
   mocks.subConversationId = overrides.subConversationId;
   mocks.isCreatingConversation = overrides.isCreatingConversation ?? false;
+  mocks.backendKind = overrides.backendKind ?? "local";
 
   useConversationStore.setState({
     conversationMode: overrides.conversationMode ?? "code",
@@ -159,7 +167,7 @@ function renderButton(overrides: RenderOverrides = {}) {
 
 function getModeButton() {
   return screen.getByRole("button", {
-    name: /COMMON\$(CODE|PLAN)/,
+    name: /COMMON\$(CODE|PLAN|DEEP_PLAN)/,
   });
 }
 
@@ -347,8 +355,55 @@ describe("ChangeAgentButton mode selection", () => {
     });
 
     expect(codeEvent.defaultPrevented).toBe(true);
+    await waitFor(() => {
+      expect(getModeButton()).toHaveTextContent("COMMON$DEEP_PLAN");
+    });
+    expect(mocks.handlePlanClick).toHaveBeenCalledTimes(1);
+
+    const wrapEvent = new KeyboardEvent("keydown", {
+      key: "Tab",
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    act(() => {
+      document.dispatchEvent(wrapEvent);
+    });
+
+    expect(wrapEvent.defaultPrevented).toBe(true);
     expect(getModeButton()).toHaveTextContent("COMMON$CODE");
     expect(mocks.handlePlanClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("skips the Deep Plan step in the Shift+Tab cycle on Cloud", async () => {
+    // Cloud cannot provision Deep Planning; the cycle goes code -> plan -> code
+    // rather than offering a mode that cannot produce its documents.
+    renderButton({ conversationMode: "plan", backendKind: "cloud" });
+
+    const cycleEvent = new KeyboardEvent("keydown", {
+      key: "Tab",
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    act(() => {
+      document.dispatchEvent(cycleEvent);
+    });
+
+    await waitFor(() => {
+      expect(getModeButton()).toHaveTextContent("COMMON$CODE");
+    });
+    expect(getModeButton()).not.toHaveTextContent("COMMON$DEEP_PLAN");
+  });
+
+  it("hides the Deep Plan menu entry on Cloud", async () => {
+    const user = userEvent.setup();
+    renderButton({ backendKind: "cloud" });
+
+    await user.click(getModeButton());
+
+    expect(screen.queryByTestId("deep-plan-option")).toBeNull();
+    expect(screen.getByTestId("code-option")).toBeInTheDocument();
   });
 });
 

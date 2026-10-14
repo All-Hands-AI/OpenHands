@@ -39,6 +39,8 @@ import { ContextMenu } from "#/ui/context-menu";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { useCloseOnEscape } from "#/hooks/use-close-on-escape";
 import { cn } from "#/utils/utils";
+import { CONVERSATION_MODE_LABEL_KEYS } from "#/utils/constants";
+import { isDeepPlanSupported } from "#/utils/deep-plan";
 import { useComposerDockedMinimal } from "#/context/composer-docked-context";
 import {
   chatInputIconButtonClassName,
@@ -76,7 +78,10 @@ export function ChatInputActions({
   const resumeConversationMutation = useResumeConversation();
   const { conversationId } = useOptionalConversationId();
   const { backend } = useActiveBackend();
-  const isCloud = backend.kind === "cloud";
+  // Deep Planning provisions a per-phase local planner, so its entry points
+  // are hidden on Cloud rather than offering a mode that can never produce
+  // its documents (see `isDeepPlanSupported`).
+  const deepPlanSupported = isDeepPlanSupported(backend.kind);
   const modelState = useChatInputModelState();
   const llmProfileState = useChatInputLlmProfileState();
   // Agent-profile switching lives in the "+" tools menu while the conversation
@@ -91,12 +96,18 @@ export function ChatInputActions({
     isPreStart &&
     !(conversationId?.startsWith("task-") ?? false) &&
     (agentProfilesForStart.data?.profiles?.length ?? 0) > 0;
-  // Code/Plan mode switching is a cloud OpenHands feature — it doesn't apply
-  // to ACP conversations (which have no "plan" mode), so hide it when ACP.
-  const showChangeAgentButton = isCloud && !modelState.isAcpContext;
+  // Code/Plan/Deep-Plan mode switching. It does not apply to ACP
+  // conversations (which have no "plan" mode), so hide it when ACP. The
+  // switcher mounts on every non-ACP backend so Deep Planning — which is
+  // Local-only (`isDeepPlanSupported`, its planner is a local conversation) —
+  // is actually reachable through Shift+Tab / the context menu / the overflow
+  // submenu, not just `/deep-plan`. `deepPlanSupported` hides only the Deep
+  // Plan entries on Cloud, where the mode cannot be provisioned.
+  const showChangeAgentButton = !modelState.isAcpContext;
   const webSocketStatus = useUnifiedWebSocketStatus();
   const { curAgentState } = useAgentState();
-  const { conversationMode, setConversationMode } = useConversationStore();
+  const { conversationMode, setConversationMode, startDeepPlan } =
+    useConversationStore();
   const { handlePlanClick, isCreatingConversation } = useHandlePlanClick();
 
   const actionsRowRef = React.useRef<HTMLDivElement>(null);
@@ -344,11 +355,7 @@ export function ChatInputActions({
           >
             <ToolsContextMenuIconText
               icon={<CodePillIcon className="h-2.75 w-2.75" />}
-              text={
-                conversationMode === "code"
-                  ? t(I18nKey.COMMON$CODE)
-                  : t(I18nKey.COMMON$PLAN)
-              }
+              text={t(I18nKey[CONVERSATION_MODE_LABEL_KEYS[conversationMode]])}
               rightIcon={<CarretRightFillIcon width={10} height={10} />}
             />
           </ContextMenuListItem>
@@ -398,6 +405,28 @@ export function ChatInputActions({
                     text={t(I18nKey.COMMON$PLAN)}
                   />
                 </ContextMenuListItem>
+                {deepPlanSupported && (
+                  <ContextMenuListItem
+                    testId="overflow-agent-deep-plan"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      startDeepPlan();
+                      closeOverflowMenus();
+                    }}
+                  >
+                    <ToolsContextMenuIconText
+                      icon={
+                        <LessonPlanIcon
+                          width={16}
+                          height={16}
+                          color="currentColor"
+                        />
+                      }
+                      text={t(I18nKey.COMMON$DEEP_PLAN)}
+                    />
+                  </ContextMenuListItem>
+                )}
               </ContextMenu>
             </div>
           )}

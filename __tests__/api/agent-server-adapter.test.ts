@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MockInstance } from "vitest";
-import { getAcpProvider as getClientAcpProvider } from "@openhands/typescript-client";
+import {
+  getAcpProvider as getClientAcpProvider,
+  HookType,
+} from "@openhands/typescript-client";
 import { CANVAS_UI_CLIENT_TOOL_NAME } from "#/constants/canvas-ui";
 import { LAUNCH_CHILD_CONVERSATION_TOOL_NAME } from "#/constants/child-conversation";
 import { REQUEST_SECRET_TOOL_NAME } from "#/constants/secret-request";
@@ -11,6 +14,7 @@ import {
   AGENT_CANVAS_SOURCE,
   CLIENT_SOURCE_TAG_KEY,
   buildRuntimeServicesSystemSuffix,
+  buildStartPlanningConversationRequest,
   buildStartConversationRequest,
   buildStartConversationRequestWithEncryptedSettings,
   fetchBackendExecutionRuntime,
@@ -26,7 +30,6 @@ import {
   removeStoredConversationMetadata,
   setStoredConversationMetadata,
 } from "#/api/conversation-metadata-store";
-import { HookType } from "@openhands/typescript-client";
 import type { HookConfig } from "@openhands/typescript-client";
 import { ACP_VERTEX_SAFE_MODEL } from "#/constants/acp-providers";
 import { DEFAULT_SETTINGS } from "#/services/settings";
@@ -2248,6 +2251,115 @@ describe("buildStartConversationRequestWithEncryptedSettings", () => {
     expect(
       payload.agent_settings?.agent_context?.system_message_suffix ?? "",
     ).not.toContain("ROUTE_AT_CONVERSATION_START");
+  });
+});
+
+describe("buildStartPlanningConversationRequest — Deep Planning phase wiring", () => {
+  const baseOptions = {
+    workingDir: "/workspace/project",
+    parentConversationId: "parent-1",
+    encryptedAgentSettings: {
+      llm: { model: "claude-sonnet-4-5" },
+    } as Record<string, SettingsValue>,
+  };
+
+  const plannerTool = (
+    payload: ReturnType<typeof buildStartPlanningConversationRequest>,
+  ) => {
+    const tools = (
+      payload.agent as {
+        tools: Array<{ name: string; params: Record<string, unknown> }>;
+      }
+    ).tools;
+    return tools.find((tool) => tool.name === "planning_file_editor");
+  };
+
+  it("pins a plain planner to PLAN.md with no phase tag", () => {
+    const payload = buildStartPlanningConversationRequest(baseOptions);
+
+    expect(plannerTool(payload)?.params).toEqual({
+      plan_path: "/workspace/project/.agents_tmp/PLAN.md",
+    });
+    expect(payload.tags).toEqual({ plannerparent: "parent-1" });
+  });
+
+  it("pins a phase planner to that phase's document and tags the phase", () => {
+    const payload = buildStartPlanningConversationRequest({
+      ...baseOptions,
+      deepPlanPhase: "database",
+      deepPlanGuidance: "Produce database-design.md citing [Req X.X].",
+    });
+
+    expect(plannerTool(payload)?.params).toEqual({
+      plan_path: "/workspace/project/.agents_tmp/database-design.md",
+    });
+    expect(payload.tags).toEqual({
+      plannerparent: "parent-1",
+      plannerphase: "database",
+    });
+  });
+
+  it("appends the phase guidance to the planner system prompt, in English", () => {
+    const guidance = "Produce requirements.md with inline [Req X.X] citations.";
+    const payload = buildStartPlanningConversationRequest({
+      ...baseOptions,
+      deepPlanPhase: "requirements",
+      deepPlanGuidance: guidance,
+    });
+
+    const suffix = (
+      payload.agent as { agent_context: { system_message_suffix: string } }
+    ).agent_context.system_message_suffix;
+    expect(suffix).toContain(guidance);
+    // The generic planner boundaries still apply.
+    expect(suffix).toContain("IMPORTANT_PLANNING_BOUNDARIES");
+  });
+
+  it("gives a phase planner the deep-plan document format, not the generic plan skeleton", () => {
+    // A phase document is a chain link with numbered, citable sections. The
+    // generic OBJECTIVE/CONTEXT/APPROACH/IMPLEMENTATION/TESTING skeleton must
+    // not leak into it — the live planner produced exactly that skeleton for
+    // `database-design.md` before the phase format replaced it.
+    const payload = buildStartPlanningConversationRequest({
+      ...baseOptions,
+      deepPlanPhase: "database",
+      deepPlanGuidance: "Produce database-design.md citing [Req X.X].",
+    });
+
+    const structure = (
+      payload.agent as {
+        system_prompt_kwargs: { plan_structure: string };
+      }
+    ).system_prompt_kwargs.plan_structure;
+    expect(structure).not.toContain("1. OBJECTIVE");
+    expect(structure).toContain("1. TITLE");
+    expect(structure).toContain("NUMBERED, CITABLE SECTIONS");
+    expect(structure).toContain("INLINE UPSTREAM CITATIONS");
+  });
+
+  it("keeps the generic plan structure for a plain planner", () => {
+    const payload = buildStartPlanningConversationRequest(baseOptions);
+
+    const structure = (
+      payload.agent as {
+        system_prompt_kwargs: { plan_structure: string };
+      }
+    ).system_prompt_kwargs.plan_structure;
+    expect(structure).toContain("OBJECTIVE");
+    expect(structure).not.toContain("NUMBERED, CITABLE SECTIONS");
+  });
+
+  it("keeps the generic planner directive when a phase sends no guidance", () => {
+    const payload = buildStartPlanningConversationRequest({
+      ...baseOptions,
+      deepPlanPhase: "tasks",
+    });
+
+    const suffix = (
+      payload.agent as { agent_context: { system_message_suffix: string } }
+    ).agent_context.system_message_suffix;
+    expect(suffix).toContain("IMPORTANT_PLANNING_BOUNDARIES");
+    expect(suffix).not.toContain("Produce");
   });
 });
 

@@ -4,6 +4,8 @@ import type {
   ConversationMode,
 } from "#/stores/conversation-store";
 import type { ViewMode } from "#/components/features/files-tab/view-mode";
+import type { PersistedDeepPlanState } from "#/utils/deep-plan-machine";
+import { DEEP_PLAN_PHASE_IDS, type DeepPlanPhaseId } from "#/utils/deep-plan";
 import {
   DEFAULT_UNPINNED_OVERVIEW_GIT_PARTS,
   DEFAULT_UNPINNED_OVERVIEW_SECTIONS,
@@ -40,6 +42,12 @@ export interface ConversationState {
   unpinnedOverviewSections?: string[];
   unpinnedOverviewGitParts?: string[];
   conversationMode: ConversationMode;
+  /**
+   * Deep Planning phase machine state, so a refresh restores the phase.
+   * Document bodies are intentionally not persisted — they are re-read from
+   * disk on reload; see `PersistedDeepPlanState`.
+   */
+  deepPlan?: PersistedDeepPlanState;
   subConversationTaskId: string | null;
   draftMessage: string | null;
   rightPanelShown?: boolean;
@@ -201,7 +209,67 @@ function sanitizeStoredState(
     delete result.filesTabSelectedPath;
   }
 
+  if (
+    result.conversationMode != null &&
+    !VALID_CONVERSATION_MODES.has(result.conversationMode)
+  ) {
+    result = { ...result };
+    delete result.conversationMode;
+  }
+
+  if (result.deepPlan != null && !isValidDeepPlanState(result.deepPlan)) {
+    result = { ...result };
+    delete result.deepPlan;
+  }
+
   return result;
+}
+
+const VALID_CONVERSATION_MODES: ReadonlySet<string> = new Set([
+  "code",
+  "plan",
+  "deep-plan",
+]);
+
+const isPhaseId = (value: unknown): value is DeepPlanPhaseId =>
+  typeof value === "string" &&
+  (DEEP_PLAN_PHASE_IDS as readonly string[]).includes(value);
+
+function isDocumentMap(value: unknown): value is Record<string, string> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+  return Object.entries(value).every(
+    ([phase, content]) => isPhaseId(phase) && typeof content === "string",
+  );
+}
+
+/**
+ * A persisted phase machine is only trusted when its shape is intact —
+ * `JSON.parse` gives us `unknown`, and a half-written blob would otherwise
+ * put the UI in a phase it can never leave. Document bodies are not persisted,
+ * so they are neither expected nor trusted if present (an older blob carrying
+ * them is ignored, since the files are re-read from disk anyway).
+ */
+function isValidDeepPlanState(value: unknown): value is PersistedDeepPlanState {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as Partial<PersistedDeepPlanState>;
+  if (candidate.activePhase !== null && !isPhaseId(candidate.activePhase)) {
+    return false;
+  }
+  if (
+    !Array.isArray(candidate.confirmed) ||
+    !candidate.confirmed.every(isPhaseId)
+  ) {
+    return false;
+  }
+  if (
+    candidate.documentHashes !== undefined &&
+    !isDocumentMap(candidate.documentHashes)
+  ) {
+    return false;
+  }
+  return true;
 }
 
 /**

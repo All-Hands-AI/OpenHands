@@ -4,6 +4,19 @@ import {
   getConversationState,
   setConversationState,
 } from "#/utils/conversation-local-storage";
+import {
+  EMPTY_DEEP_PLAN_STATE,
+  canEnterPhase,
+  confirmPhase,
+  hashDeepPlanDocument,
+  hydrateDeepPlanState,
+  invalidateFrom,
+  startDeepPlan as createDeepPlanState,
+  toPersistedDeepPlan,
+  type ConfirmFailure,
+  type DeepPlanState,
+} from "#/utils/deep-plan-machine";
+import type { DeepPlanPhaseId } from "#/utils/deep-plan";
 
 export type ConversationTab =
   | "files"
@@ -14,7 +27,7 @@ export type ConversationTab =
   | "tasklist"
   | "usage";
 
-export type ConversationMode = "code" | "plan";
+export type ConversationMode = "code" | "plan" | "deep-plan";
 
 export type CommitsPaneSection = "uncommitted";
 
@@ -54,8 +67,17 @@ interface ConversationState {
   hasRightPanelToggled: boolean;
   planContent: string | null;
   conversationMode: ConversationMode;
+  /** Deep Planning phase machine state; the store is its only writer. */
+  deepPlan: DeepPlanState;
   subConversationTaskId: string | null; // Task ID for cloud sub-conversation creation
   localPlanningConversationId: string | null;
+  /**
+   * Deep Planning phase the current local planner was created for. The planner
+   * is pinned to one document at creation (its `plan_path`), so switching phase
+   * requires a new planner; this records which phase the live one owns so the
+   * switch can be detected. `null` for a plain `plan`-mode planner.
+   */
+  deepPlanPlannerPhase: DeepPlanPhaseId | null;
 }
 
 interface ConversationActions {
@@ -91,8 +113,29 @@ interface ConversationActions {
   setHasRightPanelToggled: (hasRightPanelToggled: boolean) => void;
   setConversationMode: (conversationMode: ConversationMode) => void;
   setSubConversationTaskId: (taskId: string | null) => void;
-  setLocalPlanningConversationId: (conversationId: string | null) => void;
+  setLocalPlanningConversationId: (
+    conversationId: string | null,
+    deepPlanPlannerPhase?: DeepPlanPhaseId | null,
+  ) => void;
   setPlanContent: (planContent: string | null) => void;
+  startDeepPlan: () => void;
+  setDeepPlanPhase: (phase: DeepPlanPhaseId) => void;
+  setDeepPlanDocument: (phase: DeepPlanPhaseId, content: string) => void;
+  /** Record that a phase document's reload re-read was rejected (file gone). */
+  failDeepPlanDocumentRestore: (phase: DeepPlanPhaseId) => void;
+  /**
+   * Clear every recorded restore failure so the provider re-attempts the disk
+   * re-read on the next render. The user triggers this from the panel's Retry
+   * button; there is no automatic retry, since a genuinely missing file would
+   * then loop forever.
+   */
+  retryDeepPlanDocumentRestore: () => void;
+  /** Runs the reference validator; returns the structured reason on failure. */
+  confirmDeepPlanPhase: (phase: DeepPlanPhaseId) => {
+    ok: boolean;
+    failure?: ConfirmFailure;
+  };
+  resetDeepPlan: () => void;
 }
 
 type ConversationStore = ConversationState & ConversationActions;
@@ -118,6 +161,52 @@ const getInitialConversationMode = (): ConversationMode => {
 
   const state = getConversationState(conversationId);
   return state.conversationMode;
+};
+
+/**
+ * Restores the phase machine across a refresh. Without this the user would
+ * come back to phase 1 with their confirmations gone, even though the
+ * documents are still on disk.
+ */
+const getInitialDeepPlanState = (): DeepPlanState => {
+  if (typeof window === "undefined") {
+    return EMPTY_DEEP_PLAN_STATE;
+  }
+
+  const conversationId = getConversationIdFromLocation();
+  if (!conversationId) {
+    return EMPTY_DEEP_PLAN_STATE;
+  }
+
+  // Only phase/confirmations/hashes are persisted; the bodies are re-read from
+  // disk via history replay, so the machine starts with empty documents.
+  return hydrateDeepPlanState(getConversationState(conversationId).deepPlan);
+};
+
+/**
+ * Persists the phase machine for the conversation in the current URL.
+ *
+ * `conversationMode` is only passed by callers that also change the mode.
+ * `startDeepPlan` flips the mode in memory, and the mount-time reset
+ * re-derives it from storage — so without persisting it a refresh restores
+ * the machine but drops the user back to `code`, unable to see it.
+ */
+const persistDeepPlan = (
+  deepPlan: DeepPlanState,
+  conversationMode?: ConversationMode,
+): void => {
+  const conversationId = getConversationIdFromLocation();
+  if (conversationId) {
+    // Persist the slim form: document bodies live on disk and are re-read on
+    // reload, so storing them here only risks the localStorage quota.
+    const persisted = toPersistedDeepPlan(deepPlan);
+    setConversationState(
+      conversationId,
+      conversationMode
+        ? { deepPlan: persisted, conversationMode }
+        : { deepPlan: persisted },
+    );
+  }
 };
 
 export const useConversationStore = create<ConversationStore>()(
@@ -153,8 +242,10 @@ export const useConversationStore = create<ConversationStore>()(
       hasRightPanelToggled: false,
       planContent: null,
       conversationMode: getInitialConversationMode(),
+      deepPlan: getInitialDeepPlanState(),
       subConversationTaskId: null,
       localPlanningConversationId: null,
+      deepPlanPlannerPhase: null,
 
       // Actions
       setIsRightPanelShown: (isRightPanelShown) =>
@@ -366,8 +457,18 @@ export const useConversationStore = create<ConversationStore>()(
           {
             shouldHideSuggestions: false,
             conversationMode: getInitialConversationMode(),
+            // Re-derive from storage, exactly like `conversationMode`: this
+            // runs on every conversation mount, so resetting to the empty
+            // machine would discard the persisted phase and drop the user
+            // back to phase 1 on refresh.
+            deepPlan: getInitialDeepPlanState(),
             subConversationTaskId: null,
             localPlanningConversationId: null,
+            // Clear the phase with the id. They describe the same planner, so a
+            // stale phase alongside a nulled id would make the next
+            // conversation inherit this one's planner decision and skip
+            // provisioning its own.
+            deepPlanPlannerPhase: null,
             planContent: null,
           },
           false,
@@ -388,15 +489,148 @@ export const useConversationStore = create<ConversationStore>()(
       setSubConversationTaskId: (subConversationTaskId) =>
         set({ subConversationTaskId }, false, "setSubConversationTaskId"),
 
-      setLocalPlanningConversationId: (localPlanningConversationId) =>
+      setLocalPlanningConversationId: (
+        localPlanningConversationId,
+        deepPlanPlannerPhase = null,
+      ) =>
         set(
-          { localPlanningConversationId },
+          { localPlanningConversationId, deepPlanPlannerPhase },
           false,
           "setLocalPlanningConversationId",
         ),
 
       setPlanContent: (planContent) =>
         set({ planContent }, false, "setPlanContent"),
+
+      startDeepPlan: () => {
+        // Re-entering the mode (Shift+Tab, the context menu, `/deep-plan`)
+        // must not discard a chain the user already advanced; only open a
+        // fresh one when there is nothing to keep.
+        const existing = useConversationStore.getState().deepPlan;
+        const deepPlan =
+          existing.activePhase === null ? createDeepPlanState() : existing;
+        persistDeepPlan(deepPlan, "deep-plan");
+        set(
+          { deepPlan, conversationMode: "deep-plan" as ConversationMode },
+          false,
+          "startDeepPlan",
+        );
+      },
+
+      setDeepPlanPhase: (phase) =>
+        set(
+          (state) => {
+            if (!canEnterPhase(state.deepPlan, phase)) return {};
+            const deepPlan = { ...state.deepPlan, activePhase: phase };
+            persistDeepPlan(deepPlan);
+            return { deepPlan };
+          },
+          false,
+          "setDeepPlanPhase",
+        ),
+
+      setDeepPlanDocument: (phase, content) => {
+        const current = useConversationStore.getState().deepPlan;
+        // History replay re-reads the persisted documents after a refresh;
+        // re-hydrating identical bytes is not an edit, so it must not drop the
+        // confirmations the user already earned. Only a real change invalidates
+        // the phase and everything built on it.
+        if (current.documents[phase] === content) {
+          return;
+        }
+        // After a reload the bodies start empty but the persisted per-document
+        // hashes remain, so a replay of the bytes the persisted chain vouches
+        // for is recognized as a rehydrate (not an edit) even though the body
+        // is not yet in memory. The body is still stored so the panel can
+        // render it and the validator can read it.
+        const isRehydrate =
+          current.documentHashes?.[phase] === hashDeepPlanDocument(content);
+        set(
+          (state) => {
+            const documentHashes = {
+              ...state.deepPlan.documentHashes,
+              [phase]: hashDeepPlanDocument(content),
+            };
+            const withDocument = {
+              ...state.deepPlan,
+              documents: { ...state.deepPlan.documents, [phase]: content },
+              documentHashes,
+              // A successful re-read clears any earlier restore failure for the
+              // phase, so the checkpoint stops reporting it as unavailable.
+              restoreFailed: (state.deepPlan.restoreFailed ?? []).filter(
+                (failed) => failed !== phase,
+              ),
+            };
+            const deepPlan = isRehydrate
+              ? withDocument
+              : invalidateFrom(withDocument, phase);
+            persistDeepPlan(deepPlan);
+            return { deepPlan };
+          },
+          false,
+          "setDeepPlanDocument",
+        );
+      },
+
+      failDeepPlanDocumentRestore: (phase) =>
+        set(
+          (state) => {
+            if (state.deepPlan.documents[phase] !== undefined) return {};
+            const restoreFailed = state.deepPlan.restoreFailed ?? [];
+            if (restoreFailed.includes(phase)) return {};
+            return {
+              deepPlan: {
+                ...state.deepPlan,
+                restoreFailed: [...restoreFailed, phase],
+              },
+            };
+          },
+          false,
+          "failDeepPlanDocumentRestore",
+        ),
+
+      retryDeepPlanDocumentRestore: () =>
+        set(
+          (state) => {
+            if ((state.deepPlan.restoreFailed ?? []).length === 0) return {};
+            // `restoreFailed` is deliberately not persisted: it describes an
+            // in-flight read failure, so clearing it in memory is enough to let
+            // the restore effect re-issue the read.
+            return {
+              deepPlan: { ...state.deepPlan, restoreFailed: [] },
+            };
+          },
+          false,
+          "retryDeepPlanDocumentRestore",
+        ),
+
+      confirmDeepPlanPhase: (phase) => {
+        const result = confirmPhase(
+          useConversationStore.getState().deepPlan,
+          phase,
+        );
+        if (!result.ok) {
+          return { ok: false, failure: result.failure };
+        }
+        persistDeepPlan(result.state);
+        set({ deepPlan: result.state }, false, "confirmDeepPlanPhase");
+        return { ok: true };
+      },
+
+      resetDeepPlan: () => {
+        // Persist `"code"` explicitly: `startDeepPlan` wrote `"deep-plan"` to
+        // storage, so re-deriving the mode from storage (the mount-time reset
+        // path) would leave the user stuck in Deep Plan after a reset.
+        persistDeepPlan(EMPTY_DEEP_PLAN_STATE, "code");
+        set(
+          {
+            deepPlan: EMPTY_DEEP_PLAN_STATE,
+            conversationMode: "code",
+          },
+          false,
+          "resetDeepPlan",
+        );
+      },
     }),
     {
       name: "conversation-store",

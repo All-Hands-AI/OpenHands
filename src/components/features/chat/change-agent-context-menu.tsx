@@ -15,6 +15,13 @@ interface ChangeAgentContextMenuProps {
   onClose: () => void;
   onCodeClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onPlanClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  onDeepPlanClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  /**
+   * Whether to show the Deep Plan entry. Deep Planning is provisioned only on
+   * local backends, so Cloud callers hide it rather than offer a mode that
+   * cannot produce its documents.
+   */
+  showDeepPlan?: boolean;
 }
 
 export function ChangeAgentContextMenu({
@@ -22,6 +29,8 @@ export function ChangeAgentContextMenu({
   onClose,
   onCodeClick,
   onPlanClick,
+  onDeepPlanClick,
+  showDeepPlan = true,
 }: ChangeAgentContextMenuProps) {
   const { t } = useTranslation("openhands");
   const menuRef = useClickOutsideElement<HTMLUListElement>(onClose);
@@ -37,6 +46,13 @@ export function ChangeAgentContextMenu({
     event.preventDefault();
     event.stopPropagation();
     onPlanClick?.(event);
+    onClose();
+  };
+
+  const handleDeepPlanClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onDeepPlanClick?.(event);
     onClose();
   };
 
@@ -72,6 +88,20 @@ export function ChangeAgentContextMenu({
           isActive={activeMode === "plan"}
         />
       </ContextMenuListItem>
+      {showDeepPlan && (
+        <ContextMenuListItem
+          testId="deep-plan-option"
+          onClick={handleDeepPlanClick}
+          className={cn(activeMode === "deep-plan" && "bg-interactive-hover")}
+        >
+          <ContextMenuIconTextWithDescription
+            icon={LessonPlanIcon}
+            title={t(I18nKey.COMMON$DEEP_PLAN)}
+            description={t(I18nKey.COMMON$DEEP_PLAN_AGENT_DESCRIPTION)}
+            isActive={activeMode === "deep-plan"}
+          />
+        </ContextMenuListItem>
+      )}
     </ContextMenu>
   );
 }

@@ -159,6 +159,38 @@ describe("useSlashCommand", () => {
     expect(commands).toEqual(expect.arrayContaining(["/btw", "/code-search"]));
   });
 
+  it("includes /deep-plan in the built-in commands on a local backend", () => {
+    // Deep Planning is provisioned only on local backends.
+    mockConversation.data = { conversation_version: "V1" };
+    mockSkills.data = [];
+
+    const ref = makeChatInputRef();
+    const { result } = renderHook(() => useSlashCommand(ref));
+
+    expect(result.current.filteredItems.map((i) => i.command)).toContain(
+      "/deep-plan",
+    );
+  });
+
+  it("excludes /deep-plan from the built-in commands on a cloud backend", () => {
+    // The mode's interceptor is local-only, so the menu must not offer it on
+    // Cloud where entering it can never provision a planner.
+    setRegisteredBackends([cloudBackend]);
+    setActiveSelection({ backendId: cloudBackend.id });
+    mockConversation.data = { conversation_version: "V1" };
+    mockSkills.data = [];
+
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(ActiveBackendProvider, null, children);
+
+    const ref = makeChatInputRef();
+    const { result } = renderHook(() => useSlashCommand(ref), { wrapper });
+
+    const commands = result.current.filteredItems.map((i) => i.command);
+    expect(commands).not.toContain("/deep-plan");
+    expect(commands).toContain("/plan");
+  });
+
   it("includes /new in the built-in commands on a cloud backend", () => {
     // Arrange
     setRegisteredBackends([cloudBackend]);
@@ -255,6 +287,7 @@ describe("useSlashCommand", () => {
       "/goal",
       "/plan",
       "/code",
+      "/deep-plan",
     ]);
 
     mockSkills.isLoading = false;
@@ -267,6 +300,7 @@ describe("useSlashCommand", () => {
       "/goal",
       "/plan",
       "/code",
+      "/deep-plan",
     ]);
   });
 
@@ -304,6 +338,7 @@ describe("useSlashCommand", () => {
       "/goal",
       "/plan",
       "/code",
+      "/deep-plan",
       "/explicit",
       "/alias",
       "/derived",
@@ -442,6 +477,7 @@ describe("useSlashCommand", () => {
       "/goal",
       "/plan",
       "/code",
+      "/deep-plan",
       "/deploy",
     ]);
   });
@@ -489,6 +525,7 @@ describe("useSlashCommand", () => {
       "/goal",
       "/plan",
       "/code",
+      "/deep-plan",
     ]);
   });
 
@@ -548,6 +585,7 @@ describe("useSlashCommand", () => {
       "/goal",
       "/plan",
       "/code",
+      "/deep-plan",
     ]);
   });
 
@@ -724,14 +762,14 @@ describe("useSlashCommand", () => {
     const { result } = renderHook(() => useSlashCommand(ref));
     act(() => result.current.updateSlashMenu());
 
-    for (const expected of [1, 2, 3, 4, 0]) {
+    for (const expected of [1, 2, 3, 4, 5, 0]) {
       const event = makeKeyboardEvent("ArrowDown");
       act(() => expect(result.current.handleSlashKeyDown(event)).toBe(true));
       expect(event.preventDefault).toHaveBeenCalledOnce();
       expect(result.current.selectedIndex).toBe(expected);
     }
 
-    for (const expected of [4, 3]) {
+    for (const expected of [5, 4]) {
       const event = makeKeyboardEvent("ArrowUp");
       act(() => expect(result.current.handleSlashKeyDown(event)).toBe(true));
       expect(event.preventDefault).toHaveBeenCalledOnce();
