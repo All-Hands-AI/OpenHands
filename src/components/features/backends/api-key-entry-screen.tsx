@@ -83,7 +83,7 @@ export default function ApiKeyEntryScreen() {
   return (
     <div
       data-testid="api-key-entry-screen"
-      className="flex min-h-screen items-center justify-center bg-base px-6"
+      className="flex min-h-screen items-center justify-center bg-canvas-base px-6"
     >
       <div
         className={cn(
@@ -118,8 +118,8 @@ export default function ApiKeyEntryScreen() {
                       data-testid={`${testIdRoot}-status`}
                       className={
                         connectionStatus === "error"
-                          ? "text-red-400"
-                          : "text-green-400"
+                          ? "text-feedback-error"
+                          : "text-feedback-success"
                       }
                     >
                       {connectionStatus === "error"
