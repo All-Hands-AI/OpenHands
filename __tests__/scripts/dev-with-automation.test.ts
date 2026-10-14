@@ -355,12 +355,15 @@ describe("buildConfig", () => {
         mode: 0o700,
       });
     }
+    // An ambient TMUX_TMPDIR (e.g. npm test run inside tmux) would mask the
+    // default; only the case's own env may set it.
+    const { TMUX_TMPDIR: _ambientTmuxTmpDir, ...parentEnv } = process.env;
     const result = spawnSync(
       process.execPath,
       ["--input-type=module", "-e", script],
       {
         env: {
-          ...process.env,
+          ...parentEnv,
           ...env,
           HOME: probeHome,
           PATH: `${probeHome}${path.delimiter}${process.env.PATH ?? ""}`,
