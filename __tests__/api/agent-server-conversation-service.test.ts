@@ -901,10 +901,15 @@ describe("AgentServerConversationService", () => {
       const payload = payloadCall[1] as { tags: Record<string, string> };
       expect(payload.tags).toMatchObject({
         repository: "OpenHands/OpenHands",
-        selected_branch: "main",
-        git_provider: "github",
+        selectedbranch: "main",
+        gitprovider: "github",
         workspace: "/Users/jane/projects/foo",
       });
+      // The agent-server rejects the whole request (422) when any tag key
+      // falls outside its ^[a-z0-9]+$ pattern, so every stamped key must match.
+      for (const key of Object.keys(payload.tags)) {
+        expect(key).toMatch(/^[a-z0-9]+$/);
+      }
       // The client-source tag is stamped by buildStartConversationRequest;
       // the metadata tags must merge into it, not replace it.
       expect(payload.tags.clientsource).toBe("agentcanvas");
@@ -1016,8 +1021,8 @@ describe("AgentServerConversationService", () => {
       expect(mockUpdateConversation).toHaveBeenCalledWith("conv-abc", {
         tags: {
           repository: "OpenHands/agent-canvas",
-          selected_branch: "main",
-          git_provider: "github",
+          selectedbranch: "main",
+          gitprovider: "github",
           clientsource: "agentcanvas",
           acpserver: "my-acp",
         },

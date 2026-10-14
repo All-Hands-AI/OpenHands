@@ -1369,8 +1369,8 @@ describe("toAppConversation", () => {
       ...baseInfo,
       tags: {
         repository: "OpenHands/OpenHands",
-        selected_branch: "main",
-        git_provider: "github",
+        selectedbranch: "main",
+        gitprovider: "github",
         workspace: "/Users/jane/projects/openhands",
       },
     };
@@ -1404,13 +1404,13 @@ describe("toAppConversation", () => {
       expect(result.git_provider).toBe("gitlab");
     });
 
-    it("drops an unrecognized git_provider tag instead of casting it through", () => {
+    it("drops an unrecognized gitprovider tag instead of casting it through", () => {
       // Tags are free-form and any API client can PATCH them, so an unknown
       // value must degrade to null rather than reach provider-keyed lookups
       // (icons, repo URL builders, token checks) as a bogus Provider.
       const result = toAppConversation({
         ...baseInfo,
-        tags: { git_provider: "not-a-real-provider" },
+        tags: { gitprovider: "not-a-real-provider" },
       });
 
       expect(result.git_provider).toBeNull();

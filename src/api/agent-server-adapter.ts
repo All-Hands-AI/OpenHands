@@ -437,7 +437,7 @@ export function toAppConversation(
       metadata?.selected_repository ?? info.tags?.[REPOSITORY_TAG_KEY] ?? null,
     selected_branch:
       metadata?.selected_branch ?? info.tags?.[SELECTED_BRANCH_TAG_KEY] ?? null,
-    // The ``git_provider`` tag is free-form wire data — validate it against
+    // The ``gitprovider`` tag is free-form wire data — validate it against
     // the known provider union instead of casting, so an unrecognized value
     // degrades to "no provider" rather than poisoning provider-keyed lookups.
     git_provider:
@@ -570,8 +570,9 @@ export const CLIENT_SOURCE_TAG_KEY = "clientsource";
 export const AGENT_CANVAS_SOURCE = "agentcanvas";
 
 export const REPOSITORY_TAG_KEY = "repository";
-export const SELECTED_BRANCH_TAG_KEY = "selected_branch";
-export const GIT_PROVIDER_TAG_KEY = "git_provider";
+// Agent-server tag keys must match ^[a-z0-9]+$, so no underscores here.
+export const SELECTED_BRANCH_TAG_KEY = "selectedbranch";
+export const GIT_PROVIDER_TAG_KEY = "gitprovider";
 export const WORKSPACE_TAG_KEY = "workspace";
 
 export const AUTOMATION_TRIGGER_TAG_KEY = "automationtrigger";
@@ -627,10 +628,12 @@ export const RESERVED_CONVERSATION_TAG_KEYS: ReadonlySet<string> = new Set([
   AUTOMATION_EDIT_ID_TAG_KEY,
   "title",
   GIT_PROVIDER_TAG_KEY,
+  "git_provider",
   "repo_name",
   "repo",
   REPOSITORY_TAG_KEY,
   SELECTED_BRANCH_TAG_KEY,
+  "selected_branch",
   "branch",
   "archiveworkspacepath",
   WORKSPACE_TAG_KEY,
