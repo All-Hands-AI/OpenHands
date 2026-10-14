@@ -1,0 +1,3111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>MCP Apps in Agent Canvas — an opt-in frontend host</title>
+    <style>
+      :root {
+        --fg: #202321;
+        --muted: #61675f;
+        --subtle: #898e84;
+        --bg: #fafaf6;
+        --card: #ffffff;
+        --elevated: #f3f4ed;
+        --accent: #2d5948;
+        --accent-soft: #eaf2eb;
+        --rule: #dfe3d8;
+        --rule-strong: #afb9aa;
+        --code-bg: #f1f2ec;
+        --warn: #a75a1b;
+        --warn-soft: #fcf1e5;
+        --ok: #306746;
+        --crit: #a03632;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        --sans:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
+          sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-padding-top: 24px;
+      }
+      html,
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: var(--sans);
+      }
+      body {
+        line-height: 1.65;
+        font-size: 15px;
+      }
+      main {
+        min-width: 0;
+      }
+      a {
+        color: var(--accent);
+        text-underline-offset: 3px;
+      }
+      a:hover {
+        text-decoration-thickness: 2px;
+      }
+      a:focus-visible,
+      summary:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 4px;
+      }
+      .wrap {
+        display: grid;
+        grid-template-columns: 210px minmax(0, 1fr);
+        gap: 42px;
+        max-width: 1310px;
+        margin: auto;
+        padding: 35px 28px 90px;
+      }
+      .toc {
+        position: sticky;
+        top: 28px;
+        align-self: start;
+        font-size: 12px;
+      }
+      .toc h2 {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--muted);
+        margin: 0 0 10px;
+      }
+      .toc ol {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 20px;
+        counter-reset: contents;
+      }
+      .toc li {
+        counter-increment: contents;
+        padding: 5px 0;
+      }
+      .toc li::before {
+        content: counter(contents) ". ";
+        color: var(--subtle);
+      }
+      .toc a {
+        text-decoration: none;
+        color: var(--fg);
+      }
+      .toc .file-nav {
+        list-style: none;
+        padding: 0;
+        margin: 8px 0;
+      }
+      .toc .file-nav li {
+        counter-increment: none;
+        line-height: 1.45;
+      }
+      .toc .file-nav li::before {
+        content: "";
+      }
+      .toc small {
+        display: block;
+        color: var(--muted);
+        padding-left: 14px;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--accent);
+        border: 1px solid var(--rule);
+        padding: 1px 5px;
+        border-radius: 3px;
+        margin-right: 6px;
+        vertical-align: 1px;
+      }
+      .tag.edit {
+        color: var(--warn);
+      }
+      .tag.mechanical {
+        color: var(--muted);
+      }
+      header {
+        border-bottom: 1px solid var(--rule-strong);
+        padding-bottom: 24px;
+        margin-bottom: 25px;
+      }
+      .eyebrow {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--accent);
+        font-weight: 700;
+      }
+      h1 {
+        font-size: clamp(27px, 3.2vw, 39px);
+        line-height: 1.15;
+        letter-spacing: -0.025em;
+        margin: 12px 0;
+        max-width: 780px;
+      }
+      .subtitle {
+        font-size: 17px;
+        color: var(--muted);
+        max-width: 830px;
+      }
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 18px;
+        font-size: 12px;
+        color: var(--muted);
+        margin: 15px 0 0;
+      }
+      h2 {
+        font-size: 24px;
+        line-height: 1.25;
+        margin: 45px 0 14px;
+        letter-spacing: -0.02em;
+      }
+      h2 .num {
+        color: var(--subtle);
+        margin-right: 9px;
+        font-weight: 400;
+      }
+      h3 {
+        font-size: 17px;
+        line-height: 1.4;
+        margin: 22px 0 10px;
+      }
+      p {
+        margin: 10px 0;
+      }
+      .lede {
+        font-size: 16px;
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.85em;
+        background: var(--code-bg);
+        padding: 2px 4px;
+        border-radius: 3px;
+        overflow-wrap: anywhere;
+      }
+      pre {
+        font-family: var(--mono);
+        font-size: 12px;
+        line-height: 1.65;
+        background: var(--code-bg);
+        padding: 14px 16px;
+        border: 1px solid var(--rule);
+        border-radius: 5px;
+        overflow-x: auto;
+        white-space: pre;
+      }
+      pre code {
+        background: none;
+        padding: 0;
+        overflow-wrap: normal;
+      }
+      .kw {
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .str,
+      .plus {
+        color: var(--ok);
+      }
+      .com {
+        color: var(--subtle);
+      }
+      .minus {
+        color: var(--crit);
+      }
+      .src {
+        font: 11px var(--mono);
+        text-decoration: none;
+        border-bottom: 1px dotted var(--accent);
+        overflow-wrap: anywhere;
+      }
+      .sources {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .sources a {
+        display: inline;
+      }
+      .callout {
+        border-left: 3px solid var(--accent);
+        background: var(--accent-soft);
+        padding: 12px 16px;
+        margin: 18px 0;
+        font-size: 14px;
+        border-radius: 0 5px 5px 0;
+      }
+      .callout.warn {
+        border-color: var(--warn);
+        background: var(--warn-soft);
+      }
+      .callout.note {
+        border-color: var(--rule-strong);
+        background: var(--elevated);
+      }
+      .decision-grid,
+      .ba {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 16px;
+      }
+      .decision {
+        background: var(--card);
+        border: 1px solid var(--rule);
+        padding: 15px 18px;
+        border-radius: 6px;
+      }
+      .decision strong {
+        display: block;
+        color: var(--accent);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .decision p {
+        margin-bottom: 0;
+      }
+      .api {
+        background: var(--card);
+        border: 1px solid var(--rule);
+        padding: 16px;
+        border-radius: 6px;
+      }
+      .api h3 {
+        margin-top: 0;
+      }
+      .api pre {
+        margin-bottom: 0;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 13px;
+        margin: 15px 0;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--rule);
+        vertical-align: top;
+      }
+      th {
+        font-weight: 650;
+        background: var(--elevated);
+      }
+      .table-scroll {
+        overflow-x: auto;
+      }
+      .fig {
+        margin: 18px 0 25px;
+      }
+      .fig svg {
+        width: 100%;
+        height: auto;
+        display: block;
+        background: var(--card);
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+      }
+      figcaption {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 9px;
+      }
+      svg .existing {
+        fill: var(--code-bg);
+        stroke: var(--subtle);
+        stroke-width: 1.3;
+        stroke-dasharray: 5 3;
+      }
+      svg .new {
+        fill: var(--accent-soft);
+        stroke: var(--accent);
+        stroke-width: 1.7;
+      }
+      svg .changed {
+        fill: var(--warn-soft);
+        stroke: var(--warn);
+        stroke-width: 1.7;
+      }
+      svg .boundary {
+        fill: var(--elevated);
+        stroke: var(--rule-strong);
+        stroke-width: 1;
+        stroke-dasharray: 4 4;
+      }
+      svg .concept {
+        fill: var(--card);
+        stroke: var(--rule-strong);
+        stroke-width: 1;
+      }
+      svg .title {
+        font: 700 13px var(--sans);
+        fill: var(--fg);
+      }
+      svg .detail {
+        font: 11px var(--sans);
+        fill: var(--muted);
+      }
+      svg .location {
+        font: 10px var(--mono);
+        fill: var(--subtle);
+      }
+      svg .label {
+        font: 700 10px var(--mono);
+        fill: var(--warn);
+      }
+      svg .heading {
+        font: 700 12px var(--sans);
+        fill: var(--muted);
+        letter-spacing: 0.05em;
+      }
+      svg .edge {
+        stroke: var(--subtle);
+        stroke-width: 1.4;
+        stroke-dasharray: 5 3;
+        fill: none;
+      }
+      svg .delta {
+        stroke: var(--warn);
+        stroke-width: 1.8;
+        stroke-dasharray: 6 3;
+        fill: none;
+      }
+      svg .pill {
+        fill: var(--card);
+        stroke: var(--rule);
+      }
+      svg a {
+        text-decoration: none;
+      }
+      details {
+        border: 1px solid var(--rule);
+        border-radius: 5px;
+        margin: 12px 0;
+        background: var(--card);
+      }
+      summary {
+        cursor: pointer;
+        padding: 9px 12px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      details .inside {
+        padding: 0 14px 12px;
+      }
+      details pre {
+        margin-top: 0;
+      }
+      .card {
+        border-top: 1px solid var(--rule);
+        padding: 12px 0 19px;
+      }
+      .file-title {
+        display: flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .file-title h3 {
+        margin-bottom: 3px;
+      }
+      .counts {
+        font: 11px var(--mono);
+        color: var(--muted);
+      }
+      .compare {
+        display: grid;
+        grid-template-columns: 90px minmax(0, 1fr);
+        gap: 7px 10px;
+        background: var(--elevated);
+        padding: 12px 14px;
+        font-size: 13px;
+        border-radius: 4px;
+      }
+      .compare .before {
+        color: var(--muted);
+      }
+      .compare .after {
+        color: var(--warn);
+        font-weight: 650;
+      }
+      ul,
+      ol {
+        padding-left: 22px;
+      }
+      li {
+        margin: 5px 0;
+      }
+      .foot {
+        border-top: 1px solid var(--rule-strong);
+        margin-top: 35px;
+        padding-top: 18px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      @media (max-width: 900px) {
+        .wrap {
+          grid-template-columns: minmax(0, 1fr);
+          padding: 24px 18px 65px;
+          gap: 20px;
+        }
+        .toc {
+          position: static;
+          border-bottom: 1px solid var(--rule);
+          padding-bottom: 10px;
+        }
+        .toc ol {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 4px 17px;
+          margin-bottom: 10px;
+        }
+        .file-nav {
+          display: none;
+        }
+      }
+      @media (max-width: 600px) {
+        .decision-grid,
+        .ba {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .compare {
+          grid-template-columns: 60px minmax(0, 1fr);
+        }
+        th,
+        td {
+          padding: 8px;
+        }
+      }
+      @media print {
+        .wrap {
+          display: block;
+          padding: 0;
+        }
+        .toc {
+          display: none;
+        }
+        h2,
+        h3 {
+          break-after: avoid;
+        }
+        .fig,
+        .api,
+        .decision {
+          break-inside: avoid;
+        }
+        a {
+          color: var(--fg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <nav class="toc" aria-label="Design review contents">
+        <h2>Review path</h2>
+        <ol>
+          <li><a href="#decision">An opt-in frontend increment</a></li>
+          <li><a href="#api">Additive API, unchanged events</a></li>
+          <li><a href="#flow">Text stays; an App joins the card</a></li>
+          <li><a href="#boundaries">Origins and sessions stay bound</a></li>
+          <li><a href="#files">File-by-file changes</a></li>
+          <li><a href="#evidence">What the prototype proves</a></li>
+          <li><a href="#remaining">Production work remains explicit</a></li>
+        </ol>
+        <h2>Changed source</h2>
+        <ul class="file-nav">
+          <li>
+            <a href="#types"><span class="tag">Added</span>types/mcp-app.ts</a
+            ><small>+84 / −0 · public contracts</small>
+          </li>
+          <li>
+            <a href="#normalizer"
+              ><span class="tag">Added</span>mcp-app-descriptor.ts</a
+            ><small>+84 / −0 · independent sidecar</small>
+          </li>
+          <li>
+            <a href="#provider"
+              ><span class="tag">Added</span>mcp-app-host-context.tsx</a
+            ><small>+45 / −0 · explicit injection</small>
+          </li>
+          <li>
+            <a href="#message-files"
+              ><span class="tag edit">Changed</span>Messages + grouping</a
+            ><small>+25 / −9 · visible artifact</small>
+          </li>
+          <li>
+            <a href="#render-files"
+              ><span class="tag edit">Changed</span>Wrapper + dispatcher</a
+            ><small>+41 / −6 · text compatibility</small>
+          </li>
+          <li>
+            <a href="#artifact"
+              ><span class="tag">Added</span>mcp-app-artifact.tsx</a
+            ><small>+285 / −0 · bound lifecycle</small>
+          </li>
+          <li>
+            <a href="#bridge"><span class="tag">Added</span>mcp-app-bridge.ts</a
+            ><small>+379 / −0 · official AppBridge</small>
+          </li>
+          <li>
+            <a href="#sandbox"
+              ><span class="tag">Added</span>Sandbox page + server</a
+            ><small>+188 / −0 · distinct origins</small>
+          </li>
+          <li>
+            <a href="#shared"
+              ><span class="tag edit">Changed</span>Shared conversation</a
+            ><small>+8 / −4 · no inherited adapter</small>
+          </li>
+          <li>
+            <a href="#fixture"
+              ><span class="tag">Added</span>Local fixture + runner</a
+            ><small>in-memory evidence</small>
+          </li>
+          <li>
+            <a href="#mechanical"
+              ><span class="tag mechanical">Config</span>Exports, deps,
+              translations</a
+            ><small>exact pins · lazy bridge</small>
+          </li>
+        </ul>
+      </nav>
+      <main>
+        <header>
+          <div class="eyebrow">OpenHands / Issue #16620 / PR design</div>
+          <h1>
+            MCP Apps in Agent Canvas,<br />opt in at the presentation layer
+          </h1>
+          <p class="subtitle">
+            A trusted embedding can associate an MCP result with a
+            <code>ui://</code> resource and render an interactive, isolated App
+            beside the existing tool text. The change adds frontend contracts,
+            rendering, an official protocol bridge, and a local fixture.
+          </p>
+          <div class="meta">
+            <span>Additive library API</span
+            ><span>Self-contained HTML Apps</span
+            ><span>In-memory demo evidence</span
+            ><span>Temporary review document</span>
+          </div>
+        </header>
+
+        <section id="decision">
+          <h2>
+            <span class="num">1</span>The default Canvas keeps its existing
+            behavior
+          </h2>
+          <p class="lede">
+            This is an <strong>opt-in frontend prototype</strong>. Agent
+            Server/client 1.54.0 has no production adapter in this increment. A
+            caller must explicitly provide a Host, a conversation scope, and an
+            event-ID-keyed presentation sidecar; otherwise the existing MCP text
+            path remains active.
+          </p>
+          <p class="sources">
+            Sources:
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/specs/mcp-apps.md#L3"
+              >specs/mcp-apps.md:3</a
+            >
+            ·
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-host-context.tsx#L12"
+              >mcp-app-host-context.tsx:12</a
+            >
+            ·
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/chat/tool-visualizers/dispatcher.tsx#L37"
+              >dispatcher.tsx:37</a
+            >
+          </p>
+          <div class="callout">
+            ★ <strong>Review the integration boundary first:</strong> canonical
+            <code>OpenHandsEvent</code> objects receive no App field. Private
+            result metadata lives in <code>MCPAppArtifacts</code>, separately
+            owned by the embedding. No new Agent Server endpoint, wire
+            requirement, or version floor is introduced.
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/types/mcp-app.ts#L14"
+              >src/types/mcp-app.ts:14</a
+            >
+            ·
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/specs/mcp-apps.md#L17"
+              >specs/mcp-apps.md:17</a
+            >
+          </div>
+          <div class="decision-grid">
+            <div class="decision">
+              <strong>Implemented</strong>
+              <p>
+                Descriptor normalization, visible inline cards,
+                <code>resources/read</code> through an injected session,
+                <code>ui/initialize</code>, input/result delivery, optional
+                tool/context/message callbacks, origin checks, abort and
+                teardown.
+              </p>
+              <p class="sources">
+                <a
+                  class="src"
+                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L139"
+                  >mcp-app-bridge.ts:139</a
+                >
+              </p>
+            </div>
+            <div class="decision">
+              <strong>Scope boundary</strong>
+              <p>
+                The local Host returns fixture HTML and mock results. Production
+                server routing, user consent, model context consumption,
+                persistence, and ACP support still need released backend
+                contracts.
+              </p>
+              <p class="sources">
+                <a
+                  class="src"
+                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/fixtures/mcp-apps/demo.tsx#L119"
+                  >demo.tsx:119</a
+                >
+                ·
+                <a
+                  class="src"
+                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/specs/mcp-apps.md#L84"
+                  >specs/mcp-apps.md:84</a
+                >
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="api">
+          <h2>
+            <span class="num">2</span>The API adds a sidecar; it does not extend
+            wire events
+          </h2>
+          <details>
+            <summary>Source manifest</summary>
+            <div class="inside sources">
+              <a
+                class="src"
+                href="https://github.com/OpenHands/OpenHands/blob/71427af5b426b3f1270db86341dffe30a947d53c/src/types/agent-server/core/base/observation.ts#L9"
+                >before: MCPToolObservation</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/types/mcp-app.ts#L14"
+                >after: frontend contracts</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation/index.ts#L9"
+                >after: library exports</a
+              >
+            </div>
+          </details>
+          <div class="ba">
+            <div class="api">
+              <h3>Before · canonical observation</h3>
+              <pre><code>interface MCPToolObservation {
+  content: Array&lt;TextContent | ImageContent&gt;;
+  is_error: boolean;
+  tool_name: string;
+}
+
+<span class="com">// LLM-ready content, no App presentation contract.</span></code></pre>
+              <p class="sources">
+                <a
+                  class="src"
+                  href="https://github.com/OpenHands/OpenHands/blob/71427af5b426b3f1270db86341dffe30a947d53c/src/types/agent-server/core/base/observation.ts#L9"
+                  >src/types/agent-server/core/base/observation.ts:9</a
+                >
+              </p>
+            </div>
+            <div class="api">
+              <h3>After · canonical observation + independent map</h3>
+              <pre><code><span class="kw">interface</span> MCPAppIntegrationData {
+  tool: Pick&lt;Tool, <span class="str">"name" | "_meta"</span>&gt;;
+  toolInput: Record&lt;string, unknown&gt;;
+  toolResult: CallToolResult;
+}
+<span class="kw">type</span> MCPAppArtifacts =
+  ReadonlyMap&lt;string, MCPAppIntegrationData&gt;;</code></pre>
+              <p class="sources">
+                <a
+                  class="src"
+                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/types/mcp-app.ts#L15"
+                  >src/types/mcp-app.ts:15</a
+                >
+              </p>
+            </div>
+          </div>
+          <p>
+            The optional <code>artifacts</code> map defaults to empty. The
+            embedding replaces the map when data arrives or is removed so
+            memoized grouping can update without changing canonical events.
+            <code>getMCPAppDescriptor(event, integrationData)</code> accepts
+            only environment MCP observations and independently supplied data.
+          </p>
+          <p class="sources">
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-host-context.tsx#L18"
+              >mcp-app-host-context.tsx:18</a
+            >
+            ·
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/messages.tsx#L77"
+              >messages.tsx:77</a
+            >
+            ·
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/utils/mcp-app-descriptor.ts#L50"
+              >mcp-app-descriptor.ts:50</a
+            >
+          </p>
+          <pre><code><span class="kw">const</span> artifacts: MCPAppArtifacts = <span class="kw">new</span> Map([
+  [event.id, { tool: { name, _meta }, toolInput, toolResult }],
+]);
+&lt;MCPAppHostProvider host={host} scope={scope} artifacts={artifacts}&gt;
+  {conversation}
+&lt;/MCPAppHostProvider&gt;</code></pre>
+          <p class="sources">
+            Actual fixture usage:
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/fixtures/mcp-apps/demo.tsx#L91"
+              >demo.tsx:91</a
+            >
+            ·
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/fixtures/mcp-apps/demo.tsx#L185"
+              >demo.tsx:185</a
+            >
+          </p>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Contract</th>
+                  <th>Responsibility</th>
+                  <th>Compatibility / boundary</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>MCPAppHost.open(binding, options)</code></td>
+                  <td>
+                    Resolve the originating, authorized server and open a
+                    session.
+                  </td>
+                  <td>
+                    Injected API; no built-in endpoint.
+                    <a
+                      class="src"
+                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/types/mcp-app.ts#L77"
+                      >types/mcp-app.ts:77</a
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>MCPAppSession.readResource</code></td>
+                  <td>Required resource callback.</td>
+                  <td>
+                    Complete MCP resource result; HTML MIME checked by bridge.
+                    <a
+                      class="src"
+                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/types/mcp-app.ts#L57"
+                      >types/mcp-app.ts:57</a
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <code>callTool?</code>, <code>updateModelContext?</code>,
+                    <code>sendMessage?</code>
+                  </td>
+                  <td>Optional write callbacks.</td>
+                  <td>
+                    Capabilities advertised only when implemented.
+                    Context/message support is text-only.
+                    <a
+                      class="src"
+                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L179"
+                      >mcp-app-bridge.ts:179</a
+                    >
+                    ·
+                    <a
+                      class="src"
+                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L263"
+                      >:263</a
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>MCPAppScope</code> / <code>MCPAppBinding</code></td>
+                  <td>Trusted identity and originating call.</td>
+                  <td>
+                    Never sourced from the iframe; current write owner is
+                    checked before and after callback awaits.
+                    <a
+                      class="src"
+                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/types/mcp-app.ts#L28"
+                      >types/mcp-app.ts:28</a
+                    >
+                    ·
+                    <a
+                      class="src"
+                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L219"
+                      >mcp-app-bridge.ts:219</a
+                    >
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="flow">
+          <h2>
+            <span class="num">3</span>The text path stays intact; an explicit
+            descriptor adds an App
+          </h2>
+          <figure class="fig">
+            <svg
+              viewBox="0 0 1040 645"
+              role="img"
+              aria-labelledby="flow-title flow-desc"
+            >
+              <title id="flow-title">
+                Before and after: MCP result to conversation artifact
+              </title>
+              <desc id="flow-desc">
+                Before, MCP observations are grouped and rendered as text.
+                After, an independently owned event-ID-keyed sidecar is
+                normalized; valid descriptors keep the result visible and add a
+                bound resource and protocol host. Without a descriptor the
+                original text path remains.
+              </desc>
+              <defs>
+                <marker
+                  id="flow-arrow"
+                  viewBox="0 0 10 10"
+                  refX="9"
+                  refY="5"
+                  markerWidth="7"
+                  markerHeight="7"
+                  orient="auto"
+                >
+                  <path d="M0,0 L10,5 L0,10 Z" fill="var(--subtle)" />
+                </marker>
+                <marker
+                  id="flow-change"
+                  viewBox="0 0 10 10"
+                  refX="9"
+                  refY="5"
+                  markerWidth="7"
+                  markerHeight="7"
+                  orient="auto"
+                >
+                  <path d="M0,0 L10,5 L0,10 Z" fill="var(--warn)" />
+                </marker>
+              </defs>
+              <text class="heading" x="34" y="35">
+                BEFORE · existing text pipeline
+              </text>
+              <text class="heading" x="414" y="35">
+                AFTER · additive presentation pipeline
+              </text>
+              <path d="M375,54 L375,607" stroke="var(--rule)" />
+              <g>
+                <a
+                  href="https://github.com/OpenHands/OpenHands/blob/71427af5b426b3f1270db86341dffe30a947d53c/src/types/agent-server/core/base/observation.ts#L9"
+                >
+                  <rect
+                    class="existing"
+                    x="34"
+                    y="66"
+                    width="310"
+                    height="68"
+                    rx="5"
+                  />
+                  <text class="title" x="51" y="92">MCPToolObservation</text>
+                  <text class="detail" x="51" y="111">
+                    LLM-ready content · is_error · tool_name
+                  </text>
+                  <text class="location" x="51" y="125">
+                    core/base/observation.ts:9
+                  </text>
+                </a>
+              </g>
+              <path
+                class="edge"
+                d="M189,134 L189,172"
+                marker-end="url(#flow-arrow)"
+              />
+              <g>
+                <a
+                  href="https://github.com/OpenHands/OpenHands/blob/71427af5b426b3f1270db86341dffe30a947d53c/src/components/conversation-events/chat/group-events.ts#L24"
+                >
+                  <rect
+                    class="existing"
+                    x="34"
+                    y="172"
+                    width="310"
+                    height="68"
+                    rx="5"
+                  />
+                  <text class="title" x="51" y="198">
+                    Messages → groupEvents
+                  </text>
+                  <text class="detail" x="51" y="217">
+                    MCP observations can join a collapsed run
+                  </text>
+                  <text class="location" x="51" y="231">
+                    chat/group-events.ts:24
+                  </text>
+                </a>
+              </g>
+              <path
+                class="edge"
+                d="M189,240 L189,278"
+                marker-end="url(#flow-arrow)"
+              />
+              <g>
+                <a
+                  href="https://github.com/OpenHands/OpenHands/blob/71427af5b426b3f1270db86341dffe30a947d53c/src/components/conversation-events/chat/event-content-helpers/get-event-content.tsx#L315"
+                >
+                  <rect
+                    class="existing"
+                    x="34"
+                    y="278"
+                    width="310"
+                    height="68"
+                    rx="5"
+                  />
+                  <text class="title" x="51" y="304">getEventContent</text>
+                  <text class="detail" x="51" y="323">
+                    visualizer fallback → observation content
+                  </text>
+                  <text class="location" x="51" y="337">
+                    get-event-content.tsx:315
+                  </text>
+                </a>
+              </g>
+              <path
+                class="edge"
+                d="M189,346 L189,384"
+                marker-end="url(#flow-arrow)"
+              />
+              <g>
+                <a
+                  href="https://github.com/OpenHands/OpenHands/blob/71427af5b426b3f1270db86341dffe30a947d53c/src/components/conversation-events/chat/event-content-helpers/get-observation-content.ts#L128"
+                >
+                  <rect
+                    class="existing"
+                    x="34"
+                    y="384"
+                    width="310"
+                    height="68"
+                    rx="5"
+                  />
+                  <text class="title" x="51" y="410">
+                    getMCPToolObservationContent
+                  </text>
+                  <text class="detail" x="51" y="429">
+                    Tool + Result/Error text · clipped markdown
+                  </text>
+                  <text class="location" x="51" y="443">
+                    get-observation-content.ts:128
+                  </text>
+                </a>
+              </g>
+              <g>
+                <rect
+                  class="concept"
+                  x="34"
+                  y="492"
+                  width="310"
+                  height="80"
+                  rx="5"
+                />
+                <text class="title" x="51" y="519">
+                  No frontend App contract
+                </text>
+                <text class="detail" x="51" y="540">
+                  Concept: no resource fetch, iframe, or ui/ host
+                </text>
+                <text class="location" x="51" y="559">
+                  for this observation path
+                </text>
+              </g>
+
+              <g>
+                <a
+                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/types/agent-server/core/base/observation.ts#L9"
+                >
+                  <rect
+                    class="existing"
+                    x="414"
+                    y="66"
+                    width="265"
+                    height="68"
+                    rx="5"
+                  />
+                  <text class="title" x="430" y="92">MCPToolObservation</text>
+                  <text class="detail" x="430" y="111">
+                    canonical event stays unchanged
+                  </text>
+                  <text class="location" x="430" y="125">
+                    core/base/observation.ts:9
+                  </text>
+                </a>
+              </g>
+              <g>
+                <a
+                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/types/mcp-app.ts#L21"
+                >
+                  <rect
+                    class="new"
+                    x="711"
+                    y="66"
+                    width="295"
+                    height="68"
+                    rx="5"
+                  />
+                  <text class="title" x="727" y="92">MCPAppArtifacts</text>
+                  <text class="detail" x="727" y="111">
+                    tool metadata + input + complete result
+                  </text>
+                  <text class="location" x="727" y="125">
+                    types/mcp-app.ts:21 · keyed by event.id
+                  </text>
+                </a>
+              </g>
+              <path
+                class="delta"
+                d="M546,134 L546,179"
+                marker-end="url(#flow-change)"
+              />
+              <path
+                class="delta"
+                d="M858,134 L858,155 L747,155 L747,179"
+                marker-end="url(#flow-change)"
+              />
+              <g>
+                <a
+                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/utils/mcp-app-descriptor.ts#L50"
+                >
+                  <rect
+                    class="new"
+                    x="414"
+                    y="179"
+                    width="592"
+                    height="73"
+                    rx="5"
+                  />
+                  <text class="title" x="430" y="205">
+                    getMCPAppDescriptor(event, integrationData)
+                  </text>
+                  <text class="detail" x="430" y="225">
+                    Explicit sidecar + tool._meta.ui.resourceUri → normalized
+                    descriptor
+                  </text>
+                  <text class="location" x="430" y="241">
+                    utils/mcp-app-descriptor.ts:50 · no text/raw_output
+                    inference
+                  </text>
+                </a>
+              </g>
+              <path
+                class="delta"
+                d="M709,252 L709,291"
+                marker-end="url(#flow-change)"
+              />
+              <g>
+                <a
+                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/event-message-components/generic-event-message-wrapper.tsx#L71"
+                >
+                  <rect
+                    class="changed"
+                    x="414"
+                    y="291"
+                    width="592"
+                    height="74"
+                    rx="5"
+                  />
+                  <text class="title" x="430" y="316">
+                    GenericEventMessageWrapper → getEventContent → MCPBody
+                  </text>
+                  <text class="detail" x="430" y="337">
+                    groupEvents leaves Apps inline; the card starts expanded
+                  </text>
+                  <text class="location" x="430" y="352">
+                    wrapper.tsx:71 · get-event-content.tsx:316 · mcp.tsx:10
+                  </text>
+                </a>
+              </g>
+              <path
+                class="edge"
+                d="M562,365 L562,407"
+                marker-end="url(#flow-arrow)"
+              />
+              <path
+                class="delta"
+                d="M858,365 L858,407"
+                marker-end="url(#flow-change)"
+              />
+              <g>
+                <a
+                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/chat/tool-visualizers/mcp/mcp.tsx#L19"
+                >
+                  <rect
+                    class="existing"
+                    x="414"
+                    y="407"
+                    width="266"
+                    height="73"
+                    rx="5"
+                  />
+                  <text class="title" x="430" y="433">MarkdownRenderer</text>
+                  <text class="detail" x="430" y="453">
+                    original tool text remains visible
+                  </text>
+                  <text class="location" x="430" y="467">
+                    mcp.tsx:19 · existing text helper
+                  </text>
+                </a>
+              </g>
+              <g>
+                <a
+                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.tsx#L31"
+                >
+                  <rect
+                    class="new"
+                    x="711"
+                    y="407"
+                    width="295"
+                    height="73"
+                    rx="5"
+                  />
+                  <text class="title" x="727" y="433">MCPAppArtifact</text>
+                  <text class="detail" x="727" y="453">
+                    Host.open(binding) → readResource
+                  </text>
+                  <text class="location" x="727" y="467">
+                    mcp-app-artifact.tsx:31
+                  </text>
+                </a>
+              </g>
+              <path
+                class="delta"
+                d="M858,480 L858,518"
+                marker-end="url(#flow-change)"
+              />
+              <g>
+                <a
+                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L139"
+                >
+                  <rect
+                    class="new"
+                    x="414"
+                    y="518"
+                    width="592"
+                    height="73"
+                    rx="5"
+                  />
+                  <text class="title" x="430" y="544">
+                    mountMCPAppBridge → trusted proxy → opaque App iframe
+                  </text>
+                  <text class="detail" x="430" y="565">
+                    Official AppBridge · input before complete ToolResult ·
+                    callbacks via session
+                  </text>
+                  <text class="location" x="430" y="579">
+                    mcp-app-bridge.ts:139 · public/mcp-app-sandbox.html:46 → Fig
+                    3
+                  </text>
+                </a>
+              </g>
+              <text class="detail" x="414" y="621">
+                No descriptor? resolveVisualizerBody returns null; the original
+                text path continues.
+              </text>
+            </svg>
+            <figcaption>
+              Fig 1 · App data enters from an independently owned sidecar, then
+              branches beside the existing text. The App path never mutates the
+              observation. Exact rendering edges:
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/chat/tool-visualizers/dispatcher.tsx#L26"
+                >dispatcher.tsx:26</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/chat/tool-visualizers/mcp/mcp.tsx#L10"
+                >mcp.tsx:10</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/public/mcp-app-sandbox.html#L46"
+                >sandbox.html:46</a
+              >
+            </figcaption>
+          </figure>
+          <div class="callout note">
+            ⓘ Dashed gray shows existing behavior, green identifies additions,
+            and orange dashed arrows mark the changed flow. A node labeled
+            “Concept” describes an absent contract; all implementation nodes
+            link to their source revision.
+          </div>
+          <figure class="fig">
+            <svg
+              viewBox="0 0 1040 227"
+              role="img"
+              aria-labelledby="group-title group-desc"
+            >
+              <title id="group-title">
+                Grouping before and after App sidecar arrival
+              </title>
+              <desc id="group-desc">
+                Before, consecutive MCP results can collapse into one group.
+                After, a result with a valid independent sidecar becomes a
+                visible, expanded single item and divides the neighboring tool
+                runs. Sidecar removal restores grouping.
+              </desc>
+              <defs>
+                <marker
+                  id="group-arr"
+                  viewBox="0 0 10 10"
+                  refX="9"
+                  refY="5"
+                  markerWidth="7"
+                  markerHeight="7"
+                  orient="auto"
+                >
+                  <path d="M0,0 L10,5 L0,10 Z" fill="var(--warn)" />
+                </marker>
+              </defs>
+              <text class="heading" x="30" y="30">BEFORE</text>
+              <text class="heading" x="534" y="30">
+                AFTER · sidecar arrives for event B
+              </text>
+              <g>
+                <a
+                  href="https://github.com/OpenHands/OpenHands/blob/71427af5b426b3f1270db86341dffe30a947d53c/src/components/conversation-events/chat/group-events.ts#L84"
+                >
+                  <rect
+                    class="existing"
+                    x="30"
+                    y="55"
+                    width="412"
+                    height="99"
+                    rx="5"
+                  />
+                  <text class="title" x="47" y="83">
+                    groupEvents → one collapsed tool group
+                  </text>
+                  <text class="detail" x="47" y="107">
+                    MCP event A · MCP event B · MCP event C
+                  </text>
+                  <text class="location" x="47" y="134">
+                    chat/group-events.ts:84
+                  </text>
+                </a>
+              </g>
+              <path
+                class="delta"
+                d="M454,104 L516,104"
+                marker-end="url(#group-arr)"
+              />
+              <g>
+                <a
+                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/group-events.ts#L46"
+                >
+                  <rect
+                    class="existing"
+                    x="534"
+                    y="55"
+                    width="135"
+                    height="99"
+                    rx="5"
+                  />
+                  <text class="title" x="551" y="83">single A</text>
+                  <text class="detail" x="551" y="107">flush old run</text>
+                  <text class="location" x="551" y="134">group-events:46</text>
+                </a>
+              </g>
+              <g>
+                <a
+                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/event-message-components/generic-event-message-wrapper.tsx#L122"
+                >
+                  <rect
+                    class="changed"
+                    x="686"
+                    y="55"
+                    width="180"
+                    height="99"
+                    rx="5"
+                  />
+                  <text class="title" x="702" y="83">MCPBody for B</text>
+                  <text class="detail" x="702" y="107">
+                    expanded text + App
+                  </text>
+                  <text class="location" x="702" y="134">wrapper.tsx:122</text>
+                </a>
+              </g>
+              <g>
+                <a
+                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/group-events.ts#L91"
+                >
+                  <rect
+                    class="existing"
+                    x="883"
+                    y="55"
+                    width="127"
+                    height="99"
+                    rx="5"
+                  />
+                  <text class="title" x="898" y="83">single C</text>
+                  <text class="detail" x="898" y="107">start new run</text>
+                  <text class="location" x="898" y="134">group-events:91</text>
+                </a>
+              </g>
+              <text class="detail" x="30" y="188">
+                MCPAppArtifacts is a memo dependency; replacing the map updates
+                this layout.
+              </text>
+              <text class="location" x="30" y="206">
+                messages.tsx:77 · source action thought is hoisted before the
+                groupability branch (group-events.ts:129)
+              </text>
+            </svg>
+            <figcaption>
+              Fig 2 · Apps remain visible without expanding a parent group.
+              Thoughts are extracted before the new group-breaker decision so
+              the source action’s reasoning survives. Evidence:
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/__tests__/components/conversation-events/chat/group-events.test.ts#L296"
+                >group-events.test.ts:296</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/__tests__/components/conversation-events/chat/messages-stable-event-props.test.tsx#L127"
+                >messages-stable-event-props.test.tsx:127</a
+              >
+            </figcaption>
+          </figure>
+        </section>
+
+        <section id="boundaries">
+          <h2>
+            <span class="num">4</span>A View keeps its originating session
+            across mode changes
+          </h2>
+          <details>
+            <summary>Source manifest</summary>
+            <div class="inside sources">
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.tsx#L72"
+                >binding and writable owner</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L40"
+                >SandboxTransport</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/public/mcp-app-sandbox.html#L23"
+                >trusted proxy</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/scripts/mcp-app-sandbox.mjs#L15"
+                >sandbox server headers</a
+              >
+            </div>
+          </details>
+          <figure class="fig">
+            <svg
+              viewBox="0 0 1040 555"
+              role="img"
+              aria-labelledby="trust-title trust-desc"
+            >
+              <title id="trust-title">
+                Trust and session boundaries for the MCP App host
+              </title>
+              <desc id="trust-desc">
+                The trusted Canvas opens a session bound to backend,
+                organization, connection revision, conversation and tool call.
+                The official bridge authenticates the separate-origin proxy; the
+                proxy authenticates its parent and its opaque-origin inner
+                iframe. App write requests return through the bound session with
+                current write scope checked before and after the asynchronous
+                call.
+              </desc>
+              <defs>
+                <marker
+                  id="trust-arr"
+                  viewBox="0 0 10 10"
+                  refX="9"
+                  refY="5"
+                  markerWidth="7"
+                  markerHeight="7"
+                  orient="auto"
+                >
+                  <path d="M0,0 L10,5 L0,10 Z" fill="var(--warn)" />
+                </marker>
+              </defs>
+              <g>
+                <rect
+                  class="boundary"
+                  x="22"
+                  y="31"
+                  width="448"
+                  height="491"
+                  rx="8"
+                />
+                <text class="heading" x="40" y="56">
+                  TRUSTED CANVAS ORIGIN · example :3101
+                </text>
+              </g>
+              <g>
+                <a
+                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.tsx#L72"
+                >
+                  <rect
+                    class="new"
+                    x="40"
+                    y="77"
+                    width="412"
+                    height="103"
+                    rx="5"
+                  />
+                  <text class="title" x="56" y="102">
+                    MCPAppArtifact → Host.open(binding)
+                  </text>
+                  <text class="detail" x="56" y="125">
+                    backend · org · connectionRevision · owner
+                  </text>
+                  <text class="detail" x="56" y="146">
+                    eventId · actionId · toolCallId · toolName · URI
+                  </text>
+                  <text class="location" x="56" y="167">
+                    mcp-app-artifact.tsx:72 / types/mcp-app.ts:40
+                  </text>
+                </a>
+              </g>
+              <path
+                class="delta"
+                d="M246,180 L246,213"
+                marker-end="url(#trust-arr)"
+              />
+              <g>
+                <a
+                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L185"
+                >
+                  <rect
+                    class="new"
+                    x="40"
+                    y="213"
+                    width="412"
+                    height="92"
+                    rx="5"
+                  />
+                  <text class="title" x="56" y="239">
+                    AppBridge + SandboxTransport
+                  </text>
+                  <text class="detail" x="56" y="261">
+                    source === proxy window &amp; origin === sandbox origin
+                  </text>
+                  <text class="location" x="56" y="286">
+                    mcp-app-bridge.ts:185 / :56
+                  </text>
+                </a>
+              </g>
+              <g>
+                <a
+                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L219"
+                >
+                  <rect
+                    class="changed"
+                    x="40"
+                    y="366"
+                    width="412"
+                    height="123"
+                    rx="5"
+                  />
+                  <text class="title" x="56" y="393">
+                    invoke → originating MCPAppSession
+                  </text>
+                  <text class="detail" x="56" y="415">
+                    assertActive before + after await · combined abort signal
+                  </text>
+                  <text class="detail" x="56" y="438">
+                    Writes require current writableConversationId === owner
+                  </text>
+                  <text class="location" x="56" y="461">
+                    mcp-app-bridge.ts:219 / artifact.tsx:85
+                  </text>
+                  <text class="location" x="56" y="480">
+                    mode switch revokes writes; never retargets the View
+                  </text>
+                </a>
+              </g>
+              <path
+                class="delta"
+                d="M246,305 L246,366"
+                marker-end="url(#trust-arr)"
+              />
+              <rect
+                class="pill"
+                x="147"
+                y="322"
+                width="199"
+                height="21"
+                rx="4"
+              />
+              <text class="label" x="158" y="336">
+                tool / context / message callbacks
+              </text>
+              <g>
+                <rect
+                  class="boundary"
+                  x="541"
+                  y="31"
+                  width="477"
+                  height="491"
+                  rx="8"
+                />
+                <text class="heading" x="561" y="56">
+                  DISTINCT CREDENTIAL-FREE ORIGIN · example :3102
+                </text>
+              </g>
+              <g>
+                <a
+                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/public/mcp-app-sandbox.html#L45"
+                >
+                  <rect
+                    class="new"
+                    x="560"
+                    y="77"
+                    width="438"
+                    height="113"
+                    rx="5"
+                  />
+                  <text class="title" x="577" y="103">
+                    public/mcp-app-sandbox.html proxy
+                  </text>
+                  <text class="detail" x="577" y="125">
+                    parent source + configured parentOrigin validated
+                  </text>
+                  <text class="detail" x="577" y="146">
+                    outer sandbox: allow-scripts allow-same-origin
+                  </text>
+                  <text class="location" x="577" y="177">
+                    sandbox.html:45 / bridge.ts:372
+                  </text>
+                </a>
+              </g>
+              <path
+                class="delta"
+                d="M452,259 L499,259 L499,135 L560,135"
+                marker-end="url(#trust-arr)"
+              />
+              <rect
+                class="pill"
+                x="468"
+                y="207"
+                width="84"
+                height="35"
+                rx="4"
+              />
+              <text class="label" x="476" y="221">fixed-origin</text>
+              <text class="label" x="476" y="234">postMessage</text>
+              <path
+                class="delta"
+                d="M779,190 L779,250"
+                marker-end="url(#trust-arr)"
+              />
+              <rect
+                class="pill"
+                x="614"
+                y="207"
+                width="330"
+                height="24"
+                rx="4"
+              />
+              <text class="label" x="628" y="223">
+                DOMParser → prepend CSP → inner srcdoc
+              </text>
+              <g>
+                <rect
+                  class="boundary"
+                  x="560"
+                  y="250"
+                  width="438"
+                  height="239"
+                  rx="6"
+                />
+                <text class="heading" x="578" y="275">
+                  UNTRUSTED APP · OPAQUE ORIGIN ("null")
+                </text>
+              </g>
+              <g>
+                <a
+                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/public/mcp-app-sandbox.html#L52"
+                >
+                  <rect
+                    class="new"
+                    x="578"
+                    y="293"
+                    width="402"
+                    height="104"
+                    rx="5"
+                  />
+                  <text class="title" x="594" y="319">inner iframe</text>
+                  <text class="detail" x="594" y="341">
+                    allow-scripts only · no same-origin permission
+                  </text>
+                  <text class="detail" x="594" y="362">
+                    CSP: connect/frame/worker/form sources denied
+                  </text>
+                  <text class="location" x="594" y="385">
+                    sandbox.html:52 / :40
+                  </text>
+                </a>
+              </g>
+              <text class="detail" x="578" y="428">
+                Proxy forwards only inner window + origin "null".
+              </text>
+              <text class="detail" x="578" y="451">
+                "*" is used only toward the opaque inner document.
+              </text>
+              <a
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/public/mcp-app-sandbox.html#L68"
+              >
+                <text class="location" x="578" y="473">sandbox.html:68–77</text>
+              </a>
+              <text class="location" x="22" y="545">
+                Sandbox URL must be HTTP(S), distinct from Canvas, and free of
+                userinfo (artifact.tsx:123 / bridge.ts:144).
+              </text>
+            </svg>
+            <figcaption>
+              Fig 3 · Untrusted HTML runs only in the inner opaque-origin
+              document. Routing and credentials remain with the trusted
+              embedding adapter. Repeated write checks prevent a mode change
+              from redirecting an App’s callbacks.
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.tsx#L85"
+                >artifact.tsx:85</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/public/mcp-app-sandbox.html#L56"
+                >sandbox.html:56</a
+              >
+            </figcaption>
+          </figure>
+          <div class="callout warn">
+            ⚠ <strong>Scope checks are not user authorization.</strong> The
+            prototype starts a valid artifact without a consent prompt. A
+            production Host must enforce tool visibility, confirmation, audit,
+            and rate limits before enabling write callbacks. Only self-contained
+            HTML is accepted here; external CSP domains and additional
+            permissions are rejected.
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/specs/mcp-apps.md#L45"
+              >specs/mcp-apps.md:45</a
+            >
+            ·
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L99"
+              >bridge.ts:99</a
+            >
+          </div>
+          <p>
+            Loads have a 30-second timeout. Failure aborts work, removes iframe
+            <code>src</code>, releases the bridge/session, and leaves a retry
+            action beside the original text. Teardown is attempted once with a
+            one-second deadline; even a crashed View releases transport
+            listeners. Display height is clamped to 160–1200 pixels.
+          </p>
+          <p class="sources">
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.tsx#L111"
+              >artifact.tsx:111</a
+            >
+            ·
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.tsx#L161"
+              >artifact.tsx:161</a
+            >
+            ·
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L340"
+              >bridge.ts:340</a
+            >
+          </p>
+        </section>
+
+        <section id="files">
+          <h2>
+            <span class="num">5</span>File-by-file: small rendering changes
+            around a new host
+          </h2>
+          <p>
+            Figures 1–3 carry the cross-file behavior. These cards isolate each
+            logical change; excerpts are deliberately short, with exact source
+            links for the full implementation.
+          </p>
+
+          <article class="card" id="types">
+            <div class="file-title">
+              <h3>Presentation and routing contracts are separate</h3>
+              <span class="tag">Added</span
+              ><span class="counts">src/types/mcp-app.ts · +84 / −0</span>
+            </div>
+            <p>
+              <code>MCPAppIntegrationData</code> carries View data;
+              <code>MCPAppScope</code> and <code>MCPAppBinding</code> carry
+              trusted identity. The Host adapter resolves server provenance and
+              keeps credentials private.
+            </p>
+            <p class="sources">
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/types/mcp-app.ts#L15"
+                >IntegrationData:15</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/types/mcp-app.ts#L29"
+                >Scope:29</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/types/mcp-app.ts#L40"
+                >Binding:40</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/types/mcp-app.ts#L57"
+                >Session:57</a
+              >
+            </p>
+            <details>
+              <summary>
+                Added contract excerpt · no before implementation
+              </summary>
+              <div class="inside">
+                <pre><code><span class="plus">+ artifacts: ReadonlyMap&lt;eventId, MCPAppIntegrationData&gt;</span>
+<span class="plus">+ Host.open(binding, { signal }): Promise&lt;MCPAppSession&gt;</span>
+<span class="plus">+ Session.readResource(uri, options)</span>
+<span class="plus">+ optional callTool / updateModelContext / sendMessage / dispose</span></code></pre>
+              </div>
+            </details>
+          </article>
+
+          <article class="card" id="normalizer">
+            <div class="file-title">
+              <h3>
+                A UI declaration must come from independent integration data
+              </h3>
+              <span class="tag">Added</span
+              ><span class="counts"
+                >src/utils/mcp-app-descriptor.ts · +84 / −0</span
+              >
+            </div>
+            <p>
+              <code>getMCPAppDescriptor</code> requires an environment MCP
+              observation, tool metadata, an input object, and a valid result
+              shape. Standard nested <code>tool._meta.ui.resourceUri</code> wins
+              over the deprecated key. A malformed nested declaration does not
+              silently fall back to another resource.
+            </p>
+            <p class="sources">
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/utils/mcp-app-descriptor.ts#L12"
+                >getResourceUri:12</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/utils/mcp-app-descriptor.ts#L50"
+                >getMCPAppDescriptor:50</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/utils/mcp-app-descriptor.test.ts#L47"
+                >ignores unpublished wire fields test:47</a
+              >
+            </p>
+            <details>
+              <summary>
+                Added normalizer excerpt · no before implementation
+              </summary>
+              <div class="inside">
+                <pre><code><span class="plus">+ getMCPAppDescriptor(event, integrationData)</span>
+<span class="plus">+ require source === "environment" &amp;&amp; kind === "MCPToolObservation"</span>
+<span class="plus">+ prefer _meta.ui.resourceUri; fallback only when ui is absent</span>
+<span class="plus">+ return descriptor | null</span>
+<span class="com">No event-shaped App field, raw_output, or text inference is read.</span></code></pre>
+              </div>
+            </details>
+          </article>
+
+          <article class="card" id="provider">
+            <div class="file-title">
+              <h3>
+                Provider defaults prevent ambient Host or private data access
+              </h3>
+              <span class="tag">Added</span
+              ><span class="counts">mcp-app-host-context.tsx · +45 / −0</span>
+            </div>
+            <p>
+              <code>MCPAppHostProvider</code> memoizes an explicit Host, scope,
+              and sidecar. Both the default context and omitted sidecar are
+              empty; a nested provider does not inherit the parent’s private
+              presentation data.
+            </p>
+            <p class="sources">
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-host-context.tsx#L12"
+                >default context:12</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-host-context.tsx#L26"
+                >Provider:26</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-host-context.test.tsx#L79"
+                >nested sidecar test:79</a
+              >
+            </p>
+            <details>
+              <summary>Added defaults excerpt</summary>
+              <div class="inside">
+                <pre><code><span class="plus">+ { host: null, scope: null, artifacts: EMPTY_ARTIFACTS }</span>
+<span class="plus">+ artifacts = EMPTY_ARTIFACTS</span>
+<span class="plus">+ useMemo(() =&gt; ({ host, scope, artifacts }), [host, scope, artifacts])</span></code></pre>
+              </div>
+            </details>
+          </article>
+
+          <article class="card" id="message-files">
+            <div class="file-title">
+              <h3>Messages reacts when the sidecar arrives or disappears</h3>
+              <span class="tag edit">Changed</span
+              ><span class="counts">messages.tsx · +4 / −2</span>
+            </div>
+            <div class="compare">
+              <span class="before">Before</span
+              ><span
+                ><code>groupEvents(messages, undefined, allEvents)</code>
+                depended only on events.</span
+              ><span class="after">After</span
+              ><span
+                >Reads <code>artifacts</code> from the provider and adds it to
+                the memoized grouping input/dependency.</span
+              >
+            </div>
+            <p class="sources">
+              <a
+                class="src"
+                href="https://github.com/OpenHands/OpenHands/blob/71427af5b426b3f1270db86341dffe30a947d53c/src/components/conversation-events/chat/messages.tsx#L75"
+                >before messages.tsx:75</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/messages.tsx#L77"
+                >after messages.tsx:77</a
+              >
+            </p>
+            <details>
+              <summary>Focused diff</summary>
+              <div class="inside">
+                <pre><code><span class="minus">- () =&gt; groupEvents(messages, undefined, allEvents), [messages, allEvents]</span>
+<span class="plus">+ () =&gt; groupEvents(messages, undefined, allEvents, artifacts),</span>
+<span class="plus">+ [messages, allEvents, artifacts]</span></code></pre>
+              </div>
+            </details>
+            <div class="file-title">
+              <h3>groupEvents keeps Apps and source thoughts visible</h3>
+              <span class="tag edit">Changed</span
+              ><span class="counts">group-events.ts · +21 / −7</span>
+            </div>
+            <div class="compare">
+              <span class="before">Before</span
+              ><span
+                >MCP observations joined runs; thought extraction lived inside
+                the groupable branch.</span
+              ><span class="after">After</span
+              ><span
+                >A valid descriptor breaks the run. Thought extraction executes
+                before the branch so an App result retains its source action
+                thought. See Fig 2.</span
+              >
+            </div>
+            <p class="sources">
+              <a
+                class="src"
+                href="https://github.com/OpenHands/OpenHands/blob/71427af5b426b3f1270db86341dffe30a947d53c/src/components/conversation-events/chat/group-events.ts#L121"
+                >before group-events.ts:121</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/group-events.ts#L46"
+                >after group-events.ts:46</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/group-events.ts#L129"
+                >thought extraction:129</a
+              >
+            </p>
+            <p>
+              The updated base's <code>UserRejectObservation</code> behavior is
+              retained: rejected actions resolve their corresponding action and
+              follow that action's grouping policy.
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/group-events.ts#L63"
+                >group-events.ts:63</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/group-events.ts#L123"
+                >corresponding action:123</a
+              >
+            </p>
+            <details>
+              <summary>Focused diff</summary>
+              <div class="inside">
+                <pre><code><span class="plus">+ if (getMCPAppDescriptor(event, mcpAppData)) return false;</span>
+<span class="plus">+ const thoughtAction = getThoughtSourceAction(event, allEvents);</span>
+<span class="com">  hoist the thought before checking isGroupableEvent(...)</span>
+<span class="plus">+ isGroupableEvent(event, correspondingAction, artifacts?.get(event.id))</span></code></pre>
+              </div>
+            </details>
+          </article>
+
+          <article class="card" id="render-files">
+            <div class="file-title">
+              <h3>The wrapper derives a descriptor at render time</h3>
+              <span class="tag edit">Changed</span
+              ><span class="counts"
+                >generic-event-message-wrapper.tsx · +18 / −4</span
+              >
+            </div>
+            <div class="compare">
+              <span class="before">Before</span
+              ><span
+                >The wrapper passed only event/action to
+                <code>getEventContent</code>; markdown file artifacts alone
+                initially expanded.</span
+              ><span class="after">After</span
+              ><span
+                >Looks up <code>artifacts.get(event.id)</code>, normalizes it,
+                and passes an explicit descriptor. App cards initially expand; a
+                resource-URI key reinitializes the card when late presentation
+                data arrives.</span
+              >
+            </div>
+            <p class="sources">
+              <a
+                class="src"
+                href="https://github.com/OpenHands/OpenHands/blob/71427af5b426b3f1270db86341dffe30a947d53c/src/components/conversation-events/chat/event-message-components/generic-event-message-wrapper.tsx#L69"
+                >before wrapper.tsx:69</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/event-message-components/generic-event-message-wrapper.tsx#L76"
+                >sidecar lookup:76</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/event-message-components/generic-event-message-wrapper.tsx#L122"
+                >expansion/key:122</a
+              >
+            </p>
+            <p>
+              The localized rejected-action indicator remains in
+              <code>titleTrailing</code>; App expansion does not replace it.
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/event-message-components/generic-event-message-wrapper.tsx#L136"
+                >wrapper.tsx:136</a
+              >
+            </p>
+            <details>
+              <summary>Focused diff</summary>
+              <div class="inside">
+                <pre><code><span class="plus">+ getMCPAppDescriptor(event, artifacts.get(event.id))</span>
+<span class="plus">+ getEventContent(event, correspondingAction, mcpAppDescriptor)</span>
+<span class="plus">+ initiallyExpanded = existingMarkdownArtifact || !!mcpAppDescriptor</span>
+<span class="plus">+ key={mcpAppDescriptor?.resourceUri ?? event.id}</span></code></pre>
+              </div>
+            </details>
+            <div class="file-title">
+              <h3>
+                getEventContent threads an optional descriptor without changing
+                titles
+              </h3>
+              <span class="tag edit">Changed</span
+              ><span class="counts">get-event-content.tsx · +5 / −1</span>
+            </div>
+            <p>
+              One optional parameter feeds the observation visualizer only for a
+              valid App descriptor; ordinary observations retain the original
+              two-argument call. The existing title, status, Canvas UI, and ACP
+              branches keep their prior logic. Rejected observations still
+              render their corresponding action's details when available.
+            </p>
+            <p class="sources">
+              <a
+                class="src"
+                href="https://github.com/OpenHands/OpenHands/blob/71427af5b426b3f1270db86341dffe30a947d53c/src/components/conversation-events/chat/event-content-helpers/get-event-content.tsx#L315"
+                >before:315</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/event-content-helpers/get-event-content.tsx#L316"
+                >after:316</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/event-content-helpers/get-event-content.tsx#L351"
+                >call shape:351</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/event-content-helpers/get-event-content.tsx#L356"
+                >rejected details:356</a
+              >
+            </p>
+            <details>
+              <summary>Focused diff</summary>
+              <div class="inside">
+                <pre><code><span class="plus">+ mcpAppDescriptor?: MCPAppDescriptor | null</span>
+<span class="plus">+ mcpAppDescriptor</span>
+<span class="plus">+   ? resolveVisualizerBody(event, correspondingAction, mcpAppDescriptor)</span>
+<span class="plus">+   : resolveVisualizerBody(event, correspondingAction)</span></code></pre>
+              </div>
+            </details>
+            <div class="file-title">
+              <h3>
+                The dispatcher only selects MCPBody with an explicit descriptor
+              </h3>
+              <span class="tag edit">Changed</span
+              ><span class="counts">dispatcher.tsx · +18 / −1</span>
+            </div>
+            <div class="compare">
+              <span class="before">Before</span
+              ><span>Registry lookup then <code>null</code> fallback.</span
+              ><span class="after">After</span
+              ><span
+                >A dedicated MCP branch returns <code>MCPBody</code> for a
+                descriptor, or <code>null</code> for the unchanged markdown
+                pipeline. Other registry entries remain intact.</span
+              >
+            </div>
+            <p class="sources">
+              <a
+                class="src"
+                href="https://github.com/OpenHands/OpenHands/blob/71427af5b426b3f1270db86341dffe30a947d53c/src/components/features/chat/tool-visualizers/dispatcher.tsx#L19"
+                >before dispatcher.tsx:19</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/chat/tool-visualizers/dispatcher.tsx#L37"
+                >after dispatcher.tsx:37</a
+              >
+            </p>
+            <details>
+              <summary>Focused diff</summary>
+              <div class="inside">
+                <pre><code><span class="plus">+ if (kind === "MCPToolObservation")</span>
+<span class="plus">+   return descriptor ? &lt;MCPBody descriptor={descriptor} ... /&gt; : null;</span></code></pre>
+              </div>
+            </details>
+            <div class="file-title">
+              <h3>MCPBody preserves original text beside the new artifact</h3>
+              <span class="tag">Added</span
+              ><span class="counts"
+                >tool-visualizers/mcp/mcp.tsx · +23 / −0</span
+              >
+            </div>
+            <p>
+              The original <code>getObservationContent</code> helper still
+              produces markdown. <code>MCPAppArtifact</code> owns only the App,
+              so errors or missing Hosts cannot remove the textual result.
+            </p>
+            <p class="sources">
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/chat/tool-visualizers/mcp/mcp.tsx#L10"
+                >MCPBody:10</a
+              >
+            </p>
+            <details>
+              <summary>Added body excerpt</summary>
+              <div class="inside">
+                <pre><code><span class="plus">+ &lt;MarkdownRenderer&gt;{getObservationContent(observation)}&lt;/MarkdownRenderer&gt;</span>
+<span class="plus">+ &lt;MCPAppArtifact event={observation} descriptor={descriptor} /&gt;</span></code></pre>
+              </div>
+            </details>
+          </article>
+
+          <article class="card" id="artifact">
+            <div class="file-title">
+              <h3>MCPAppArtifact owns one bound lifecycle</h3>
+              <span class="tag">Added</span
+              ><span class="counts">mcp-app-artifact.tsx · +285 / −0</span>
+            </div>
+            <p>
+              The component selects the event’s main/planning owner, builds a
+              trusted binding, validates the sandbox URL, opens a session, and
+              reads the declared resource. It dynamically imports the bridge
+              only after a resource arrives. A mode switch changes the write
+              predicate without redirecting the existing session.
+            </p>
+            <p class="sources">
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.tsx#L43"
+                >owner:43</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.tsx#L85"
+                >isWritable:85</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.tsx#L132"
+                >open/read:132</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.tsx#L144"
+                >lazy import:144</a
+              >
+            </p>
+            <p>
+              Loading skeletons and error/retry states use existing Canvas
+              tokens and button components. Iframe height comes from a CSS
+              custom property; unmount and failure remove <code>src</code> and
+              dispose work.
+            </p>
+            <p class="sources">
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.tsx#L208"
+                >UI states:208</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.module.css#L1"
+                >height CSS:1</a
+              >
+            </p>
+            <details>
+              <summary>Added lifecycle excerpt · see Fig 3</summary>
+              <div class="inside">
+                <pre><code><span class="plus">+ host.open(binding, { signal }) → session.readResource(resourceUri, { signal })</span>
+<span class="plus">+ await import("./mcp-app-bridge")</span>
+<span class="plus">+ loading → ready | error; timeout = 30_000</span>
+<span class="plus">+ fail/unmount: abort; iframe.removeAttribute("src"); dispose()</span>
+<span class="plus">+ retry: increment attempt; open a fresh session</span></code></pre>
+              </div>
+            </details>
+          </article>
+
+          <article class="card" id="bridge">
+            <div class="file-title">
+              <h3>The official AppBridge carries protocol semantics</h3>
+              <span class="tag">Added</span
+              ><span class="counts">mcp-app-bridge.ts · +379 / −0</span>
+            </div>
+            <p>
+              <code>SandboxTransport</code> accepts JSON-RPC only from the exact
+              proxy window/origin. Before loading any iframe, the bridge
+              validates the complete resource and tool-result schemas, MIME,
+              UTF-8 blob decoding, and supported resource metadata.
+            </p>
+            <p class="sources">
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L56"
+                >receive:56</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L94"
+                >resourceHTML:94</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L156"
+                >full schema checks:156</a
+              >
+            </p>
+            <p>
+              After sandbox and App initialization, input is sent before the
+              complete result, including private <code>_meta</code>. Optional
+              callbacks route through the session. <code>invoke</code> combines
+              lifecycle/request abort signals and repeats the write-scope check
+              after awaiting. Ordinary callback errors are protocol errors;
+              bridge failures invoke the component’s fatal cleanup.
+            </p>
+            <p class="sources">
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L247"
+                >callback routing:247</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L219"
+                >invoke:219</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L304"
+                >initialized/data delivery:304</a
+              >
+            </p>
+            <details>
+              <summary>Added protocol excerpt</summary>
+              <div class="inside">
+                <pre><code><span class="plus">+ new AppBridge(null, HOST_INFO, capabilities, { hostContext })</span>
+<span class="plus">+ sendSandboxResourceReady({ html, sandbox: "allow-scripts" })</span>
+<span class="plus">+ onInitialized: await sendToolInput(...); await sendToolResult(parsedResult)</span>
+<span class="plus">+ invoke: assertActive → callback(combinedSignal) → assertActive</span>
+<span class="plus">+ dispose: abort lifetime → teardown(1s) → close bridge + transport</span></code></pre>
+              </div>
+            </details>
+          </article>
+
+          <article class="card" id="sandbox">
+            <div class="file-title">
+              <h3>
+                The proxy inserts untrusted HTML only into an opaque inner
+                iframe
+              </h3>
+              <span class="tag">Added</span
+              ><span class="counts"
+                >public/mcp-app-sandbox.html · +91 / −0</span
+              >
+            </div>
+            <p>
+              The static proxy checks its configured parent origin and creates
+              one inner iframe after the resource-ready notification. HTML is
+              parsed in an inert document, receives restrictive CSP, then
+              becomes <code>srcdoc</code>. The inner frame has
+              <code>allow-scripts</code> without <code>allow-same-origin</code>.
+              See Fig 3.
+            </p>
+            <p class="sources">
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/public/mcp-app-sandbox.html#L25"
+                >parent origin:25</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/public/mcp-app-sandbox.html#L52"
+                >inner frame:52</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/public/mcp-app-sandbox.html#L72"
+                >inner message source:72</a
+              >
+            </p>
+            <details>
+              <summary>Added proxy excerpt</summary>
+              <div class="inside">
+                <pre><code><span class="plus">+ event.source === parent &amp;&amp; event.origin === parentOrigin</span>
+<span class="plus">+ DOMParser.parseFromString(html, "text/html")</span>
+<span class="plus">+ app.head.prepend(CSP); inner.sandbox = "allow-scripts"; inner.srcdoc = ...</span>
+<span class="plus">+ event.source === inner.contentWindow &amp;&amp; event.origin === "null"</span></code></pre>
+              </div>
+            </details>
+            <div class="file-title">
+              <h3>The server serves one credential-free proxy page</h3>
+              <span class="tag">Added</span
+              ><span class="counts"
+                >scripts/mcp-app-sandbox.mjs · +97 / −0</span
+              >
+            </div>
+            <p>
+              <code>createMCPAppSandboxServer</code> accepts only the fixed GET
+              path and configured parent-origin parameter. Response headers
+              enforce CSP, <code>frame-ancestors</code>, no-store, no-referrer,
+              and restricted permissions. Source layout loads
+              <code>public/</code>; published package layout falls back to
+              <code>build/</code>.
+            </p>
+            <p class="sources">
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/scripts/mcp-app-sandbox.mjs#L16"
+                >server:16</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/scripts/mcp-app-sandbox.mjs#L26"
+                >packaged fallback:26</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/scripts/mcp-app-sandbox.mjs#L40"
+                >fixed path:40</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/scripts/mcp-app-sandbox.mjs#L50"
+                >CSP:50</a
+              >
+            </p>
+            <details>
+              <summary>Added serving policy excerpt</summary>
+              <div class="inside">
+                <pre><code><span class="plus">+ GET /sandbox.html?parentOrigin=&lt;configured-origin&gt; → proxy HTML</span>
+<span class="plus">+ all other routes/methods/origins → 404</span>
+<span class="plus">+ source public/ file; ENOENT → fixed build/ file</span>
+<span class="plus">+ CSP + frame-ancestors + Permissions-Policy + no-store + no-referrer</span></code></pre>
+              </div>
+            </details>
+          </article>
+
+          <article class="card" id="shared">
+            <div class="file-title">
+              <h3>A shared conversation cannot inherit live Host access</h3>
+              <span class="tag edit">Changed</span
+              ><span class="counts"
+                >src/routes/shared-conversation.tsx · +8 / −4</span
+              >
+            </div>
+            <div class="compare">
+              <span class="before">Before</span
+              ><span
+                >Shared history rendered <code>Messages</code> directly.</span
+              ><span class="after">After</span
+              ><span
+                >A nested provider explicitly sets <code>host={null}</code> and
+                <code>scope={null}</code>, with an empty sidecar. Public history
+                cannot access an outer conversation’s Host or private
+                data.</span
+              >
+            </div>
+            <p class="sources">
+              <a
+                class="src"
+                href="https://github.com/OpenHands/OpenHands/blob/71427af5b426b3f1270db86341dffe30a947d53c/src/routes/shared-conversation.tsx#L152"
+                >before shared-conversation.tsx:152</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/routes/shared-conversation.tsx#L154"
+                >after shared-conversation.tsx:154</a
+              >
+              ·
+              <a
+                class="src"
+                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/__tests__/routes/shared-conversation-viewer-behavior.test.tsx#L280"
+                >isolation test:280</a
+              >
+            </p>
+            <details>
+              <summary>Focused diff</summary>
+              <div class="inside">
+                <pre><code><span class="plus">+ &lt;MCPAppHostProvider host={null} scope={null}&gt;</span>
+    &lt;Messages messages={renderableEvents} allEvents={conversationEvents} /&gt;
+<span class="plus">+ &lt;/MCPAppHostProvider&gt;</span></code></pre>
+              </div>
+            </details>
+          </article>
+
+          <article class="card" id="fixture">
+            <div class="file-title">
+              <h3>
+                The fixture exercises real rendering and sandboxing with mock
+                Host data
+              </h3>
+              <span class="tag">Added</span
+              ><span class="counts">fixture + runner</span>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>File</th>
+                    <th>Added role</th>
+                    <th>Source</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <code>src/fixtures/mcp-apps/demo.tsx</code><br /><span
+                        class="counts"
+                        >+394 / −0</span
+                      >
+                    </td>
+                    <td>
+                      Canonical mock observation, independent map, real event
+                      wrapper, in-memory Host, mode-change and origin-check
+                      controls. Host callbacks return local data or log strings.
+                    </td>
+                    <td>
+                      <a
+                        class="src"
+                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/fixtures/mcp-apps/demo.tsx#L74"
+                        >event:74</a
+                      >
+                      ·
+                      <a
+                        class="src"
+                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/fixtures/mcp-apps/demo.tsx#L119"
+                        >Host:119</a
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <code>src/fixtures/mcp-apps/market-app.html</code
+                      ><br /><span class="counts">+442 / −0</span>
+                    </td>
+                    <td>
+                      Self-contained sample App; explicit mock market UI, raw
+                      ui/ JSON-RPC handshake/callbacks, private-result and
+                      isolation indicators, ResizeObserver height notifications.
+                    </td>
+                    <td>
+                      <a
+                        class="src"
+                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/fixtures/mcp-apps/market-app.html#L335"
+                        >App script:335</a
+                      >
+                      ·
+                      <a
+                        class="src"
+                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/fixtures/mcp-apps/market-app.html#L401"
+                        >resize/callbacks:401</a
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <code>scripts/mcp-app-demo.mjs</code><br /><span
+                        class="counts"
+                        >+61 / −0</span
+                      >
+                    </td>
+                    <td>
+                      Starts a loopback Vite fixture and the real sandbox server
+                      on separate ports. Does not start an Agent Server or
+                      connect an LLM.
+                    </td>
+                    <td>
+                      <a
+                        class="src"
+                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/scripts/mcp-app-demo.mjs#L8"
+                        >origins:8</a
+                      >
+                      ·
+                      <a
+                        class="src"
+                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/scripts/mcp-app-demo.mjs#L14"
+                        >sandbox/Vite:14</a
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <code>demo.css</code> · <code>index.html</code><br /><span
+                        class="counts"
+                        >+16 / −0 · +12 / −0</span
+                      >
+                    </td>
+                    <td>
+                      Fixture visual tokens and document entry; demo styling is
+                      separate from production App content.
+                    </td>
+                    <td>
+                      <a
+                        class="src"
+                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/fixtures/mcp-apps/demo.css#L1"
+                        >demo.css:1</a
+                      >
+                      ·
+                      <a
+                        class="src"
+                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/fixtures/mcp-apps/index.html#L1"
+                        >index.html:1</a
+                      >
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <details>
+              <summary>Added fixture flow</summary>
+              <div class="inside">
+                <pre><code><span class="plus">+ real GenericEventMessageWrapper + real MCPAppArtifact + real AppBridge</span>
+<span class="plus">+ distinct-origin proxy + opaque inner iframe</span>
+<span class="plus">+ memory readResource → imported APP_HTML</span>
+<span class="plus">+ memory callTool → fixed refreshed price</span>
+<span class="plus">+ context/message → log strings only</span></code></pre>
+              </div>
+            </details>
+          </article>
+
+          <article class="card" id="mechanical">
+            <h3>
+              Exports, pins, translations, and build configuration are additive
+            </h3>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>File / delta</th>
+                    <th>Before → after</th>
+                    <th>Source</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <code>src/components/conversation/index.ts</code
+                      ><br /><span class="tag mechanical">Exports</span
+                      ><span class="counts">+14 / −0</span>
+                    </td>
+                    <td>
+                      Existing conversation exports → adds Host provider and MCP
+                      App types to the existing library barrel.
+                    </td>
+                    <td>
+                      <a
+                        class="src"
+                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation/index.ts#L9"
+                        >index.ts:9</a
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <code>package.json</code><br /><span
+                        class="tag mechanical"
+                        >Dependencies</span
+                      ><span class="counts">+5 / −0</span>
+                    </td>
+                    <td>
+                      No MCP App SDK → exact <code>ext-apps@1.7.5</code>,
+                      <code>sdk@1.29.0</code>, <code>zod@4.4.3</code>; adds
+                      demo/E2E scripts. Existing typescript-client stays 1.54.0.
+                    </td>
+                    <td>
+                      <a
+                        class="src"
+                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/package.json#L25"
+                        >dependencies:25</a
+                      >
+                      ·
+                      <a
+                        class="src"
+                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/package.json#L109"
+                        >scripts:109</a
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <code>package-lock.json</code><br /><span
+                        class="tag mechanical"
+                        >Lockfile</span
+                      ><span class="counts">+649 / −14</span>
+                    </td>
+                    <td>
+                      Locks the new protocol dependencies and transitives;
+                      resolved package URLs use the official npm registry.
+                    </td>
+                    <td>
+                      <a
+                        class="src"
+                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/package-lock.json#L1"
+                        >package-lock.json:1</a
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <code>vite.config.ts</code><br /><span
+                        class="tag mechanical"
+                        >Optimization</span
+                      ><span class="counts">+2 / −0</span>
+                    </td>
+                    <td>
+                      Existing development preoptimization list → includes
+                      official AppBridge. The production split follows the
+                      dynamic import in the artifact component.
+                    </td>
+                    <td>
+                      <a
+                        class="src"
+                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/vite.config.ts#L293"
+                        >vite.config.ts:293</a
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <code>src/i18n/translation.json</code><br /><span
+                        class="tag mechanical"
+                        >UI strings</span
+                      ><span class="counts">+72 / −0</span>
+                    </td>
+                    <td>
+                      Adds title/loading/unavailable/error keys in all 16
+                      supported locales.
+                    </td>
+                    <td>
+                      <a
+                        class="src"
+                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/i18n/translation.json#L2"
+                        >translation.json:2</a
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <code>mcp-app-artifact.module.css</code><br /><span
+                        class="tag mechanical"
+                        >Frame height</span
+                      ><span class="counts">+3 / −0</span>
+                    </td>
+                    <td>
+                      New class reads <code>--mcp-app-height</code>; component
+                      computes clamped height from App size notifications.
+                    </td>
+                    <td>
+                      <a
+                        class="src"
+                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.module.css#L1"
+                        >module.css:1</a
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <code>playwright.mcp-apps.config.ts</code><br /><span
+                        class="tag mechanical"
+                        >Test runner</span
+                      ><span class="counts">+24 / −0</span>
+                    </td>
+                    <td>
+                      Dedicated Chromium config, one worker, fixture web server,
+                      optional installed-browser override.
+                    </td>
+                    <td>
+                      <a
+                        class="src"
+                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/playwright.mcp-apps.config.ts#L5"
+                        >config:5</a
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <code>specs/mcp-apps.md</code> · feature
+                      <code>README.md</code><br /><span class="tag">Added</span
+                      ><span class="counts">spec +90 / −0</span>
+                    </td>
+                    <td>
+                      Four behavior IDs, boundary contracts, deployment/review
+                      instructions, and production follow-ups. README supplies
+                      the component map.
+                    </td>
+                    <td>
+                      <a
+                        class="src"
+                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/specs/mcp-apps.md#L8"
+                        >spec IDs:8</a
+                      >
+                      ·
+                      <a
+                        class="src"
+                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/README.md#L1"
+                        >README:1</a
+                      >
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <section id="evidence">
+          <h2>
+            <span class="num">6</span>The evidence covers a real sandbox with
+            mock backend data
+          </h2>
+          <p>
+            The browser fixture uses the real event wrapper, official AppBridge,
+            distinct proxy origin, and nested iframe. Its server callback
+            implementation is in memory: refresh returns a fixed price, while
+            context and message callbacks append local log entries. Those logs
+            prove routing through the Host contract, not model consumption or
+            persistence.
+          </p>
+          <p class="sources">
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/fixtures/mcp-apps/demo.tsx#L129"
+              >readResource:129</a
+            >
+            ·
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/fixtures/mcp-apps/demo.tsx#L142"
+              >mock callbacks:142</a
+            >
+          </p>
+          <p>
+            <strong>Final feature validation:</strong> 115 focused Vitest tests,
+            144 additional compatibility tests, and all three Chromium
+            integration tests passed. The PR validation record holds the exact
+            commands, environment, builds, screenshots, and recording; these
+            counts apply to the source revision pinned by this page.
+            <a
+              href="https://github.com/FantasyChino/OpenHands/blob/e1ce2eaab2205760dd6b33b5db1b682ae7e5474c/.pr/mcp-apps/validation.md"
+              >Validation record</a
+            >
+          </p>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Invariant</th>
+                  <th>Observable evidence</th>
+                  <th>Limit of that evidence</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Text plus complete result in an isolated App</td>
+                  <td>
+                    Browser checks original text, input symbol, private
+                    <code>_meta</code>, opaque-origin isolation, and mobile
+                    reflow.
+                    <a
+                      class="src"
+                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/tests/e2e/mcp-apps/host.spec.ts#L14"
+                      >host.spec.ts:14</a
+                    >
+                  </td>
+                  <td>
+                    A self-contained fixture App, not a production MCP server.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Declared callbacks and mode-change revocation</td>
+                  <td>
+                    Refresh/context/message hit Host logs; changing write owner
+                    rejects the next write without opening session #2.
+                    <a
+                      class="src"
+                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/tests/e2e/mcp-apps/host.spec.ts#L54"
+                      >host.spec.ts:54</a
+                    >
+                  </td>
+                  <td>
+                    Mock tool result; context/message do not reach an LLM.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Window and origin filtering</td>
+                  <td>
+                    Wrong-window browser request leaves no tool-call log. Unit
+                    tests also cover spoofed origin and malformed JSON-RPC.
+                    <a
+                      class="src"
+                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/tests/e2e/mcp-apps/host.spec.ts#L83"
+                      >host.spec.ts:83</a
+                    >
+                    ·
+                    <a
+                      class="src"
+                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/__tests__/components/features/mcp-apps/mcp-app-bridge.test.ts#L173"
+                      >bridge.test.ts:173</a
+                    >
+                  </td>
+                  <td>No claim of a full adversarial sandbox audit.</td>
+                </tr>
+                <tr>
+                  <td>
+                    Sidecar arrival/removal does not mutate canonical events
+                  </td>
+                  <td>
+                    Messages grouping reacts to replacement maps; an App-shaped
+                    wire field alone is ignored.
+                    <a
+                      class="src"
+                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/__tests__/components/conversation-events/chat/messages-stable-event-props.test.tsx#L127"
+                      >Messages test:127</a
+                    >
+                    ·
+                    <a
+                      class="src"
+                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/utils/mcp-app-descriptor.test.ts#L47"
+                      >descriptor test:47</a
+                    >
+                  </td>
+                  <td>
+                    A frontend ownership guarantee; backend provenance still
+                    needs a real adapter.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Abort and teardown release old work</td>
+                  <td>
+                    Pending callbacks abort, teardown executes once, listeners
+                    close; component retries with fresh binding.
+                    <a
+                      class="src"
+                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/__tests__/components/features/mcp-apps/mcp-app-bridge.test.ts#L289"
+                      >bridge.test.ts:289</a
+                    >
+                    ·
+                    <a
+                      class="src"
+                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.test.tsx#L128"
+                      >artifact.test.tsx:128</a
+                    >
+                  </td>
+                  <td>Unit lifecycle checks plus fixture browser behavior.</td>
+                </tr>
+                <tr>
+                  <td>
+                    Shared history does not inherit private presentation data
+                  </td>
+                  <td>
+                    Outer live Host/sidecar is blocked by the nested shared-view
+                    provider.
+                    <a
+                      class="src"
+                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/__tests__/routes/shared-conversation-viewer-behavior.test.tsx#L280"
+                      >shared viewer test:280</a
+                    >
+                  </td>
+                  <td>Cloud persistence for Apps remains unimplemented.</td>
+                </tr>
+                <tr>
+                  <td>Installed-package sandbox file can be served</td>
+                  <td>
+                    The sandbox script loads built HTML when
+                    <code>public/</code> is absent.
+                    <a
+                      class="src"
+                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/__tests__/scripts/mcp-app-sandbox.test.ts#L11"
+                      >sandbox.test.ts:11</a
+                    >
+                  </td>
+                  <td>
+                    Packaging-path test; deployment still requires a dedicated
+                    origin.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <details>
+            <summary>Reproduce the local prototype and browser checks</summary>
+            <div class="inside">
+              <pre><code>npm run demo:mcp-apps
+<span class="com"># Open http://127.0.0.1:3101/src/fixtures/mcp-apps/</span>
+<span class="com"># The separate sandbox origin is http://127.0.0.1:3102</span>
+
+npm run test:e2e:mcp-apps
+<span class="com"># Optional: MCP_APPS_BROWSER_PATH selects an installed browser.</span></code></pre>
+              <p class="sources">
+                <a
+                  class="src"
+                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/specs/mcp-apps.md#L71"
+                  >review instructions:71</a
+                >
+              </p>
+            </div>
+          </details>
+          <p>
+            Current command results, screenshots, and interaction recording
+            belong to the PR’s validation artifacts. This document describes the
+            assertions and their limits rather than treating a demo screenshot
+            as production evidence.
+          </p>
+          <p class="sources">
+            <a
+              href="https://github.com/FantasyChino/OpenHands/blob/e1ce2eaab2205760dd6b33b5db1b682ae7e5474c/.pr/mcp-apps/validation.md"
+              >Validation record</a
+            >
+            ·
+            <a
+              href="https://github.com/FantasyChino/OpenHands/blob/e1ce2eaab2205760dd6b33b5db1b682ae7e5474c/.pr/mcp-apps/desktop.png"
+              >Desktop capture</a
+            >
+            ·
+            <a
+              href="https://github.com/FantasyChino/OpenHands/blob/e1ce2eaab2205760dd6b33b5db1b682ae7e5474c/.pr/mcp-apps/mobile.png"
+              >Mobile capture</a
+            >
+            ·
+            <a
+              href="https://github.com/FantasyChino/OpenHands/blob/e1ce2eaab2205760dd6b33b5db1b682ae7e5474c/.pr/mcp-apps/interaction.webm"
+              >Interaction recording</a
+            >
+          </p>
+        </section>
+
+        <section id="remaining">
+          <h2><span class="num">7</span>Production work remains explicit</h2>
+          <ol>
+            <li>
+              <strong>Published server/client contracts:</strong> preserve
+              tool-definition UI metadata, private result metadata, and
+              originating server provenance; provide conversation-bound
+              resource/tool proxies.
+            </li>
+            <li>
+              <strong>Production authorization:</strong> enforce tool
+              visibility, user confirmation, audit, and rate limits before the
+              Host exposes write callbacks.
+            </li>
+            <li>
+              <strong>Context and history:</strong> consume App context in the
+              next model turn and define Cloud history persistence without
+              mixing private View metadata into canonical transcripts.
+            </li>
+            <li>
+              <strong>Install modes and ACP:</strong> choose dedicated sandbox
+              deployment for each installation path and add ACP
+              provenance/resource routing before supporting ACP Apps.
+            </li>
+          </ol>
+          <p class="sources">
+            Declared follow-ups:
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/specs/mcp-apps.md#L84"
+              >specs/mcp-apps.md:84</a
+            >
+            · callback policy:
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/specs/mcp-apps.md#L38"
+              >specs/mcp-apps.md:38</a
+            >
+            · ACP boundary:
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/specs/mcp-apps.md#L50"
+              >specs/mcp-apps.md:50</a
+            >
+          </p>
+          <div class="callout">
+            ★ The review target is the frontend seam and self-contained host.
+            Production enablement should be a separate change after the required
+            backend contracts and authorization behavior are available.
+          </div>
+          <p class="foot">
+            This is a self-contained, offline HTML review aid. It has no
+            external assets or scripts. Before-state links are pinned to
+            <code
+              >OpenHands/OpenHands@71427af5b426b3f1270db86341dffe30a947d53c</code
+            >; after-state links are pinned to the feature source commit in
+            <code>FantasyChino/OpenHands</code>. The <code>.pr/</code> document
+            and evidence are temporary and must be removed before merge;
+            commit-pinned PR links preserve review access.
+          </p>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
