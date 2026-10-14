@@ -6,7 +6,6 @@ import {
   type VSCodeStatusResponse,
 } from "@openhands/typescript-client";
 import {
-  type CloudClient,
   ConversationClient,
   FileClient,
   ProfilesClient,
@@ -21,17 +20,18 @@ import {
   resolveNewConversationWorkspace,
 } from "../conversation-workspace";
 import HooksService from "../hooks-service";
+import type { Backend } from "../backend-registry/types";
 import {
   getActiveBackend,
   getEffectiveLocalBackend,
 } from "../backend-registry/active-store";
 import { callCloudProxy } from "../cloud/proxy";
-import { activeOrgForBackend, createCloudClient } from "../cloud/client";
-import { recordOrganizationSuspension } from "../cloud/organization-suspension-store";
+import { activeOrgForBackend } from "../cloud/client";
 import ProfilesService from "../profiles-service/profiles-service.api";
 import {
   batchGetCloudConversations,
   createCloudAppConversation,
+  deleteCloudConversation,
   downloadCloudConversation,
   getCloudAppConversationStartTask,
   readCloudConversationFile,
@@ -95,8 +95,7 @@ export type ConversationDeletionScope =
   | { kind: "local"; client: ConversationClient }
   | {
       kind: "cloud";
-      client: CloudClient;
-      backendId: string;
+      backend: Backend;
       orgId: string | null;
     };
 // Creating the first conversation right after a cold agent-server boot (fresh
@@ -1043,8 +1042,7 @@ class AgentServerConversationService {
     if (backend.kind === "cloud") {
       return {
         kind: "cloud",
-        client: createCloudClient(backend),
-        backendId: backend.id,
+        backend,
         orgId: activeOrgForBackend(backend),
       };
     }
@@ -1059,16 +1057,7 @@ class AgentServerConversationService {
     scope: ConversationDeletionScope = this.createConversationDeletionScope(),
   ): Promise<void> {
     if (scope.kind === "cloud") {
-      try {
-        await scope.client.request({
-          method: "DELETE",
-          path: `/api/v1/app-conversations/${conversationId}`,
-          ...(scope.orgId ? { headers: { "X-Org-Id": scope.orgId } } : {}),
-        });
-      } catch (error) {
-        recordOrganizationSuspension(scope.backendId, scope.orgId, error);
-        throw error;
-      }
+      await deleteCloudConversation(conversationId, scope);
       removeStoredConversationMetadata(conversationId);
       return;
     }
