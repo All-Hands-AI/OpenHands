@@ -66,7 +66,7 @@
     <section id="sec1"><h2><span class="num">1</span>What changed</h2>
       <div class="callout"><b>★ Key takeaway.</b> The upload destination is now derived from the conversation's own <code>workspace.working_dir</code> (read via <code>ConversationClient.getConversation</code>) instead of a locally-guessed default. When the guess diverged from the stored value, the guard rejected every file with a <code>422</code>; now the destination matches what the guard compares against.</div>
       <p>Net effect: <b>2 behavior changes</b> in one file, plus a new i18n string. Compatibility is <b>additive</b> — no public API, wire contract, or persisted shape changes; the local resolution is retained as a lazy fallback, so the WUP-001 behavior is unchanged whenever the runtime read is unavailable.</p>
-      <p class="sub" style="font-size:14px">Base <code>1ec8661</code> · 6 files · +83 / −8.</p>
+      <p class="sub" style="font-size:14px">Base <code>bf483c1</code> · 6 files · +235 / −17 (incl. tests + design doc).</p>
     </section>
 
     <section id="sec2"><h2><span class="num">2</span>The bug, in one call chain</h2>
