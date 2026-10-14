@@ -680,13 +680,16 @@ export function startStaticServer(config) {
   const staticMiddleware = createStaticMiddleware(dirAbs);
 
   const uninstallDiagnostics = proxy.installDiagnostics();
-  // DigitalOcean Managed Agents for the browser: with MARS_WEB=1 this server
-  // hosts the MARS bridge and proxies to sessions' tunnel listeners, behind
-  // the session key (see mars-web-bridge.mjs). The key is the one this server
-  // already injects; a LAN bind with no key refuses to mount.
+  // DigitalOcean Managed Agents for the browser: this server hosts the MARS
+  // bridge and proxies to sessions' tunnel listeners, behind the session key
+  // (see mars-web-bridge.mjs). Deliberately `config.sessionApiKey`, not
+  // `policy.sessionApiKey`: the policy decides whether the key may be baked
+  // into the HTML on a LAN bind (Docker binds `::` and strips it), while the
+  // bridge only ever checks a key the client sends — the one the user types
+  // on the API key screen. A LAN bind with no key at all refuses to mount.
   const marsWeb = mountMarsWebBridge({
     host: config.host,
-    sessionApiKey: policy.sessionApiKey,
+    sessionApiKey: config.sessionApiKey || null,
   });
 
   const server = createServer((req, res) => {

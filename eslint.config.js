@@ -452,11 +452,10 @@ export default [
           // Retain existing JS-config/plugin exceptions for a separate token audit.
           // Exact classes only: do not exempt raw palettes or whole namespaces.
           allow: [
-            // hero.ts / @heroui/theme: semantic colors and the medium font size.
+            // hero.ts / @heroui/theme: semantic colors pending the token audit.
             "bg-background",
             "bg-content1",
             "text-primary-foreground",
-            "text-medium",
             // tailwind.config.js: existing named tokens, pending theme migration.
             "bg-status-fail-bg",
             "text-status-fail-text",
