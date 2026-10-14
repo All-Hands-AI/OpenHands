@@ -593,16 +593,17 @@ class AgentServerConversationService {
       agentLlmProfileRef,
     );
     const conversationId = uuidv4();
+    const resolvedWorkspaceMode =
+      workspaceMode ?? (workingDirOverride ? "local_repo" : "new_worktree");
+    const inContainer = resolvedWorkspaceMode === "docker_container";
     const { workingDir, hooksProjectDir, isolated } =
       await resolveNewConversationWorkspace({
         conversationId,
         workingDir: workingDirOverride,
         selectedRepository: metadata?.selected_repository,
         parentConversationId,
+        inContainer,
       });
-    const resolvedWorkspaceMode =
-      workspaceMode ?? (workingDirOverride ? "local_repo" : "new_worktree");
-    const inContainer = resolvedWorkspaceMode === "docker_container";
 
     // Use encrypted settings to avoid exposing secrets in the browser
     const payload = await buildStartConversationRequestWithEncryptedSettings({
@@ -619,8 +620,7 @@ class AgentServerConversationService {
       // older than 1.37.1 ignore the field and create an unlinked conversation.
       parentConversationId,
       workingDir,
-      // A container does not see host paths, so host hooks do not apply.
-      hooksProjectDir: inContainer ? null : hooksProjectDir,
+      hooksProjectDir,
       worktree: !isolated && resolvedWorkspaceMode === "new_worktree",
       agentProfileId,
       agentProfileKind,
@@ -942,8 +942,10 @@ class AgentServerConversationService {
     if (!conversationId || !getEffectiveLocalBackend()) {
       return emptyHooksResponse();
     }
+    const metadata = getStoredConversationMetadata(conversationId);
     const projectDir = await resolveConversationHooksProjectDir(
-      getStoredConversationMetadata(conversationId)?.selected_workspace,
+      metadata?.selected_workspace,
+      metadata?.workspace_mode === "docker_container",
     );
     if (projectDir === null) return emptyHooksResponse();
     return toHooksResponse(await HooksService.fetchWorkspaceHooks(projectDir));

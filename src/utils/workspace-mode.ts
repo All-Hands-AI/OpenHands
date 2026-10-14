@@ -4,6 +4,17 @@ import { I18nKey } from "#/i18n/declaration";
 
 export const DEFAULT_WORKSPACE_MODE: WorkspaceMode = "local_repo";
 
+const HOST_WORKSPACE_MODES: WorkspaceMode[] = ["local_repo", "new_worktree"];
+
+/** The modes the launcher offers; Docker only when the server can run it. */
+export function getWorkspaceModeOptions(
+  dockerSelectable: boolean,
+): WorkspaceMode[] {
+  return dockerSelectable
+    ? [...HOST_WORKSPACE_MODES, "docker_container"]
+    : HOST_WORKSPACE_MODES;
+}
+
 export const LAST_LOCAL_WORKSPACE_MODE_STORAGE_KEY =
   "openhands-last-local-workspace-mode";
 

@@ -20,6 +20,7 @@ import {
 import type { Backend } from "#/api/backend-registry/types";
 import { clearCachedAgentServerInfo } from "#/api/agent-server-compatibility";
 import AgentServerConversationService from "#/api/conversation-service/agent-server-conversation-service.api";
+import HooksService from "#/api/hooks-service";
 import LLMSubscriptionService from "#/api/llm-subscription-service";
 import {
   LLM_AUTH_TYPE_SUBSCRIPTION,
@@ -868,6 +869,7 @@ describe("AgentServerConversationService", () => {
     });
 
     it("asks for the docker runtime in docker-container mode", async () => {
+      const loadWorkspaceHooks = vi.spyOn(HooksService, "loadWorkspaceHooks");
       mockGetSettings.mockResolvedValue({
         agent_settings: { llm: { model: "gpt-4o" } },
         conversation_settings: {},
@@ -899,6 +901,8 @@ describe("AgentServerConversationService", () => {
       expect(payload.workspace.working_dir).toBe("/Users/jane/projects/foo");
       expect(payload.worktree).toBe(false);
       expect(payload.conversation_runtime).toBe("docker");
+      // The container cannot see host paths, so no host hooks are loaded.
+      expect(loadWorkspaceHooks).not.toHaveBeenCalled();
     });
   });
 

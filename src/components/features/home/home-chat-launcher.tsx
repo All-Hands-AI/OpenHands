@@ -30,6 +30,7 @@ import { getApiErrorMessage } from "#/utils/api-error-message";
 import { getWorkspacesUnsupportedMessage } from "#/utils/workspaces-compatibility";
 import {
   DEFAULT_WORKSPACE_MODE,
+  getWorkspaceModeOptions,
   readStoredLocalWorkspaceMode,
   writeStoredLocalWorkspaceMode,
 } from "#/utils/workspace-mode";
@@ -49,7 +50,6 @@ import { OpenLauncherButton } from "./open-launcher-button";
 import { OpenWorkspaceDialog } from "./open-workspace-dialog";
 import { OpenRepositoryDialog } from "./open-repository-dialog";
 import { HomeGitControlBarPreview } from "./home-git-control-bar-preview";
-import { WORKSPACE_MODE_OPTIONS } from "#/components/features/chat/workspace-mode-selector";
 
 export function HomeChatLauncher() {
   const { t } = useTranslation("openhands");
@@ -108,9 +108,7 @@ export function HomeChatLauncher() {
     dockerSelectable,
     unsupportedMessage: runtimeWorkspaceMessage,
   } = useConversationWorkspace();
-  const workspaceModes: WorkspaceMode[] = dockerSelectable
-    ? [...WORKSPACE_MODE_OPTIONS, "docker_container"]
-    : WORKSPACE_MODE_OPTIONS;
+  const workspaceModes = getWorkspaceModeOptions(dockerSelectable);
   // A remembered mode the current server no longer offers falls back.
   const effectiveWorkspaceMode = workspaceModes.includes(workspaceMode)
     ? workspaceMode
