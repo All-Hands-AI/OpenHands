@@ -3,7 +3,7 @@ import { CANVAS_UI_CLIENT_TOOL_NAME } from "#/constants/canvas-ui";
 import { LAUNCH_CHILD_CONVERSATION_TOOL_NAME } from "#/constants/child-conversation";
 import { REQUEST_SECRET_TOOL_NAME } from "#/constants/secret-request";
 import { DEFAULT_SETTINGS } from "#/services/settings";
-import type { Settings } from "#/types/settings";
+import type { Settings, SettingsValue } from "#/types/settings";
 import {
   AGENT_CANVAS_SOURCE,
   CLIENT_SOURCE_TAG_KEY,
@@ -86,7 +86,7 @@ describe("buildStartConversationRequest", () => {
     ) {
       return buildStartConversationRequest({
         settings,
-        encryptedAgentSettings: agentSettings as Settings["agent_settings"],
+        encryptedAgentSettings: agentSettings as Record<string, SettingsValue>,
         encryptedConversationSettings: settings.conversation_settings!,
         defaultToolNames,
       });
@@ -119,7 +119,10 @@ describe("buildStartConversationRequest", () => {
           { name: "file_editor", params: {} },
         ],
       };
-      const settings = { ...makeSettings(agentSettings), ...identity };
+      const settings = {
+        ...makeSettings(agentSettings as Record<string, SettingsValue>),
+        ...identity,
+      };
 
       const payload = start(settings, agentSettings);
 
@@ -178,7 +181,10 @@ describe("buildStartConversationRequest", () => {
         ...llmOnly,
         tools: [{ name: "file_editor", params: {} }],
       };
-      const settings = { ...makeSettings(agentSettings), ...identity };
+      const settings = {
+        ...makeSettings(agentSettings as Record<string, SettingsValue>),
+        ...identity,
+      };
 
       const payload = start(settings, agentSettings);
 
