@@ -13,7 +13,7 @@ interface HomeGitControlBarPreviewProps {
   branch?: Branch | null;
   provider?: Provider | null;
   workspaceMode: WorkspaceMode;
-  workspaceModes?: WorkspaceMode[];
+  workspaceModes: WorkspaceMode[];
   backendKind: BackendKind;
   onRepoClick: () => void;
   onWorkspaceModeChange: (mode: WorkspaceMode) => void;
