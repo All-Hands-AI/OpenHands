@@ -18,8 +18,8 @@
 ---
 
 ### WUP-002: Upload destinations prefer the runtime-reported conversation working dir
-- [x] When the frontend uploads a file, `uploadFilesToConversation` shall read the conversation's own `workspace.working_dir` from the runtime the upload targets (`GET /conversations/{id}` via `ConversationClient`) and use that value verbatim as the upload anchor.
-- [x] The locally-derived working dir (from `resolveConversationUploadWorkingDir`) shall remain the fallback used only when the runtime read fails or returns an empty working dir, so a transient runtime error never regresses the WUP-001 home-anchored behavior.
+- [x] When the frontend uploads a file, `uploadFilesToConversation` shall read the conversation's own `workspace.working_dir` from the runtime the upload targets (`GET /conversations/{id}` via `ConversationClient`) and use that value verbatim as the upload anchor when it is absolute.
+- [x] The locally-derived working dir (from `resolveConversationUploadWorkingDir`) shall remain the fallback used only when the runtime read fails or returns an empty or relative working dir, so a transient runtime error never regresses the WUP-001 home-anchored behavior.
 - [x] The runtime read shall be best-effort: any failure (network, 404, auth, sandbox still starting) falls back to the local resolution rather than failing the upload.
 - [x] When an upload is rejected by the agent-server's workspace guard with `422` and the detail `path must be inside the conversation workspace`, the skipped-file reason shown to the user shall be a human-readable message (via `FILE_SERVICE$UPLOAD_WORKSPACE_MISMATCH`) instead of the raw `HTTP request failed (422 …)` body.
 

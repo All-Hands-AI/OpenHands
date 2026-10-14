@@ -3,6 +3,7 @@ import { ConversationClient } from "@openhands/typescript-client/clients";
 import { HttpError } from "@openhands/typescript-client";
 import i18n from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
+import { isAbsolutePath } from "#/api/agent-server-home";
 import { getAgentServerClientOptions } from "#/api/agent-server-client-options";
 import { getActiveBackend } from "#/api/backend-registry/active-store";
 import { batchGetCloudConversations } from "#/api/cloud/conversation-service.api";
@@ -82,7 +83,7 @@ function requireCloudRuntime(
  * reported value makes the destination authoritative instead of guessed.
  *
  * Returns `null` (never throws) when the runtime is unreachable or reports no
- * working dir, so the caller can fall back to the local resolution.
+ * absolute working dir, so the caller can fall back to the local resolution.
  */
 async function readRuntimeWorkingDir(
   runtime: ConversationRuntimeContext,
@@ -98,7 +99,11 @@ async function readRuntimeWorkingDir(
     ).getConversation<{ workspace?: { working_dir?: string | null } | null }>(
       conversationId,
     );
-    return info?.workspace?.working_dir?.trim() || null;
+    const dir = info?.workspace?.working_dir?.trim();
+    // A relative dir is resolved by the guard against the server's own CWD,
+    // which Canvas cannot know. Only an absolute value is authoritative;
+    // otherwise keep the local resolution (WUP-001).
+    return dir && isAbsolutePath(dir) ? dir : null;
   } catch {
     return null;
   }

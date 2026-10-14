@@ -210,6 +210,32 @@ describe("uploadFilesToConversation", () => {
     );
   });
 
+  // @spec WUP-002 — a runtime that reports a *relative* working dir is not
+  // authoritative (the guard resolves it against the server CWD, which Canvas
+  // cannot know), so the local resolution still wins.
+  it("ignores a relative runtime working dir and keeps the local resolution", async () => {
+    setRegisteredBackends([
+      {
+        id: "local-1",
+        name: "Local",
+        host: "http://127.0.0.1:18000",
+        apiKey: "local-key",
+        kind: "local",
+      },
+    ]);
+    setActiveSelection({ backendId: "local-1" });
+    getConversationMock.mockResolvedValue({
+      workspace: { working_dir: "workspace/project/abc123" },
+    });
+
+    await uploadFilesToConversation("conv-1", [makeFile("a.txt")]);
+
+    expect(fileUploadMock).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "a.txt" }),
+      "/Users/test/workspace/project/a.txt",
+    );
+  });
+
   // @spec WUP-002 — a failed runtime read must not break the upload.
   it("falls back to the local resolution when the runtime read fails", async () => {
     setRegisteredBackends([
