@@ -228,6 +228,12 @@ describe("mock settings schemas and state", () => {
         choices: ["llm", "none"],
         depends_on: ["confirmation_mode"],
       }),
+      worktree_base: contract("runtime", "string", "default_branch", "major", {
+        choices: ["default_branch", "head"],
+      }),
+      container_memory: contract("runtime", "string", null, "major"),
+      container_cpus: contract("runtime", "number", null, "major"),
+      container_browser: contract("runtime", "boolean", true, "major"),
     };
     for (const version of ["", "/v1"]) {
       for (const [schema, expected] of [
@@ -305,7 +311,11 @@ describe("mock settings schemas and state", () => {
       expect(response.ok).toBe(true);
       expect(body).toMatchObject({
         model_name: "ConversationSettings",
-        sections: [{ key: "general" }, { key: "verification" }],
+        sections: [
+          { key: "general" },
+          { key: "verification" },
+          { key: "runtime" },
+        ],
       });
     }
   });

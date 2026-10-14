@@ -780,6 +780,31 @@ function getConversationSecurityAnalyzer(conversationSettings: SettingsRecord) {
   }
 }
 
+/**
+ * The Settings → Runtime options a start request carries. Only non-defaults
+ * are sent, so servers without the fields see the request they always did.
+ */
+function getConversationRuntimeOptions(conversationSettings: SettingsRecord): {
+  worktree_base?: "head";
+  container?: { memory?: string; cpus?: number; browser?: false };
+} {
+  const {
+    worktree_base: worktreeBase,
+    container_memory: memory,
+    container_cpus: cpus,
+    container_browser: browser,
+  } = conversationSettings;
+  const container = {
+    ...(typeof memory === "string" && memory ? { memory } : {}),
+    ...(typeof cpus === "number" ? { cpus } : {}),
+    ...(browser === false ? { browser: false as const } : {}),
+  };
+  return {
+    ...(worktreeBase === "head" ? { worktree_base: worktreeBase } : {}),
+    ...(Object.keys(container).length > 0 ? { container } : {}),
+  };
+}
+
 function isToolRecord(
   value: unknown,
 ): value is { name: string; params?: unknown } {
@@ -1397,6 +1422,7 @@ export function buildStartConversationRequest(
       options.executionRuntime === "docker"
         ? false
         : (options.worktree ?? true),
+    ...getConversationRuntimeOptions(conversationSettings),
   };
 
   // Stamp the client source tag so the agent-server can attribute the
