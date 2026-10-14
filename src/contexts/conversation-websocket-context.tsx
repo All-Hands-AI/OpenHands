@@ -40,7 +40,9 @@ import {
   isSwitchLLMObservationEvent,
   isClassifyAndSwitchLLMObservationEvent,
   isCanvasUIActionEvent,
+  isAutomationFormUpdateActionEvent,
   isLaunchChildConversationActionEvent,
+  isRequestSecretActionEvent,
 } from "#/types/agent-server/type-guards";
 import {
   asSessionFrame,
@@ -51,7 +53,9 @@ import {
   StreamingDeltaBatcher,
 } from "#/utils/streaming-delta-batcher";
 import { handleCanvasUIAction } from "#/services/canvas-ui";
+import { handleAutomationFormUpdateAction } from "#/services/automation-form";
 import { handleLaunchChildConversationAction } from "#/services/child-conversation-launch";
+import { handleRequestSecretAction } from "#/services/secret-request";
 import { ConversationStateUpdateEventStats } from "#/types/agent-server/core/events/conversation-state-event";
 import type {
   ConversationErrorEvent,
@@ -849,11 +853,30 @@ export function ConversationWebSocketProvider({
             handleCanvasUIAction(event.action, conversationId ?? null);
           }
 
+          if (isAutomationFormUpdateActionEvent(event)) {
+            handleAutomationFormUpdateAction(
+              event.action,
+              conversationId ?? null,
+              event.id,
+              event.timestamp,
+            );
+          }
+
           // Same client-tool pattern, but the work is a network call: launch
           // the requested child conversation and post the outcome back so the
           // agent learns the id the server-side acknowledgement can't carry.
           if (conversationId && isLaunchChildConversationActionEvent(event)) {
             void handleLaunchChildConversationAction(
+              event.action,
+              conversationId,
+              event.tool_call_id,
+            );
+          }
+
+          // Same pattern again: the user answers in a modal, and the outcome
+          // is posted back once they close it.
+          if (conversationId && isRequestSecretActionEvent(event)) {
+            void handleRequestSecretAction(
               event.action,
               conversationId,
               event.tool_call_id,
