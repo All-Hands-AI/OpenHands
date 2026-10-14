@@ -25,6 +25,8 @@ const {
   mockGetCachedAgentServerVersion,
   mockGetSettings,
   mockListMetaProfiles,
+  mockBatchGetAppConversations,
+  mockResolveConversationLaunch,
 } = vi.hoisted(() => ({
   mockCreateConversation: vi.fn(),
   mockResolveWorkingDir: vi.fn(),
@@ -36,6 +38,8 @@ const {
   mockGetCachedAgentServerVersion: vi.fn(),
   mockGetSettings: vi.fn(),
   mockListMetaProfiles: vi.fn(),
+  mockBatchGetAppConversations: vi.fn(),
+  mockResolveConversationLaunch: vi.fn(),
 }));
 
 vi.mock(
@@ -46,7 +50,18 @@ vi.mock(
       resolveConversationWorkingDir: mockResolveWorkingDir,
       sendMessage: mockSendMessage,
       updateConversationTitle: mockUpdateTitle,
+      batchGetAppConversations: mockBatchGetAppConversations,
     },
+  }),
+);
+
+vi.mock(
+  "#/hooks/mutation/resolve-conversation-launch",
+  async (importOriginal) => ({
+    ...(await importOriginal<
+      typeof import("#/hooks/mutation/resolve-conversation-launch")
+    >()),
+    resolveConversationLaunch: mockResolveConversationLaunch,
   }),
 );
 
@@ -152,6 +167,8 @@ describe("handleLaunchChildConversationAction", () => {
       meta_profiles: [],
       active_meta_profile: null,
     });
+    mockBatchGetAppConversations.mockResolvedValue([]);
+    mockResolveConversationLaunch.mockResolvedValue({ activeLlmProfile: null });
   });
 
   describe("parameter validation", () => {
@@ -227,6 +244,49 @@ describe("handleLaunchChildConversationAction", () => {
         workspaceMode: "new_worktree",
         parentConversationId: PARENT_ID,
       });
+    });
+
+    it("launches the child from the parent's agent profile and current LLM", async () => {
+      seedWorktreeCapableParent();
+      mockBatchGetAppConversations.mockResolvedValue([
+        {
+          agent_kind: "openhands",
+          active_profile: "fast",
+          launched_agent_profile: {
+            agent_profile_id: "profile-1",
+            revision: 3,
+          },
+        },
+      ]);
+      mockResolveConversationLaunch.mockResolvedValue({
+        agentProfileId: "profile-1",
+        agentProfileKind: "openhands",
+        llmProfileOverride: "fast",
+        llmProfile: "fast",
+        activeLlmProfile: "slow",
+      });
+
+      await handleLaunchChildConversationAction(
+        action({}),
+        PARENT_ID,
+        nextToolCallId(),
+      );
+
+      expect(mockResolveConversationLaunch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          agentProfileId: "profile-1",
+          llmProfile: "fast",
+          isCloud: false,
+        }),
+      );
+      expect(mockCreateConversation).toHaveBeenCalledWith(
+        expect.objectContaining({
+          agentProfileId: "profile-1",
+          agentProfileKind: "openhands",
+          agentLlmProfileOverride: "fast",
+          parentConversationId: PARENT_ID,
+        }),
+      );
     });
 
     it("reports the child's id, url and status back to the agent", async () => {

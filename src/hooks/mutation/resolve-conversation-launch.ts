@@ -32,6 +32,8 @@ interface ResolveConversationLaunchOptions {
   isCloud: boolean;
   /** An explicit profile pick; omitted launches the active profile. */
   agentProfileId?: string;
+  /** The LLM profile to run, such as a parent conversation's current model. */
+  llmProfile?: string | null;
 }
 
 /** Decide which agent source and LLM a new conversation launches with. */
@@ -41,6 +43,7 @@ export async function resolveConversationLaunch({
   orgId,
   isCloud,
   agentProfileId,
+  llmProfile,
 }: ResolveConversationLaunchOptions): Promise<ConversationLaunch> {
   // Await the list from the shared query cache: a send fired before the home
   // query resolves must still launch from the active profile. Do not fall back
@@ -98,21 +101,24 @@ export async function resolveConversationLaunch({
     // The home LLM pill shows and activates the account-wide active LLM
     // profile, never the pinned ref (#16539), so an implicit launch runs that
     // selection. An explicit pick keeps its pinned ref unless the ref is gone.
+    const preferredLlmProfile =
+      llmProfile ||
+      (!agentProfileId || !llmProfileExists ? activeLlmProfile : null);
     const selectedLlmProfile =
       !isCloud &&
-      activeLlmProfile &&
-      activeLlmProfile !== profile.llm_profile_ref &&
-      (!agentProfileId || !llmProfileExists)
-        ? activeLlmProfile
+      preferredLlmProfile &&
+      preferredLlmProfile !== profile.llm_profile_ref
+        ? preferredLlmProfile
         : undefined;
     if (!llmProfileExists || selectedLlmProfile) {
       if (!isCloud && (await backendSupportsLaunchLlmOverride())) {
         // A dangling ref with nothing selected reaches the server, which
         // rejects it with an error the user can act on.
         llmProfileOverride = selectedLlmProfile;
-      } else {
+      } else if (!llmProfileExists || !llmProfile) {
         // No per-launch override on this server: run agent_settings at the
-        // cost of the profile's other fields.
+        // cost of the profile's other fields. A requested LLM is dropped
+        // instead, keeping the profile.
         if (!llmProfileExists) {
           console.warn(
             `Agent profile "${profile.name}" references missing ` +
