@@ -784,10 +784,7 @@ function getConversationSecurityAnalyzer(conversationSettings: SettingsRecord) {
  * The Settings → Runtime options a start request carries. Only non-defaults
  * are sent, so servers without the fields see the request they always did.
  */
-function getConversationRuntimeOptions(conversationSettings: SettingsRecord): {
-  worktree_base?: "head";
-  container?: { memory?: string; cpus?: number; browser?: false };
-} {
+function getConversationRuntimeOptions(conversationSettings: SettingsRecord) {
   const {
     worktree_base: worktreeBase,
     container_memory: memory,
@@ -797,10 +794,12 @@ function getConversationRuntimeOptions(conversationSettings: SettingsRecord): {
   const container = {
     ...(typeof memory === "string" && memory ? { memory } : {}),
     ...(typeof cpus === "number" ? { cpus } : {}),
-    ...(browser === false ? { browser: false as const } : {}),
+    ...(browser === false ? { browser } : {}),
   };
   return {
-    ...(worktreeBase === "head" ? { worktree_base: worktreeBase } : {}),
+    ...(typeof worktreeBase === "string" && worktreeBase !== "default_branch"
+      ? { worktree_base: worktreeBase }
+      : {}),
     ...(Object.keys(container).length > 0 ? { container } : {}),
   };
 }
