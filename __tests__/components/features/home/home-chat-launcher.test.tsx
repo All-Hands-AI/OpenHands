@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
 import { HomeChatLauncher } from "#/components/features/home/home-chat-launcher";
+import type { WorkspaceMode } from "#/api/conversation-metadata-store";
 import AgentServerConversationService from "#/api/conversation-service/agent-server-conversation-service.api";
 import AutomationService from "#/api/automation-service/automation-service.api";
 import WorkspacesService from "#/api/workspaces-service/workspaces-service.api";
@@ -198,17 +199,27 @@ vi.mock("#/components/features/home/open-repository-dialog", () => ({
 vi.mock("#/components/features/home/home-git-control-bar-preview", () => ({
   HomeGitControlBarPreview: ({
     workspaceMode,
+    workspaceModes,
     backendKind,
     onWorkspaceModeChange,
   }: {
-    workspaceMode: "local_repo" | "new_worktree";
+    workspaceMode: WorkspaceMode;
+    workspaceModes: WorkspaceMode[];
     backendKind: "local" | "cloud";
-    onWorkspaceModeChange: (mode: "local_repo" | "new_worktree") => void;
+    onWorkspaceModeChange: (mode: WorkspaceMode) => void;
   }) => (
     <div data-testid="stub-git-control-bar-preview">
       <span data-testid="stub-workspace-mode">
         {backendKind}:{workspaceMode}
       </span>
+      <span data-testid="stub-workspace-modes">{workspaceModes.join(",")}</span>
+      <button
+        type="button"
+        data-testid="stub-workspace-mode-docker-container"
+        onClick={() => onWorkspaceModeChange("docker_container")}
+      >
+        Docker Container
+      </button>
       <button
         type="button"
         data-testid="stub-workspace-mode-new-worktree"
@@ -555,6 +566,57 @@ describe("HomeChatLauncher", () => {
     );
     await waitFor(() =>
       expect(mockNavigate).toHaveBeenCalledWith("/conversations/conv-wt"),
+    );
+  });
+
+  it("starts a Docker Container conversation when the server offers Docker", async () => {
+    mockUseConversationWorkspace.mockReturnValue({
+      isolated: false,
+      dockerSelectable: true,
+      unsupportedMessage: null,
+    });
+    const createSpy = vi
+      .spyOn(AgentServerConversationService, "createConversation")
+      .mockResolvedValue(
+        makeConversationResponse({ app_conversation_id: "conv-docker" }),
+      );
+    renderLauncher();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByTestId("open-workspace-button"));
+    await user.click(
+      await screen.findByTestId("stub-workspace-dialog-confirm"),
+    );
+    await user.click(
+      screen.getByTestId("stub-workspace-mode-docker-container"),
+    );
+    await user.click(screen.getByTestId("stub-chat-submit"));
+
+    expect(screen.getByTestId("stub-workspace-modes")).toHaveTextContent(
+      "local_repo,new_worktree,docker_container",
+    );
+    await waitFor(() =>
+      expect(createSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ workspaceMode: "docker_container" }),
+      ),
+    );
+  });
+
+  it("falls back from a remembered Docker mode the server does not offer", async () => {
+    writeStoredLocalWorkspaceMode("docker_container");
+    renderLauncher();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByTestId("open-workspace-button"));
+    await user.click(
+      await screen.findByTestId("stub-workspace-dialog-confirm"),
+    );
+
+    expect(screen.getByTestId("stub-workspace-modes")).toHaveTextContent(
+      "local_repo,new_worktree",
+    );
+    expect(screen.getByTestId("stub-workspace-mode")).toHaveTextContent(
+      "local:local_repo",
     );
   });
 

@@ -14,23 +14,18 @@ import { WorkspaceModeIcon } from "./workspace-mode-icon";
 
 interface WorkspaceModeSelectorProps {
   value: WorkspaceMode;
+  options: WorkspaceMode[];
   backendKind: BackendKind;
   onChange: (value: WorkspaceMode) => void;
-  options?: WorkspaceMode[];
   disabled?: boolean;
   testId?: string;
 }
 
-export const WORKSPACE_MODE_OPTIONS: WorkspaceMode[] = [
-  "local_repo",
-  "new_worktree",
-];
-
 export function WorkspaceModeSelector({
   value,
+  options,
   backendKind,
   onChange,
-  options = WORKSPACE_MODE_OPTIONS,
   disabled = false,
   testId = "workspace-mode-selector",
 }: WorkspaceModeSelectorProps) {
