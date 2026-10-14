@@ -150,6 +150,7 @@ export default function AutomationSetupNew() {
               <InteractiveChatBox
                 onSubmit={(content) => startConversationFromPrompt(content)}
                 disabled={isPending || !draft}
+                persistDraft={false}
                 showGitControlBar={false}
                 placeholder={t(
                   I18nKey.AUTOMATION_SETUP$DOCKED_COMPOSER_PLACEHOLDER,

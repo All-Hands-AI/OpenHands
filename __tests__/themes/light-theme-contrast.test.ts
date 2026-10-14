@@ -5,7 +5,6 @@ import {
   formControlBackNavButtonClassName,
   formControlBorderClassName,
   formControlFieldClassName,
-  formControlFilterTriggerClassName,
   formControlShellClassName,
 } from "#/utils/form-control-classes";
 import {
@@ -37,7 +36,6 @@ const BODY_TEXT = [
 const OUTLINED_CONTROLS = {
   field: formControlFieldClassName,
   shell: formControlShellClassName,
-  "filter trigger": formControlFilterTriggerClassName,
   "dropdown filter trigger": dropdownFilterTriggerClassName,
 };
 

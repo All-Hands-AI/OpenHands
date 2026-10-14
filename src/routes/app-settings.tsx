@@ -29,7 +29,19 @@ import { getLockedCloudHost } from "#/api/agent-server-config";
 
 const AUTOMATIC_TITLE_LLM_PROFILE_KEY = "__automatic__";
 
+/**
+ * The form's inputs are uncontrolled and seeded from the loaded settings, so a
+ * switch to a backend whose settings are already cached would keep the
+ * previous backend's values (and Save would write them to the new backend).
+ * Keying by the settings query's backend identity remounts the form with the
+ * active backend's values and drops unsaved edits made on the previous one.
+ */
 export function AppSettingsScreen() {
+  const { backend, orgId } = useActiveBackend();
+  return <AppSettingsForm key={`${backend.id}:${orgId ?? ""}`} />;
+}
+
+function AppSettingsForm() {
   const { t } = useTranslation("openhands");
 
   const { mutate: saveSettings, isPending } = useSaveSettings();

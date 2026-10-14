@@ -1,5 +1,6 @@
 import React from "react";
 import { AppearancePortal } from "#/components/shared/appearance-portal";
+import { useModalFocus } from "./use-modal-focus";
 
 interface ModalBackdropProps {
   children: React.ReactNode;
@@ -23,6 +24,8 @@ export function ModalBackdrop({
   elevated = false,
   "aria-label": ariaLabel,
 }: ModalBackdropProps) {
+  const focus = useModalFocus({ elevated });
+
   React.useEffect(() => {
     if (!closeOnEscape) return undefined;
     const handleEscape = (e: KeyboardEvent) => {
@@ -47,11 +50,18 @@ export function ModalBackdrop({
   // parent modal.
   return (
     <AppearancePortal>
+      {/* Focus and key events from content (including portaled popovers)
+          bubble through the React tree; see useModalFocus. */}
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
       <div
+        ref={focus.rootRef}
         role="dialog"
         aria-modal="true"
         aria-label={ariaLabel}
-        className={`fixed inset-0 flex items-center justify-center ${
+        tabIndex={-1}
+        onFocus={focus.onFocus}
+        onKeyDown={focus.onKeyDown}
+        className={`fixed inset-0 flex items-center justify-center outline-none ${
           elevated ? "z-[70]" : "z-60"
         }`}
       >
