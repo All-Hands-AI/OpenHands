@@ -27,11 +27,16 @@ vi.mock("#/components/conversation-events/chat/event-message", async () => {
       ),
     );
   }
+  const actual = await vi.importActual<
+    typeof import("#/components/conversation-events/chat/event-message")
+  >("#/components/conversation-events/chat/event-message");
   return {
-    EventMessage: ({ event }: { event: OpenHandsEvent }) =>
-      ReactModule.createElement(PersistentRow, {
-        eventId: String(event.id ?? ""),
-      }),
+    EventMessage: (props: React.ComponentProps<typeof actual.EventMessage>) =>
+      String(props.event.id).startsWith("reasoning-")
+        ? ReactModule.createElement(actual.EventMessage, props)
+        : ReactModule.createElement(PersistentRow, {
+            eventId: String(props.event.id ?? ""),
+          }),
   };
 });
 
@@ -171,6 +176,34 @@ describe("Messages virtualization", () => {
     expect(screen.getByTestId("toggle-message-0")).toHaveTextContent(
       "expanded",
     );
+  });
+
+  it("keeps real reasoning expanded after scrolling away and back", () => {
+    const events = buildEvents(400);
+    events[0] = {
+      ...createUserMessageEvent("reasoning-message"),
+      source: "agent",
+      llm_message: {
+        role: "assistant",
+        content: [
+          { type: "text", text: "<think>Preserved reasoning</think>Answer" },
+        ],
+      },
+    };
+    renderMessages(events);
+    fireEvent.click(screen.getByTestId("collapsible-thinking-toggle"));
+    expect(
+      screen.getByTestId("collapsible-thinking-content"),
+    ).toHaveTextContent("Preserved reasoning");
+    const parent = screen.getByTestId("scroll-parent");
+    parent.scrollTop = 12000;
+    fireEvent.scroll(parent);
+    expect(screen.queryByTestId("collapsible-thinking-toggle")).toBeNull();
+    parent.scrollTop = 0;
+    fireEvent.scroll(parent);
+    expect(
+      screen.getByTestId("collapsible-thinking-content"),
+    ).toHaveTextContent("Preserved reasoning");
   });
 
   it("persists a row's expansion across the virtualization threshold", () => {

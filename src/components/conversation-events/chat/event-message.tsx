@@ -258,7 +258,12 @@ function EventMessageComponent({
       .join("\n\n");
     return (
       <>
-        {reasoningContent && <CollapsibleThinking content={reasoningContent} />}
+        {reasoningContent && (
+          <CollapsibleThinking
+            content={reasoningContent}
+            expansionId={`reasoning-${event.id}`}
+          />
+        )}
         {message && (
           <ChatMessage
             type="agent"
@@ -286,7 +291,12 @@ function EventMessageComponent({
   // (usually English) differs from the conversation language.
   if (isActionEvent(event) && event.action.kind === "ThinkAction") {
     const thinkAction = event as ActionEvent<ThinkAction>;
-    return <CollapsibleThinking content={thinkAction.action.thought} />;
+    return (
+      <CollapsibleThinking
+        content={thinkAction.action.thought}
+        expansionId={`reasoning-${event.id}`}
+      />
+    );
   }
 
   // Action events - render thought + action (will be replaced by thought + observation)
@@ -294,7 +304,12 @@ function EventMessageComponent({
     const reasoningContent = getReasoningContent(event);
     return (
       <>
-        {reasoningContent && <CollapsibleThinking content={reasoningContent} />}
+        {reasoningContent && (
+          <CollapsibleThinking
+            content={reasoningContent}
+            expansionId={`reasoning-${event.id}`}
+          />
+        )}
         {!suppressThought && (
           <ThoughtEventMessage
             event={event}
@@ -357,7 +372,12 @@ function EventMessageComponent({
 
     return (
       <>
-        {reasoningContent && <CollapsibleThinking content={reasoningContent} />}
+        {reasoningContent && (
+          <CollapsibleThinking
+            content={reasoningContent}
+            expansionId={`reasoning-${event.id}`}
+          />
+        )}
         {shouldShowThought && (
           <ThoughtEventMessage
             event={correspondingAction}
@@ -387,7 +407,12 @@ function EventMessageComponent({
 
     return (
       <>
-        {reasoningContent && <CollapsibleThinking content={reasoningContent} />}
+        {reasoningContent && (
+          <CollapsibleThinking
+            content={reasoningContent}
+            expansionId={`reasoning-${event.id}`}
+          />
+        )}
         {!suppressThought && correspondingAction && (
           <ThoughtEventMessage
             event={correspondingAction}

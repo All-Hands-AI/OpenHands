@@ -123,7 +123,12 @@ function UserAssistantEventMessageComponent({
 
   return (
     <>
-      {reasoning && <CollapsibleThinking content={reasoning} />}
+      {reasoning && (
+        <CollapsibleThinking
+          content={reasoning}
+          expansionId={`reasoning-${event.id}`}
+        />
+      )}
       <ChatMessage
         type={event.source}
         message={message}
