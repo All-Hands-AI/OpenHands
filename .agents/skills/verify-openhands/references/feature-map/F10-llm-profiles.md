@@ -121,3 +121,58 @@ Preconditions:
 - Toasts last only a few seconds. A `browser screenshot` taken after a slow command can miss them, so assert with `browser wait-text` or `browser toasts`.
 - Known issue #17955: a new profile is saved without the inherited LLM options the editor shows, such as temperature (`F10.create-prefill`).
 - `Subscription models are not loaded yet.` is translated in every language (`SETTINGS$SUBSCRIPTION_MODELS_NOT_LOADED`, #18308; source check 2026-10-13, not driven live). It shows when a subscription profile is saved before `GET /api/llm/subscription/openai/models` answers, in the settings save (`src/routes/llm-settings.tsx`) and in onboarding's LLM step. No recipe drives it, since it needs that request to be slow or to fail.
+
+  ```sh known-bug F10.create-prefill desktop-inherited
+  control-openhands llm set --profile QA_Inherit --model deepseek/deepseek-flash --api-key-env DEEPSEEK_API_KEY --no-activate --no-validate
+  control-openhands api DELETE /api/profiles/QA_Inherit --write
+  control-openhands api PATCH /api/settings --write --data '{"agent_settings_diff":{"llm":{"temperature":0.4}}}'
+  control-openhands browser viewport desktop
+  control-openhands browser goto /settings/llm
+  control-openhands browser click 'testid=add-llm-profile'
+  control-openhands browser click 'testid=sdk-section-all-toggle'
+  control-openhands assert --field value --equals 0.4 -- browser value 'testid=sdk-settings-llm.temperature'
+  control-openhands browser fill 'testid=llm-custom-model-input' deepseek/deepseek-flash
+  control-openhands browser fill 'testid=profile-name-input' QA_Inherit
+  control-openhands browser fill 'testid=llm-api-key-input' --value-env DEEPSEEK_API_KEY
+  control-openhands browser record start --feature F10.create-prefill --name inherited-save
+  control-openhands browser scroll 'testid=sdk-settings-llm.temperature'
+  control-openhands browser screenshot --feature F10.create-prefill --name inherited-before-save
+  control-openhands browser click 'testid=save-profile-btn'
+  control-openhands browser wait-text 'created'
+  control-openhands browser click '[data-testid=profile-row]:has([title="QA_Inherit"]) >> testid=profile-menu-trigger'
+  control-openhands browser click 'testid=profile-actions-menu >> testid=profile-edit'
+  control-openhands browser click 'testid=sdk-section-all-toggle'
+  control-openhands browser scroll 'testid=sdk-settings-llm.temperature'
+  control-openhands browser screenshot --feature F10.create-prefill --name inherited-after-save
+  control-openhands browser record stop --gif
+  control-openhands api GET /api/profiles/QA_Inherit --pick config.temperature
+  control-openhands assert --field value --equals 0.4 --bug-shows '' -- browser value 'testid=sdk-settings-llm.temperature' # bug
+  ```
+
+  ```sh known-bug F10.create-prefill phone-inherited
+  control-openhands llm set --profile QA_Inherit --model deepseek/deepseek-flash --api-key-env DEEPSEEK_API_KEY --no-activate --no-validate
+  control-openhands api DELETE /api/profiles/QA_Inherit --write
+  control-openhands api PATCH /api/settings --write --data '{"agent_settings_diff":{"llm":{"temperature":0.4}}}'
+  control-openhands browser viewport phone
+  control-openhands browser goto /settings/llm
+  control-openhands browser click 'testid=add-llm-profile'
+  control-openhands browser click 'testid=sdk-section-all-toggle'
+  control-openhands assert --field value --equals 0.4 -- browser value 'testid=sdk-settings-llm.temperature'
+  control-openhands browser fill 'testid=llm-custom-model-input' deepseek/deepseek-flash
+  control-openhands browser fill 'testid=profile-name-input' QA_Inherit
+  control-openhands browser fill 'testid=llm-api-key-input' --value-env DEEPSEEK_API_KEY
+  control-openhands browser record start --feature F10.create-prefill --name phone-inherited-save
+  control-openhands browser scroll 'testid=sdk-settings-llm.temperature'
+  control-openhands browser screenshot --feature F10.create-prefill --name phone-inherited-before-save
+  control-openhands browser click 'testid=save-profile-btn'
+  control-openhands browser wait-text 'created'
+  control-openhands browser click '[data-testid=profile-row]:has([title="QA_Inherit"]) >> testid=profile-menu-trigger'
+  control-openhands browser click 'testid=profile-actions-menu >> testid=profile-edit'
+  control-openhands browser click 'testid=sdk-section-all-toggle'
+  control-openhands browser scroll 'testid=sdk-settings-llm.temperature'
+  control-openhands browser screenshot --feature F10.create-prefill --name phone-inherited-after-save
+  control-openhands browser record stop --gif
+  control-openhands api GET /api/profiles/QA_Inherit --pick config.temperature
+  control-openhands assert --field value --equals 0.4 --bug-shows '' -- browser value 'testid=sdk-settings-llm.temperature' # bug
+  ```
+
