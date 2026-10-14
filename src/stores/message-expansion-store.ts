@@ -60,11 +60,15 @@ export const expandedRowKey = (key: string): string => {
  * Expansion flag that survives a row unmounting and remounting. With no `key`
  * (the plain, non-virtualized list) it degrades to ordinary component state, so
  * the plain list's behavior is unchanged.
+ *
+ * Returns `[expanded, toggle, setExpanded]`; the setter writes to whichever
+ * backing store is in use, for the rare caller that must reset (not toggle)
+ * the flag.
  */
 export function usePersistentExpansion(
   key: string | undefined,
   initiallyExpanded: boolean,
-): readonly [boolean, () => void] {
+): readonly [boolean, () => void, (value: boolean) => void] {
   const [localExpanded, setLocalExpanded] = React.useState(initiallyExpanded);
   const stored = useMessageExpansionStore((state) =>
     key === undefined ? undefined : state.expanded[key],
@@ -75,13 +79,19 @@ export function usePersistentExpansion(
 
   const expanded =
     key === undefined ? localExpanded : (stored ?? initiallyExpanded);
+  const setExpanded = React.useCallback(
+    (value: boolean) => {
+      if (key === undefined) {
+        setLocalExpanded(value);
+      } else {
+        setStoredExpanded(key, value);
+      }
+    },
+    [key, setStoredExpanded],
+  );
   const toggle = React.useCallback(() => {
-    if (key === undefined) {
-      setLocalExpanded((value) => !value);
-    } else {
-      setStoredExpanded(key, !expanded);
-    }
-  }, [key, expanded, setStoredExpanded]);
+    setExpanded(!expanded);
+  }, [expanded, setExpanded]);
 
-  return [expanded, toggle] as const;
+  return [expanded, toggle, setExpanded] as const;
 }

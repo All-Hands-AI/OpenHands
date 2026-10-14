@@ -293,6 +293,46 @@ describe("Messages virtualization", () => {
     );
   });
 
+  it("seeds the virtualized shell with the plain list's own row heights", () => {
+    // Every rendered element reports 100px tall, so each plain row measures
+    // 100px. Crossing the threshold must size the shell from those real
+    // heights (100 + the 8px row gap) rather than the flat 120px estimate, or
+    // the browser would clamp the reader's scroll offset toward the bottom.
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(
+      function (this: Element) {
+        const rect = {
+          width: 800,
+          height: 100,
+          top: 0,
+          left: 0,
+          right: 800,
+          bottom: 100,
+          x: 0,
+          y: 0,
+          toJSON: () => ({}),
+        } as DOMRect;
+        return rect;
+      },
+    );
+
+    const { rerender } = renderMessages(buildEvents(100));
+    expect(screen.queryByTestId("virtualized-message-list")).toBeNull();
+
+    rerender(<Harness events={buildEvents(400)} withScrollParent />);
+
+    const list = screen.getByTestId("virtualized-message-list");
+    expect(list.style.height).toBe(`${400 * 108}px`);
+  });
+
+  it("lays out each virtualized row as a flex column, like the scroll container", () => {
+    // The user bubble right-aligns with `self-end`; that only works if the
+    // absolutely positioned row re-establishes the column flex context.
+    renderMessages(buildEvents(400));
+
+    const [row] = screen.getAllByTestId("virtualized-message-row");
+    expect(row.className).toContain("flex-col");
+  });
+
   it("shifts rows back by the list's measured scroll margin", () => {
     const rectAt = (top: number): DOMRect =>
       ({

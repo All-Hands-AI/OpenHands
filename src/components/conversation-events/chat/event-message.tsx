@@ -423,6 +423,7 @@ function EventMessageComponent({
           event={event}
           isLastMessage={isLastMessage}
           correspondingAction={correspondingAction}
+          expansionId={`reject-${String(event.id ?? "")}`}
         />
       </>
     );

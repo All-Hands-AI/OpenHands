@@ -18,6 +18,19 @@ export const RowExpansionContext = React.createContext<string | undefined>(
   undefined,
 );
 
+/**
+ * The event id of the card currently being rendered inside a row. A row can
+ * hold several event cards at once (an expanded `EventGroup`, a thought plus
+ * its action, model entries), so a control that appears once per card (a tool
+ * output block, an error's details, a critic breakdown) needs the event id as
+ * well as the row key to keep its expansion state to itself.
+ *
+ * `undefined` when the caller is not inside an event card.
+ */
+export const EventExpansionContext = React.createContext<string | undefined>(
+  undefined,
+);
+
 /** Key for one control within the current row, or `undefined` outside a row. */
 export function useRowExpansionKey(controlKey: string): string | undefined {
   const rowKey = React.useContext(RowExpansionContext);
@@ -27,5 +40,25 @@ export function useRowExpansionKey(controlKey: string): string | undefined {
         ? undefined
         : messageExpansionKey(rowKey, controlKey),
     [rowKey, controlKey],
+  );
+}
+
+/**
+ * Key for one control within one event card of the current row, falling back to
+ * {@link useRowExpansionKey} when no event card is in scope (so a control that
+ * is unique per row — a user prompt, a thought — keeps working).
+ */
+export function useEventExpansionKey(controlKey: string): string | undefined {
+  const rowKey = React.useContext(RowExpansionContext);
+  const eventKey = React.useContext(EventExpansionContext);
+  return React.useMemo(
+    () =>
+      rowKey === undefined
+        ? undefined
+        : messageExpansionKey(
+            rowKey,
+            eventKey === undefined ? controlKey : `${eventKey}::${controlKey}`,
+          ),
+    [rowKey, eventKey, controlKey],
   );
 }

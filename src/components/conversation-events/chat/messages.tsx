@@ -4,6 +4,7 @@ import { ActionEvent, OpenHandsEvent } from "#/types/agent-server/core";
 import {
   isActionEvent,
   isObservationEvent,
+  isPlanningFileEditorObservationEvent,
   isUserRejectObservation,
 } from "#/types/agent-server/type-guards";
 import { EventMessage } from "./event-message";
@@ -15,8 +16,15 @@ import { useModelStore } from "#/stores/model-store";
 import { ModelMessages } from "#/components/features/chat/model-messages";
 import { useOptionalConversationId } from "#/hooks/use-conversation-id";
 import { ConversationConfirmationButtons } from "#/components/shared/buttons/conversation-confirmation-buttons";
-import { RowExpansionContext } from "#/components/features/chat/row-expansion-context";
+import {
+  EventExpansionContext,
+  RowExpansionContext,
+} from "#/components/features/chat/row-expansion-context";
 import { useMessageExpansionStore } from "#/stores/message-expansion-store";
+import {
+  buildInitialMeasurements,
+  shouldAdjustScrollOnSizeChange,
+} from "./scroll-anchoring";
 
 interface MessagesProps {
   messages: OpenHandsEvent[]; // UI events (actions replaced by observations)
@@ -112,9 +120,36 @@ export const Messages: React.FC<MessagesProps> = React.memo(
     // one, identically to before. Agent thoughts attached to an action are
     // hoisted out as their own rendered item so they always show up in the
     // message pane and a thought between actions starts a fresh group.
-    const renderedItems = React.useMemo(
+    const plainItems = React.useMemo(
       () => groupEvents(messages, undefined, allEvents),
       [messages, allEvents],
+    );
+
+    // `null` (not `undefined`) means the caller has a scroll container but the
+    // element is not mounted yet: virtualize the shell rather than rendering
+    // every row for a frame.
+    const shouldVirtualize = Boolean(
+      scrollParent !== undefined &&
+      plainItems.length >= VIRTUALIZATION_THRESHOLD,
+    );
+
+    // A planning observation that is not the designated preview for its phase
+    // renders nothing. In the plain list that is invisible (a null render
+    // contributes no height), but a virtualized row would reserve an estimate
+    // for it and leave blank scroll space, so drop those rows on the
+    // virtualized path only. The plain list keeps them, so the EventMessage
+    // props (and therefore `showPlanPreview`) stay observable for every event.
+    const renderedItems = React.useMemo(
+      () =>
+        shouldVirtualize
+          ? plainItems.filter(
+              (item) =>
+                item.kind !== "single" ||
+                !isPlanningFileEditorObservationEvent(item.event) ||
+                (!!item.event.id && planPreviewEventIds.has(item.event.id)),
+            )
+          : plainItems,
+      [plainItems, shouldVirtualize, planPreviewEventIds],
     );
 
     const renderEventMessage = (
@@ -122,20 +157,27 @@ export const Messages: React.FC<MessagesProps> = React.memo(
       index: number,
       suppressThought: boolean,
     ) => (
-      <EventMessage
+      // Scope the event id for the card's own expansion controls, so several
+      // cards sharing one virtualized row (an event group, a thought plus its
+      // action) don't collapse and expand together.
+      <EventExpansionContext.Provider
         key={event.id}
-        event={event}
-        correspondingAction={
-          (isObservationEvent(event) || isUserRejectObservation(event)) &&
-          event.action_id
-            ? (actionById.get(event.action_id) ?? null)
-            : null
-        }
-        isLastMessage={messages.length - 1 === index}
-        isInLast10Actions={messages.length - 1 - index < 10}
-        showPlanPreview={event.id ? planPreviewEventIds.has(event.id) : false}
-        suppressThought={suppressThought}
-      />
+        value={String(event.id ?? "")}
+      >
+        <EventMessage
+          event={event}
+          correspondingAction={
+            (isObservationEvent(event) || isUserRejectObservation(event)) &&
+            event.action_id
+              ? (actionById.get(event.action_id) ?? null)
+              : null
+          }
+          isLastMessage={messages.length - 1 === index}
+          isInLast10Actions={messages.length - 1 - index < 10}
+          showPlanPreview={event.id ? planPreviewEventIds.has(event.id) : false}
+          suppressThought={suppressThought}
+        />
+      </EventExpansionContext.Provider>
     );
 
     const renderItem = (item: RenderedItem, itemIndex: number) => {
@@ -185,14 +227,6 @@ export const Messages: React.FC<MessagesProps> = React.memo(
       );
     };
 
-    // `null` (not `undefined`) means the caller has a scroll container but the
-    // element is not mounted yet: virtualize the shell rather than rendering
-    // every row for a frame.
-    const shouldVirtualize = Boolean(
-      scrollParent !== undefined &&
-      renderedItems.length >= VIRTUALIZATION_THRESHOLD,
-    );
-
     // A collapsed history (or a switch to another conversation) must not keep
     // stale expansion entries for rows that no longer exist.
     const rowKeys = React.useMemo(
@@ -204,6 +238,15 @@ export const Messages: React.FC<MessagesProps> = React.memo(
       pruneExpansion(new Set(rowKeys));
     }, [rowKeys, pruneExpansion]);
 
+    // Stable item-key accessor. TanStack compares this callback by identity when
+    // deciding whether to rebuild its measurement cache; an inline arrow would
+    // look like a new key extractor on every render and invalidate the cache
+    // (recomputing offsets and remounting rows for no reason).
+    const getItemKey = React.useCallback(
+      (index: number) => rowKeys[index],
+      [rowKeys],
+    );
+
     // The virtualizer's scroll element is the chat column, which also holds
     // content *before* this list (top-anchored /model cards, the older-history
     // spinner). TanStack compares the container's `scrollTop` against item
@@ -212,6 +255,54 @@ export const Messages: React.FC<MessagesProps> = React.memo(
     // preceding content is taller than the overscan. Measure the shell's
     // offset within the scroll element and pass it as `scrollMargin`.
     const [scrollMargin, setScrollMargin] = React.useState(0);
+
+    // Per-item heights of the plain list, keyed by row key. Captured while the
+    // plain list is mounted so that crossing the virtualization threshold can
+    // seed the virtualizer with the real geometry (see
+    // `buildInitialMeasurements`): seeding the shell with the plain list's own
+    // heights keeps its total height — and therefore the reader's scroll
+    // offset — unchanged across the switch, instead of collapsing to a flat
+    // estimate and jumping.
+    const plainListRef = React.useRef<HTMLDivElement | null>(null);
+    const plainItemHeights = React.useRef<Map<string, number>>(new Map());
+
+    // Measure after each change to the row set, while the plain list is
+    // mounted. The rows carry `data-row-key`, so one ref on their parent is
+    // enough. Re-measuring on every render would force a layout on each stream
+    // tick; keyed on the row set it runs once per append, which is when heights
+    // actually change shape.
+    React.useLayoutEffect(() => {
+      const list = plainListRef.current;
+      if (!list || shouldVirtualize) return;
+      const next = new Map<string, number>();
+      for (const child of Array.from(list.children)) {
+        const rowKey = (child as HTMLElement).dataset.rowKey;
+        const first = child.firstElementChild;
+        const last = child.lastElementChild;
+        if (!rowKey || !first || !last) continue;
+        next.set(
+          rowKey,
+          last.getBoundingClientRect().bottom -
+            first.getBoundingClientRect().top,
+        );
+      }
+      plainItemHeights.current = next;
+    }, [shouldVirtualize, rowKeys]);
+
+    // Seed the virtualizer once, the first time this list virtualizes, from the
+    // heights the plain list just had. `undefined` (the plain list) means "no
+    // seed"; once the shell is up, its own measurements take over.
+    const initialMeasurementsCache = React.useMemo(() => {
+      if (!shouldVirtualize) return undefined;
+      return buildInitialMeasurements(
+        rowKeys,
+        rowKeys.map((key) => plainItemHeights.current.get(key) ?? 0),
+        ROW_GAP_PX,
+      );
+      // Deliberately keyed on the row set only: the seed is a one-shot value
+      // read at the moment virtualization turns on, not a live input.
+    }, [shouldVirtualize, rowKeys]);
+
     const shellRef = React.useCallback(
       (node: HTMLDivElement | null) => {
         if (!node || !scrollParent) return undefined;
@@ -278,7 +369,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
     const rowVirtualizer = useVirtualizer({
       count: renderedItems.length,
       getScrollElement: () => scrollParent ?? null,
-      getItemKey: (index) => renderedItemKey(renderedItems[index]),
+      getItemKey,
       estimateSize: () => ESTIMATED_ROW_HEIGHT,
       overscan: OVERSCAN,
       enabled: shouldVirtualize,
@@ -286,6 +377,10 @@ export const Messages: React.FC<MessagesProps> = React.memo(
       // where this list begins inside it and shift each row back by the same
       // amount (see the transform below).
       scrollMargin,
+      // Seed the first virtualized render with the plain list's real row
+      // heights, so the shell's total height (and the reader's scroll offset)
+      // is unchanged by the switch.
+      initialMeasurementsCache,
       // Row heights are unknown until they mount (code blocks, images,
       // expanded output), so measure the live DOM and let the virtualizer
       // correct the offsets. The gap is added here because absolutely
@@ -293,6 +388,12 @@ export const Messages: React.FC<MessagesProps> = React.memo(
       measureElement: (element) =>
         Math.round(element.getBoundingClientRect().height) + ROW_GAP_PX,
     });
+
+    // Keep the bottom pinned when a tall row at or below the viewport is
+    // measured after it mounts (see `shouldAdjustScrollOnSizeChange`). This is
+    // an instance property, not a constructor option.
+    rowVirtualizer.shouldAdjustScrollPositionOnItemSizeChange =
+      shouldAdjustScrollOnSizeChange;
 
     // With a scroll container, rows can cross the virtualization threshold
     // and remount into the shell. Persist their expansion by row key in the
@@ -304,17 +405,33 @@ export const Messages: React.FC<MessagesProps> = React.memo(
     if (!shouldVirtualize) {
       return (
         <>
-          {renderedItems.map((item, itemIndex) => (
-            <React.Fragment key={renderedItemKey(item)}>
-              {persistExpansion ? (
-                <RowExpansionContext.Provider value={renderedItemKey(item)}>
-                  {renderItem(item, itemIndex)}
-                </RowExpansionContext.Provider>
-              ) : (
-                renderItem(item, itemIndex)
-              )}
-            </React.Fragment>
-          ))}
+          {/*
+            The wrapper is `display: contents`, so it adds no box: the rows keep
+            the scroll column's own flex gap and their `last:` margins. It is
+            only here to scope one correction — with a per-row wrapper each
+            row's last element becomes a `:last-child`, so its `last:mb-4`
+            would fire on every row instead of only the final one. The rule
+            neutralizes that margin on every row but the last.
+          */}
+          <div
+            ref={plainListRef}
+            className="contents [&>*:not(:last-child)>*:last-child]:mb-0"
+          >
+            {renderedItems.map((item, itemIndex) => {
+              const itemKey = renderedItemKey(item);
+              return (
+                <div key={itemKey} data-row-key={itemKey} className="contents">
+                  {persistExpansion ? (
+                    <RowExpansionContext.Provider value={itemKey}>
+                      {renderItem(item, itemIndex)}
+                    </RowExpansionContext.Provider>
+                  ) : (
+                    renderItem(item, itemIndex)
+                  )}
+                </div>
+              );
+            })}
+          </div>
           <ConversationConfirmationButtons />
         </>
       );
@@ -344,6 +461,11 @@ export const Messages: React.FC<MessagesProps> = React.memo(
                 data-index={virtualRow.index}
                 ref={rowVirtualizer.measureElement}
                 data-testid="virtualized-message-row"
+                // The scroll column is a flex column and the user bubble
+                // right-aligns with `self-end`; an absolutely positioned row
+                // would drop it out of that context, so the row reproduces the
+                // column layout for its own children.
+                className="flex flex-col"
                 style={{
                   position: "absolute",
                   top: 0,
