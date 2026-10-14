@@ -113,13 +113,13 @@
     </section>
 
     <section id="sec3"><h2><span class="num">3</span>Fix 1 — read the working dir from the runtime</h2>
-      <p>New helper <code>readRuntimeWorkingDir</code> (<a class="src" href="https://github.com/OpenHands/OpenHands/blob/fix/conversation-attachment-upload-workspace-422/src/api/conversation-file-upload.api.ts#L87">conversation-file-upload.api.ts:87</a>) calls <code>ConversationClient.getConversation(conversationId)</code> against the target runtime and returns its <code>workspace.working_dir</code>, or <code>null</code> on any failure. The call site prefers it and falls back to <code>resolveConversationUploadWorkingDir</code>:</p>
-      <pre><code><span class="com">// conversation-file-upload.api.ts:144 (after)</span>
+      <p>New helper <code>readRuntimeWorkingDir</code> (<a class="src" href="https://github.com/OpenHands/OpenHands/blob/fix/conversation-attachment-upload-workspace-422/src/api/conversation-file-upload.api.ts#L88">conversation-file-upload.api.ts:88</a>) calls <code>ConversationClient.getConversation(conversationId)</code> against the target runtime and returns its <code>workspace.working_dir</code> when that value is absolute, or <code>null</code> otherwise (no value, a relative value, or any failure). A relative value is <em>not</em> adopted because the guard resolves it against the server's own CWD, which Canvas cannot reproduce. The call site prefers it and falls back to <code>resolveConversationUploadWorkingDir</code>:</p>
+      <pre><code><span class="com">// conversation-file-upload.api.ts:149 (after)</span>
 const workingDir =
   (await readRuntimeWorkingDir({ conversationUrl, sessionApiKey }, conversationId)) ??
   (await resolveConversationUploadWorkingDir(conversationId, currentConversation));</code></pre>
       <div class="callout note">ⓘ The fallback is <b>lazily</b> evaluated (<code>??</code> on the awaited result), so when the runtime answers, the local resolver's own network read is skipped entirely. An early draft passed it eagerly and a throwing fallback aborted the upload before the runtime was consulted — the live harness caught that regression, hence the current shape.</div>
-      <div class="callout warn">⚠ Scope: this fixes the <em>destination</em>, not the server's stored value. If a conversation is persisted with a relative <code>working_dir</code>, the server still rejects its own mismatch; Canvas simply stops inventing a second, divergent value.</div>
+      <div class="callout warn">⚠ Scope: this fixes the <em>destination</em>, not the server's stored value. A relative runtime <code>working_dir</code> is ignored in favour of Canvas's own local resolution, so Canvas stops adopting a value it cannot resolve identically to the guard.</div>
     </section>
 
     <section id="sec4"><h2><span class="num">4</span>Fix 2 — readable message for a leftover guard 422</h2>
@@ -172,7 +172,7 @@ curl -X POST -H "$K" -F file=@test.zip "$H/api/conversations/$CID/file/upload?pa
         <tr><td><code>src/api/agent-server-home.ts</code></td><td><span class="tag t-mech">⚙️ mechanical</span></td><td>+1 / −1</td><td><code>isAbsolutePath</code> exported</td></tr>
         <tr><td><code>src/i18n/translation.json</code></td><td><span class="tag t-added">🟢 added</span></td><td>+17 / −0</td><td><code>FILE_SERVICE$UPLOAD_WORKSPACE_MISMATCH</code> (15 langs)</td></tr>
         <tr><td><code>specs/workspace-upload-path.md</code></td><td><span class="tag t-changed">✏️ changed</span></td><td>+12 / −0</td><td>WUP-002 acceptance criteria</td></tr>
-        <tr><td><code>__tests__/api/conversation-file-upload.test.ts</code></td><td><span class="tag t-changed">✏️ changed</span></td><td>+~90</td><td>4 new WUP-002 cases</td></tr>
+        <tr><td><code>__tests__/api/conversation-file-upload.test.ts</code></td><td><span class="tag t-changed">✏️ changed</span></td><td>+~116</td><td>5 new WUP-002 cases</td></tr>
       </table>
       <div class="callout note">ⓘ Follow-up, not in this PR: an agent-server that persists a <em>relative</em> <code>workspace.working_dir</code> rejects its own uploads. That normalization belongs in the SDK/server; this PR only stops Canvas from adding a second divergent value.</div>
     </section>
