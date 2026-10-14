@@ -34,6 +34,13 @@ import {
 } from "./lib/launcher-env.mjs";
 import { baselineLines, parseBaseline, withBaseline } from "./lib/baseline.mjs";
 import { affectedFamilies, familyHead } from "./lib/map-sources.mjs";
+import {
+  classifyAttempt,
+  judgeAssertion,
+  knownBugBlocks,
+  parseBugPredicate,
+  proofVerdict,
+} from "./lib/known-bug.mjs";
 import { routePattern } from "./lib/route-pattern.mjs";
 import {
   citedTestids,
@@ -3102,6 +3109,10 @@ async function cmdBrowser({ positional, flags }) {
 // Commands: evidence ledger.
 // ---------------------------------------------------------------------------
 const RESULTS = ["pass", "fail", "blocked", "not-run"];
+// `bug run` adds two results of its own: xfail (a known bug reproduced at
+// its marked assertion) and xpass (a known bug no longer reproduces).
+const BUG_RESULTS = ["xfail", "xpass"];
+const REPORT_RESULTS = [...RESULTS, ...BUG_RESULTS];
 
 // The ledger is append-only: the report shows each check's latest row,
 // keyed by feature and entry point, minus retractions.
@@ -3228,14 +3239,14 @@ async function cmdEvidence({ positional, flags }) {
   }
   if (sub === "report") {
     const latest = latestRows(rows);
-    const counts = Object.fromEntries(RESULTS.map((r) => [r, 0]));
+    const counts = Object.fromEntries(REPORT_RESULTS.map((r) => [r, 0]));
     for (const row of latest.values()) counts[row.result] += 1;
     // Per family: the denominator the report contract asks for.
     const families = new Map();
     for (const row of latest.values()) {
       const id = row.feature.slice(0, 3);
       if (!families.has(id))
-        families.set(id, Object.fromEntries(RESULTS.map((r) => [r, 0])));
+        families.set(id, Object.fromEntries(REPORT_RESULTS.map((r) => [r, 0])));
       families.get(id)[row.result] += 1;
     }
     // --baseline PATH: another run's ledger.jsonl (or run directory). Rows
@@ -3280,7 +3291,7 @@ async function cmdEvidence({ positional, flags }) {
       "",
       `Revision \`${run.revision}\`, ${run.mode} mode, Agent Server ${run.versions?.agentServer ?? "?"}, base ${run.baseUrl}.`,
       "",
-      `Checks: ${latest.size} — ${RESULTS.map((r) => `${r} ${counts[r]}`).join(", ")}. Families: ${families.size}.`,
+      `Checks: ${latest.size} — ${REPORT_RESULTS.map((r) => `${r} ${counts[r]}`).join(", ")}. Families: ${families.size}.`,
       "",
     ];
     if (changes) {
@@ -3309,14 +3320,14 @@ async function cmdEvidence({ positional, flags }) {
     lines.push(
       "## Families",
       "",
-      "| Family | pass | fail | blocked | not-run |",
-      "|---|---|---|---|---|",
+      "| Family | pass | fail | blocked | not-run | xfail | xpass |",
+      "|---|---|---|---|---|---|---|",
     );
     for (const [id, c] of [...families.entries()].sort(([a], [b]) =>
       a.localeCompare(b),
     ))
       lines.push(
-        `| ${id} | ${c.pass} | ${c.fail} | ${c.blocked} | ${c["not-run"]} |`,
+        `| ${id} | ${c.pass} | ${c.fail} | ${c.blocked} | ${c["not-run"]} | ${c.xfail} | ${c.xpass} |`,
       );
     lines.push(
       "",
@@ -3325,8 +3336,16 @@ async function cmdEvidence({ positional, flags }) {
       "| Feature/check | Entry point | Expected → actual | Result | Note | Evidence |",
       "|---|---|---|---|---|---|",
     );
-    // Fail and blocked rows first (report.md), then by feature ID.
-    const order = { fail: 0, blocked: 1, "not-run": 2, pass: 3 };
+    // Fail, xpass (a known bug stopped reproducing: review the map) and
+    // blocked rows first (report.md), then by feature ID.
+    const order = {
+      fail: 0,
+      xpass: 1,
+      blocked: 2,
+      "not-run": 3,
+      xfail: 4,
+      pass: 5,
+    };
     for (const row of [...latest.values()].sort(
       (a, b) =>
         order[a.result] - order[b.result] || a.feature.localeCompare(b.feature),
@@ -3341,6 +3360,450 @@ async function cmdEvidence({ positional, flags }) {
   usage(
     "Usage: control-openhands evidence add|list|report",
     "control-openhands evidence report > report.md",
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Commands: assert and known bugs (executable expected failures).
+// ---------------------------------------------------------------------------
+const cliPath = fileURLToPath(import.meta.url);
+
+// Runs another control-openhands command in a child process, as a recipe
+// would, and returns its exit code and parsed JSON output.
+function runSelf(args, { env = process.env, timeout = 300_000 } = {}) {
+  const child = spawnSync(process.execPath, [cliPath, ...args], {
+    env,
+    encoding: "utf8",
+    timeout,
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  let json;
+  try {
+    json = JSON.parse(child.stdout);
+  } catch {
+    json = undefined;
+  }
+  return { code: child.status ?? 1, json, stdout: child.stdout ?? "" };
+}
+
+async function cmdAssert({ positional, flags }) {
+  const hasEquals = flags.equals !== undefined && flags.equals !== true;
+  const hasMatches = flags.matches !== undefined && flags.matches !== true;
+  if (
+    !flags.field ||
+    flags.field === true ||
+    hasEquals === hasMatches ||
+    !positional.length
+  )
+    usage(
+      "assert needs --field PATH, one of --equals VALUE or --matches REGEX, and -- <control-openhands command>",
+      "control-openhands assert --field enabled --equals true --bug-shows false -- browser enabled 'testid=submit-button'",
+    );
+  const bug =
+    flags.bug === undefined || flags.bug === true
+      ? undefined
+      : String(flags.bug);
+  const bugProblems = bug === undefined ? [] : parseBugPredicate(bug).problems;
+  if (bugProblems.length)
+    usage(
+      `--bug ${bugProblems.join("; ")}`,
+      `control-openhands assert --field status --equals 200 --bug 'status eq 500 && body.error contains "has no attribute"' -- api GET /api/...`,
+    );
+  const env = { ...process.env };
+  if (flags.run && flags.run !== true) env.OH_VERIFY_RUN = resolve(flags.run);
+  const child = runSelf(positional.map(String), { env });
+  const judged = judgeAssertion({
+    exitCode: child.code,
+    json: child.json,
+    field: flags.field,
+    equals: hasEquals ? String(flags.equals) : undefined,
+    matches: hasMatches ? String(flags.matches) : undefined,
+    bugShows:
+      flags["bug-shows"] === undefined || flags["bug-shows"] === true
+        ? undefined
+        : String(flags["bug-shows"]),
+    bug,
+  });
+  const result = {
+    ok: judged.kind === "hold",
+    ...judged,
+    field: flags.field,
+    expected: hasEquals ? String(flags.equals) : `/${flags.matches}/`,
+    bugShows: flags["bug-shows"] === true ? undefined : flags["bug-shows"],
+    bug,
+    command: positional.join(" "),
+    output:
+      judged.kind === "error"
+        ? (child.json ?? child.stdout.slice(-2000))
+        : undefined,
+  };
+  // Under `bug run` every assertion is logged with the recipe line that ran
+  // it, so the runner reads the marked command's own result, never one a
+  // later cleanup step logged.
+  if (process.env.OH_VERIFY_ASSERT_LOG)
+    appendFileSync(
+      process.env.OH_VERIFY_ASSERT_LOG,
+      `${JSON.stringify({ ts: new Date().toISOString(), line: process.env.OH_VERIFY_LINE, ...result, output: undefined })}\n`,
+    );
+  out(result);
+  if (judged.kind === "error") process.exitCode = child.code || 1;
+  else if (judged.kind !== "hold") process.exitCode = 1;
+}
+
+function knownBugsIn(file) {
+  const files = file
+    ? [resolve(String(file))]
+    : featureFiles().map((f) => join(mapDir, f));
+  return files.flatMap((path) =>
+    knownBugBlocks(readFileSync(path, "utf8")).map((b) => ({
+      ...b,
+      file: relative(skillDir, path),
+    })),
+  );
+}
+
+function selectBlocks(id, flags) {
+  const blocks = knownBugsIn(
+    flags.file === true ? undefined : flags.file,
+  ).filter(
+    (b) =>
+      b.id === id &&
+      (!flags.name || flags.name === true || b.name === flags.name),
+  );
+  if (!blocks.length)
+    throw new CliError(
+      `No known-bug block for ${id}${flags.name && flags.name !== true ? ` named ${flags.name}` : ""}`,
+      { code: 2, hint: "control-openhands bug list" },
+    );
+  const broken = blocks.filter((b) => b.problems.length);
+  if (broken.length)
+    throw new CliError(`Malformed known-bug block for ${id}`, {
+      code: 2,
+      extra: {
+        problems: broken.map(
+          (b) => `${b.file}:${b.line} ${b.problems.join("; ")}`,
+        ),
+      },
+    });
+  return blocks;
+}
+
+function runBlock(run, block, { timeoutMs, logFile, failureFile, scriptFile }) {
+  // The DEBUG trap tags every command (and the asserts it runs) with its
+  // line. The ERR trap keeps the first failure only, and retags what runs
+  // after it (an EXIT trap's cleanup), so neither overwrites the observation.
+  const preamble = [
+    "set -eo pipefail",
+    `cd ${JSON.stringify(repoRoot)}`,
+    "export OH_VERIFY_LINE=",
+    "trap 'OH_VERIFY_LINE=$LINENO' DEBUG",
+    `trap '[ -e ${JSON.stringify(failureFile)} ] || printf "%s\\t%s\\n" "$LINENO" "$BASH_COMMAND" > ${JSON.stringify(failureFile)}; OH_VERIFY_LINE=after-failure' ERR`,
+  ];
+  writeFileSync(scriptFile, `${preamble.join("\n")}\n${block.script}\n`);
+  const env = {
+    ...process.env,
+    OH_VERIFY_RUN: run.dir,
+    OH_VERIFY_ASSERT_LOG: logFile,
+    PATH: `${here}:${dirname(process.execPath)}:${process.env.PATH ?? ""}`,
+  };
+  return new Promise((done) => {
+    const started = Date.now();
+    const child = spawn("bash", [scriptFile], {
+      env,
+      detached: true,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.on("data", (d) => (stdout += d));
+    child.stderr.on("data", (d) => (stderr += d));
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      try {
+        process.kill(-child.pid, "SIGKILL");
+      } catch {}
+    }, timeoutMs);
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      // Nothing a recipe started outlives it.
+      try {
+        process.kill(-child.pid, "SIGKILL");
+      } catch {}
+      let failedLine = null;
+      let failedCommand;
+      if (code !== 0 && existsSync(failureFile)) {
+        const [line, ...cmd] = readFileSync(failureFile, "utf8")
+          .trimEnd()
+          .split("\t");
+        if (/^\d+$/.test(line)) failedLine = Number(line) - preamble.length;
+        failedCommand = cmd.join("\t").slice(0, 500);
+      }
+      done({
+        lineOffset: preamble.length,
+        exitCode: timedOut ? null : code,
+        timedOut,
+        failedLine,
+        failedCommand,
+        stdout,
+        stderr,
+        elapsedMs: Date.now() - started,
+      });
+    });
+  });
+}
+
+function readJsonl(path) {
+  return existsSync(path)
+    ? readFileSync(path, "utf8")
+        .split("\n")
+        .filter(Boolean)
+        .map((l) => JSON.parse(l))
+    : [];
+}
+
+const attemptsFile = (dir) =>
+  join(dir, "evidence", "known-bugs", "attempts.jsonl");
+
+async function cmdBug({ positional, flags }) {
+  const [sub, id] = positional;
+  if (sub === "list") {
+    const blocks = knownBugsIn(flags.file === true ? undefined : flags.file);
+    out({
+      ok: blocks.every((b) => !b.problems.length),
+      count: blocks.length,
+      blocks: blocks.map(({ script, ...b }) => b),
+    });
+    return;
+  }
+  if (sub === "run") {
+    if (!id)
+      usage(
+        "bug run needs a sub-feature ID",
+        "control-openhands bug run F05.prefill-send --attempts 2 --label baseline",
+      );
+    const run = loadRun(flags);
+    if (!run) throw new CliError("No run: launch one first", { code: 3 });
+    const blocks = selectBlocks(id, flags);
+    const attempts = intFlag(flags.attempts, 1);
+    const timeoutMs = intFlag(flags.timeout, 180) * 1000;
+    const label = flags.label === true ? undefined : flags.label;
+    const skipDoctor = Boolean(flags["no-doctor"]);
+    const dir = join(run.dir, "evidence", "known-bugs");
+    const work = join(run.dir, "private", "known-bugs");
+    mkdirSync(dir, { recursive: true });
+    mkdirSync(work, { recursive: true });
+    const env = { ...process.env, OH_VERIFY_RUN: run.dir };
+    const doctor = () =>
+      skipDoctor
+        ? undefined
+        : runSelf(["doctor"], { env, timeout: 180_000 }).code === 0;
+    const results = [];
+    for (const block of blocks) {
+      for (let n = 1; n <= attempts; n += 1) {
+        const stamp = `${id}-${block.name}-${Date.now()}-${n}`;
+        const logFile = join(work, `${stamp}.asserts.jsonl`);
+        const failureFile = join(work, `${stamp}.failed`);
+        const doctorBefore = doctor();
+        let exec = {
+          exitCode: null,
+          timedOut: false,
+          failedLine: null,
+          stdout: "",
+          stderr: "",
+          elapsedMs: 0,
+        };
+        if (doctorBefore !== false)
+          exec = await runBlock(run, block, {
+            timeoutMs,
+            logFile,
+            failureFile,
+            scriptFile: join(work, `${stamp}.sh`),
+          });
+        const asserts = readJsonl(logFile).map((a) => ({
+          ...a,
+          line: /^\d+$/.test(a.line ?? "")
+            ? Number(a.line) - exec.lineOffset
+            : a.line,
+        }));
+        const [start, end] = block.bugRanges[0];
+        const assertion = asserts
+          .filter((a) => a.line >= start && a.line <= end)
+          .at(-1);
+        const doctorAfter =
+          exec.exitCode !== 0 && doctorBefore !== false ? doctor() : undefined;
+        const { status, reason } = classifyAttempt({
+          doctorBefore,
+          doctorAfter,
+          exitCode: exec.exitCode,
+          timedOut: exec.timedOut,
+          failedLine: exec.failedLine,
+          bugLines: block.bugLines,
+          bugRanges: block.bugRanges,
+          assertion,
+        });
+        const page = daemonInfo(run)
+          ? await browserCall(run, "url").catch(() => ({}))
+          : {};
+        const transcript = join(dir, `${stamp}.json`);
+        writeFileSync(
+          transcript,
+          `${JSON.stringify(
+            {
+              id,
+              name: block.name,
+              file: block.file,
+              script: block.script,
+              ...exec,
+              stdout: exec.stdout.slice(-8000),
+              stderr: exec.stderr.slice(-8000),
+              asserts,
+            },
+            null,
+            2,
+          )}\n`,
+        );
+        const attempt = {
+          ts: new Date().toISOString(),
+          id,
+          name: block.name,
+          label,
+          attempt: n,
+          status,
+          reason,
+          sha: block.sha,
+          file: `${block.file}:${block.line}`,
+          exitCode: exec.exitCode,
+          failedLine: exec.failedLine,
+          failedCommand: exec.failedCommand,
+          assertion: assertion
+            ? {
+                kind: assertion.kind,
+                expected: assertion.expected,
+                actual: assertion.actual,
+                bugShows: assertion.bugShows,
+                bug: assertion.bug,
+                bugChecks: assertion.bugChecks,
+              }
+            : undefined,
+          doctorBefore,
+          doctorAfter,
+          elapsedMs: exec.elapsedMs,
+          revision: run.revision,
+          backend: `${run.mode} agent-server ${run.versions?.agentServer ?? "?"} automation ${run.pins?.automation ?? "?"}`,
+          viewport: page.viewport
+            ? `${page.viewport.width}x${page.viewport.height}`
+            : undefined,
+          transcript: relative(run.dir, transcript),
+        };
+        appendFileSync(attemptsFile(run.dir), `${JSON.stringify(attempt)}\n`);
+        appendFileSync(
+          join(run.dir, "evidence", "ledger.jsonl"),
+          `${JSON.stringify({
+            ts: attempt.ts,
+            feature: id,
+            entry: `known bug: ${block.name}`,
+            result: status,
+            expected: assertion?.expected,
+            actual: assertion?.actual,
+            artifacts: [attempt.transcript],
+            note: [
+              status === "xfail"
+                ? "known bug reproduced at its marked assertion"
+                : status === "xpass"
+                  ? "known bug no longer reproduces: review the map note"
+                  : reason,
+              label && `${label} attempt ${n}`,
+            ]
+              .filter(Boolean)
+              .join("; "),
+            revision: attempt.revision,
+            backend: attempt.backend,
+            viewport: attempt.viewport,
+          })}\n`,
+        );
+        results.push(attempt);
+      }
+    }
+    const xpassed = results.some((r) => r.status === "xpass");
+    out({
+      ok: results.every((r) => r.status === "xfail"),
+      run: run.runId,
+      revision: run.revision,
+      summary: Object.fromEntries(
+        ["xfail", "xpass", "fail"].map((s) => [
+          s,
+          results.filter((r) => r.status === s).length,
+        ]),
+      ),
+      attempts: results,
+      hint: xpassed
+        ? "The known bug did not reproduce. On a fix under verification that is the goal: compare with `bug proof`. Otherwise review the map note: once the fix is confirmed, drop the note and keep the assertion as the bullet's normal expected result."
+        : results.some((r) => r.status === "fail")
+          ? "A fail is not a reproduction: read the reason and the transcript, doctor the run, and retry or fix the recipe."
+          : undefined,
+    });
+    if (!results.every((r) => r.status === "xfail")) process.exitCode = 1;
+    return;
+  }
+  if (sub === "proof") {
+    if (
+      !id ||
+      !flags.baseline ||
+      flags.baseline === true ||
+      !flags.fix ||
+      flags.fix === true
+    )
+      usage(
+        "bug proof needs a sub-feature ID, --baseline RUN_DIR and --fix RUN_DIR",
+        "control-openhands bug proof F05.prefill-send --baseline $BASE_RUN --fix $FIX_RUN",
+      );
+    const blocks = selectBlocks(id, flags);
+    const read = (dir) => {
+      const path = attemptsFile(resolve(String(dir)));
+      if (!existsSync(path))
+        throw new CliError(`No known-bug attempts at ${path}`, {
+          code: 2,
+          hint: "Run `control-openhands bug run ID --attempts 2` on that run first.",
+        });
+      return readJsonl(path).filter((r) => r.id === id);
+    };
+    // --baseline-label / --fix-label keep only the attempts given that
+    // --label, so a deliberate negative check on the same run is set aside.
+    const labelled = (rows, label) =>
+      label && label !== true ? rows.filter((r) => r.label === label) : rows;
+    const baseline = labelled(read(flags.baseline), flags["baseline-label"]);
+    const fix = labelled(read(flags.fix), flags["fix-label"]);
+    const verdicts = blocks.map((block) => ({
+      name: block.name,
+      sha: block.sha,
+      ...proofVerdict({
+        baseline: baseline.filter((r) => r.name === block.name),
+        fix: fix.filter((r) => r.name === block.name),
+        sha: block.sha,
+        min: intFlag(flags.min, 2),
+      }),
+    }));
+    const verified = verdicts.every((v) => v.verdict === "verified");
+    out({
+      ok: verified,
+      id,
+      verdict: verified
+        ? "verified"
+        : verdicts.some((v) => v.verdict === "not-fixed")
+          ? "not-fixed"
+          : "inconclusive",
+      blocks: verdicts,
+      hint: verified
+        ? "Drop the Known failure note and the block's `# bug` marker in the fix's PR: the assertion now guards the corrected behavior as a normal recipe step."
+        : "Only a verified verdict proves the fix. An inconclusive baseline never counts as fixed.",
+    });
+    if (!verified) process.exitCode = 1;
+    return;
+  }
+  usage(
+    "Usage: control-openhands bug list | run ID [--attempts N] [--label L] | proof ID --baseline RUN --fix RUN",
+    "control-openhands bug run F05.prefill-send --attempts 2 --label baseline",
   );
 }
 
@@ -3371,6 +3834,8 @@ const KNOWN_COMMANDS = new Set([
   "workspace",
   "browser",
   "evidence",
+  "assert",
+  "bug",
   "map",
   "help",
 ]);
@@ -3505,6 +3970,25 @@ function mapCheck({ only } = {}) {
         problems.push(`${file}: unknown command \`control-openhands ${m[1]}\``);
       if (m[1] === "browser" && m[2] && !BROWSER_VERBS.has(m[2]))
         problems.push(`${file}: unknown browser verb \`${m[2]}\``);
+    }
+    // Known-bug blocks: one `# bug` assertion naming the bug's value, a
+    // declared ID, one block per ID and name.
+    const blockNames = new Set();
+    for (const block of knownBugBlocks(text)) {
+      for (const problem of block.problems)
+        problems.push(
+          `${file}:${block.line}: known-bug ${block.id}: ${problem}`,
+        );
+      if (!declared.includes(block.id))
+        problems.push(
+          `${file}:${block.line}: known-bug ${block.id} is not a sub-feature of this file`,
+        );
+      const key = `${block.id} ${block.name}`;
+      if (blockNames.has(key))
+        problems.push(
+          `${file}:${block.line}: duplicate known-bug block ${key}`,
+        );
+      blockNames.add(key);
     }
     for (const m of text.matchAll(/\]\((\.\.\/[^)#]+)/g)) {
       const target = resolve(mapDir, m[1]);
@@ -4061,6 +4545,8 @@ Drive and observe
 
 Evidence and map
   evidence      add | list | report — the run's pass/fail/blocked/not-run ledger
+  assert        --field F --equals V [--bug-shows B | --bug P] -- <command> — check one value of a command's output
+  bug           list | run ID --attempts 2 | proof ID — known bugs as executable expected failures
   map           check | coverage | ids | routes | affected | testids | baseline — keep the feature map honest
 
 Run state lives in $OH_VERIFY_HOME (default: $TMPDIR/openhands-verify); the
@@ -4306,6 +4792,55 @@ table, then every check with fail and blocked rows first and the --note column
 (where blocked rows name their missing prerequisite). --baseline compares with
 another run's ledger and lists newly failing, newly passing and unchecked rows
 first (a daily pass against yesterday's run). --json prints the same data.
+Rows from \`bug run\` add xfail (a known bug reproduced) and xpass (it stopped
+reproducing); xpass rows sort right after fail rows.
+`,
+  assert: `control-openhands assert --field PATH (--equals VALUE | --matches REGEX) [--bug-shows VALUE] [--bug PREDICATE] -- <control-openhands command...>
+
+Runs the command, reads PATH (dotted, e.g. value, viewport.width) from its JSON
+output and compares it: strings as they are, other values as JSON. Exit 0 when
+it holds; 1 on a mismatch; the command's own code when it fails or has no such
+field (kind "error": no value was compared). --bug-shows and --bug name what a
+known bug produces; a mismatch that does not match them is kind "other-symptom".
+--bug-shows V is short for "--bug 'PATH eq V'". --bug takes "PATH OP [VALUE]"
+clauses joined by "&&", on any field of the output, with OP one of eq, ne,
+contains, not-contains, matches (regex), exists, missing; quote a VALUE with
+spaces. The result lists each clause under bugChecks.
+
+  control-openhands assert --field enabled --equals true -- browser enabled 'testid=submit-button'
+  control-openhands assert --field text --equals Saved --bug 'text contains "An error occurred"' -- browser text 'testid=toast'
+`,
+  bug: `control-openhands bug list [--file PATH]
+control-openhands bug run ID [--name N] [--attempts N] [--label L] [--timeout SEC] [--no-doctor] [--file PATH]
+control-openhands bug proof ID --baseline RUN_DIR --fix RUN_DIR [--baseline-label L] [--fix-label L] [--min 2]
+
+A known bug in the map can carry a fenced block, opened with
+"\`\`\`sh known-bug <ID> [name]", whose commands assert the correct behavior. Its one
+command ending in "# bug" (continued lines ending in "\\" count as one) is a
+"control-openhands assert ... --bug-shows <value>" or "... --bug <predicate>".
+
+'run' executes the block in bash (set -eo pipefail) against the run, each
+attempt after a passing doctor, and classifies it:
+  xfail  the "# bug" assertion failed and saw the bug's symptom (reproduced)
+  xpass  every command held (the bug did not reproduce: review the map note)
+  fail   anything else: doctor failed before (setup) or after (backend), a
+         timeout, an earlier line (setup) or a later one, the bug line's command
+         erroring, or a different value (wrong symptom)
+Each attempt is appended to evidence/known-bugs/attempts.jsonl (revision,
+backend, viewport, recipe hash, failing line, assertion, transcript) and to the
+ledger as an xfail/xpass/fail row. Exit 0 only when every attempt is xfail.
+Each assertion is logged with the recipe line that ran it, and the first
+failure is the one kept, so a cleanup step (an EXIT trap) cannot replace the
+marked command's observation.
+
+'proof' compares the attempts of the current recipe on a baseline run and a fix
+run: verified only when the baseline has at least two attempts, all xfail, the
+fix at least two, all xpass, on different revisions with the same viewport and
+backend. A fix that still reproduces is not-fixed; anything else is inconclusive.
+
+  control-openhands bug run F25.selector-dropdown --attempts 2 --label baseline --run $BASE_RUN
+  control-openhands bug run F25.selector-dropdown --attempts 2 --label fix --run $FIX_RUN
+  control-openhands bug proof F25.selector-dropdown --baseline $BASE_RUN --baseline-label baseline --fix $FIX_RUN --fix-label fix
 `,
   map: `control-openhands map check [--file Fnn-name.md]   lint the map (or one entry, skipping index links): four H2s, unique IDs, links, known commands, index counts
 control-openhands map check --fix-counts   rewrite the index's sub-feature counts and total from the files, then lint
@@ -4349,6 +4884,8 @@ const COMMANDS = {
   workspace: cmdWorkspace,
   browser: cmdBrowser,
   evidence: cmdEvidence,
+  assert: cmdAssert,
+  bug: cmdBug,
   map: cmdMap,
 };
 

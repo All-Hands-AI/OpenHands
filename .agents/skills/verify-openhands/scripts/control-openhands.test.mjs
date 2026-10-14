@@ -53,6 +53,13 @@ import {
 import { MAX_PAGES, collectEvents, countImages } from "./lib/events-paging.mjs";
 import { redactBody, redactUrl } from "./lib/network-bodies.mjs";
 import { buildLocator, parseRole, toCss } from "./lib/selectors.mjs";
+import {
+  classifyAttempt,
+  judgeAssertion,
+  knownBugBlocks,
+  parseBugPredicate,
+  proofVerdict,
+} from "./lib/known-bug.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const cli = join(here, "control-openhands.mjs");
@@ -1844,3 +1851,506 @@ test.skipIf(process.platform === "win32")(
     }
   },
 );
+
+// A run directory with no stack behind it: enough for evidence and bug runs
+// whose recipes only call offline commands.
+function fakeRun(revision = "abc") {
+  const dir = mkdtempSync(join(tmpdir(), "bug-run-"));
+  mkdirSync(join(dir, "private"));
+  mkdirSync(join(dir, "evidence"));
+  writeFileSync(
+    join(dir, "run.json"),
+    JSON.stringify({
+      runId: `r-${revision}`,
+      revision,
+      mode: "local",
+      baseUrl: "http://127.0.0.1:9",
+      ports: { ingress: 9 },
+      launcherPgid: 0,
+      versions: { agentServer: "1.54.0" },
+      pins: { automation: "1.19.3" },
+    }),
+  );
+  return dir;
+}
+
+const block = (body, head = "```sh known-bug F14.create desktop") =>
+  `# F14\n\n- Known failure (#1):\n\n  ${head}\n${body
+    .split("\n")
+    .map((l) => `  ${l}`)
+    .join("\n")}\n  \`\`\`\n`;
+
+test("known-bug blocks parse with their bug line, and malformed ones say why", () => {
+  const [ok] = knownBugBlocks(
+    block(
+      "control-openhands browser goto /\ncontrol-openhands assert --field value --equals Local --bug-shows '' -- browser value 'testid=x'  # bug",
+    ),
+  );
+  assert.equal(ok.id, "F14.create");
+  assert.equal(ok.name, "desktop");
+  assert.deepEqual(ok.bugLines, [2]);
+  assert.deepEqual(ok.problems, []);
+  assert.match(ok.script, /^control-openhands browser goto \/\n/);
+  assert.match(ok.sha, /^[0-9a-f]{16}$/);
+  const [unnamed] = knownBugBlocks(
+    block(
+      "control-openhands assert --field a --equals 1 --bug-shows 0 -- status  # bug",
+      "```sh known-bug F14.create",
+    ),
+  );
+  assert.equal(unnamed.name, "default");
+  const problems = (body) => knownBugBlocks(block(body))[0].problems.join("; ");
+  assert.match(
+    problems("control-openhands browser goto /"),
+    /exactly one line ending in `# bug` \(found 0\)/,
+  );
+  assert.match(
+    problems("false  # bug"),
+    /must be a `control-openhands assert`/,
+  );
+  assert.match(
+    problems("control-openhands assert --field a --equals 1 -- status  # bug"),
+    /must name what the bug shows with --bug-shows or --bug/,
+  );
+  assert.match(
+    problems(
+      "control-openhands assert --field a --equals 1 --bug 'a is 0' -- status  # bug",
+    ),
+    /--bug `a is 0` is not PATH OP \[VALUE\]/,
+  );
+  assert.match(
+    problems(
+      "control-openhands assert --field a --equals 1 --bug 'a eq' -- status  # bug",
+    ),
+    /needs a value/,
+  );
+  assert.deepEqual(
+    knownBugBlocks(
+      block(
+        "control-openhands assert --field a --equals 1 --bug 'a eq 0 && b.c contains \"no such\"' -- status  # bug",
+      ),
+    )[0].problems,
+    [],
+  );
+  // A command continued over several lines is one marked command.
+  const [continued] = knownBugBlocks(
+    block(
+      "true\ncontrol-openhands assert --field a --equals 1 \\\n  --bug-shows 0 \\\n  -- status  # bug\ntrue",
+    ),
+  );
+  assert.deepEqual(continued.problems, []);
+  assert.deepEqual(continued.bugLines, [4]);
+  assert.deepEqual(continued.bugRanges, [[2, 4]]);
+  assert.match(
+    knownBugBlocks(
+      "```sh known-bug F14.create\ncontrol-openhands status\n",
+    )[0].problems.join(),
+    /never closed/,
+  );
+});
+
+test("an assertion tells the bug's value from another value and from an error", () => {
+  const json = { ok: true, value: "", viewport: { width: 390 } };
+  const judge = (o) =>
+    judgeAssertion({
+      exitCode: 0,
+      json,
+      field: "value",
+      equals: "Local",
+      bugShows: "",
+      ...o,
+    });
+  assert.equal(judge({}).kind, "mismatch");
+  assert.equal(judge({ bugShows: "Remote" }).kind, "other-symptom");
+  assert.equal(judge({ bugShows: undefined }).kind, "mismatch");
+  assert.equal(judge({ equals: "" }).kind, "hold");
+  assert.equal(judge({ field: "viewport.width", equals: "390" }).kind, "hold");
+  assert.equal(judge({ field: "nope" }).kind, "error");
+  assert.equal(judge({ exitCode: 1 }).kind, "error");
+  assert.equal(judge({ equals: undefined, matches: "^$" }).kind, "hold");
+  // --bug clauses name the symptom on any field; all must hold.
+  const api = {
+    status: 500,
+    response: { body: { exception: "'int' object has no attribute 'pop'" } },
+  };
+  const bug = (predicate) =>
+    judgeAssertion({
+      exitCode: 0,
+      json: api,
+      field: "status",
+      equals: "422",
+      bug: predicate,
+    });
+  const reproduced = bug(
+    "status eq 500 && response.body.exception contains 'has no attribute'",
+  );
+  assert.equal(reproduced.kind, "mismatch");
+  assert.deepEqual(
+    reproduced.bugChecks.map((c) => c.ok),
+    [true, true],
+  );
+  assert.equal(
+    bug("status eq 500 && response.body.exception contains timeout").kind,
+    "other-symptom",
+  );
+  assert.equal(bug("status eq 503").kind, "other-symptom");
+  assert.equal(bug("response.body.exception matches ^'int'").kind, "mismatch");
+  assert.equal(bug("response.body.detail missing").kind, "mismatch");
+  assert.equal(bug("status ne 500").kind, "other-symptom");
+});
+
+test("bug predicates parse PATH OP [VALUE] clauses joined by &&", () => {
+  assert.deepEqual(
+    parseBugPredicate(
+      `status eq 500 && body.error contains "no such file" && body.x exists`,
+    ).clauses,
+    [
+      { path: "status", op: "eq", value: "500" },
+      { path: "body.error", op: "contains", value: "no such file" },
+      { path: "body.x", op: "exists" },
+    ],
+  );
+  assert.deepEqual(parseBugPredicate("value eq ''").clauses, [
+    { path: "value", op: "eq", value: "" },
+  ]);
+  assert.match(parseBugPredicate("value matches (").problems[0], /Invalid/);
+  assert.match(
+    parseBugPredicate("value exists 1").problems[0],
+    /takes no value/,
+  );
+});
+
+test("only a mismatch at the bug line on a healthy stack counts as reproducing", () => {
+  const base = {
+    doctorBefore: true,
+    doctorAfter: true,
+    exitCode: 1,
+    timedOut: false,
+    failedLine: 4,
+    bugLines: [4],
+    assertion: { kind: "mismatch" },
+  };
+  const c = (o) => classifyAttempt({ ...base, ...o });
+  assert.deepEqual(c({}), { status: "xfail" });
+  assert.equal(c({ exitCode: 0, failedLine: null }).status, "xpass");
+  // Negative cases: none of these is the bug.
+  assert.match(
+    c({ doctorBefore: false }).reason,
+    /^setup: doctor failed before/,
+  );
+  assert.match(
+    c({ doctorAfter: false }).reason,
+    /^backend: doctor failed after/,
+  );
+  assert.equal(c({ timedOut: true, exitCode: null }).reason, "timeout");
+  assert.match(c({ failedLine: 2 }).reason, /^setup: line 2 failed before/);
+  assert.match(c({ failedLine: 5 }).reason, /after the `# bug` assertion held/);
+  assert.match(
+    c({ assertion: { kind: "error" } }).reason,
+    /command itself failed/,
+  );
+  assert.match(
+    c({ assertion: { kind: "other-symptom" } }).reason,
+    /^wrong symptom/,
+  );
+  assert.match(c({ assertion: undefined }).reason, /no assertion result/);
+  assert.match(c({ failedLine: null }).reason, /unknown/);
+  // A continued marked command spans lines; bash reports its first one.
+  const span = { bugLines: [6], bugRanges: [[4, 6]] };
+  assert.deepEqual(c(span), { status: "xfail" });
+  assert.match(c({ ...span, failedLine: 3 }).reason, /^setup: line 3/);
+  assert.match(c({ ...span, failedLine: 7 }).reason, /after the `# bug`/);
+  for (const o of [
+    { doctorBefore: false },
+    { doctorAfter: false },
+    { timedOut: true },
+    { failedLine: 2 },
+    { assertion: { kind: "error" } },
+    { assertion: { kind: "other-symptom" } },
+  ])
+    assert.equal(c(o).status, "fail", JSON.stringify(o));
+});
+
+test("a fix is verified only by two reproductions and two passes under the same inputs", () => {
+  const row = (status, o = {}) => ({
+    status,
+    sha: "s1",
+    revision: "base",
+    viewport: "1440x1000",
+    backend: "local agent-server 1.54.0 automation 1.19.3",
+    ...o,
+  });
+  const fixRow = (status, o = {}) => row(status, { revision: "fix", ...o });
+  const v = (baseline, fix) => proofVerdict({ baseline, fix, sha: "s1" });
+  const good = v(
+    [row("xfail"), row("xfail")],
+    [fixRow("xpass"), fixRow("xpass")],
+  );
+  assert.equal(good.verdict, "verified", good.reasons.join());
+  // A baseline that does not reproduce reliably is inconclusive, never fixed.
+  assert.equal(
+    v([row("xfail"), row("xpass")], [fixRow("xpass"), fixRow("xpass")]).verdict,
+    "inconclusive",
+  );
+  assert.equal(
+    v([row("xfail"), row("fail")], [fixRow("xpass"), fixRow("xpass")]).verdict,
+    "inconclusive",
+  );
+  assert.equal(
+    v([row("xfail")], [fixRow("xpass"), fixRow("xpass")]).verdict,
+    "inconclusive",
+  );
+  assert.equal(
+    v([row("xfail"), row("xfail")], [fixRow("xpass")]).verdict,
+    "inconclusive",
+  );
+  assert.equal(
+    v([row("xfail"), row("xfail")], [fixRow("xpass"), fixRow("xfail")]).verdict,
+    "not-fixed",
+  );
+  assert.equal(
+    v([row("xfail"), row("xfail")], [fixRow("xpass"), fixRow("fail")]).verdict,
+    "inconclusive",
+  );
+  // Inputs must match.
+  assert.match(
+    v(
+      [row("xfail"), row("xfail")],
+      [fixRow("xpass"), fixRow("xpass", { viewport: "390x844" })],
+    ).reasons.join(),
+    /different viewports/,
+  );
+  assert.match(
+    v(
+      [row("xfail"), row("xfail")],
+      [fixRow("xpass", { backend: "x" }), fixRow("xpass", { backend: "x" })],
+    ).reasons.join(),
+    /different backend/,
+  );
+  assert.match(
+    v(
+      [row("xfail"), row("xfail")],
+      [row("xpass"), row("xpass")],
+    ).reasons.join(),
+    /same revision/,
+  );
+  // Attempts of an older recipe do not count.
+  const old = v(
+    [row("xpass", { sha: "s0" }), row("xfail"), row("xfail")],
+    [fixRow("xpass"), fixRow("xpass")],
+  );
+  assert.equal(old.verdict, "verified");
+  assert.equal(old.ignored, 1);
+});
+
+test("bug run classifies live attempts and bug proof turns two runs into a verdict", () => {
+  const dir = mkdtempSync(join(tmpdir(), "bug-map-"));
+  const write = (name, body, timeout) => {
+    const file = join(dir, `${name}.md`);
+    writeFileSync(file, block(body));
+    return file;
+  };
+  // `evidence list` on an empty ledger prints {"count": 0}: the "bug" is a
+  // count of 0 where 1 is expected.
+  const bugLine = (o = "--equals 1 --bug-shows 0") =>
+    `control-openhands assert --field count ${o} -- evidence list --feature QA  # bug`;
+  const cases = {
+    reproduced: [`true\n${bugLine()}`, "xfail"],
+    fixed: [`true\n${bugLine("--equals 0 --bug-shows 1")}`, "xpass"],
+    setup: [`false\n${bugLine()}`, "fail", /^setup: line 1/],
+    symptom: [
+      `true\n${bugLine("--equals 1 --bug-shows 7")}`,
+      "fail",
+      /^wrong symptom/,
+    ],
+    broken: [
+      "true\ncontrol-openhands assert --field count --equals 1 --bug-shows 0 -- evidence nope  # bug",
+      "fail",
+      /command itself failed/,
+    ],
+    later: [
+      `${bugLine("--equals 0 --bug-shows 1")}\nfalse`,
+      "fail",
+      /after the `# bug` assertion held/,
+    ],
+    timeout: [`sleep 5\n${bugLine()}`, "fail", /^timeout$/, ["--timeout", "1"]],
+    predicate: [`true\n${bugLine("--equals 1 --bug 'count eq 0'")}`, "xfail"],
+    "predicate-symptom": [
+      `true\n${bugLine("--equals 1 --bug 'count eq 0 && count ne 0'")}`,
+      "fail",
+      /^wrong symptom/,
+    ],
+    continued: [
+      `true\ncontrol-openhands assert --field count \\\n  --equals 1 --bug-shows 0 \\\n  -- evidence list --feature QA  # bug`,
+      "xfail",
+    ],
+    // A cleanup trap's later assertions, passing or failing, do not replace
+    // the marked command's observation.
+    cleanup: [
+      `trap 'control-openhands assert --field count --equals 0 -- evidence list --feature QA; control-openhands assert --field count --equals 5 -- evidence list --feature QA; false' EXIT\ntrue\n${bugLine()}`,
+      "xfail",
+    ],
+  };
+  for (const [name, [body, status, reason, extra = []]] of Object.entries(
+    cases,
+  )) {
+    const runDir = fakeRun();
+    const r = run(
+      [
+        "bug",
+        "run",
+        "F14.create",
+        "--file",
+        write(name, body),
+        "--no-doctor",
+        ...extra,
+      ],
+      { OH_VERIFY_RUN: runDir },
+    );
+    const [attempt] = r.json.attempts;
+    assert.equal(attempt.status, status, `${name}: ${r.stdout}`);
+    if (reason) assert.match(attempt.reason, reason, name);
+    assert.equal(r.status, status === "xfail" ? 0 : 1, name);
+    // Every attempt lands in the ledger as its own result.
+    const ledger = readFileSync(
+      join(runDir, "evidence", "ledger.jsonl"),
+      "utf8",
+    );
+    assert.match(ledger, new RegExp(`"result":"${status}"`), name);
+    assert.ok(existsSync(join(runDir, attempt.transcript)), name);
+  }
+  // Two attempts on each side, then the verdict.
+  const reproduced = write("proof-base", `true\n${bugLine()}`);
+  const base = fakeRun("base");
+  const fix = fakeRun("fix");
+  const twice = (runDir, file, label) =>
+    run(
+      [
+        "bug",
+        "run",
+        "F14.create",
+        "--file",
+        file,
+        "--no-doctor",
+        "--attempts",
+        "2",
+        "--label",
+        label,
+      ],
+      {
+        OH_VERIFY_RUN: runDir,
+      },
+    );
+  assert.deepEqual(twice(base, reproduced, "baseline").json.summary, {
+    xfail: 2,
+    xpass: 0,
+    fail: 0,
+  });
+  // The fix run sees the same recipe pass: a ledger row makes count 1.
+  writeFileSync(
+    join(fix, "evidence", "ledger.jsonl"),
+    `${JSON.stringify({ feature: "QA", result: "pass", artifacts: [] })}\n`,
+  );
+  const fixed = twice(fix, reproduced, "fix");
+  assert.equal(fixed.json.summary.xpass, 2, fixed.stdout);
+  assert.match(fixed.json.hint, /bug proof/);
+  const proof = run([
+    "bug",
+    "proof",
+    "F14.create",
+    "--file",
+    reproduced,
+    "--baseline",
+    base,
+    "--fix",
+    fix,
+  ]);
+  assert.equal(proof.json.verdict, "verified", proof.stdout);
+  assert.equal(proof.status, 0);
+  // The same run on both sides proves nothing; a one-sided rerun is short.
+  assert.equal(
+    run([
+      "bug",
+      "proof",
+      "F14.create",
+      "--file",
+      reproduced,
+      "--baseline",
+      base,
+      "--fix",
+      base,
+    ]).json.verdict,
+    "inconclusive",
+  );
+  // A negative attempt on the baseline makes it inconclusive unless set aside
+  // by label.
+  run(
+    [
+      "bug",
+      "run",
+      "F14.create",
+      "--file",
+      reproduced,
+      "--no-doctor",
+      "--timeout",
+      "0",
+      "--label",
+      "negative",
+    ],
+    {
+      OH_VERIFY_RUN: base,
+    },
+  );
+  const args = [
+    "bug",
+    "proof",
+    "F14.create",
+    "--file",
+    reproduced,
+    "--baseline",
+    base,
+    "--fix",
+    fix,
+  ];
+  assert.equal(run(args).json.verdict, "inconclusive");
+  assert.equal(
+    run([...args, "--baseline-label", "baseline", "--fix-label", "fix"]).json
+      .verdict,
+    "verified",
+  );
+  // The report keeps xfail and xpass apart from pass and fail.
+  const report = run(["evidence", "report"], { OH_VERIFY_RUN: fix });
+  assert.match(
+    report.stdout,
+    /\| Family \| pass \| fail \| blocked \| not-run \| xfail \| xpass \|/,
+  );
+  assert.match(report.stdout, /\| F14 \| 0 \| 0 \| 0 \| 0 \| 0 \| 1 \|/);
+  assert.match(
+    report.stdout,
+    /\| xpass \| known bug no longer reproduces: review the map note; fix attempt 2 \|/,
+  );
+  // bug list reports malformed blocks.
+  const bad = run(["bug", "list", "--file", write("bad", "true")]);
+  assert.equal(bad.json.ok, false);
+  assert.match(bad.json.blocks[0].problems[0], /exactly one line/);
+});
+
+test("help documents assert and bug, and the shipped map's known-bug blocks are well formed", () => {
+  const help = run(["--help"]).stdout;
+  assert.match(help, /assert +--field/);
+  assert.match(help, /bug +list \| run ID/);
+  const bug = run(["help", "bug"]).stdout;
+  for (const word of [
+    "xfail",
+    "xpass",
+    "proof",
+    "--bug-shows",
+    "--attempts",
+    "inconclusive",
+  ])
+    assert.ok(bug.includes(word), word);
+  assert.match(run(["help", "assert"]).stdout, /--bug-shows/);
+  const list = run(["bug", "list"]);
+  assert.equal(list.json.ok, true, list.stdout);
+  assert.ok(list.json.count >= 1);
+});

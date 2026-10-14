@@ -124,6 +124,26 @@ sections, in this order:
    (reproduced <date>, #<issue>): <what happens>`; list it here as
    `Known issue #<issue>: ...` only when no recipe can drive it.
 
+   Make the note executable when a recipe can drive it: indent a fenced block
+   under it, opened with `` ```sh known-bug <ID> [name] `` (the name tells
+   entry points or viewports apart, such as `desktop` and `phone`). Its
+   commands set their own viewport and starting page and assert the *correct*
+   behavior; exactly one command, the one that fails because of the bug, is a
+   `control-openhands assert --field <path> --equals <correct> --bug-shows
+   <what the bug shows> -- <command>` ending in `# bug` (a long one may
+   continue over lines ending in `\`). When the bug's value varies, or
+   needs more than one field to pin down, name it with `--bug 'PATH OP
+   [VALUE] && ...'` instead (see the known-bug contract below). Arrange steps go
+   before it and must be able to fail on their own (assert the starting value
+   too), so a broken setup is never read as the bug. Keep a `browser
+   screenshot` before the assertion where the symptom is visual.
+   `control-openhands bug run <ID>` then reports `xfail` while the bug lasts,
+   `xpass` once it stops, and `fail` for anything else; `map check` rejects a
+   block without exactly one such command. F25's `F25.selector-dropdown` note is
+   the worked example. When a fix is proven, the PR that drops the note turns
+   the block's commands into the bullet's normal steps, so the same assertion
+   guards the corrected behavior.
+
 Treat commands as literal: quote selectors, keep names unique to the run (prefix
 fixtures with `QA_`), and restore shared state after mutations (delete the secret,
 deactivate the profile) unless the next recipe depends on it, in which case say so.
@@ -215,3 +235,43 @@ parallel, each edits only its own file and checks it with `--file`; one
 coordinator updates the index afterwards.
 Then hand the evidence ledger (`control-openhands evidence report`) to whoever
 asked, with fail/blocked rows first.
+
+## The known-bug contract
+
+Keep these rules in step with the sibling verification skills
+(verify-agent-server in OpenHands/software-agent-sdk, verify-automation in
+OpenHands/automation), so a proof means the same thing in each. The code stays
+separate; only the syntax for naming the bug differs, noted below.
+
+- The recipe asserts the correct behavior. The command that fails because of
+  the bug ends its line with `# bug` and names the bug's own symptom: the
+  value or error it produces, not just any wrong value. Here that command is
+  always a `control-openhands assert`, which carries the symptom as
+  `--bug-shows V` or `--bug PREDICATE`; the sibling skills write
+  `# bug: PREDICATE` on the marked line instead.
+- Three outcomes. `xfail`: the marked command failed and its symptom held (the
+  documented bug reproduced). `xpass`: every command passed, so the correct
+  behavior was observed; `bug run` exits 1 so the note gets reviewed and the
+  marker removed. `fail`: anything else, including a different value at the
+  marked command, an arrange step that breaks first, a timeout, an unhealthy
+  stack before or after, a failure after the marked command, or a failing line
+  the runner could not locate.
+- The predicate is `PATH OP [VALUE]` clauses joined by `&&`, matched against
+  the JSON the asserted command printed: `--bug 'status eq 500 &&
+  body.error contains "has no attribute"'`. OP is `eq`, `ne`, `contains`,
+  `not-contains`, `matches` (a regex), `exists` or `missing`. `--bug-shows V`
+  is `--bug '<field> eq V'`. Prefer `contains` or `matches` on the stable part
+  of an error message over pinning its whole text.
+- `xpass` must mean the correct value was observed, so the marked command
+  asserts positively. Negative shapes (`! cmd`, `if cmd; then false; fi`,
+  `test !`) cannot be marked: the marked command must be an `assert`, and
+  `map check` rejects anything else.
+- `map check` rejects a missing or malformed predicate.
+- The observation is the marked command's own. Every assertion is logged with
+  the recipe line that ran it and the first failure is kept, so a later step
+  or an `EXIT` trap's cleanup cannot replace it. A marked command continued
+  over several lines counts as one, from its first line to the `# bug` line.
+- A fix is proven with the baseline reproducing (`xfail`) twice and the fix
+  passing (`xpass`) twice, with the same recipe, viewport and backend:
+  `control-openhands bug proof` computes that verdict (`verified`,
+  `not-fixed` or `inconclusive`).

@@ -112,6 +112,18 @@ export const SETUP_QUERY_KEYS = {
   capabilities: () => ["setup-capabilities"] as const,
 } as const;
 
+export const MARS_QUERY_KEYS = {
+  all: ["mars"] as const,
+  authState: ["mars", "auth-state"] as const,
+  /** Every connection's agent list, for invalidating after a change. */
+  allAgents: ["mars", "agents"] as const,
+  /** Keyed by connection so switching teams never shows another team's list. */
+  agents: (connectionId: string | null) =>
+    ["mars", "agents", connectionId] as const,
+  /** DigitalOcean's sandbox size catalog; the same for every team. */
+  sandboxSizes: ["mars", "sandbox-sizes"] as const,
+} as const;
+
 export const APP_UPDATE_QUERY_KEYS = {
   /** Latest published @openhands/agent-canvas version (npm `latest` dist-tag). */
   latestVersion: ["agent-canvas-latest-version"] as const,
@@ -130,5 +142,3 @@ export const CONFIG_CACHE_OPTIONS = {
   staleTime: 1000 * 60 * 5, // 5 minutes
   gcTime: 1000 * 60 * 15, // 15 minutes
 } as const;
-
-export type QueryKeys = (typeof QUERY_KEYS)[keyof typeof QUERY_KEYS];

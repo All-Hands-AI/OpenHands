@@ -42,6 +42,7 @@ import {
   isCanvasUIActionEvent,
   isAutomationFormUpdateActionEvent,
   isLaunchChildConversationActionEvent,
+  isRequestSecretActionEvent,
 } from "#/types/agent-server/type-guards";
 import {
   asSessionFrame,
@@ -54,6 +55,7 @@ import {
 import { handleCanvasUIAction } from "#/services/canvas-ui";
 import { handleAutomationFormUpdateAction } from "#/services/automation-form";
 import { handleLaunchChildConversationAction } from "#/services/child-conversation-launch";
+import { handleRequestSecretAction } from "#/services/secret-request";
 import { ConversationStateUpdateEventStats } from "#/types/agent-server/core/events/conversation-state-event";
 import type {
   ConversationErrorEvent,
@@ -865,6 +867,16 @@ export function ConversationWebSocketProvider({
           // agent learns the id the server-side acknowledgement can't carry.
           if (conversationId && isLaunchChildConversationActionEvent(event)) {
             void handleLaunchChildConversationAction(
+              event.action,
+              conversationId,
+              event.tool_call_id,
+            );
+          }
+
+          // Same pattern again: the user answers in a modal, and the outcome
+          // is posted back once they close it.
+          if (conversationId && isRequestSecretActionEvent(event)) {
+            void handleRequestSecretAction(
               event.action,
               conversationId,
               event.tool_call_id,

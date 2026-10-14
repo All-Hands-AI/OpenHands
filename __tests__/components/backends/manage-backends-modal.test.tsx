@@ -865,6 +865,145 @@ describe("ManageBackendsModal", () => {
   });
 });
 
+describe("ManageBackendsModal — removing a DigitalOcean session backend", () => {
+  const MARS_SESSION_ID = "sess_1";
+
+  function installMarsBridge(destroySession: () => Promise<void>) {
+    const bridge = {
+      destroySession: vi.fn(destroySession),
+      closeTunnel: vi.fn().mockResolvedValue(undefined),
+    };
+    (window as unknown as { marsBridge?: unknown }).marsBridge = bridge;
+    return bridge;
+  }
+
+  function BackendNames() {
+    const { backends } = useActiveBackendContext();
+    return (
+      <span data-testid="backend-names">
+        {backends.map((b) => b.name).join(",")}
+      </span>
+    );
+  }
+
+  async function openRemovalFor(name: string, onClose = vi.fn()) {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <TestSeed
+        onMount={(ctx) => {
+          ctx.addBackend({
+            name,
+            host: "http://127.0.0.1:41234",
+            apiKey: "",
+            kind: "local",
+            marsSessionId: MARS_SESSION_ID,
+          });
+        }}
+      >
+        <BackendNames />
+        <ManageBackendsModal onClose={onClose} />
+      </TestSeed>,
+    );
+    await user.click(
+      await screen.findByTestId(`manage-backends-remove-${name}`),
+    );
+    return user;
+  }
+
+  it("does not close Manage Backends on Escape while a session is being stopped", async () => {
+    // A stop that never settles, so the dialog stays mid-destroy.
+    installMarsBridge(() => new Promise<void>(() => {}));
+    const onClose = vi.fn();
+    const user = await openRemovalFor("DO session", onClose);
+
+    await user.click(await screen.findByTestId("stop-session-button"));
+    await user.keyboard("{Escape}");
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(
+      screen.getByTestId("mars-backend-removal-modal"),
+    ).toBeInTheDocument();
+  });
+
+  afterEach(() => {
+    delete (window as unknown as { marsBridge?: unknown }).marsBridge;
+  });
+
+  it("explains the session keeps running and only disconnects on 'Disconnect only'", async () => {
+    const bridge = installMarsBridge(() => Promise.resolve());
+    const user = await openRemovalFor("DO session");
+
+    const modal = await screen.findByTestId("mars-backend-removal-modal");
+    expect(modal).toHaveTextContent("BACKEND$REMOVE_MARS_CONFIRMATION");
+    await user.click(within(modal).getByTestId("disconnect-only-button"));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("backend-names")).not.toHaveTextContent(
+        "DO session",
+      ),
+    );
+    expect(bridge.destroySession).not.toHaveBeenCalled();
+    expect(bridge.closeTunnel).toHaveBeenCalledWith(MARS_SESSION_ID);
+  });
+
+  it("destroys the DigitalOcean session before removing the backend on 'Stop session'", async () => {
+    const bridge = installMarsBridge(() => Promise.resolve());
+    const user = await openRemovalFor("DO session");
+
+    await user.click(await screen.findByTestId("stop-session-button"));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("backend-names")).not.toHaveTextContent(
+        "DO session",
+      ),
+    );
+    expect(bridge.destroySession).toHaveBeenCalledWith(MARS_SESSION_ID);
+    expect(
+      screen.queryByTestId("mars-backend-removal-modal"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps the backend and shows the error when DigitalOcean refuses to stop the session", async () => {
+    installMarsBridge(() =>
+      Promise.reject(new Error("Session is locked by a checkpoint.")),
+    );
+    const user = await openRemovalFor("DO session");
+
+    await user.click(await screen.findByTestId("stop-session-button"));
+
+    expect(
+      await screen.findByTestId("mars-backend-removal-error"),
+    ).toHaveTextContent("Session is locked by a checkpoint.");
+    expect(screen.getByTestId("backend-names")).toHaveTextContent("DO session");
+    expect(screen.getByTestId("stop-session-button")).toBeEnabled();
+  });
+
+  it("keeps the generic confirmation for backends that are not DigitalOcean sessions", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <TestSeed
+        onMount={(ctx) => {
+          ctx.addBackend({
+            name: "Plain",
+            host: "http://localhost:9000",
+            apiKey: "",
+            kind: "local",
+          });
+        }}
+      >
+        <ManageBackendsModal onClose={vi.fn()} />
+      </TestSeed>,
+    );
+
+    await user.click(await screen.findByTestId("manage-backends-remove-Plain"));
+
+    expect(await screen.findByTestId("confirmation-modal")).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("mars-backend-removal-modal"),
+    ).not.toBeInTheDocument();
+  });
+});
+
 function renderInQueryClient(ui: React.ReactElement) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -918,6 +1057,43 @@ describe("BackendRow", () => {
       .getByText(cloudBackend.name)
       .closest("button");
     expect(selectButton).toBeDisabled();
+  });
+
+  it("keeps a disconnected DigitalOcean session selectable, since selecting it reconnects", async () => {
+    const onSelect = vi.fn();
+    const marsBackend: Backend = {
+      id: "mars-1",
+      name: "DO session",
+      host: "http://127.0.0.1:41234",
+      apiKey: "",
+      kind: "local",
+      marsSessionId: "sess_1",
+    };
+    renderInQueryClient(
+      <ul>
+        <BackendRow
+          backend={marsBackend}
+          health={{
+            isConnected: false,
+            consecutiveFailures: 3,
+            lastError: "connection refused",
+            disabled: true,
+          }}
+          onSelect={onSelect}
+          onEdit={vi.fn()}
+          onRemove={vi.fn()}
+        />
+      </ul>,
+    );
+
+    const selectButton = within(
+      screen.getByTestId("manage-backends-row-DO session"),
+    )
+      .getByText("DO session")
+      .closest("button")!;
+    expect(selectButton).toBeEnabled();
+    await userEvent.click(selectButton);
+    expect(onSelect).toHaveBeenCalledTimes(1);
   });
 
   it("shows a logged-out cloud status with a log back in button", () => {

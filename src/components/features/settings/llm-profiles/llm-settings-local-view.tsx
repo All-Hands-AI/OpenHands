@@ -47,7 +47,11 @@ import {
   LLM_SUBSCRIPTION_VENDOR_KEY,
   OPENAI_SUBSCRIPTION_VENDOR,
 } from "#/constants/llm-subscription";
-import { SettingsFormValues } from "#/utils/sdk-settings-schema";
+import {
+  buildSdkSettingsPayload,
+  getAgentSettingValue,
+  SettingsFormValues,
+} from "#/utils/sdk-settings-schema";
 import { BackNavButton } from "#/components/shared/buttons/back-nav-button";
 import { Typography } from "#/ui/typography";
 import { useSettingsSectionHeader } from "#/contexts/settings-section-header-context";
@@ -109,6 +113,26 @@ export function LlmSettingsLocalView() {
   // embedded form hydrates, so the eventual DB default never replaces it and
   // the user can save the wrong model.
   const isDefaultModelReady = useDefaultModelReady();
+  // @spec LLP-001 — A fresh profile never inherits schema-declared credentials.
+  const createProfileInitialValues = useMemo(
+    () => ({
+      // A fresh profile may inherit options, but no existing credentials.
+      ...Object.fromEntries(
+        (agentSchema?.sections ?? []).flatMap((section) =>
+          section.fields
+            .filter((field) => field.secret)
+            .map((field) => [field.key, ""]),
+        ),
+      ),
+      "llm.model": createProfileDefaultModel,
+      "llm.api_key": "",
+      "llm.base_url": "",
+      [LLM_PROVIDER_CONNECTION_KEY]: "",
+      [LLM_AUTH_TYPE_KEY]: LLM_AUTH_TYPE_API_KEY,
+      [LLM_SUBSCRIPTION_VENDOR_KEY]: OPENAI_SUBSCRIPTION_VENDOR,
+    }),
+    [agentSchema, createProfileDefaultModel],
+  );
 
   // Always hold the freshest schema. `handleEditProfile` awaits a network
   // round-trip before seeding the form, so reading the schema from a ref
@@ -118,6 +142,8 @@ export function LlmSettingsLocalView() {
   // and would otherwise seed only the three hard-coded keys.
   const agentSchemaRef = useRef(agentSchema);
   agentSchemaRef.current = agentSchema;
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
 
   // Provider connections are available on the local agent-server and on cloud
   // when an org is bound (the org-scoped CRUD routes). A cloud backend without
@@ -137,6 +163,7 @@ export function LlmSettingsLocalView() {
   const [saveControl, setSaveControl] = useState<SdkSectionSaveControl | null>(
     null,
   );
+  const automaticCreateBooleanKeys = useRef<Set<string> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
 
@@ -170,6 +197,7 @@ export function LlmSettingsLocalView() {
   }, []);
 
   const handleAddProfile = useCallback(() => {
+    automaticCreateBooleanKeys.current = null;
     setProfileName("");
     setIsProfileNameUserEdited(false);
     setEditingProfile(null);
@@ -212,6 +240,7 @@ export function LlmSettingsLocalView() {
   );
 
   const handleBackToList = useCallback(() => {
+    automaticCreateBooleanKeys.current = null;
     setViewMode("list");
     setEditingProfile(null);
     setProfileName("");
@@ -221,6 +250,31 @@ export function LlmSettingsLocalView() {
   const handleSaveControlChange = useCallback(
     (control: SdkSectionSaveControl) => {
       setSaveControl(control);
+      const currentSettings = settingsRef.current;
+      const currentSchema = agentSchemaRef.current;
+      // Capture the draft's raw origin once it hydrates. Null-default booleans
+      // render unchecked, but null preserves provider auto-detection. A later
+      // settings refresh must not change that meaning for this open draft.
+      if (
+        viewMode === "create" &&
+        automaticCreateBooleanKeys.current === null &&
+        currentSettings &&
+        currentSchema &&
+        "llm.model" in control.values
+      ) {
+        automaticCreateBooleanKeys.current = new Set(
+          currentSchema.sections.flatMap((section) =>
+            section.fields
+              .filter(
+                (field) =>
+                  field.value_type === "boolean" &&
+                  field.default === null &&
+                  getAgentSettingValue(currentSettings, field.key) === null,
+              )
+              .map((field) => field.key),
+          ),
+        );
+      }
 
       // Auto-derive profile name from model in create mode, and keep it
       // following later model changes until the user types their own name.
@@ -243,6 +297,7 @@ export function LlmSettingsLocalView() {
     [viewMode, isProfileNameUserEdited, existingNames],
   );
 
+  // @spec LLP-001 — New profiles preserve options and credential boundaries.
   const handleSave = useCallback(async () => {
     if (!saveControl || !isNameValid) return;
 
@@ -253,10 +308,34 @@ export function LlmSettingsLocalView() {
     // otherwise reset everything else to defaults.
     let dirtyLlm: Record<string, unknown>;
     try {
-      dirtyLlm = (saveControl.getDirtyPayload().llm ?? {}) as Record<
-        string,
-        unknown
-      >;
+      // A new profile has no saved config to merge over, so persist every
+      // non-secret value its form displays, using the same coercion as edits.
+      // Explicit credential edits are included by the dirty payload below.
+      const initialPayload =
+        viewMode === "create" && agentSchema
+          ? buildSdkSettingsPayload(
+              agentSchema,
+              saveControl.values,
+              Object.fromEntries(
+                agentSchema.sections.flatMap((section) =>
+                  section.fields
+                    .filter((field) => field.key in saveControl.values)
+                    .map((field) => [
+                      field.key,
+                      !field.secret &&
+                        !automaticCreateBooleanKeys.current?.has(field.key),
+                    ]),
+                ),
+              ),
+            )
+          : {};
+      dirtyLlm = {
+        ...((initialPayload.llm ?? {}) as Record<string, unknown>),
+        ...((saveControl.getDirtyPayload().llm ?? {}) as Record<
+          string,
+          unknown
+        >),
+      };
     } catch (error) {
       displayErrorToast(
         error instanceof Error ? error.message : t(I18nKey.ERROR$GENERIC),
@@ -348,6 +427,7 @@ export function LlmSettingsLocalView() {
     }
   }, [
     saveControl,
+    agentSchema,
     isNameValid,
     supportsConnections,
     profileName,
@@ -409,7 +489,7 @@ export function LlmSettingsLocalView() {
         isRequired
         error={
           isDuplicateName
-            ? t(I18nKey.SETTINGS$META_PROFILE_NAME_TAKEN)
+            ? t(I18nKey.SETTINGS$LLM_PROFILE_NAME_TAKEN)
             : undefined
         }
       />
@@ -435,16 +515,7 @@ export function LlmSettingsLocalView() {
             viewMode === "edit" && editingProfile?.initialValues
               ? // Edit mode: use the existing profile values
                 editingProfile.initialValues
-              : // Create mode: prefill with the backend-selected default model,
-                // while keeping secret/base URL fields blank for a fresh profile.
-                {
-                  "llm.model": createProfileDefaultModel,
-                  "llm.api_key": "",
-                  "llm.base_url": "",
-                  [LLM_PROVIDER_CONNECTION_KEY]: "",
-                  [LLM_AUTH_TYPE_KEY]: LLM_AUTH_TYPE_API_KEY,
-                  [LLM_SUBSCRIPTION_VENDOR_KEY]: OPENAI_SUBSCRIPTION_VENDOR,
-                }
+              : createProfileInitialValues
           }
           showProviderConnection={supportsConnections}
           onSaveControlChange={handleSaveControlChange}
