@@ -52271,24 +52271,6 @@
     "ca": "Com les converses noves creen worktrees i dimensionen els seus contenidors.",
     "id": "Cara percakapan baru membuat worktree dan menentukan ukuran kontainernya."
   },
-  "SCHEMA$RUNTIME$SECTION_LABEL": {
-    "en": "Runtime",
-    "ja": "ランタイム",
-    "zh-CN": "运行时",
-    "zh-TW": "執行環境",
-    "ko-KR": "런타임",
-    "no": "Kjøremiljø",
-    "it": "Runtime",
-    "pt": "Runtime",
-    "es": "Entorno de ejecución",
-    "ar": "بيئة التشغيل",
-    "fr": "Environnement d'exécution",
-    "tr": "Çalışma ortamı",
-    "de": "Laufzeit",
-    "uk": "Середовище виконання",
-    "ca": "Entorn d'execució",
-    "id": "Runtime"
-  },
   "SCHEMA$WORKTREE_BASE$LABEL": {
     "en": "Create worktrees from",
     "ja": "ワークツリーの作成元",
@@ -52470,21 +52452,21 @@
     "id": "Jalankan browser di percakapan Docker bila image server memilikinya."
   },
   "COMMAND_MENU$RUNTIME_SETTINGS_KEYWORDS": {
-    "en": "runtime docker container worktree memory cpu browser",
-    "ja": "runtime docker container worktree memory cpu browser ランタイム コンテナー ワークツリー メモリ",
-    "zh-CN": "runtime docker container worktree memory cpu browser 运行时 容器 工作树 内存",
-    "zh-TW": "runtime docker container worktree memory cpu browser 執行環境 容器 工作樹 記憶體",
-    "ko-KR": "runtime docker container worktree memory cpu browser 런타임 컨테이너 워크트리 메모리",
-    "no": "runtime docker container worktree memory cpu browser kjøremiljø minne nettleser",
-    "it": "runtime docker container worktree memory cpu browser memoria contenitore",
-    "pt": "runtime docker container worktree memory cpu browser contêiner memória navegador",
-    "es": "runtime docker container worktree memory cpu browser entorno contenedor memoria navegador",
-    "ar": "runtime docker container worktree memory cpu browser بيئة التشغيل حاوية ذاكرة متصفح",
-    "fr": "runtime docker container worktree memory cpu browser conteneur mémoire navigateur",
-    "tr": "runtime docker container worktree memory cpu browser çalışma ortamı kapsayıcı bellek tarayıcı",
-    "de": "runtime docker container worktree memory cpu browser laufzeit speicher",
-    "uk": "runtime docker container worktree memory cpu browser середовище контейнер пам'ять браузер",
-    "ca": "runtime docker container worktree memory cpu browser entorn contenidor memòria navegador",
-    "id": "runtime docker container worktree memory cpu browser kontainer memori"
+    "en": "runtime docker container worktree cpu browser",
+    "ja": "runtime docker container worktree cpu browser ランタイム コンテナー ワークツリー",
+    "zh-CN": "runtime docker container worktree cpu browser 运行时 容器 工作树",
+    "zh-TW": "runtime docker container worktree cpu browser 執行環境 容器 工作樹",
+    "ko-KR": "runtime docker container worktree cpu browser 런타임 컨테이너 워크트리",
+    "no": "runtime docker container worktree cpu browser kjøremiljø nettleser",
+    "it": "runtime docker container worktree cpu browser contenitore",
+    "pt": "runtime docker container worktree cpu browser contêiner navegador",
+    "es": "runtime docker container worktree cpu browser entorno contenedor navegador",
+    "ar": "runtime docker container worktree cpu browser بيئة التشغيل حاوية متصفح",
+    "fr": "runtime docker container worktree cpu browser conteneur navigateur",
+    "tr": "runtime docker container worktree cpu browser çalışma ortamı kapsayıcı tarayıcı",
+    "de": "runtime docker container worktree cpu browser laufzeit",
+    "uk": "runtime docker container worktree cpu browser середовище контейнер браузер",
+    "ca": "runtime docker container worktree cpu browser entorn contenidor navegador",
+    "id": "runtime docker container worktree cpu browser kontainer"
   }
 }
