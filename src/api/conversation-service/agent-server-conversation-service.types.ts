@@ -131,11 +131,6 @@ export interface SendMessageResponse {
   content: MessageContent[];
 }
 
-export interface AppConversationStartTaskPage {
-  items: AppConversationStartTask[];
-  next_page_id: string | null;
-}
-
 export interface ConversationWorkspace {
   working_dir: string | null;
 }
@@ -254,10 +249,6 @@ export interface Skill {
   allowed_tools?: string[] | null;
   is_agentskills_format?: boolean;
   disable_model_invocation?: boolean;
-}
-
-export interface GetSkillsResponse {
-  skills: Skill[];
 }
 
 export interface HookDefinition {

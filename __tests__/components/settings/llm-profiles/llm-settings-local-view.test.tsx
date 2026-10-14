@@ -527,10 +527,10 @@ describe("LlmSettingsLocalView", () => {
 
       expect(nameInput).toHaveAttribute("aria-invalid", "true");
       expect(nameInput).toHaveAccessibleDescription(
-        "SETTINGS$META_PROFILE_NAME_TAKEN",
+        "SETTINGS$LLM_PROFILE_NAME_TAKEN",
       );
       expect(screen.getByRole("alert")).toHaveTextContent(
-        "SETTINGS$META_PROFILE_NAME_TAKEN",
+        "SETTINGS$LLM_PROFILE_NAME_TAKEN",
       );
       expect(screen.getByTestId("save-profile-btn")).toBeDisabled();
 
@@ -563,7 +563,7 @@ describe("LlmSettingsLocalView", () => {
 
       expect(nameInput).toHaveAttribute("aria-invalid", "true");
       expect(nameInput).toHaveAccessibleDescription(
-        "SETTINGS$META_PROFILE_NAME_TAKEN",
+        "SETTINGS$LLM_PROFILE_NAME_TAKEN",
       );
       expect(screen.getByTestId("save-profile-btn")).toBeDisabled();
     });

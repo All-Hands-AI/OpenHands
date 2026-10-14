@@ -319,29 +319,6 @@ vi.mock("#/components/features/automations/delete-confirmation-modal", () => ({
     ) : null,
 }));
 
-vi.mock(
-  "#/components/features/automations/detail/edit-automation-modal",
-  () => ({
-    EditAutomationModal: ({
-      automation,
-      isOpen,
-      onClose,
-    }: {
-      automation: Automation;
-      isOpen: boolean;
-      onClose: () => void;
-    }) =>
-      isOpen ? (
-        <div data-testid="edit-modal">
-          <span>{automation.name}</span>
-          <button type="button" onClick={onClose}>
-            close-edit
-          </button>
-        </div>
-      ) : null,
-  }),
-);
-
 vi.mock("#/components/features/automations/import-automation-modal", () => ({
   ImportAutomationModal: ({
     isOpen,
@@ -743,7 +720,6 @@ describe("automations list interactions", () => {
       automationName: "missing-id",
     });
     expect(screen.queryByTestId("delete-modal")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("edit-modal")).not.toBeInTheDocument();
   });
 
   it("reports pending dispatches and confirms a successful run", async () => {
@@ -886,7 +862,6 @@ describe("automations list interactions", () => {
     expect(mocks.navigate).toHaveBeenCalledWith(
       "/automations/setup?automationId=automation-1",
     );
-    expect(screen.queryByTestId("edit-modal")).not.toBeInTheDocument();
   });
 
   it("offers editing regardless of the backend kind", () => {

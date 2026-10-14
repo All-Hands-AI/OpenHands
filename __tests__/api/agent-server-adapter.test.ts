@@ -3,6 +3,7 @@ import type { MockInstance } from "vitest";
 import { getAcpProvider as getClientAcpProvider } from "@openhands/typescript-client";
 import { CANVAS_UI_CLIENT_TOOL_NAME } from "#/constants/canvas-ui";
 import { LAUNCH_CHILD_CONVERSATION_TOOL_NAME } from "#/constants/child-conversation";
+import { REQUEST_SECRET_TOOL_NAME } from "#/constants/secret-request";
 import { AUTOMATION_FORM_UPDATE_TOOL_NAME } from "#/constants/automation-form";
 
 import {
@@ -12,7 +13,7 @@ import {
   buildRuntimeServicesSystemSuffix,
   buildStartConversationRequest,
   buildStartConversationRequestWithEncryptedSettings,
-  fetchBackendRuntimeServicesInfo,
+  fetchBackendExecutionRuntime,
   getDefaultConversationTitle,
   parseRuntimeServicesInfo,
   toAppConversation,
@@ -854,6 +855,7 @@ describe("buildStartConversationRequest", () => {
       expect(payload.client_tools.map((tool) => tool.name)).toEqual([
         CANVAS_UI_CLIENT_TOOL_NAME,
         LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
+        REQUEST_SECRET_TOOL_NAME,
       ]);
     });
 
@@ -883,6 +885,7 @@ describe("buildStartConversationRequest", () => {
         expectedTools: [
           CANVAS_UI_CLIENT_TOOL_NAME,
           LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
+          REQUEST_SECRET_TOOL_NAME,
         ],
       },
       {
@@ -890,6 +893,7 @@ describe("buildStartConversationRequest", () => {
         expectedTools: [
           CANVAS_UI_CLIENT_TOOL_NAME,
           LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
+          REQUEST_SECRET_TOOL_NAME,
           AUTOMATION_FORM_UPDATE_TOOL_NAME,
         ],
       },
@@ -917,6 +921,7 @@ describe("buildStartConversationRequest", () => {
       expect(payload.client_tools.map((tool) => tool.name)).toEqual([
         CANVAS_UI_CLIENT_TOOL_NAME,
         LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
+        REQUEST_SECRET_TOOL_NAME,
       ]);
     });
 
@@ -1486,45 +1491,27 @@ describe("buildRuntimeServicesSystemSuffix", () => {
     expect(suffix).toContain("Automation backend: not running");
   });
 
-  it("fetches runtime services from cached server_info when available", async () => {
+  it("reads server_info from the cached probe when available", async () => {
     mockGetCachedAgentServerInfo.mockReturnValue({
       version: "1.48.0",
-      runtime_services: {
-        mode: "docker",
-        services: {
-          agent_server: { url_from_agent: "http://127.0.0.1:18000" },
-          automation: {
-            url_from_agent: "http://127.0.0.1:8000",
-            api_prefix: "/api/automation",
-            auth_env_var: "OPENHANDS_AUTOMATION_API_KEY",
-          },
-        },
-      },
+      execution_runtime: "docker",
     });
 
-    const info = await fetchBackendRuntimeServicesInfo();
+    const runtime = await fetchBackendExecutionRuntime();
 
-    expect(info?.mode).toBe("docker");
-    expect(info?.services?.automation?.url_from_agent).toBe(
-      "http://127.0.0.1:8000",
-    );
+    expect(runtime).toBe("docker");
     expect(mockGetServerInfo).not.toHaveBeenCalled();
   });
 
-  it("fetches runtime services from /server_info when there is no cached probe", async () => {
+  it("fetches /server_info when there is no cached probe", async () => {
     mockGetServerInfo.mockResolvedValue({
       version: "1.48.0",
-      runtime_services: {
-        mode: "dev:automation",
-        services: {
-          agent_server: { url_from_agent: "http://localhost:18000" },
-        },
-      },
+      execution_runtime: "local",
     });
 
-    const info = await fetchBackendRuntimeServicesInfo();
+    const runtime = await fetchBackendExecutionRuntime();
 
-    expect(info?.mode).toBe("dev:automation");
+    expect(runtime).toBe("local");
     expect(mockGetServerInfo).toHaveBeenCalledOnce();
   });
 });

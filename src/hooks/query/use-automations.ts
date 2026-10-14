@@ -12,7 +12,6 @@ import { useActiveBackend } from "#/contexts/active-backend-context";
 import { useTracking } from "#/hooks/use-tracking";
 import { uniqueById } from "#/utils/unique-by-id";
 import type {
-  Automation,
   AutomationCreatedByFilter,
   AutomationSpec,
   AutomationsResponse,
@@ -209,23 +208,6 @@ export function useImportAutomation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: AUTOMATIONS_QUERY_KEY });
       trackAutomationImported({ backendKind: active.backend.kind });
-    },
-  });
-}
-
-export function useUpdateAutomation() {
-  const queryClient = useQueryClient();
-  const active = useActiveBackend();
-  const { trackAutomationEdited } = useTracking();
-  return useMutation({
-    mutationFn: ({ id, body }: { id: string; body: Partial<Automation> }) =>
-      AutomationService.updateAutomation(id, body),
-    // Callers toast the API message themselves; skip the generic global toast.
-    meta: { disableToast: true },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: AUTOMATIONS_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: AUTOMATION_DETAIL_QUERY_KEY });
-      trackAutomationEdited({ backendKind: active.backend.kind });
     },
   });
 }

@@ -28,17 +28,16 @@
  * the event WebSocket, so proxied JSON has those URLs rewritten to the prefix.
  *
  * Trust model. These routes hold the DigitalOcean token and can destroy
- * sessions, so they are off unless `MARS_WEB=1`, and when on they want the
- * server's session key on every request: the renderer sends it as
- * `X-Session-API-Key` on `/mars/rpc/*` (the same key it already sends the
- * agent-server), and a request that presents it gets an `HttpOnly;
- * SameSite=Strict; Path=/mars` cookie back, which the browser then attaches
- * on its own to the proxied REST calls and to the WebSocket upgrade — the
- * one request a browser cannot put a header on. The key is `MARS_WEB_KEY`,
- * else the server's `--session-api-key`; with neither, the bridge mounts
- * only on a loopback bind (dev), where a `Host` check keeps a DNS-rebound
- * page from reaching it (cookies are host-scoped, so with a key in play
- * rebinding cannot carry one). Cross-origin requests are refused outright;
+ * sessions, so they want the server's session key on every request: the
+ * renderer sends it as `X-Session-API-Key` on `/mars/rpc/*` (the same key it
+ * already sends the agent-server), and a request that presents it gets an
+ * `HttpOnly; SameSite=Strict; Path=/mars` cookie back, which the browser then
+ * attaches on its own to the proxied REST calls and to the WebSocket upgrade
+ * — the one request a browser cannot put a header on. The key is
+ * `MARS_WEB_KEY`, else the server's `--session-api-key`; with neither, the
+ * bridge mounts only on a loopback bind (dev), where a `Host` check keeps a
+ * DNS-rebound page from reaching it (cookies are host-scoped, so with a key in
+ * play rebinding cannot carry one). Cross-origin requests are refused outright;
  * JSON POSTs preflight and this server sends no CORS headers. Credentials
  * are in-memory only (no OS keychain here, nothing written to disk);
  * `MARS_TOKEN` seeds one at startup.
@@ -98,11 +97,6 @@ export const RPC_METHODS = new Set([
 /** Request headers that belong to the canvas origin, never to the session host. */
 const CANVAS_ONLY_HEADERS = ["cookie", AUTH_HEADER, "origin", "referer"];
 
-/** Off unless asked for: these routes hold the DO token and can destroy sessions. */
-export function isMarsWebEnabled(env = process.env) {
-  return env.MARS_WEB === "1";
-}
-
 /**
  * The key `/mars/*` requires, or null when none is configured. Explicit
  * `MARS_WEB_KEY` wins so a deployment can decouple it from the agent-server
@@ -120,26 +114,63 @@ export function resolveMarsWebKey({
 }
 
 /**
- * Mount the bridge for a server, or return null when it must not be: not
- * opted in, or no key on a non-loopback bind (the routes would be open to
- * the LAN with the DO token behind them).
+ * Mount the bridge for a server, or return null when it must not be. On by
+ * default; off when:
+ *
+ * - `MARS_WEB=0`. The explicit opt-out, for a server that fronts nothing a
+ *   browser reaches directly (dev-with-automation's static child behind the
+ *   ingress) or runs under Electron, where the preload already provides the
+ *   bridge and a second one would only hold its own sign-in state.
+ * - No key on a non-loopback bind: the routes would be open to the LAN with
+ *   the DO token behind them.
+ *
+ * The refusal is a warning only when someone asked for the bridge (the old
+ * `MARS_WEB=1` opt-in, or `MARS_TOKEN` set); a Docker public-mode instance
+ * that never uses DigitalOcean gets a debug line, not a warning on every
+ * start. `MARS_WEB_KEY` is not a signal here: with it set there is a key and
+ * this branch is never reached.
  */
 export function mountMarsWebBridge({
   env = process.env,
   host = DEFAULT_BIND_HOST,
   sessionApiKey = null,
   log = (message) => console.warn(`[mars-web] ${message}`),
+  debug = (message) => console.debug(`[mars-web] ${message}`),
 } = {}) {
-  if (!isMarsWebEnabled(env)) return null;
+  if (isMarsWebDisabled(env, log)) return null;
   const key = resolveMarsWebKey({ env, sessionApiKey });
   if (!key && !isLoopbackBind(host)) {
-    log(
-      `MARS_WEB=1 but no key and bind host ${host} is not loopback; refusing to mount /mars/* (set MARS_WEB_KEY or --session-api-key).`,
+    const optedIn = env.MARS_WEB === "1" || Boolean(env.MARS_TOKEN?.trim());
+    (optedIn ? log : debug)(
+      `no key and bind host ${host} is not loopback; not mounting /mars/* (set MARS_WEB_KEY or --session-api-key).`,
     );
     return null;
   }
-  if (!key) log("no key configured; /mars/* is open to local callers only");
+  if (!key) debug("no key configured; /mars/* is open to local callers only");
   return createMarsWebBridge({ env, host, key });
+}
+
+const MARS_WEB_OFF = new Set(["0", "false", "off", "no"]);
+const MARS_WEB_ON = new Set(["", "1", "true", "on", "yes"]);
+
+/**
+ * `MARS_WEB=0` (also `false`, `off`, `no`) turns the bridge off for a server
+ * that must not host it. The old `MARS_WEB=1` opt-in and its synonyms mean
+ * on, which is the default anyway. Anything else is a typo in the off switch:
+ * say so once, and stay on, since on is what no value means.
+ */
+export function isMarsWebDisabled(
+  env = process.env,
+  log = (message) => console.warn(`[mars-web] ${message}`),
+) {
+  const value = (env.MARS_WEB ?? "").trim().toLowerCase();
+  if (MARS_WEB_OFF.has(value)) return true;
+  if (!MARS_WEB_ON.has(value)) {
+    log(
+      `MARS_WEB=${JSON.stringify(env.MARS_WEB)} is not recognised (use 0/false/off/no to turn the bridge off); leaving it on.`,
+    );
+  }
+  return false;
 }
 
 function safeEqual(a, b) {

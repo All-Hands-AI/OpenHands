@@ -47,23 +47,6 @@ const DEFAULT_MODEL =
     ? llmDefaults.model
     : "openhands/claude-opus-4-5-20251101";
 
-export const createMockWebClientConfig = (
-  overrides: Partial<WebClientConfig> = {},
-): WebClientConfig => ({
-  feature_flags: {
-    hide_llm_settings: false,
-    hide_users_page: false,
-    ...overrides.feature_flags,
-  },
-  providers_configured: [],
-  maintenance_start_time: null,
-  recaptcha_site_key: null,
-  faulty_models: [],
-  error_message: null,
-  updated_at: new Date().toISOString(),
-  ...overrides,
-});
-
 const MOCK_AGENT_SETTINGS_SCHEMA: NonNullable<
   Settings["agent_settings_schema"]
 > = {
