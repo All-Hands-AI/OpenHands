@@ -14,12 +14,15 @@
  * server to dial that tunnel and never reaches the page.
  *
  * The server wants its session key on these routes. Each RPC carries it as
- * `X-Session-API-Key` (the key this page already holds for the agent-server);
- * the server answers with an HttpOnly cookie that the browser then sends by
- * itself on the proxied REST calls and the WebSocket upgrade.
+ * `X-Session-API-Key` (the key this page already holds for the agent-server:
+ * baked into the page, or typed on the API key screen when the page was
+ * served without one); the server answers with an HttpOnly cookie that the
+ * browser then sends by itself on the proxied REST calls and the WebSocket
+ * upgrade.
  */
 
 import { getAgentServerHeaders } from "#/api/agent-server-config";
+import { getRegisteredBackends } from "#/api/backend-registry/active-store";
 import type { MarsBridge } from "./mars-tunnel-backend";
 
 export const MARS_WEB_HEALTH_PATH = "/mars/health";
@@ -42,6 +45,33 @@ export class MarsWebBridgeError extends Error {
   }
 }
 
+function isPageOrigin(host: string): boolean {
+  try {
+    return new URL(host).origin === window.location.origin;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The session key for the server this page came from. A page served without
+ * a baked key (a LAN bind, `--frontend-only`, Docker) holds the key the user
+ * typed on the API key screen, stored on the local backend for this origin.
+ * Only that backend's key is sent: never one meant for another host.
+ */
+function bridgeAuthHeaders(): Record<string, string> {
+  const baked = getAgentServerHeaders();
+  if (Object.keys(baked).length > 0) return baked;
+  const own = getRegisteredBackends().find(
+    (backend) =>
+      backend.kind === "local" &&
+      !backend.marsSessionId &&
+      backend.apiKey &&
+      isPageOrigin(backend.host),
+  );
+  return own ? { "X-Session-API-Key": own.apiKey } : {};
+}
+
 async function rpc<T>(
   baseUrl: string,
   method: string,
@@ -52,7 +82,7 @@ async function rpc<T>(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...getAgentServerHeaders(),
+      ...bridgeAuthHeaders(),
     },
     body: JSON.stringify({ args }),
   });

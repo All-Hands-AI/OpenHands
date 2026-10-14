@@ -6,11 +6,16 @@ import {
   installMarsWebBridge,
   probeMarsWebBridge,
 } from "#/api/mars/mars-web-bridge";
+import type { Backend } from "#/api/backend-registry/types";
 
 const sessionApiKey = vi.hoisted(() => ({ value: null as string | null }));
 vi.mock("#/api/agent-server-config", () => ({
   getAgentServerHeaders: (): Record<string, string> =>
     sessionApiKey.value ? { "X-Session-API-Key": sessionApiKey.value } : {},
+}));
+const registered = vi.hoisted(() => ({ backends: [] as Backend[] }));
+vi.mock("#/api/backend-registry/active-store", () => ({
+  getRegisteredBackends: (): Backend[] => registered.backends,
 }));
 
 function jsonResponse(status: number, body: unknown): Response {
@@ -24,6 +29,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   delete window.marsBridge;
   sessionApiKey.value = null;
+  registered.backends = [];
 });
 
 describe("createMarsWebBridge", () => {
@@ -97,6 +103,69 @@ describe("createMarsWebBridge", () => {
       },
       body: JSON.stringify({ args: ["s1"] }),
     });
+  });
+
+  it("sends the key typed on the API key screen when the page has none baked in", async () => {
+    const backend = (overrides: Partial<Backend>): Backend => ({
+      id: "b",
+      name: "b",
+      host: window.location.origin,
+      apiKey: "",
+      kind: "local",
+      ...overrides,
+    });
+    registered.backends = [
+      backend({
+        id: "remote",
+        host: "http://10.0.0.9:3000",
+        apiKey: "sk-remote",
+      }),
+      backend({ id: "mars", apiKey: "sk-mars", marsSessionId: "s1" }),
+      backend({ id: "typed", apiKey: "sk-typed" }),
+    ];
+    const fetchImpl = vi.fn(async () => jsonResponse(200, { result: null }));
+    const bridge = createMarsWebBridge(
+      "",
+      fetchImpl as unknown as typeof fetch,
+    );
+
+    await bridge.savePat({ token: "dop_v1_x" });
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "/mars/rpc/savePat",
+      expect.objectContaining({
+        headers: {
+          "Content-Type": "application/json",
+          "X-Session-API-Key": "sk-typed",
+        },
+      }),
+    );
+  });
+
+  it("never sends a key stored for another host", async () => {
+    registered.backends = [
+      {
+        id: "remote",
+        name: "remote",
+        host: "http://10.0.0.9:3000",
+        apiKey: "sk-remote",
+        kind: "local",
+      },
+    ];
+    const fetchImpl = vi.fn(async () => jsonResponse(200, { result: null }));
+    const bridge = createMarsWebBridge(
+      "",
+      fetchImpl as unknown as typeof fetch,
+    );
+
+    await bridge.signOut();
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "/mars/rpc/signOut",
+      expect.objectContaining({
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
   });
 
   it("never offers OAuth", async () => {
