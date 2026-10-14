@@ -3,6 +3,7 @@ import { ThinkingBlock } from "#/types/agent-server/core/base/event";
 import {
   isActionEvent,
   isObservationEvent,
+  isUserRejectObservation,
 } from "#/types/agent-server/type-guards";
 
 /**
@@ -102,7 +103,8 @@ export const buildActionById = (
 /**
  * Find the `ActionEvent` whose thought should be rendered alongside the
  * given UI event. For an `ActionEvent` the thought belongs to itself; for
- * an `ObservationEvent` we look up the matching action in `allEvents`.
+ * an `ObservationEvent` (or the `UserRejectObservation` of a rejected
+ * action) we look up the matching action in `allEvents`.
  *
  * `ThinkAction` is intentionally excluded because its thought IS the
  * action body and is rendered through a separate codepath.
@@ -120,7 +122,7 @@ export const getThoughtSourceAction = (
     return hasNonEmptyThought(event) ? event : null;
   }
 
-  if (isObservationEvent(event)) {
+  if (isObservationEvent(event) || isUserRejectObservation(event)) {
     const action = actionById
       ? (actionById.get(event.action_id ?? "") ?? null)
       : (allEvents.find(
