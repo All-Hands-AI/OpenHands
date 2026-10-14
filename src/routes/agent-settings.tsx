@@ -1001,7 +1001,7 @@ export function AgentSettingsScreen({
               className="flex items-center gap-2"
               data-testid="agent-settings-tools-load-failed"
             >
-              <Typography.Text className="text-xs text-red-400">
+              <Typography.Text className="text-xs text-feedback-error">
                 {t(I18nKey.SETTINGS$AGENT_PROFILE_TOOLS_LOAD_FAILED)}{" "}
                 {t(I18nKey.SETTINGS$AGENT_PROFILE_TOOLS_KEPT_ON_SAVE)}
               </Typography.Text>

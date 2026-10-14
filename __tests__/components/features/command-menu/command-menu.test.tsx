@@ -8,10 +8,8 @@ import {
 import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import {
-  CommandMenu,
-  CommandMenuTrigger,
-} from "#/components/features/command-menu";
+import { CommandMenu } from "#/components/features/command-menu/command-menu";
+import { CommandMenuTrigger } from "#/components/features/command-menu/command-menu-trigger";
 import { COMMAND_MENU_ROUTE } from "#/components/features/command-menu/command-menu-items";
 import { getInterfaceCopy } from "#/manifests/automation-interface";
 import {

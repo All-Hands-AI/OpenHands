@@ -20,6 +20,8 @@ interface InteractiveChatBoxProps {
   hasStartedConversation?: boolean;
   showGitControlBar?: boolean;
   placeholder?: string;
+  /** Whether the composer saves and restores a draft; see CustomChatInput. */
+  persistDraft?: boolean;
 }
 
 export function InteractiveChatBox({
@@ -28,6 +30,7 @@ export function InteractiveChatBox({
   hasStartedConversation,
   showGitControlBar = true,
   placeholder,
+  persistDraft = true,
 }: InteractiveChatBoxProps) {
   const {
     images,
@@ -84,6 +87,7 @@ export function InteractiveChatBox({
         isNewConversationPending={disabled}
         hasStartedConversation={hasStartedConversation}
         placeholder={placeholder}
+        persistDraft={persistDraft}
         onSubmit={handleSubmit}
         onFilesPaste={handleUpload}
       />
