@@ -1,8 +1,10 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router";
 import { useTracking } from "#/hooks/use-tracking";
 import { useTranslation } from "react-i18next";
 import { isAcpAuthErrorCode } from "#/utils/acp-error-codes";
+import { getLockedCloudHost } from "#/api/agent-server-config";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { createChatMessage } from "#/services/chat-service";
 import { BtwMessages } from "./btw-messages";
@@ -53,6 +55,7 @@ import { useOptionalConversationId } from "#/hooks/use-conversation-id";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { I18nKey } from "#/i18n/declaration";
 import { hasConversationStarted } from "./components/resolve-picker-kind";
+import { ComposerDockedProvider } from "#/context/composer-docked-context";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -63,7 +66,21 @@ function getEntryPoint(
   return "direct";
 }
 
-export function ChatInterface() {
+export function ChatInterface({
+  showGitControlBar = true,
+  showEmptyStateSuggestions = true,
+  composerDockTarget = null,
+  onDockedComposerSubmit,
+  minimalComposer = false,
+  composerPlaceholder,
+}: {
+  showGitControlBar?: boolean;
+  showEmptyStateSuggestions?: boolean;
+  composerDockTarget?: HTMLElement | null;
+  onDockedComposerSubmit?: () => void;
+  minimalComposer?: boolean;
+  composerPlaceholder?: string;
+} = {}) {
   useAutoRefreshFilesOnEdit();
 
   const { trackInitialQuerySubmitted, trackUserMessageSent } = useTracking();
@@ -140,8 +157,9 @@ export function ChatInterface() {
   // Global keyboard shortcut for Build button (Cmd+Enter / Ctrl+Enter)
   // This is placed here instead of PlanPreview to avoid duplicate listeners
   // when multiple PlanPreview components exist in the chat.
-  // Gated on the same conditions as the Build button (ConversationTabs'
-  // `isBuildDisabled`) so it cannot fire outside the plan flow.
+  // Gated on the same conditions as the Build button
+  // (ConversationPlannerBuildBar's `isBuildDisabled`) so it cannot fire
+  // outside the plan flow.
   React.useEffect(() => {
     if (isAgentRunning || conversationMode !== "plan" || !planContent) {
       return undefined;
@@ -213,6 +231,14 @@ export function ChatInterface() {
     scrollHeight: number;
     scrollTop: number;
   } | null>(null);
+
+  React.useEffect(() => {
+    // A pending history load may be discarded during a conversation switch.
+    // Do not let the previous conversation's saved scroll geometry affect the
+    // next conversation's scroll restoration.
+    preserveScrollPosition.current = null;
+  }, [conversationId]);
+
   const maybeLoadOlder = React.useCallback(
     (target: HTMLElement) => {
       if (isProvisioningTask || isLoadingOlderEvents || !hasMoreOlderEvents) {
@@ -490,6 +516,33 @@ export function ChatInterface() {
     t,
   });
 
+  const isComposerDocked = Boolean(composerDockTarget);
+  const isMinimalComposer = isComposerDocked || minimalComposer;
+  const composer = (
+    <ComposerDockedProvider
+      enabled={isComposerDocked}
+      minimal={isMinimalComposer}
+    >
+      <InteractiveChatBox
+        onSubmit={(content, images, files) => {
+          if (isComposerDocked) onDockedComposerSubmit?.();
+          return handleSendMessage(content, images, files);
+        }}
+        disabled={isNewConversationPending || llmBlocked}
+        hasStartedConversation={hasStartedConversation}
+        showGitControlBar={showGitControlBar}
+        placeholder={
+          isMinimalComposer
+            ? t(I18nKey.AUTOMATION_SETUP$DOCKED_COMPOSER_PLACEHOLDER)
+            : composerPlaceholder
+        }
+      />
+    </ComposerDockedProvider>
+  );
+  const dockedOrInlineComposer = composerDockTarget
+    ? createPortal(composer, composerDockTarget)
+    : composer;
+
   return (
     <WorkspaceFilesForChatProvider>
       <ScrollProvider value={scrollProviderValue}>
@@ -509,7 +562,8 @@ export function ChatInterface() {
             // disabled). They're also a `pointer-events-auto` overlay that would
             // sit over the LlmNotConfiguredBanner below and swallow clicks on its
             // setup button — so hide them and let the banner be the lone CTA.
-            !llmBlocked && (
+            !llmBlocked &&
+            showEmptyStateSuggestions && (
               <ChatSuggestions
                 onSuggestionsClick={(message) => setMessageToSend(message)}
               />
@@ -589,7 +643,7 @@ export function ChatInterface() {
             <GoalStatusBanner conversationId={conversationId} />
           </div>
 
-          <div className="flex shrink-0 flex-col gap-[6px] pb-4">
+          <div className="flex shrink-0 flex-col gap-1.5 pb-4">
             <SkillInstallRestartBanner conversationId={conversationId} />
             <BtwMessages conversationId={conversationId} />
             {errorMessage && (
@@ -603,8 +657,10 @@ export function ChatInterface() {
                     ? () => conversationWebSocket?.reconnect()
                     : undefined
                 }
+                // Locked-to-Cloud blocks the Canvas agent settings page
+                // (OHE-3457).
                 onReauth={
-                  isAcpAuthErrorCode(errorCode)
+                  isAcpAuthErrorCode(errorCode) && getLockedCloudHost() === null
                     ? () => navigate("/settings/agents")
                     : undefined
                 }
@@ -620,14 +676,14 @@ export function ChatInterface() {
               // the chat input. The conversation history above is still visible.
               <div
                 data-testid="archived-conversation-banner"
-                className="mx-1 px-4 py-3 rounded-lg bg-[var(--oh-surface)] border border-[var(--oh-border-subtle)]"
+                className="mx-1 px-4 py-3 rounded-lg bg-surface border border-border-subtle"
               >
-                <p className="text-xs font-semibold text-[var(--oh-foreground)]">
+                <p className="text-xs font-semibold text-foreground">
                   {sandboxStatus === "ERROR"
                     ? t(I18nKey.CHAT_INTERFACE$ERROR_SANDBOX_TITLE)
                     : t(I18nKey.CHAT_INTERFACE$ARCHIVED_SANDBOX_TITLE)}
                 </p>
-                <p className="text-xs text-[var(--oh-muted)] mt-0.5">
+                <p className="text-xs text-muted mt-0.5">
                   {sandboxStatus === "ERROR"
                     ? t(I18nKey.CHAT_INTERFACE$ERROR_SANDBOX_DESCRIPTION)
                     : t(I18nKey.CHAT_INTERFACE$ARCHIVED_SANDBOX_DESCRIPTION)}
@@ -662,11 +718,7 @@ export function ChatInterface() {
                   </div>
                 </div>
 
-                <InteractiveChatBox
-                  onSubmit={handleSendMessage}
-                  disabled={isNewConversationPending || llmBlocked}
-                  hasStartedConversation={hasStartedConversation}
-                />
+                {dockedOrInlineComposer}
               </div>
             )}
           </div>

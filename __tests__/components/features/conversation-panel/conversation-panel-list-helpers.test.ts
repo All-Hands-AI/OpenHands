@@ -22,6 +22,7 @@ import {
   UNNAMED_AUTOMATION_FACET,
 } from "#/components/features/conversation-panel/conversation-panel-list-helpers";
 import type { AppConversation } from "#/api/conversation-service/agent-server-conversation-service.types";
+import { I18nKey } from "#/i18n/declaration";
 import { ExecutionStatus } from "#/types/agent-server/core";
 
 const base: Omit<AppConversation, "id" | "title" | "workspace"> = {
@@ -1027,6 +1028,7 @@ describe("conversation-panel-list-helpers", () => {
           title: "internal title stamp",
           automationname: "Nightly Audit",
           automationtrigger: "cron",
+          automationsetup: "draft",
         },
       },
       {
@@ -1041,15 +1043,21 @@ describe("conversation-panel-list-helpers", () => {
       { ...base, id: "t4", title: "t4", tags: null },
     ];
     expect(collectTagFacets(conversations)).toEqual([
+      "automationsetup=draft",
       "origin=slack",
       "owner=alice",
       "project=fracture",
     ]);
   });
 
-  it("formats bare-tag facets (empty value) as just the key", () => {
+  it("formats bare-tag facets (empty value) and setup facets readably", () => {
+    const t = (key: I18nKey) =>
+      key === I18nKey.AUTOMATIONS$DETAIL$DRAFT ? "Draft" : "Automation setup";
     expect(formatTagFacetLabel("work=")).toBe("work");
     expect(formatTagFacetLabel("project=fracture")).toBe("project=fracture");
+    expect(formatTagFacetLabel("automationsetup=draft", t)).toBe(
+      "Automation setup: Draft",
+    );
   });
 
   const tagFilterFixtures: AppConversation[] = [

@@ -11,7 +11,6 @@ import {
   AGENT_PROFILES_RETRY_OPTIONS,
   SETTINGS_QUERY_KEYS,
 } from "#/hooks/query/query-keys";
-import { agentProfileDetailQueryKey } from "#/hooks/query/use-active-acp-profile-detail";
 import { invalidateConversationQueries } from "./conversation-mutation-utils";
 
 interface SwitchAcpModelVars {
@@ -22,7 +21,8 @@ interface SwitchAcpModelVars {
    * is persisted as the default the next conversation launches with.
    */
   conversationId: string | null;
-  model: string;
+  /** Null saves no model, so the next conversation starts on the agent's own default. */
+  model: string | null;
 }
 
 /**
@@ -52,10 +52,12 @@ export const useSwitchAcpModel = () => {
   return useMutation({
     mutationFn: async ({ conversationId, model }: SwitchAcpModelVars) => {
       if (conversationId) {
-        await AgentServerConversationService.switchAcpModel(
-          conversationId,
-          model,
-        );
+        if (model) {
+          await AgentServerConversationService.switchAcpModel(
+            conversationId,
+            model,
+          );
+        }
         return;
       }
 
@@ -82,7 +84,7 @@ export const useSwitchAcpModel = () => {
         // Merge over the stored profile so a model-only pick can't wipe the
         // fields this surface doesn't model (command, session mode, …).
         const detail = await queryClient.ensureQueryData({
-          queryKey: agentProfileDetailQueryKey(
+          queryKey: AGENT_PROFILES_QUERY_KEYS.detail(
             backend.id,
             orgId,
             activeProfile.name,
