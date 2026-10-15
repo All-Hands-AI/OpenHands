@@ -66,43 +66,46 @@ describe("useStreamedText", () => {
     // Not committed on arrival — the clock has not ticked yet.
     expect(result.current).toBe("Hi");
 
-    frames.tick();
+    // Under one character per frame at this pace, so give it a few.
+    frames.tick(3);
     expect(result.current.length).toBeGreaterThan("Hi".length);
     expect(result.current.length).toBeLessThan(202);
 
-    // At ~120 chars/s, 200 characters take about 1.7s rather than one burst.
+    // At ~60 chars/s, 200 characters take about 3.3s rather than one burst.
     frames.tick(60);
-    expect(result.current.length).toBeLessThan(150);
-    frames.tick(50);
+    expect(result.current.length).toBeLessThan(100);
+    frames.tick(160);
     expect(result.current).toBe(`Hi${"x".repeat(200)}`);
     expect(frames.pending()).toBe(0);
   });
 
   it("reveals bursty chunks at a steady pace once the rate is known", () => {
-    const chunk = "x".repeat(40);
+    // ~55 chars/s, under the pace cap: one 12-char burst every 13 frames.
+    const chunk = "x".repeat(12);
     const framesPerChunk = 13;
     const { result, rerender } = renderHook(
       ({ text }) => useStreamedText(text),
       { initialProps: { text: "" } },
     );
 
-    const steps: number[] = [];
-    for (let i = 1; i <= 6; i += 1) {
+    const halves: number[] = [];
+    for (let i = 1; i <= 8; i += 1) {
       rerender({ text: chunk.repeat(i) });
-      for (let f = 0; f < framesPerChunk; f += 1) {
+      // Compare the first and second half of each gap between bursts.
+      for (const frameCount of [6, framesPerChunk - 6]) {
         const before = result.current.length;
-        frames.tick();
-        // Skip the first chunks, while the arrival rate is being learned.
+        frames.tick(frameCount);
+        // Skip the first bursts, while the arrival rate is being learned.
         if (i > 3) {
-          steps.push(result.current.length - before);
+          halves.push((result.current.length - before) / frameCount);
         }
       }
     }
 
     // Each burst is spread across the gap until the next one rather than
     // revealed up front and followed by a pause.
-    expect(Math.max(...steps) - Math.min(...steps)).toBeLessThanOrEqual(2);
-    expect(steps.filter((step) => step === 0).length).toBeLessThanOrEqual(1);
+    expect(Math.min(...halves)).toBeGreaterThan(0.5);
+    expect(Math.max(...halves)).toBeLessThan(1.5);
   });
 
   it("caps the pace for a fast model but never trails it far", () => {
@@ -122,11 +125,11 @@ describe("useStreamedText", () => {
 
     stream(62); // ~1s
     // Revealed at a reading pace, not at the model's 600 chars/s.
-    expect(result.current.length).toBeLessThan(200);
+    expect(result.current.length).toBeLessThan(100);
 
-    stream(560); // ~10s in total
-    // Past a few seconds' backlog it speeds up, so it stays within ~5s.
-    expect(length - result.current.length).toBeLessThan(600 * 5);
+    stream(1180); // ~20s in total
+    // Past ~10s of backlog it speeds up, so it never trails further.
+    expect(length - result.current.length).toBeLessThan(600 * 10);
   });
 
   it("reports while text is still being revealed", () => {
@@ -139,7 +142,7 @@ describe("useStreamedText", () => {
     rerender({ text: `Hi${"x".repeat(40)}` });
     expect(revealing.result.current).toBe(true);
 
-    frames.tick(40);
+    frames.tick(60);
     expect(revealing.result.current).toBe(false);
   });
 

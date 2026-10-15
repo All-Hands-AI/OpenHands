@@ -73,7 +73,7 @@ describe("a streamed reply finishing", () => {
     expect(shown).not.toContain(text);
 
     // ~185 characters at the reveal pace, then the finished message renders.
-    tick(120);
+    tick(240);
     expect(bubble()).toHaveTextContent(text);
     expect(bubble().querySelector("[data-stream-word]")).toBeNull();
   });

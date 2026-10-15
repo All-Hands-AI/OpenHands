@@ -1,18 +1,18 @@
 import React from "react";
 
 /**
- * Fastest steady reveal, in characters per millisecond (120 chars/s). Fast
+ * Fastest steady reveal, in characters per millisecond (60 chars/s). Fast
  * models deliver several hundred characters a second; revealing at that pace
  * reads as text being dumped rather than written.
  */
-const MAX_PACE = 0.12;
+const MAX_PACE = 0.06;
 
 /**
  * How far the reveal may trail the model before it speeds up beyond
  * `MAX_PACE`: past this backlog, it drains at least `backlog / MAX_LAG_MS`, so
- * a long reply from a fast model never ends up more than a few seconds behind.
+ * a long reply from a fast model never ends up more than ~10 seconds behind.
  */
-const MAX_LAG_MS = 5000;
+const MAX_LAG_MS = 10000;
 
 /** Weight of the newest inter-arrival sample in the rate estimate. */
 const RATE_SMOOTHING = 0.3;
