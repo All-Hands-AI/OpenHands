@@ -428,6 +428,7 @@ function DraftStatusBar({
   runs,
   isSubmitting,
   canTest,
+  saveFailed,
   onTest,
   onViewRuns,
 }: {
@@ -435,6 +436,8 @@ function DraftStatusBar({
   runs: AutomationRun[];
   isSubmitting: boolean;
   canTest: boolean;
+  /** The latest save failed, so `draft` no longer describes the form. */
+  saveFailed: boolean;
   onTest: () => void;
   onViewRuns: () => void;
 }) {
@@ -468,7 +471,7 @@ function DraftStatusBar({
           </span>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          {validationMessage ? null : (
+          {validationMessage || saveFailed ? null : (
             <span
               data-testid="automation-setup-draft-validity"
               className={validityClassName}
@@ -1887,6 +1890,7 @@ export function AutomationSetupPanel({
                 runs={draftRuns}
                 isSubmitting={isSubmitting}
                 canTest={isEditingExisting || canTestDraft}
+                saveFailed={saveState === "error"}
                 onTest={() => {
                   setIsViewingDraftRuns(true);
                   void (isEditingExisting
