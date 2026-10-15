@@ -1,59 +1,60 @@
+---
 name: Verify skill isolation
 
 on:
-  pull_request_target:
-    types: [opened, synchronize, reopened, edited, ready_for_review]
+    pull_request_target:
+        types: [opened, synchronize, reopened, edited, ready_for_review]
 
 permissions:
-  contents: read
-  pull-requests: read
+    contents: read
+    pull-requests: read
 
 jobs:
-  verify-skill-isolation:
-    name: Verify skill isolation
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      # Use only trusted base-branch code and GitHub metadata. Never check out
-      # the PR or execute its code in this pull_request_target workflow.
-      - uses: actions/github-script@v8
-        with:
-          script: |
-            try {
-              const params = { ...context.repo, pull_number: context.issue.number };
-              const { data: before } = await github.rest.pulls.get(params);
-              const files = await github.paginate(github.rest.pulls.listFiles, {
-                ...params, per_page: 100,
-              });
-              const { data: after } = await github.rest.pulls.get(params);
-              if (before.head.sha !== after.head.sha || before.base.sha !== after.base.sha ||
-                  before.changed_files !== after.changed_files) {
-                throw new Error("PR changed while checking its files; rerun this check.");
-              }
-              // GitHub caps this endpoint at 3,000 files. Never accept a partial diff.
-              if (files.length !== after.changed_files) {
-                throw new Error("Could not read the complete PR file list; split the PR.");
-              }
-              const paths = [];
-              for (const file of files) {
-                if (!file.filename || (file.status === "renamed" && !file.previous_filename)) {
-                  throw new Error("Incomplete file or rename metadata; rerun this check.");
-                }
-                paths.push(file.filename);
-                if (file.previous_filename) paths.push(file.previous_filename);
-              }
-              const isVerify = (path) => /^\.agents\/skills\/verify-[^/]+\//.test(path);
-              const otherPaths = [...new Set(paths.filter((path) =>
-                !isVerify(path) && path.split("/").pop() !== "AGENTS.md"))];
-              if (paths.some(isVerify) && otherPaths.length) {
-                core.setFailed(
-                  "Keep verify-* skill changes separate from all other changes. " +
-                  "Only AGENTS.md files may accompany .agents/skills/verify-*/ changes. " +
-                  "Move these paths to a separate PR:\n" + otherPaths.join("\n"),
-                );
-              } else {
-                core.info("Verify skill isolation passed.");
-              }
-            } catch (error) {
-              core.setFailed(error.message);
-            }
+    verify-skill-isolation:
+        name: Verify skill isolation
+        runs-on: ubuntu-latest
+        timeout-minutes: 5
+        steps:
+            # Use only trusted base-branch code and GitHub metadata. Never check out
+            # the PR or execute its code in this pull_request_target workflow.
+            - uses: actions/github-script@v8
+              with:
+                  script: |
+                      try {
+                        const params = { ...context.repo, pull_number: context.issue.number };
+                        const { data: before } = await github.rest.pulls.get(params);
+                        const files = await github.paginate(github.rest.pulls.listFiles, {
+                          ...params, per_page: 100,
+                        });
+                        const { data: after } = await github.rest.pulls.get(params);
+                        if (before.head.sha !== after.head.sha || before.base.sha !== after.base.sha ||
+                            before.changed_files !== after.changed_files) {
+                          throw new Error("PR changed while checking its files; rerun this check.");
+                        }
+                        // GitHub caps this endpoint at 3,000 files. Never accept a partial diff.
+                        if (files.length !== after.changed_files) {
+                          throw new Error("Could not read the complete PR file list; split the PR.");
+                        }
+                        const paths = [];
+                        for (const file of files) {
+                          if (!file.filename || (file.status === "renamed" && !file.previous_filename)) {
+                            throw new Error("Incomplete file or rename metadata; rerun this check.");
+                          }
+                          paths.push(file.filename);
+                          if (file.previous_filename) paths.push(file.previous_filename);
+                        }
+                        const isVerify = (path) => /^\.agents\/skills\/verify-[^/]+\//.test(path);
+                        const otherPaths = [...new Set(paths.filter((path) =>
+                          !isVerify(path) && path.split("/").pop() !== "AGENTS.md"))];
+                        if (paths.some(isVerify) && otherPaths.length) {
+                          core.setFailed(
+                            "Keep verify-* skill changes separate from all other changes. " +
+                            "Only AGENTS.md files may accompany .agents/skills/verify-*/ changes. " +
+                            "Move these paths to a separate PR:\n" + otherPaths.join("\n"),
+                          );
+                        } else {
+                          core.info("Verify skill isolation passed.");
+                        }
+                      } catch (error) {
+                        core.setFailed(error.message);
+                      }

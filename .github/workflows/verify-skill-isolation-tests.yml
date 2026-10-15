@@ -1,28 +1,29 @@
+---
 name: Verify skill isolation tests
 
 on:
-  pull_request:
-    paths:
-      - .github/workflows/verify-skill-isolation.yml
-      - .github/workflows/verify-skill-isolation-tests.yml
-      - .github/scripts/tests/verify-skill-isolation.test.cjs
-  push:
-    branches: [main]
-    paths:
-      - .github/workflows/verify-skill-isolation.yml
-      - .github/workflows/verify-skill-isolation-tests.yml
-      - .github/scripts/tests/verify-skill-isolation.test.cjs
+    pull_request:
+        paths:
+            - .github/workflows/verify-skill-isolation.yml
+            - .github/workflows/verify-skill-isolation-tests.yml
+            - .github/scripts/tests/verify-skill-isolation.test.cjs
+    push:
+        branches: [main]
+        paths:
+            - .github/workflows/verify-skill-isolation.yml
+            - .github/workflows/verify-skill-isolation-tests.yml
+            - .github/scripts/tests/verify-skill-isolation.test.cjs
 
 permissions:
-  contents: read
+    contents: read
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "24"
-      - run: node --test .github/scripts/tests/verify-skill-isolation.test.cjs
+    test:
+        runs-on: ubuntu-latest
+        timeout-minutes: 5
+        steps:
+            - uses: actions/checkout@v7
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: '24'
+            - run: node --test .github/scripts/tests/verify-skill-isolation.test.cjs

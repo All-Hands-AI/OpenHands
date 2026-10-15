@@ -7,8 +7,10 @@ const { test } = require("node:test");
 const workflow = fs.readFileSync(
   path.join(__dirname, "../../workflows/verify-skill-isolation.yml"), "utf8",
 );
-const script = workflow.split("          script: |\n")[1]
-  .split("\n").map((line) => line.replace(/^            /, "")).join("\n");
+const match = workflow.match(/^([ \t]*)script: \|\n([\s\S]*)$/m);
+assert.ok(match, "workflow must contain an inline github-script body");
+const script = match[2].split("\n")
+  .map((line) => line.slice(match[1].length + 4)).join("\n");
 const run = new (Object.getPrototypeOf(async function () {}).constructor)(
   "github", "context", "core", script,
 );
