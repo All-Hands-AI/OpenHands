@@ -5,7 +5,7 @@ of Agent Canvas. Read this index before driving the app, then open the matching
 feature file and run its recipe with `control-openhands`. The map is not a claim
 that every row passes today; the run's evidence ledger is.
 
-Maintenance baseline: main@2bdc0e9d6c5940bc3d4667fb2127fbb753b2f7c8 (2026-10-13). The next maintenance pass starts from this commit; a pass proposes the next baseline in its PR, and merging that PR accepts it.
+Maintenance baseline: main@8b9823a89ce5844d0808398c2f740d9748da66df (2026-10-14). The next maintenance pass starts from this commit; a pass proposes the next baseline in its PR, and merging that PR accepts it.
 
 ## Baseline preconditions
 
@@ -230,7 +230,7 @@ How to write and prove new entries: [../mapping.md](../mapping.md).
 | ID | Family | What it covers | Entry points | Needs | Sub-features |
 |---|---|---|---|---|---|
 | F01 | [First run, onboarding and sign-in](F01-first-run-and-sign-in.md) | telemetry consent, onboarding modal, public-mode backend step and API-key screen, route error page | any URL on a fresh browser profile; `launch --public` | fresh run or `browser reset`; LLM for say-hello | 22 |
-| F02 | [App shell, sidebar and command menu](F02-app-shell.md) | rail and phone drawer, collapse, home pinning, getting-started checklist, command menu, toasts | every page; `Control+k` / `Meta+k` | baseline; LLM for checklist progress | 27 |
+| F02 | [App shell, sidebar and command menu](F02-app-shell.md) | rail and phone drawer, collapse, home pinning, getting-started checklist, command menu, toasts | every page; `Control+k` / `Meta+k` | baseline; LLM for checklist progress | 28 |
 | F03 | [Home and starting work](F03-home.md) | home composer, workspace picker, plugin picker, recommended automations rail, no-LLM banner | `/`, **New Chat**, command menu | runs before and after `llm preset`; fixture repo | 42 |
 | F04 | [Conversation list and folders](F04-conversation-list.md) | sidebar list, View presets, workspace folders, tags, rename/pin/archive/delete, load more | sidebar on every page | several conversations; fixture repos | 41 |
 | F05 | [Composer, slash commands and plan mode](F05-composer.md) | send, drafts, attachments, model pill, slash commands, `/goal`, plan mode, dictation | home and conversation composer | LLM | 25 |
@@ -242,7 +242,7 @@ How to write and prove new entries: [../mapping.md](../mapping.md).
 | F11 | [Provider connections](F11-provider-connections.md) | add, edit, rotate key, delete connections; profiles from a connection | `/settings/llm` | fresh run; DeepSeek key | 21 |
 | F12 | [Model router](F12-model-router.md) | meta-profiles, templates, run on first message, routing effect | `/settings/meta-llm` | LLM profiles | 25 |
 | F13 | [Agent profiles](F13-agent-profiles.md) | OpenHands and ACP profiles, editor, name rules, active profile, MCP and secret scoping | `/settings/agents` | fresh run; LLM | 22 |
-| F14 | [Secrets](F14-secrets.md) | list, add, edit, rename, delete, agent access | `/settings/secrets` | LLM for agent access | 11 |
+| F14 | [Secrets](F14-secrets.md) | list, add, edit, rename, delete, agent access | `/settings/secrets` | LLM for agent access | 12 |
 | F15 | [Condenser, agent context and verification](F15-agent-behavior-settings.md) | condenser fields, agent context, confirmation mode and critic, their effect on runs | `/settings/condenser`, `/agent-context`, `/verification` | LLM for the effects | 23 |
 | F16 | [Application settings](F16-application-settings.md) | language, theme, analytics, sound, checklist, title model, voice input, git identity | `/settings/app` | LLM for title and git checks | 20 |
 | F17 | [Customize hub and MCP servers](F17-mcp-servers.md) | catalog, install, test, edit, delete, custom servers, agent use | **Customize**, `/mcp` | `uvx`/`npx`; LLM | 31 |
@@ -254,11 +254,11 @@ How to write and prove new entries: [../mapping.md](../mapping.md).
 | F23 | [Automation detail, runs and editing](F23-automation-detail.md) | detail page, runs, logs, edit dialog, triggers, debug | `/automations/<id>` | LLM; runs | 41 |
 | F24 | [Automation Git Sync](F24-git-sync.md) | configure, sync cycles, encryption, status | `/automations/git-sync` | `fixture git-repo` | 26 |
 | F25 | [Backends, Cloud and sharing](F25-backends-and-cloud.md) | add, edit, remove and switch backends, per-backend consent, Cloud login, shared pages | backend selector | a second stack; Cloud account (blocked) | 33 |
-| F26 | [Launcher modes, Docker, desktop and library](F26-runtime-variants.md) | launcher flags, partial stacks, LAN bind, Docker, Electron, embeddable library | a terminal | Docker/Electron where available | 33 |
+| F26 | [Launcher modes, Docker, desktop and library](F26-runtime-variants.md) | launcher flags, partial stacks, LAN bind, Docker, Electron, embeddable library | a terminal | Docker/Electron where available | 34 |
 | F27 | [Workspace tools](F27-workspace-tools.md) | terminal, browser, planner, task list, usage, `canvas_ui_control` | drawer tabs | LLM | 30 |
 | F28 | [Automation setup page](F28-automation-setup-page.md) | blank form, kind toggle, schedule presets, event fields, timeout, draft save and validation, draft Test, Create | **Add Automation → Create Automation**, `/automations/setup`, draft Resume, kebab Edit | automation service; no LLM | 13 |
 
-28 families, 775 sub-features. `control-openhands map ids` lists every ID with its file.
+28 families, 778 sub-features. `control-openhands map ids` lists every ID with its file.
 
 ### Neighbouring families
 
