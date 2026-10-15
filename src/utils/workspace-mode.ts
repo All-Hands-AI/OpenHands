@@ -6,13 +6,37 @@ export const DEFAULT_WORKSPACE_MODE: WorkspaceMode = "local_repo";
 
 const HOST_WORKSPACE_MODES: WorkspaceMode[] = ["local_repo", "new_worktree"];
 
-/** The modes the launcher offers; Docker only when the server can run it. */
+/**
+ * The modes the launcher offers; Docker only when the server can run it.
+ * Without a workspace there is no repo to work in or branch, so the only
+ * choice left is where the conversation runs.
+ */
 export function getWorkspaceModeOptions(
   dockerSelectable: boolean,
+  hasWorkspace = true,
 ): WorkspaceMode[] {
+  if (!hasWorkspace) {
+    return dockerSelectable ? ["local_repo", "docker_container"] : [];
+  }
   return dockerSelectable
     ? [...HOST_WORKSPACE_MODES, "docker_container"]
     : HOST_WORKSPACE_MODES;
+}
+
+/**
+ * The mode the launcher starts on: the Settings → Runtime default
+ * (`conversation_settings.conversation_runtime`) when set, else the last one
+ * used. A local default keeps the last host mode (repo or worktree).
+ */
+export function getDefaultWorkspaceMode(
+  defaultRuntime: unknown,
+  lastUsed: WorkspaceMode,
+): WorkspaceMode {
+  if (defaultRuntime === "docker") return "docker_container";
+  if (defaultRuntime === "local" && lastUsed === "docker_container") {
+    return DEFAULT_WORKSPACE_MODE;
+  }
+  return lastUsed;
 }
 
 export const LAST_LOCAL_WORKSPACE_MODE_STORAGE_KEY =
@@ -52,6 +76,7 @@ export function writeStoredLocalWorkspaceMode(mode: WorkspaceMode): void {
 export function getWorkspaceModeI18nKey(
   mode: WorkspaceMode,
   backendKind: BackendKind,
+  hasWorkspace = true,
 ): I18nKey {
   if (mode === "new_worktree") {
     return I18nKey.COMMON$WORKSPACE_MODE_NEW_WORKTREE;
@@ -59,6 +84,7 @@ export function getWorkspaceModeI18nKey(
   if (mode === "docker_container") {
     return I18nKey.COMMON$WORKSPACE_MODE_DOCKER_CONTAINER;
   }
+  if (!hasWorkspace) return I18nKey.COMMON$WORKSPACE_MODE_LOCAL;
   return backendKind === "cloud"
     ? I18nKey.COMMON$WORKSPACE_MODE_CLOUD_REPO
     : I18nKey.COMMON$WORKSPACE_MODE_LOCAL_REPO;

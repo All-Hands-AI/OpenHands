@@ -228,6 +228,9 @@ describe("mock settings schemas and state", () => {
         choices: ["llm", "none"],
         depends_on: ["confirmation_mode"],
       }),
+      conversation_runtime: contract("runtime", "string", null, "major", {
+        choices: ["local", "docker"],
+      }),
       worktree_base: contract("runtime", "string", "default_branch", "major", {
         choices: ["default_branch", "head"],
       }),

@@ -596,7 +596,7 @@ class AgentServerConversationService {
     const resolvedWorkspaceMode =
       workspaceMode ?? (workingDirOverride ? "local_repo" : "new_worktree");
     const inContainer = resolvedWorkspaceMode === "docker_container";
-    const { workingDir, hooksProjectDir, isolated } =
+    const { workingDir, hooksProjectDir, isolated, runtimeSelectable } =
       await resolveNewConversationWorkspace({
         conversationId,
         workingDir: workingDirOverride,
@@ -604,6 +604,13 @@ class AgentServerConversationService {
         parentConversationId,
         inContainer,
       });
+    // A server offering both runtimes is told which one; whatever its default
+    // is, a host mode then runs on the host. Other servers keep their own.
+    const conversationRuntime = inContainer
+      ? "docker"
+      : runtimeSelectable
+        ? "local"
+        : undefined;
 
     // Use encrypted settings to avoid exposing secrets in the browser
     const payload = await buildStartConversationRequestWithEncryptedSettings({
@@ -632,7 +639,9 @@ class AgentServerConversationService {
       getAgentServerClientOptions({ timeout: CREATE_CONVERSATION_TIMEOUT_MS }),
     ).createConversation<DirectConversationInfo>({
       ...payload,
-      ...(inContainer ? { conversation_runtime: "docker" } : {}),
+      ...(conversationRuntime
+        ? { conversation_runtime: conversationRuntime }
+        : {}),
       ...(telemetryDistinctId ? { user_id: telemetryDistinctId } : {}),
     });
     const localBackend = getEffectiveLocalBackend();

@@ -1,7 +1,6 @@
 import i18n from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
 import { ServerClient } from "@openhands/typescript-client/clients";
-import type { ServerInfo } from "@openhands/typescript-client";
 import {
   getAgentServerClientOptions,
   type AgentServerClientOverrides,
@@ -18,10 +17,14 @@ import { resolveAbsoluteAgentServerPath } from "./agent-server-home";
 
 const ISOLATED_WORKSPACE_DIR = "/workspace";
 
+/** A Docker-only server: a server that also offers `local` is not isolated. */
 export function usesIsolatedWorkspace(
-  info: ServerInfo | null | undefined,
+  info: AgentServerInfo | null | undefined,
 ): boolean {
-  return info?.conversation_runtime === "docker";
+  return (
+    info?.conversation_runtime === "docker" &&
+    !info.available_conversation_runtimes?.includes("local")
+  );
 }
 
 /** Whether a start request may pick `conversation_runtime: "docker"`. */
@@ -73,6 +76,7 @@ export async function resolveNewConversationWorkspace(options: {
       workingDir: ISOLATED_WORKSPACE_DIR,
       hooksProjectDir: null,
       isolated: true,
+      runtimeSelectable: false,
     };
   }
   // @spec WUP-001 — Resolve relative local defaults against the backend home.
@@ -87,7 +91,12 @@ export async function resolveNewConversationWorkspace(options: {
   const hooksProjectDir = options.inContainer
     ? null
     : await resolveHooksProjectDir(options.workingDir, clientOptions.host);
-  return { workingDir, hooksProjectDir, isolated: false };
+  return {
+    workingDir,
+    hooksProjectDir,
+    isolated: false,
+    runtimeSelectable: supportsDockerConversations(info),
+  };
 }
 
 /**

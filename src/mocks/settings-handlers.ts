@@ -414,6 +414,23 @@ const MOCK_CONVERSATION_SETTINGS_SCHEMA: NonNullable<
       label: "Runtime",
       fields: [
         {
+          key: "conversation_runtime",
+          label: "Default runtime",
+          description: "Where new conversations run.",
+          section: "runtime",
+          section_label: "Runtime",
+          value_type: "string",
+          default: null,
+          choices: [
+            { label: "local", value: "local" },
+            { label: "docker", value: "docker" },
+          ],
+          depends_on: [],
+          prominence: "major",
+          secret: false,
+          required: false,
+        },
+        {
           key: "worktree_base",
           label: "Create worktrees from",
           description: "Ref a new conversation worktree branches from.",

@@ -904,6 +904,43 @@ describe("AgentServerConversationService", () => {
       // The container cannot see host paths, so no host hooks are loaded.
       expect(loadWorkspaceHooks).not.toHaveBeenCalled();
     });
+
+    it("asks a server offering both runtimes for the local one in a host mode", async () => {
+      server.use(
+        http.get("*/server_info", () =>
+          HttpResponse.json({
+            version: "1.54.0",
+            conversation_runtime: "docker",
+            available_conversation_runtimes: ["local", "docker"],
+          }),
+        ),
+      );
+      clearCachedAgentServerInfo();
+      mockGetSettings.mockResolvedValue({
+        agent_settings: { llm: { model: "gpt-4o" } },
+        conversation_settings: {},
+      });
+      mockGetSettingsForConversation.mockResolvedValue({
+        agentSettings: { llm: { model: "gpt-4o" } },
+        conversationSettings: {},
+        secretsEncrypted: true,
+      });
+      mockHttpPost.mockResolvedValue({
+        data: {
+          id: "ignored-server-id",
+          created_at: "2024-01-01",
+          updated_at: "2024-01-01",
+        },
+      });
+
+      await AgentServerConversationService.createConversation({
+        workingDirOverride: "/Users/jane/projects/foo",
+        workspaceMode: "local_repo",
+      });
+
+      const [payloadCall] = mockHttpPost.mock.calls;
+      expect(payloadCall[1]).toMatchObject({ conversation_runtime: "local" });
+    });
   });
 
   describe("downloadConversation local branch", () => {
