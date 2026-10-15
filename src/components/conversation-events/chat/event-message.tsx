@@ -260,6 +260,7 @@ function EventMessageComponent({
             message={message}
             isFromPlanningAgent={isFromPlanningAgent}
             timestamp={event.timestamp}
+            isStreaming
           />
         )}
       </>

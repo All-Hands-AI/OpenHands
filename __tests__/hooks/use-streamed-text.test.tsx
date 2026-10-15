@@ -17,6 +17,8 @@ function manualFrames() {
   vi.stubGlobal("cancelAnimationFrame", (handle: number) => {
     callbacks.delete(handle);
   });
+  // Arrivals are timed with `performance.now()`; keep it on the same clock.
+  vi.spyOn(performance, "now").mockImplementation(() => now);
 
   return {
     /** Advance one 16ms frame. */
@@ -43,6 +45,7 @@ describe("useStreamedText", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it("shows the initial text immediately", () => {
@@ -68,6 +71,49 @@ describe("useStreamedText", () => {
     frames.tick(40);
     expect(result.current).toBe(`Hi${"x".repeat(200)}`);
     expect(frames.pending()).toBe(0);
+  });
+
+  it("reveals bursty chunks at a steady pace once the rate is known", () => {
+    const chunk = "x".repeat(40);
+    const framesPerChunk = 13;
+    const { result, rerender } = renderHook(
+      ({ text }) => useStreamedText(text),
+      { initialProps: { text: "" } },
+    );
+
+    const steps: number[] = [];
+    for (let i = 1; i <= 6; i += 1) {
+      rerender({ text: chunk.repeat(i) });
+      for (let f = 0; f < framesPerChunk; f += 1) {
+        const before = result.current.length;
+        frames.tick();
+        // Skip the first chunks, while the arrival rate is being learned.
+        if (i > 3) {
+          steps.push(result.current.length - before);
+        }
+      }
+    }
+
+    // Each burst is spread across the gap until the next one rather than
+    // revealed up front and followed by a pause.
+    expect(Math.max(...steps) - Math.min(...steps)).toBeLessThanOrEqual(2);
+    expect(steps.filter((step) => step === 0).length).toBeLessThanOrEqual(1);
+  });
+
+  it("catches up on a burst larger than the usual chunk", () => {
+    const { result, rerender } = renderHook(
+      ({ text }) => useStreamedText(text),
+      { initialProps: { text: "" } },
+    );
+    // Learn a slow rate, then deliver a large burst.
+    for (let i = 1; i <= 3; i += 1) {
+      rerender({ text: "x".repeat(i * 5) });
+      frames.tick(13);
+    }
+    rerender({ text: "x".repeat(15 + 600) });
+    // Drained within roughly the lag cap, not at the slow rate (~2 minutes).
+    frames.tick(40);
+    expect(result.current.length).toBe(615);
   });
 
   it("snaps when the text is not an extension of what is shown", () => {
