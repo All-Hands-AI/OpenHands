@@ -85,12 +85,12 @@ describe("color themes", () => {
       ).toBeGreaterThanOrEqual(4.5);
 
       // @spec WN-001 — Context meter text and fills preserve contrast in each palette.
-      const contextMeterSurface = luminance(resolve("--oh-surface"));
+      const contextMeterSurface = luminance(resolve("--oh-surface-raised"));
       const contextMeterTrack = luminance(resolve("--oh-color-tertiary"));
       for (const role of ["--oh-feedback-error", "--oh-feedback-warning"]) {
         expect(
           contrast(luminance(resolve(role)), contextMeterSurface),
-          `${role} against the context meter surface`,
+          `${role} against the context meter raised surface`,
         ).toBeGreaterThanOrEqual(4.5);
       }
       for (const role of ["--oh-feedback-warning", "--oh-status-error"]) {
