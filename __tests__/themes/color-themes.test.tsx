@@ -60,6 +60,32 @@ describe("color themes", () => {
         ).toBeGreaterThanOrEqual(4.5);
       }
 
+      // @spec FF-002 — Theme-aware connection status banners
+      const statusSurfaces = ["--oh-color-base", "--oh-color-base-secondary"];
+      const statusTextRoles = [
+        ["--oh-feedback-success", "--oh-status-success"],
+        ["--oh-feedback-error", "--oh-status-error"],
+      ] as const;
+      for (const surfaceToken of statusSurfaces) {
+        const base = channels(resolve(surfaceToken));
+        for (const [textRole, statusRole] of statusTextRoles) {
+          const tint = channels(resolve(statusRole)).map(
+            (channel, index) => channel * 0.05 + base[index] * 0.95,
+          );
+          expect(
+            contrast(luminance(resolve(textRole)), luminance(tint)),
+            `${textRole} against a 5% ${statusRole} tint over ${surfaceToken}`,
+          ).toBeGreaterThanOrEqual(4.5);
+        }
+      }
+      expect(
+        contrast(
+          luminance(resolve("--oh-contrast")),
+          luminance(resolve("--oh-surface-raised")),
+        ),
+        "--oh-contrast against the configured credential banner surface",
+      ).toBeGreaterThanOrEqual(4.5);
+
       // @spec FF-001 — Theme-aware validation and load errors
       // The automation setup draft bar's error pill: Tailwind red-500
       // (#fb2c36) at 5% over the theme surface.
