@@ -11,6 +11,10 @@ For the main install options and overall context, see [README.md](./README.md).
 - Docker Desktop for Windows
 - A host directory for `PROJECTS_PATH` containing the project folders you want the agent to access (create it before starting the container)
 
+> [!NOTE]
+> Docker Desktop for Windows handles bind-mount permissions transparently;
+> no Linux `chmod` commands are needed for this PowerShell quickstart.
+
 ```powershell
 docker pull ghcr.io/openhands/agent-canvas:1.12.0 # x-release-please-version
 
@@ -27,10 +31,3 @@ docker run -it --rm `
 Open [http://localhost:8000/canvas](http://localhost:8000/canvas) in your browser.
 
 The agent will be able to access any project under `PROJECTS_PATH`.
-
-> [!NOTE]
-> Docker Desktop for Windows/macOS handles bind-mount permissions transparently.
-> On Linux (Docker Engine), the container's `openhands` user is **uid 10001** —
-> if the agent-server and automation fail to start, make the mounted host dirs
-> writable by that uid (see the note in
-> [README.md](./README.md#option-2-with-a-docker-sandbox)).
