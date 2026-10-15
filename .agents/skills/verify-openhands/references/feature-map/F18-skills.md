@@ -91,7 +91,7 @@ Preconditions:
 
 - `sidebar-skills-link` is labelled **Customize** and lands on `/mcp` on desktop (`/customize` redirects); Skills is one more click. Test ids embed the route: quote `'testid=sidebar-extensions-/skills'`.
 - A `browser click` on an **enabled** card toggle is lost when the pointer was not already over it: `pointerenter` swaps the checkmark icon for the X icon between mousedown and mouseup, so Chrome fires no click and no `PATCH /api/settings` goes out (#17941). `browser hover` the toggle first (or click twice). Turning a skill on is not affected. Recorded as `fail` on `F18.toggle`.
-- The card toggle and the facet rows are `role=switch`/`role=checkbox` buttons: read `aria-checked`. The modal switch is a hidden `<input>` (#17900): click the row text and read `.checked` with `browser eval`.
+- The card toggle and the facet rows are `role=switch`/`role=checkbox` buttons: read `aria-checked`. The modal switch is an `sr-only` checkbox (keyboard reachable): click the row text and read `.checked` with `browser eval`.
 - Typing writes `?q=` with `replace` after a 300 ms debounce, so read `browser url` a second later; facet clicks push a history entry immediately.
 - Facet counts are disjunctive: a row counts skills matching the other groups' selections, so Disabled reads `0` (and is disabled) while Recommended is checked.
 - Groups with fewer than two values are hidden (Source and Type on a fresh run) unless the URL selects one of their values.

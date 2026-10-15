@@ -83,6 +83,14 @@ that ID instead of re-mapping it.
 
 ## 3. Write each entry
 
+Describe current behavior and how to verify it. Once a fix is proven, keep
+the corrected expectations and normal recipe steps, and remove the fix's
+PR or closed-issue references, verification dates or device lists, old UI
+wording, and descriptions of checkouts without the fix. Keep that history
+in the maintenance PR and evidence ledger. Retain links for known open
+bugs, authorizing PRs for retired IDs, and version or environment
+distinctions that still affect a supported run.
+
 Each file starts with an H1 title, one paragraph describing the user-visible
 behavior, and one `Source:` line with the main implementation paths (for drift
 checks and `map affected`; keep other implementation detail out). Every path

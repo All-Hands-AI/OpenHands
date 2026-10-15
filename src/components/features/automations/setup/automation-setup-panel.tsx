@@ -428,6 +428,7 @@ function DraftStatusBar({
   runs,
   isSubmitting,
   canTest,
+  saveFailed,
   onTest,
   onViewRuns,
 }: {
@@ -435,6 +436,8 @@ function DraftStatusBar({
   runs: AutomationRun[];
   isSubmitting: boolean;
   canTest: boolean;
+  /** The latest save failed, so `draft` no longer describes the form. */
+  saveFailed: boolean;
   onTest: () => void;
   onViewRuns: () => void;
 }) {
@@ -445,7 +448,7 @@ function DraftStatusBar({
   const validityClassName = cn(
     "max-w-full min-w-0 whitespace-normal rounded-full px-2.5 py-0.5 text-left text-xs leading-4",
     validationMessage
-      ? "w-fit bg-red-500/10 text-red-300"
+      ? "w-fit bg-red-500/10 text-feedback-error"
       : "bg-[var(--oh-success)]/10 text-[var(--oh-success)]",
   );
 
@@ -468,7 +471,7 @@ function DraftStatusBar({
           </span>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          {validationMessage ? null : (
+          {validationMessage || saveFailed ? null : (
             <span
               data-testid="automation-setup-draft-validity"
               className={validityClassName}
@@ -576,7 +579,7 @@ function DraftRunsPage({
           key={message}
           role="alert"
           data-testid="automation-setup-draft-runs-error"
-          className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+          className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-feedback-error"
         >
           {message}
         </p>
@@ -1887,6 +1890,7 @@ export function AutomationSetupPanel({
                 runs={draftRuns}
                 isSubmitting={isSubmitting}
                 canTest={isEditingExisting || canTestDraft}
+                saveFailed={saveState === "error"}
                 onTest={() => {
                   setIsViewingDraftRuns(true);
                   void (isEditingExisting

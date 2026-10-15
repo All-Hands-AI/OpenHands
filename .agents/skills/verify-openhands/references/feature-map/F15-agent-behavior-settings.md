@@ -80,7 +80,7 @@ Preconditions:
 
 ## Gotchas
 
-- Switches are hidden `<input>`s (#17900): `browser testids` lists them only with `--hidden`. Toggle by clicking the label text scoped to the page, read `.checked` with `browser eval`.
+- Switches are `sr-only` checkboxes (keyboard reachable): toggle by clicking the label text scoped to the page, read `.checked` with `browser eval`.
 - `text=Enable Critic` is a case-insensitive substring match and hits the help paragraph `Enable critic evaluation for the agent.` first, so the click does nothing. Quote it: `text="Enable Critic"` (same for `text="Enable Iterative Refinement"`).
 - The conversation-owned fields have no `verification.` prefix: `sdk-settings-confirmation_mode`, `sdk-settings-security_analyzer`. Critic fields keep it (`sdk-settings-verification.critic_enabled`).
 - Saving is tier-scoped: Basic or Advanced saves reset every field the tier hides to its schema default (`F15.view-scoped-save`). Make all edits on All when other non-default values must survive.
