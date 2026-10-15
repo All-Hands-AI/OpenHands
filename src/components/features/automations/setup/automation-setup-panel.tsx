@@ -445,10 +445,12 @@ function DraftStatusBar({
   const validationMessage = draft.validationErrors?.[0]?.message ?? null;
   const statusText = getDraftExecutionStatusText(draft, runs, t);
 
+  // @spec FF-001 — Theme-aware validation and load errors
+  // A 5% tint keeps the error text at 4.5:1 on every theme's surface.
   const validityClassName = cn(
     "max-w-full min-w-0 whitespace-normal rounded-full px-2.5 py-0.5 text-left text-xs leading-4",
     validationMessage
-      ? "w-fit bg-red-500/10 text-feedback-error"
+      ? "w-fit bg-red-500/5 text-feedback-error"
       : "bg-[var(--oh-success)]/10 text-[var(--oh-success)]",
   );
 
