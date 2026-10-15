@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
-import { createServer, type AddressInfo, type Server } from "node:net";
+import { connect, createServer, type AddressInfo, type Server } from "node:net";
 import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 import {
@@ -12,7 +12,11 @@ import {
 } from "node:fs";
 import {
   allocateMockLlmPorts,
+  MOCK_LLM_PORT_LEASE_ENV,
   MOCK_LLM_PORT_SNAPSHOT_ENV,
+  releaseHeldPorts,
+  reholdPorts,
+  shutdownPortLease,
 } from "../../tests/e2e/mock-llm/utils/allocate-mock-llm-ports";
 import globalTeardown from "../../tests/e2e/mock-llm/utils/global-teardown";
 import { uvCacheEnvForIsolatedHome } from "../../tests/e2e/mock-llm/utils/uv-cache-env";
@@ -102,6 +106,7 @@ describe("mock-LLM runner isolation", () => {
 
     afterEach(async () => {
       await Promise.all(servers.splice(0).map((server) => closeServer(server)));
+      await shutdownPortLease();
     });
 
     it("reuses the first ports when a later evaluation finds them busy", async () => {
@@ -184,6 +189,120 @@ describe("mock-LLM runner isolation", () => {
         ),
       ).rejects.toThrow(/mockLlm/);
       expect(env.MOCK_LLM_PORT).toBe("9999");
+    });
+
+    it("holds a child-stack block so another run gets a disjoint block", async () => {
+      const spec = {
+        name: "feOnly" as const,
+        envName: "MOCK_LLM_FE_ONLY_PORT",
+        preferred: 0,
+        span: 4,
+        extraOffsets: [1001],
+        hold: true,
+      };
+      const first = await allocateMockLlmPorts([spec], "run-a", {});
+      const second = await allocateMockLlmPorts(
+        [{ ...spec, preferred: Number(first.feOnly) }],
+        "run-b",
+        {},
+      );
+
+      const firstBase = Number(first.feOnly);
+      const secondBase = Number(second.feOnly);
+      const firstPorts = new Set([
+        firstBase,
+        firstBase + 1,
+        firstBase + 2,
+        firstBase + 3,
+        firstBase + 1001,
+      ]);
+      const secondPorts = [
+        secondBase,
+        secondBase + 1,
+        secondBase + 2,
+        secondBase + 3,
+        secondBase + 1001,
+      ];
+      expect(second.feOnly).not.toBe(first.feOnly);
+      expect(secondPorts.some((port) => firstPorts.has(port))).toBe(false);
+    });
+
+    it("releases a held block and can bind it again", async () => {
+      const env: NodeJS.ProcessEnv = {};
+      const spec = {
+        name: "feOnly" as const,
+        envName: "MOCK_LLM_FE_ONLY_PORT",
+        preferred: 0,
+        span: 4,
+        extraOffsets: [1001],
+        hold: true,
+      };
+      const first = await allocateMockLlmPorts([spec], "run-a", env);
+      const base = first.feOnly;
+      await releaseHeldPorts(["feOnly"], env);
+
+      const taken = await allocateMockLlmPorts(
+        [{ ...spec, name: "other" as const, preferred: Number(base) }],
+        "run-b",
+        {},
+      );
+      expect(taken.other).toBe(base);
+
+      await releaseHeldPorts(["other"]);
+      await reholdPorts(["feOnly"], env);
+      const blocked = await allocateMockLlmPorts(
+        [{ ...spec, name: "third" as const, preferred: Number(base) }],
+        "run-c",
+        {},
+      );
+      expect(blocked.third).not.toBe(base);
+    });
+
+    it("releases a held block when another process asks the lease socket", async () => {
+      const env: NodeJS.ProcessEnv = {};
+      const spec = {
+        name: "feOnly" as const,
+        envName: "MOCK_LLM_FE_ONLY_PORT",
+        preferred: 0,
+        span: 4,
+        extraOffsets: [1001],
+        hold: true,
+      };
+      const first = await allocateMockLlmPorts([spec], "lease-owner", env);
+      const address = env[MOCK_LLM_PORT_LEASE_ENV];
+      if (!address) throw new Error("port lease did not publish an address");
+      const separator = address.lastIndexOf(":");
+
+      await new Promise<void>((resolve, reject) => {
+        const socket = connect(
+          {
+            host: address.slice(0, separator),
+            port: Number(address.slice(separator + 1)),
+          },
+          () => {
+            socket.write(
+              `${JSON.stringify({ op: "release", names: ["feOnly"] })}\n`,
+            );
+          },
+        );
+        let buf = "";
+        socket.on("error", reject);
+        socket.on("data", (chunk: Buffer) => {
+          buf += chunk.toString();
+          if (!buf.includes("\n")) return;
+          socket.end();
+          const response = JSON.parse(buf) as { ok: boolean };
+          if (!response.ok) reject(new Error(buf));
+          else resolve();
+        });
+      });
+
+      const taken = await allocateMockLlmPorts(
+        [{ ...spec, name: "other" as const, preferred: Number(first.feOnly) }],
+        "lease-taker",
+        {},
+      );
+      expect(taken.other).toBe(first.feOnly);
     });
 
     it("allocates again when the snapshot belongs to the other config", async () => {
@@ -276,6 +395,26 @@ describe("mock-LLM runner isolation", () => {
 
       await globalTeardown();
       expect(existsSync(dummyRunDir)).toBe(true);
+    });
+
+    it("refuses to delete a directory outside the run namespace", async () => {
+      const unsafe = path.join(process.cwd(), ".mock-llm-unsafe-delete-test");
+      mkdirSync(unsafe);
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      try {
+        process.env.MOCK_LLM_RUN_DIR = unsafe;
+        delete process.env.MOCK_LLM_PRESERVE_STATE;
+        await globalTeardown();
+        expect(existsSync(unsafe)).toBe(true);
+        expect(warnSpy).toHaveBeenCalledWith(
+          expect.stringContaining(
+            "Refusing to delete unsafe per-run state directory",
+          ),
+        );
+      } finally {
+        warnSpy.mockRestore();
+        rmSync(unsafe, { recursive: true, force: true });
+      }
     });
 
     it("refuses to delete root, homedir, or cwd", async () => {

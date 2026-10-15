@@ -31,7 +31,10 @@ import { defineConfig, devices } from "@playwright/test";
 import { randomBytes } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { allocateMockLlmPorts } from "./tests/e2e/mock-llm/utils/allocate-mock-llm-ports";
+import {
+  allocateMockLlmPorts,
+  mockLlmPortSpecs,
+} from "./tests/e2e/mock-llm/utils/allocate-mock-llm-ports";
 
 // ── Docker image ────────────────────────────────────────────────────────
 const DOCKER_IMAGE =
@@ -51,73 +54,12 @@ const RUN_ROOT = resolve(
 );
 process.env.MOCK_LLM_RUN_DIR = RUN_ROOT;
 
-// ── Port allocation (separate from live E2E / dev to avoid collisions) ─
 // Playwright re-imports this config in each worker. allocateMockLlmPorts
 // records the first result in MOCK_LLM_PORT_SNAPSHOT so workers reuse it
-// after the webServers have bound the ports.
+// after the webServers have bound the ports. Child-stack blocks stay held
+// in this process until a spec releases them.
 const rawPorts = await allocateMockLlmPorts(
-  [
-    {
-      name: "mockLlm",
-      envName: "MOCK_LLM_PORT",
-      preferred: parseInt(process.env.MOCK_LLM_PORT ?? "9999", 10),
-    },
-    {
-      name: "ingress",
-      envName: "MOCK_LLM_INGRESS_PORT",
-      preferred: parseInt(process.env.MOCK_LLM_INGRESS_PORT ?? "18300", 10),
-    },
-    {
-      name: "publicMode",
-      envName: "MOCK_LLM_PUBLIC_MODE_PORT",
-      preferred: parseInt(process.env.MOCK_LLM_PUBLIC_MODE_PORT ?? "18301", 10),
-    },
-    {
-      name: "backend",
-      envName: "OH_CANVAS_SAFE_BACKEND_PORT",
-      preferred: parseInt(
-        process.env.OH_CANVAS_SAFE_BACKEND_PORT ??
-          process.env.AGENT_SERVER_PORT ??
-          "18000",
-        10,
-      ),
-    },
-    {
-      name: "automation",
-      envName: "OH_CANVAS_SAFE_AUTOMATION_PORT",
-      preferred: parseInt(
-        process.env.OH_CANVAS_SAFE_AUTOMATION_PORT ??
-          process.env.AUTOMATION_PORT ??
-          "18001",
-        10,
-      ),
-    },
-    {
-      name: "feOnly",
-      envName: "MOCK_LLM_FE_ONLY_PORT",
-      preferred: parseInt(process.env.MOCK_LLM_FE_ONLY_PORT ?? "18310", 10),
-    },
-    {
-      name: "beOnly",
-      envName: "MOCK_LLM_BE_ONLY_PORT",
-      preferred: parseInt(process.env.MOCK_LLM_BE_ONLY_PORT ?? "18320", 10),
-    },
-    {
-      name: "crossFe",
-      envName: "MOCK_LLM_CROSS_FE_PORT",
-      preferred: parseInt(process.env.MOCK_LLM_CROSS_FE_PORT ?? "18370", 10),
-    },
-    {
-      name: "crossBeA",
-      envName: "MOCK_LLM_CROSS_BE_A_PORT",
-      preferred: parseInt(process.env.MOCK_LLM_CROSS_BE_A_PORT ?? "18380", 10),
-    },
-    {
-      name: "crossBeB",
-      envName: "MOCK_LLM_CROSS_BE_B_PORT",
-      preferred: parseInt(process.env.MOCK_LLM_CROSS_BE_B_PORT ?? "18390", 10),
-    },
-  ],
+  mockLlmPortSpecs("docker"),
   "docker",
 );
 

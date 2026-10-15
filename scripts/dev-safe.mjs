@@ -818,6 +818,7 @@ export function buildAgentServerEnv(config, options = {}) {
     // where the locale is already UTF-8.
     // This is a no-op on Linux/macOS where the locale is already UTF-8.
     PYTHONUTF8: "1",
+    TMUX_TMPDIR: config.tmuxTmpDir,
     // Parent of stateDir (= ~/.openhands) so settings/secrets match Docker,
     // or explicit env override.
     OH_PERSISTENCE_DIR: env.OH_PERSISTENCE_DIR || path.dirname(config.stateDir),

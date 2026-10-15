@@ -500,6 +500,12 @@ describe("buildAgentServerTelemetryEnv", () => {
     expect(env.OH_PERSISTENCE_DIR).toBe("/custom/persistence");
   });
 
+  it("passes the configured tmux directory to the agent-server", () => {
+    expect(
+      buildAgentServerEnv(agentServerConfig, { env: {} }).TMUX_TMPDIR,
+    ).toBe(agentServerConfig.tmuxTmpDir);
+  });
+
   it("turns the browser off on the agent-server when browser tools are disabled", () => {
     expect(
       buildAgentServerEnv(agentServerConfig, {
