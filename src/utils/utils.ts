@@ -120,8 +120,9 @@ export const getFileExtension = (fileName: string): string => {
  *
  * Mirrors OpenHands' cloud frontend (parameterized by `app_mode`):
  *   - bitbucket / bitbucket_data_center → always installation-based
- *   - github → installation-based ONLY when the active backend is cloud
- *   - gitlab / azure_devops / forgejo → direct (search) flow
+ *   - github / azure_devops → installation-based ONLY when the active backend
+ *     is cloud (Azure DevOps organizations are its installations)
+ *   - gitlab / forgejo → direct (search) flow
  *
  * `appMode` accepts the active backend `kind` ("local" | "cloud") so call
  * sites can hand it through directly.
@@ -137,6 +138,7 @@ export const shouldUseInstallationRepos = (
     case "bitbucket_data_center":
       return true;
     case "github":
+    case "azure_devops":
       return appMode === "cloud";
     default:
       return false;
