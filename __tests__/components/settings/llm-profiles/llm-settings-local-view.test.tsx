@@ -73,6 +73,7 @@ vi.mock("#/routes/llm-settings", async () => {
           "llm.model": model,
           "llm.api_key": apiKey,
           "llm.base_url": baseUrl,
+          "llm.temperature": temperature,
         };
         onSaveControlChange?.({
           save: vi.fn(),

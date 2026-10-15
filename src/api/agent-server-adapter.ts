@@ -241,6 +241,14 @@ async function fetchBackendServerInfo(): Promise<AgentServerInfo | null> {
   }
 }
 
+/** Whether start requests accept `agent_launch_additions.llm_profile_ref`. */
+export async function backendSupportsLaunchLlmOverride(): Promise<boolean> {
+  const serverInfo = await fetchBackendServerInfo();
+  return (
+    serverInfo?.capabilities?.includes("agent_launch_pipeline_v1") ?? false
+  );
+}
+
 export async function fetchBackendExecutionRuntime(): Promise<
   AgentServerInfo["execution_runtime"]
 > {
@@ -1197,8 +1205,12 @@ type AgentSettingsStartConversationPayload = StartConversationPayloadBase & {
   // exclusive agent sources; the server resolves the profile server-side.
   agent_settings?: AgentSettingsPayload;
   agent_profile_id?: string;
-  // Appended to the profile-resolved agent's system-message suffix.
-  agent_launch_additions?: { system_message_suffix_append?: string };
+  agent_launch_additions?: {
+    // Appended to the profile-resolved agent's system-message suffix.
+    system_message_suffix_append?: string;
+    // Runs the profile with this LLM profile instead of its own.
+    llm_profile_ref?: string;
+  };
   agent?: never;
 };
 
@@ -1234,6 +1246,8 @@ export interface StartConversationOptions {
   // server-side) instead of an inline ``agent_settings`` dump (#3727).
   agentProfileId?: string;
   agentProfileKind?: AgentKind;
+  /** LLM profile the agent profile runs with instead of its own. */
+  llmProfileOverride?: string;
   titleLlmProfile?: string;
   runtimeServicesInfo?: RuntimeServicesInfo | null;
   executionRuntime?: AgentServerInfo["execution_runtime"];
@@ -1312,6 +1326,14 @@ export function buildStartConversationRequest(
   ]
     .filter((suffix): suffix is string => Boolean(suffix))
     .join("\n\n");
+  const launchAdditions = {
+    ...(profileLaunchSuffix
+      ? { system_message_suffix_append: profileLaunchSuffix }
+      : {}),
+    ...(options.llmProfileOverride
+      ? { llm_profile_ref: options.llmProfileOverride }
+      : {}),
+  };
   const acpServerTag = acpMode
     ? getAcpServerTag(sourceAgentSettings)
     : undefined;
@@ -1359,12 +1381,8 @@ export function buildStartConversationRequest(
     ...(options.agentProfileId
       ? {
           agent_profile_id: options.agentProfileId,
-          ...(profileLaunchSuffix
-            ? {
-                agent_launch_additions: {
-                  system_message_suffix_append: profileLaunchSuffix,
-                },
-              }
+          ...(Object.keys(launchAdditions).length > 0
+            ? { agent_launch_additions: launchAdditions }
             : {}),
         }
       : { agent_settings: agentSettings }),
@@ -1759,6 +1777,7 @@ export async function buildStartConversationRequestWithEncryptedSettings(options
   worktree?: boolean;
   agentProfileId?: string;
   agentProfileKind?: AgentKind;
+  llmProfileOverride?: string;
   titleLlmProfile?: string;
 }): Promise<Record<string, unknown>> {
   const [{ SecretsService }, { default: HooksService }] = await Promise.all([
