@@ -786,19 +786,28 @@ function getConversationSecurityAnalyzer(conversationSettings: SettingsRecord) {
  */
 function getConversationRuntimeOptions(conversationSettings: SettingsRecord) {
   const {
-    worktree_base: worktreeBase,
+    worktree_base: base,
+    worktree_base_ref: ref,
+    worktree_branch_prefix: branchPrefix,
     container_memory: memory,
     container_cpus: cpus,
     container_browser: browser,
   } = conversationSettings;
+  const worktreeOptions = {
+    ...(typeof base === "string" && base !== "default_branch" ? { base } : {}),
+    ...(base === "ref" && typeof ref === "string" ? { ref } : {}),
+    ...(typeof branchPrefix === "string" && branchPrefix !== "openhands/"
+      ? { branch_prefix: branchPrefix }
+      : {}),
+  };
   const container = {
     ...(typeof memory === "string" && memory ? { memory } : {}),
     ...(typeof cpus === "number" ? { cpus } : {}),
     ...(browser === false ? { browser } : {}),
   };
   return {
-    ...(typeof worktreeBase === "string" && worktreeBase !== "default_branch"
-      ? { worktree_base: worktreeBase }
+    ...(Object.keys(worktreeOptions).length > 0
+      ? { worktree_options: worktreeOptions }
       : {}),
     ...(Object.keys(container).length > 0 ? { container } : {}),
   };

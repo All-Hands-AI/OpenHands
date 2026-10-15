@@ -232,9 +232,19 @@ describe("mock settings schemas and state", () => {
         choices: ["local", "worktree", "docker"],
       }),
       worktree_base: contract("runtime", "string", "default_branch", "major", {
-        choices: ["default_branch", "head"],
+        choices: ["default_branch", "head", "ref"],
         depends_on: ["default_runtime=worktree"],
       }),
+      worktree_base_ref: contract("runtime", "string", null, "major", {
+        depends_on: ["default_runtime=worktree", "worktree_base=ref"],
+      }),
+      worktree_branch_prefix: contract(
+        "runtime",
+        "string",
+        "openhands/",
+        "major",
+        { depends_on: ["default_runtime=worktree"] },
+      ),
       container_memory: contract("runtime", "string", null, "major", {
         depends_on: ["default_runtime=docker"],
       }),

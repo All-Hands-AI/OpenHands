@@ -158,6 +158,8 @@ describe("buildStartConversationRequest", () => {
         conversation_settings: {
           ...DEFAULT_SETTINGS.conversation_settings,
           worktree_base: "default_branch",
+          worktree_base_ref: null,
+          worktree_branch_prefix: "openhands/",
           container_memory: null,
           container_cpus: null,
           container_browser: true,
@@ -165,7 +167,7 @@ describe("buildStartConversationRequest", () => {
       },
     });
 
-    expect(payload).not.toHaveProperty("worktree_base");
+    expect(payload).not.toHaveProperty("worktree_options");
     expect(payload).not.toHaveProperty("container");
   });
 
@@ -175,7 +177,9 @@ describe("buildStartConversationRequest", () => {
         ...DEFAULT_SETTINGS,
         conversation_settings: {
           ...DEFAULT_SETTINGS.conversation_settings,
-          worktree_base: "head",
+          worktree_base: "ref",
+          worktree_base_ref: "origin/release",
+          worktree_branch_prefix: "me/",
           container_memory: "4g",
           container_cpus: 2,
           container_browser: false,
@@ -184,7 +188,11 @@ describe("buildStartConversationRequest", () => {
     });
 
     expect(payload).toMatchObject({
-      worktree_base: "head",
+      worktree_options: {
+        base: "ref",
+        ref: "origin/release",
+        branch_prefix: "me/",
+      },
       container: { memory: "4g", cpus: 2, browser: false },
     });
   });
