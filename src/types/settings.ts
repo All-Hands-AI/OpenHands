@@ -14,11 +14,6 @@ export const ProviderOptions = {
 
 export type Provider = keyof typeof ProviderOptions;
 
-export type ProviderToken = {
-  token: string;
-  host: string | null;
-};
-
 export type SettingsChoiceValue = boolean | number | string;
 
 export type SettingsChoice = {
