@@ -74,6 +74,7 @@ export function getClipboardFiles(clipboardData: DataTransfer): File[] {
 
   return fromItems;
 }
+
 /**
  * Windows IME keydown uses keyCode 229 while the composition session is
  * active. Some third-party IMEs omit `isComposing` on that keystroke.
@@ -91,19 +92,19 @@ type ImeEventLike = {
   };
 };
 
+/** DOM events, React synthetic events, and test doubles. */
+export type ImeEventInput =
+  | ImeEventLike
+  | { nativeEvent: Event; isComposing?: boolean; keyCode?: number }
+  | null
+  | undefined;
+
 /**
  * True while an IME (Chinese / Japanese / Korean) composition session is
  * active. Writing innerHTML/textContent during that window cancels the
  * session — third-party Windows IMEs are especially sensitive because they
  * often keep preedit out of the DOM until confirm.
  */
-/** DOM events, React synthetic events, and test doubles. */
-type ImeEventInput =
-  | ImeEventLike
-  | { nativeEvent: Event; isComposing?: boolean; keyCode?: number }
-  | null
-  | undefined;
-
 export const isImeComposingEvent = (
   event: ImeEventInput,
   composingSession = false,

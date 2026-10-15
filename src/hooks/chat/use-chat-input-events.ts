@@ -7,6 +7,7 @@ import {
   getClipboardFiles,
   isImeComposingEvent,
   markImeComposing,
+  type ImeEventInput,
 } from "#/components/features/chat/utils/chat-input.utils";
 
 /**
@@ -25,8 +26,7 @@ export const useChatInputEvents = (
   const composingRef = useRef(false);
 
   const isImeSessionActive = useCallback(
-    (event?: { isComposing?: boolean; keyCode?: number }) =>
-      isImeComposingEvent(event, composingRef.current),
+    (event?: ImeEventInput) => isImeComposingEvent(event, composingRef.current),
     [],
   );
 

@@ -8,7 +8,6 @@ import { useSlashCommand } from "#/hooks/chat/use-slash-command";
 import { ChatInputGrip } from "./components/chat-input-grip";
 import { ChatInputContainer } from "./components/chat-input-container";
 import { HiddenFileInput } from "./components/hidden-file-input";
-import { isImeComposingEvent } from "#/components/features/chat/utils/chat-input.utils";
 import { useConversationStore } from "#/stores/conversation-store";
 import { cn } from "#/utils/utils";
 
@@ -213,7 +212,7 @@ export function CustomChatInput({
           onDrop={handleDrop}
           onInput={(e) => {
             handleInput(e);
-            if (isImeComposingEvent(e) || isImeSessionActive()) return;
+            if (isImeSessionActive(e)) return;
             updateSlashMenu();
             saveDraft();
             syncCanSubmit();
