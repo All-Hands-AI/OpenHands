@@ -1306,7 +1306,8 @@ describe("SettingsService", () => {
     ).rejects.toBeDefined();
 
     expect(getCount).toBe(0);
-    expect(patchBodies).toHaveLength(3);
+    // A deterministic 400 validation failure is not retried (#17932).
+    expect(patchBodies).toHaveLength(1);
     expect(patchBodies).not.toContainEqual({
       agent_settings_diff: { mcp_config: null },
     });
