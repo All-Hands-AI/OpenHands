@@ -1,13 +1,12 @@
-import type { ElementContent, Root, RootContent } from "hast";
+import type { Plugin } from "unified";
+import type { ElementContent, Root } from "hast";
+import { SKIP, visit } from "unist-util-visit";
 
 /** Must match the `stream-word-fade` animation in index.css. */
 export const STREAM_WORD_FADE_MS = 280;
 
 /** Text inside these is not split into words. */
 const SKIP_TAGS = new Set(["pre", "code", "svg", "math", "script", "style"]);
-
-const now = () =>
-  typeof performance !== "undefined" ? performance.now() : Date.now();
 
 /**
  * Records when each part of a streamed text was revealed, so a word's fade can
@@ -17,12 +16,10 @@ const now = () =>
 export class RevealClock {
   private segments: { start: number; at: number }[] = [];
 
-  private settledBefore = 0;
-
   private length = 0;
 
   /** The text now shown is `length` long. */
-  advance(length: number, at = now()) {
+  advance(length: number, at = performance.now()) {
     if (length > this.length) {
       this.segments.push({ start: this.length, at });
       this.length = length;
@@ -33,22 +30,17 @@ export class RevealClock {
       at - this.segments[0].at >= STREAM_WORD_FADE_MS
     ) {
       this.segments.shift();
-      this.settledBefore = this.segments[0]?.start ?? this.length;
     }
   }
 
   /** Treat text up to `length` as already shown, e.g. after a retry snapped in. */
   reset(length: number) {
     this.segments = [];
-    this.settledBefore = length;
     this.length = length;
   }
 
   /** When the character at `offset` was revealed, or null if long enough ago. */
   revealedAt(offset: number): number | null {
-    if (offset < this.settledBefore) {
-      return null;
-    }
     for (let i = this.segments.length - 1; i >= 0; i -= 1) {
       if (this.segments[i].start <= offset) {
         return this.segments[i].at;
@@ -74,59 +66,53 @@ interface FadeInWordsOptions {
  * continue from the previous one — off by the markup's few characters, which
  * is invisible in the timing.
  */
-export function rehypeFadeInWords({ clock, blockStart }: FadeInWordsOptions) {
-  return (tree: Root) => {
-    const renderedAt = now();
+export const rehypeFadeInWords: Plugin<[FadeInWordsOptions], Root> =
+  ({ clock, blockStart }) =>
+  (tree) => {
+    const renderedAt = performance.now();
     let cursor = 0;
 
-    const splitWords = (value: string, start: number): ElementContent[] => {
-      const parts: ElementContent[] = [];
-      let index = 0;
-      for (const part of value.split(/(\s+)/)) {
-        if (part && /\S/.test(part)) {
-          const revealedAt = clock.revealedAt(blockStart + start + index);
-          const elapsed =
-            revealedAt === null ? Infinity : renderedAt - revealedAt;
-          parts.push({
-            type: "element",
-            tagName: "span",
-            properties:
-              elapsed < STREAM_WORD_FADE_MS
-                ? {
-                    dataStreamWord: true,
-                    className: ["stream-word-fade"],
-                    style: `animation-delay:${-Math.round(elapsed)}ms`,
-                  }
-                : { dataStreamWord: true },
-            children: [{ type: "text", value: part }],
-          });
-        } else if (part) {
-          parts.push({ type: "text", value: part });
-        }
-        index += part.length;
-      }
-      return parts;
+    const wordSpan = (word: string, offset: number): ElementContent => {
+      const revealedAt = clock.revealedAt(blockStart + offset);
+      const elapsed = revealedAt === null ? Infinity : renderedAt - revealedAt;
+      return {
+        type: "element",
+        tagName: "span",
+        properties:
+          elapsed < STREAM_WORD_FADE_MS
+            ? {
+                dataStreamWord: true,
+                className: ["stream-word-fade"],
+                style: `animation-delay:${-Math.round(elapsed)}ms`,
+              }
+            : { dataStreamWord: true },
+        children: [{ type: "text", value: word }],
+      };
     };
 
-    const wrap = <T extends RootContent | ElementContent>(children: T[]): T[] =>
-      children.flatMap((child) => {
-        if (child.type === "text") {
-          const offset = child.position?.start.offset;
-          if (offset !== undefined) {
-            cursor = offset;
-          }
-          const start = cursor;
-          cursor += child.value.length;
-          return splitWords(child.value, start) as T[];
+    visit(tree, (node, index, parent) => {
+      if (node.type === "element" && SKIP_TAGS.has(node.tagName)) {
+        return SKIP;
+      }
+      if (node.type !== "text" || !parent || index === undefined) {
+        return undefined;
+      }
+      cursor = node.position?.start.offset ?? cursor;
+      const parts: ElementContent[] = [];
+      let offset = cursor;
+      for (const part of node.value.split(/(\s+)/)) {
+        if (part) {
+          parts.push(
+            /\S/.test(part)
+              ? wordSpan(part, offset)
+              : { type: "text", value: part },
+          );
         }
-        if (child.type === "element" && !SKIP_TAGS.has(child.tagName)) {
-          // eslint-disable-next-line no-param-reassign
-          child.children = wrap(child.children);
-        }
-        return [child];
-      });
-
-    // eslint-disable-next-line no-param-reassign
-    tree.children = wrap(tree.children);
+        offset += part.length;
+      }
+      cursor += node.value.length;
+      parent.children.splice(index, 1, ...parts);
+      // Continue after the inserted nodes: their text is already split.
+      return index + parts.length;
+    });
   };
-}

@@ -1,81 +1,62 @@
 import React from "react";
+import { create } from "zustand";
 
 /**
- * Fastest steady reveal, in characters per millisecond (60 chars/s). Fast
- * models deliver several hundred characters a second; revealing at that pace
- * reads as text being dumped rather than written.
+ * Reveal pace, in characters per millisecond (60 chars/s). Fast models deliver
+ * several hundred characters a second; revealing at that pace reads as text
+ * being dumped rather than written.
  */
-const MAX_PACE = 0.06;
+const PACE = 0.06;
 
 /**
- * How far the reveal may trail the model before it speeds up beyond
- * `MAX_PACE`: past this backlog, it drains at least `backlog / MAX_LAG_MS`, so
- * a long reply from a fast model never ends up more than ~10 seconds behind.
+ * How far the reveal may trail the model before it speeds up beyond `PACE`:
+ * past this backlog, it drains at least `backlog / MAX_LAG_MS`, so a long
+ * reply from a fast model never ends up more than ~10 seconds behind.
  */
 const MAX_LAG_MS = 10000;
 
-/** Weight of the newest inter-arrival sample in the rate estimate. */
-const RATE_SMOOTHING = 0.3;
+/**
+ * Hooks still revealing text, so the chat can keep following a reply that is
+ * still typing out after its stream has already finished.
+ */
+const useRevealingStore = create<{ ids: ReadonlySet<symbol> }>(() => ({
+  ids: new Set(),
+}));
 
-/** Gaps longer than this (a pause in the model) are not a rate sample. */
-const MAX_ARRIVAL_GAP_MS = 1000;
-
-const now = () =>
-  typeof performance !== "undefined" ? performance.now() : Date.now();
-
-// Hooks that are still revealing text, so the chat can keep following a reply
-// that is still typing out after its stream has already finished.
-const revealing = new Set<symbol>();
-const revealingListeners = new Set<() => void>();
-
-const setRevealing = (id: symbol, isRevealing: boolean) => {
-  const wasRevealing = revealing.size > 0;
-  if (isRevealing) {
-    revealing.add(id);
-  } else {
-    revealing.delete(id);
-  }
-  if (wasRevealing !== revealing.size > 0) {
-    revealingListeners.forEach((listener) => listener());
-  }
-};
-
-const subscribeRevealing = (listener: () => void) => {
-  revealingListeners.add(listener);
-  return () => {
-    revealingListeners.delete(listener);
-  };
-};
+const setRevealing = (id: symbol, isRevealing: boolean) =>
+  useRevealingStore.setState((state) => {
+    if (state.ids.has(id) === isRevealing) {
+      return state;
+    }
+    const ids = new Set(state.ids);
+    if (isRevealing) {
+      ids.add(id);
+    } else {
+      ids.delete(id);
+    }
+    return { ids };
+  });
 
 /** Whether any streamed text is still being revealed on screen. */
-export function useIsRevealingStreamedText(): boolean {
-  return React.useSyncExternalStore(
-    subscribeRevealing,
-    () => revealing.size > 0,
-    () => false,
-  );
-}
+export const useIsRevealingStreamedText = () =>
+  useRevealingStore((state) => state.ids.size > 0);
 
 /**
  * Reveal `target` on a clock rather than at the granularity the network
  * happened to deliver it (#15493).
  *
- * Text is revealed at the rate it has been arriving, capped at `MAX_PACE`, so
- * chunks that land in bursts read as steady writing instead of a jump followed
- * by a pause; only a backlog worth more than `MAX_LAG_MS` speeds it up. Text
- * that is not an extension of what is already on screen (a superseding retry,
- * or a different slot) snaps immediately rather than being re-typed.
+ * Text is revealed at a steady `PACE`, so chunks that land in bursts read as
+ * writing instead of a jump followed by a pause; only a backlog worth more
+ * than `MAX_LAG_MS` speeds it up. Text that is not an extension of what is
+ * already on screen (a superseding retry, or a different slot) snaps
+ * immediately rather than being re-typed.
  */
 export function useStreamedText(target: string): string {
   const [revealed, setRevealed] = React.useState(target);
   const revealedRef = React.useRef(target);
-  // Fractional reveal position, so a pace of e.g. 1.9 characters per frame
-  // advances evenly instead of rounding every frame.
+  // Fractional reveal position: the pace is under one character per frame.
   const positionRef = React.useRef(target.length);
   const frameRef = React.useRef<number | null>(null);
-  const arrivalRef = React.useRef<{ length: number; at: number } | null>(null);
-  // Characters per millisecond, or null until two arrivals were seen.
-  const rateRef = React.useRef<number | null>(null);
   const [revealId] = React.useState(() => Symbol("streamed-text"));
 
   React.useEffect(() => {
@@ -89,39 +70,21 @@ export function useStreamedText(target: string): string {
       !target.startsWith(revealedRef.current) ||
       typeof requestAnimationFrame !== "function"
     ) {
-      arrivalRef.current = null;
-      rateRef.current = null;
       commit(target);
       return undefined;
     }
-
-    const arrivedAt = now();
-    const previous = arrivalRef.current;
-    if (previous && target.length > previous.length) {
-      const gap = arrivedAt - previous.at;
-      if (gap > 0 && gap <= MAX_ARRIVAL_GAP_MS) {
-        const sample = (target.length - previous.length) / gap;
-        rateRef.current =
-          rateRef.current === null
-            ? sample
-            : rateRef.current + RATE_SMOOTHING * (sample - rateRef.current);
-      }
-    }
-    arrivalRef.current = { length: target.length, at: arrivedAt };
-
     if (revealedRef.current.length === target.length) {
       return undefined;
     }
 
     let lastTick = 0;
-    const tick = (frameTime: number) => {
+    const tick = (now: number) => {
       frameRef.current = null;
-      const elapsed = lastTick ? frameTime - lastTick : 16;
-      lastTick = frameTime;
+      const elapsed = lastTick ? now - lastTick : 16;
+      lastTick = now;
 
       const backlog = target.length - positionRef.current;
-      const pace = Math.min(rateRef.current ?? MAX_PACE, MAX_PACE);
-      const step = Math.max(pace, backlog / MAX_LAG_MS) * elapsed;
+      const step = Math.max(PACE, backlog / MAX_LAG_MS) * elapsed;
       const position = Math.min(target.length, positionRef.current + step);
       const nextLength = Math.floor(position);
       if (nextLength !== revealedRef.current.length) {

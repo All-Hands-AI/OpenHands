@@ -79,8 +79,8 @@ describe("useStreamedText", () => {
     expect(frames.pending()).toBe(0);
   });
 
-  it("reveals bursty chunks at a steady pace once the rate is known", () => {
-    // ~55 chars/s, under the pace cap: one 12-char burst every 13 frames.
+  it("reveals bursty chunks at a steady pace", () => {
+    // ~55 chars/s: one 12-char burst every 13 frames.
     const chunk = "x".repeat(12);
     const framesPerChunk = 13;
     const { result, rerender } = renderHook(
@@ -95,10 +95,7 @@ describe("useStreamedText", () => {
       for (const frameCount of [6, framesPerChunk - 6]) {
         const before = result.current.length;
         frames.tick(frameCount);
-        // Skip the first bursts, while the arrival rate is being learned.
-        if (i > 3) {
-          halves.push((result.current.length - before) / frameCount);
-        }
+        halves.push((result.current.length - before) / frameCount);
       }
     }
 

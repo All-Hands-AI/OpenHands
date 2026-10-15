@@ -16,10 +16,7 @@ import { InteractiveChatBox } from "./interactive-chat-box";
 import { AgentState } from "#/types/agent-state";
 import { useFilteredEvents } from "#/hooks/use-filtered-events";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
-import { useFollowStreamingReply } from "#/hooks/use-follow-streaming-reply";
 import { useIsRevealingStreamedText } from "#/hooks/use-streamed-text";
-import { useEventStore } from "#/stores/use-event-store";
-import { isStreamingDeltaEvent } from "#/types/agent-server/type-guards";
 import { useLoadOlderEvents } from "#/hooks/use-load-older-events";
 import { useAutoRefreshFilesOnEdit } from "#/hooks/use-auto-refresh-files-on-edit";
 import { WorkspaceFilesForChatProvider } from "./chat-markdown-path-code";
@@ -122,6 +119,9 @@ export function ChatInterface({
   );
   const { t } = useTranslation("openhands");
   const scrollRef = React.useRef<HTMLDivElement>(null);
+  // A streamed reply grows inside one event as it is revealed, so follow it
+  // frame by frame while it does.
+  const isRevealingStreamedText = useIsRevealingStreamedText();
   const {
     scrollDomToBottom,
     onChatBodyScroll,
@@ -129,7 +129,7 @@ export function ChatInterface({
     autoScroll,
     setAutoScroll,
     setHitBottom,
-  } = useScrollToBottom(scrollRef);
+  } = useScrollToBottom(scrollRef, isRevealingStreamedText);
   const {
     mutate: newConversationCommand,
     isPending: isNewConversationPending,
@@ -463,25 +463,6 @@ export function ChatInterface({
     activeGoalScrollKey,
     scrollDomToBottom,
   ]);
-
-  // A streamed reply grows inside one event, which the effect above does not
-  // see; follow it frame by frame while the user is pinned to the bottom. The
-  // reveal can still be typing out after the stream has finished.
-  const hasStreamingSlot = useEventStore((state) =>
-    state.uiEvents.some(isStreamingDeltaEvent),
-  );
-  const isRevealingStreamedText = useIsRevealingStreamedText();
-  const isStreamingReply = hasStreamingSlot || isRevealingStreamedText;
-  const isRestoringScrollPosition = React.useCallback(
-    () => preserveScrollPosition.current !== null,
-    [],
-  );
-  useFollowStreamingReply(scrollRef, {
-    active: isStreamingReply,
-    autoScroll,
-    setAutoScroll,
-    isPaused: isRestoringScrollPosition,
-  });
 
   // Auto-load older events when the chat content doesn't overflow the
   // scroll area (no scrollbar to drag, no wheel events past 0). We

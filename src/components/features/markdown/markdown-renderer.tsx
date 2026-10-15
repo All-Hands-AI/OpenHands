@@ -157,18 +157,18 @@ function MarkdownBlockComponent({
   clock: RevealClock | undefined;
   blockStart: number;
 }) {
-  const plugins = React.useMemo<PluggableList | undefined>(
-    () =>
-      clock
-        ? [...(rehypePlugins ?? []), [rehypeFadeInWords, { clock, blockStart }]]
-        : rehypePlugins,
-    [rehypePlugins, clock, blockStart],
-  );
   return (
     <Markdown
       components={components}
       remarkPlugins={remarkPlugins}
-      rehypePlugins={plugins}
+      rehypePlugins={
+        clock
+          ? [
+              ...(rehypePlugins ?? []),
+              [rehypeFadeInWords, { clock, blockStart }],
+            ]
+          : rehypePlugins
+      }
     >
       {source}
     </Markdown>
@@ -185,11 +185,7 @@ const MarkdownBlock = React.memo(MarkdownBlockComponent);
  */
 function useStreamedMarkdownBlocks(text: string, streaming: boolean) {
   const previousRef = React.useRef({ text: "", offsets: [0] });
-  const clockRef = React.useRef<RevealClock | null>(null);
-  if (clockRef.current === null) {
-    clockRef.current = new RevealClock();
-  }
-  const clock = clockRef.current;
+  const [clock] = React.useState(() => new RevealClock());
 
   const blocks = React.useMemo(() => {
     if (!streaming) {
