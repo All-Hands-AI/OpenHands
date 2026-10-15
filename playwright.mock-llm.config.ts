@@ -25,6 +25,7 @@ import { dirname, join, resolve } from "node:path";
 import {
   allocateMockLlmPorts,
   mockLlmPortSpecs,
+  releasePortsCommand,
 } from "./tests/e2e/mock-llm/utils/allocate-mock-llm-ports";
 import { uvCacheEnvForIsolatedHome } from "./tests/e2e/mock-llm/utils/uv-cache-env";
 
@@ -76,8 +77,8 @@ process.env.MOCK_LLM_USER_SKILLS_HOST_DIR = USER_SKILLS_DIR;
 
 // Playwright re-imports this config in each worker. allocateMockLlmPorts
 // records the first result in MOCK_LLM_PORT_SNAPSHOT so workers reuse it
-// after the webServers have bound the ports. Child-stack blocks stay held
-// in this process until a spec releases them.
+// after the webServers have bound the ports. Every port stays held in this
+// process until its webServer command or spec releases it.
 const rawPorts = await allocateMockLlmPorts(mockLlmPortSpecs("npm"), "npm");
 
 const MOCK_LLM_PORT = rawPorts.mockLlm;
@@ -157,7 +158,9 @@ export default defineConfig({
   webServer: [
     // 1. Mock LLM server (Python)
     {
-      command: `${MOCK_LLM_PYTHON} tests/e2e/mock-llm/scripts/mock-llm-server.py --port ${MOCK_LLM_PORT}`,
+      command:
+        releasePortsCommand(["mockLlm"]) +
+        `exec ${MOCK_LLM_PYTHON} tests/e2e/mock-llm/scripts/mock-llm-server.py --port ${MOCK_LLM_PORT}`,
       url: MOCK_LLM_URL,
       timeout: 30_000,
       reuseExistingServer: false,
@@ -181,6 +184,7 @@ export default defineConfig({
         `node -e "const fs=require('node:fs'); fs.rmSync('${RUN_ROOT}',{recursive:true,force:true}); fs.rmSync('${STATE_DIR}',{recursive:true,force:true}); fs.rmSync('${AUTOMATION_DB_DIR}',{recursive:true,force:true});" && ` +
         // Build frontend if not already built (CI should pre-build for caching)
         "[ -f build/index.html ] || npm run build:app && " +
+        releasePortsCommand(["ingress", "backend", "automation", "vite"]) +
         [
           "exec env",
           envAssignment("OH_CANVAS_SAFE_STATE_DIR", STATE_DIR),
@@ -216,7 +220,7 @@ export default defineConfig({
       // process.kill(-pid, "SIGKILL"), which the stack cannot catch. Its
       // services are spawned detached (see scripts/dev-process-utils.mjs), so
       // they sit in their own process groups and survive that group kill,
-      // orphaning to PID 1 while still holding 18000/18001/18300/3001. Asking
+      // orphaning to PID 1 while still holding this run's ports. Asking
       // for SIGTERM lets the existing shutdown handler in
       // scripts/dev-with-automation.mjs run, which stops each service, waits
       // 3s, then force-kills stragglers. The timeout below leaves headroom
@@ -227,21 +231,23 @@ export default defineConfig({
     //    --auth-required (no session key injected). Proxies to the dynamically
     //    configured agent-server and automation ports.
     {
-      command: [
-        // No DigitalOcean bridge on the e2e public-mode server: nothing here
-        // uses it, and the Providers entry must not appear in these specs.
-        "exec env",
-        envAssignment("MARS_WEB", "0"),
-        "node scripts/static-server.mjs",
-        "--dir build",
-        `--port ${PUBLIC_MODE_PORT}`,
-        "--host 127.0.0.1",
-        "--auth-required",
-        `--route /api/automation=http://localhost:${AUTOMATION_PORT}`,
-        `--route /api=http://localhost:${BACKEND_PORT}`,
-        `--route /server_info=http://localhost:${BACKEND_PORT}`,
-        `--route /sockets=http://localhost:${BACKEND_PORT}`,
-      ].join(" "),
+      command:
+        releasePortsCommand(["publicMode"]) +
+        [
+          // No DigitalOcean bridge on the e2e public-mode server: nothing here
+          // uses it, and the Providers entry must not appear in these specs.
+          "exec env",
+          envAssignment("MARS_WEB", "0"),
+          "node scripts/static-server.mjs",
+          "--dir build",
+          `--port ${PUBLIC_MODE_PORT}`,
+          "--host 127.0.0.1",
+          "--auth-required",
+          `--route /api/automation=http://localhost:${AUTOMATION_PORT}`,
+          `--route /api=http://localhost:${BACKEND_PORT}`,
+          `--route /server_info=http://localhost:${BACKEND_PORT}`,
+          `--route /sockets=http://localhost:${BACKEND_PORT}`,
+        ].join(" "),
       url: `http://127.0.0.1:${PUBLIC_MODE_PORT}/`,
       timeout: 15_000,
       reuseExistingServer: false,

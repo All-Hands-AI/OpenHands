@@ -34,6 +34,7 @@ import { join, resolve } from "node:path";
 import {
   allocateMockLlmPorts,
   mockLlmPortSpecs,
+  releasePortsCommand,
 } from "./tests/e2e/mock-llm/utils/allocate-mock-llm-ports";
 
 // ── Docker image ────────────────────────────────────────────────────────
@@ -56,8 +57,8 @@ process.env.MOCK_LLM_RUN_DIR = RUN_ROOT;
 
 // Playwright re-imports this config in each worker. allocateMockLlmPorts
 // records the first result in MOCK_LLM_PORT_SNAPSHOT so workers reuse it
-// after the webServers have bound the ports. Child-stack blocks stay held
-// in this process until a spec releases them.
+// after the webServers have bound the ports. Every port stays held in this
+// process until its webServer command or spec releases it.
 const rawPorts = await allocateMockLlmPorts(
   mockLlmPortSpecs("docker"),
   "docker",
@@ -68,6 +69,7 @@ const INGRESS_PORT = rawPorts.ingress;
 const PUBLIC_MODE_PORT = rawPorts.publicMode;
 const BACKEND_PORT = rawPorts.backend;
 const AUTOMATION_PORT = rawPorts.automation;
+const VSCODE_PORT = rawPorts.vscode;
 
 process.env.MOCK_LLM_CONTAINER_NAME = CONTAINER_NAME;
 
@@ -203,7 +205,9 @@ export default defineConfig({
   webServer: [
     // 1. Mock LLM server (Python, on the host)
     {
-      command: `${MOCK_LLM_PYTHON} tests/e2e/mock-llm/scripts/mock-llm-server.py --port ${MOCK_LLM_PORT}`,
+      command:
+        releasePortsCommand(["mockLlm"]) +
+        `exec ${MOCK_LLM_PYTHON} tests/e2e/mock-llm/scripts/mock-llm-server.py --port ${MOCK_LLM_PORT}`,
       url: MOCK_LLM_URL,
       timeout: 30_000,
       reuseExistingServer: false,
@@ -238,6 +242,13 @@ export default defineConfig({
           )}]; fs.rmSync('${RUN_ROOT}',{recursive:true,force:true}); for (const dir of dirs) fs.mkdirSync(dir,{recursive:true});" &&`,
         // Stop any leftover container from a previous failed run
         `docker rm -f ${CONTAINER_NAME} 2>/dev/null;`,
+        releasePortsCommand([
+          "ingress",
+          "publicMode",
+          "backend",
+          "automation",
+          "vscode",
+        ]),
         "exec docker run",
         // Keep the container until the workflow captures its logs.
         `--name ${CONTAINER_NAME}`,
@@ -258,6 +269,7 @@ export default defineConfig({
         `-e SESSION_API_KEY=${sessionApiKey}`,
         `-e OH_SESSION_API_KEYS_0=${sessionApiKey}`,
         `-e PUBLIC_MODE_PORT=${PUBLIC_MODE_PORT}`,
+        `-e OH_VSCODE_PORT=${VSCODE_PORT}`,
         "-e VITE_DO_NOT_TRACK=1",
         "-e VITE_ENABLE_BROWSER_TOOLS=false",
         DOCKER_IMAGE,

@@ -10,11 +10,15 @@ import {
   existsSync,
   rmSync,
 } from "node:fs";
+import { exec } from "node:child_process";
+import { promisify } from "node:util";
 import {
   allocateMockLlmPorts,
+  mockLlmPortSpecs,
   MOCK_LLM_PORT_LEASE_ENV,
   MOCK_LLM_PORT_SNAPSHOT_ENV,
   releaseHeldPorts,
+  releasePortsCommand,
   reholdPorts,
   shutdownPortLease,
 } from "../../tests/e2e/mock-llm/utils/allocate-mock-llm-ports";
@@ -286,6 +290,86 @@ describe("mock-LLM runner isolation", () => {
         {},
       );
       expect(taken.other).toBe(first.feOnly);
+    });
+
+    it("gives two concurrent npm runs disjoint ports, including vscode", async () => {
+      const reserved = (ports: Record<string, string>) => {
+        const all: number[] = [];
+        for (const [name, raw] of Object.entries(ports)) {
+          const base = Number(raw);
+          if (name === "backend") all.push(base, base + 1000);
+          else if (
+            ["mockLlm", "ingress", "publicMode", "automation", "vite"].includes(
+              name,
+            )
+          ) {
+            all.push(base);
+          } else {
+            all.push(base, base + 1, base + 2, base + 3, base + 1001);
+          }
+        }
+        return all;
+      };
+
+      const first = await allocateMockLlmPorts(
+        mockLlmPortSpecs("npm", {}),
+        "run-a",
+        {},
+      );
+      const second = await allocateMockLlmPorts(
+        mockLlmPortSpecs("npm", {}),
+        "run-b",
+        {},
+      );
+
+      const firstPorts = new Set(reserved(first));
+      expect(reserved(second).filter((port) => firstPorts.has(port))).toEqual(
+        [],
+      );
+    });
+
+    it("resets connections to a held port instead of leaving them open", async () => {
+      const allocated = await allocateMockLlmPorts(
+        [
+          {
+            name: "ingress",
+            envName: "MOCK_LLM_INGRESS_PORT",
+            preferred: 0,
+            hold: true,
+          },
+        ],
+        "held-probe",
+        {},
+      );
+
+      await expect(
+        fetch(`http://127.0.0.1:${allocated.ingress}/`, {
+          signal: AbortSignal.timeout(2_000),
+        }),
+      ).rejects.toThrow(/fetch failed/);
+    });
+
+    it("lets a webServer command bind the port it releases", async () => {
+      const env: NodeJS.ProcessEnv = {};
+      const allocated = await allocateMockLlmPorts(
+        [
+          {
+            name: "ingress",
+            envName: "MOCK_LLM_INGRESS_PORT",
+            preferred: 0,
+            hold: true,
+          },
+        ],
+        "webserver-release",
+        env,
+      );
+      const bind = `node -e "require('node:net').createServer().listen(${allocated.ingress}, '127.0.0.1', function () { this.close(); })"`;
+
+      await expect(
+        promisify(exec)(releasePortsCommand(["ingress"]) + bind, {
+          env: { ...process.env, ...env },
+        }),
+      ).resolves.toBeDefined();
     });
 
     it("allocates again when the snapshot belongs to the other config", async () => {

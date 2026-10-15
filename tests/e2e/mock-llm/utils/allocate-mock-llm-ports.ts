@@ -4,6 +4,7 @@ import {
   type AddressInfo,
   type Server,
 } from "node:net";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 /**
  * Env var holding the ports chosen by the first evaluation of a mock-LLM
@@ -16,24 +17,25 @@ import {
 export const MOCK_LLM_PORT_SNAPSHOT_ENV = "MOCK_LLM_PORT_SNAPSHOT";
 
 /**
- * `host:port` of the runner process that holds child-stack ports.
- * Workers inherit it and ask the runner to release a block just before spawn.
+ * `host:port` of the runner process that holds every allocated port.
+ * WebServer commands and workers inherit it and ask the runner to release a
+ * port just before the process that binds it starts.
  */
 export const MOCK_LLM_PORT_LEASE_ENV = "MOCK_LLM_PORT_LEASE";
 
+/** `dev-with-automation.mjs` binds vscode at `backendPort + 1000`. */
+const VSCODE_OFFSET = 1000;
 /** Ingress, backend (+1), automation (+2), and vite (+3). */
 const CHILD_STACK_SPAN = 4;
-/**
- * `dev-with-automation.mjs` binds vscode at `backendPort + 1000`.
- * Backend is `base + 1`, so the vscode port is `base + 1001`.
- */
-const CHILD_STACK_VSCODE_OFFSET = 1001;
+/** Child backend is `base + 1`, so its vscode port is `base + 1001`. */
+const CHILD_STACK_VSCODE_OFFSET = 1 + VSCODE_OFFSET;
 
 export type MockLlmPortMode = "npm" | "docker";
 
 export type MockLlmPortSpec = {
   name: string;
   envName: string;
+  /** Explicit port to try first; 0 lets the OS choose. */
   preferred: number;
   /** Contiguous ports reserved from the base. Defaults to 1. */
   span?: number;
@@ -41,7 +43,7 @@ export type MockLlmPortSpec = {
   extraOffsets?: number[];
   /**
    * Keep the sockets open in this process so a concurrent run sees them as
-   * busy. WebServer ports stay unheld because those processes bind them.
+   * busy until the owner releases them right before binding.
    */
   hold?: boolean;
 };
@@ -68,30 +70,40 @@ const heldBlocks: HeldBlock[] = [];
 let leaseServer: Server | undefined;
 let leaseAddress: string | undefined;
 
-function preferredPort(
-  env: NodeJS.ProcessEnv,
-  names: string[],
-  fallback: number,
-): number {
+function preferredPort(env: NodeJS.ProcessEnv, names: string[]): number {
   for (const name of names) {
     const raw = env[name]?.trim();
     if (!raw) continue;
     const port = Number(raw);
     if (Number.isInteger(port) && port > 0 && port <= 65535) return port;
   }
-  return fallback;
+  return 0;
+}
+
+function serverPort(
+  env: NodeJS.ProcessEnv,
+  name: string,
+  envNames: string[],
+  extraOffsets: number[] = [],
+): MockLlmPortSpec {
+  return {
+    name,
+    envName: envNames[0],
+    preferred: preferredPort(env, envNames),
+    extraOffsets,
+    hold: true,
+  };
 }
 
 function childStack(
   env: NodeJS.ProcessEnv,
   name: string,
   envName: string,
-  fallback: number,
 ): MockLlmPortSpec {
   return {
     name,
     envName,
-    preferred: preferredPort(env, [envName], fallback),
+    preferred: preferredPort(env, [envName]),
     span: CHILD_STACK_SPAN,
     extraOffsets: [CHILD_STACK_VSCODE_OFFSET],
     hold: true,
@@ -100,6 +112,9 @@ function childStack(
 
 /**
  * Port list shared by the npm and Docker mock-LLM configs.
+ * There are no fixed defaults: two runs that both preferred 18300 would
+ * still race once the first released it for its server. Every port is held
+ * until the process that binds it starts; see `releasePortsCommand`.
  * Child stacks reserve the four ports `createIsolatedEnv` derives from the
  * base, plus the vscode port, and the runner holds them until the spec binds.
  */
@@ -108,65 +123,46 @@ export function mockLlmPortSpecs(
   env: NodeJS.ProcessEnv = process.env,
 ): MockLlmPortSpec[] {
   const specs: MockLlmPortSpec[] = [
-    {
-      name: "mockLlm",
-      envName: "MOCK_LLM_PORT",
-      preferred: preferredPort(env, ["MOCK_LLM_PORT"], 9999),
-    },
-    {
-      name: "ingress",
-      envName: "MOCK_LLM_INGRESS_PORT",
-      preferred: preferredPort(
-        env,
-        mode === "npm"
-          ? ["MOCK_LLM_INGRESS_PORT", "PORT"]
-          : ["MOCK_LLM_INGRESS_PORT"],
-        18300,
-      ),
-    },
-    {
-      name: "publicMode",
-      envName: "MOCK_LLM_PUBLIC_MODE_PORT",
-      preferred: preferredPort(env, ["MOCK_LLM_PUBLIC_MODE_PORT"], 18301),
-    },
-    {
-      name: "backend",
-      envName: "OH_CANVAS_SAFE_BACKEND_PORT",
-      preferred: preferredPort(
-        env,
-        mode === "docker"
-          ? ["OH_CANVAS_SAFE_BACKEND_PORT", "AGENT_SERVER_PORT"]
-          : ["OH_CANVAS_SAFE_BACKEND_PORT"],
-        18000,
-      ),
-    },
-    {
-      name: "automation",
-      envName: "OH_CANVAS_SAFE_AUTOMATION_PORT",
-      preferred: preferredPort(
-        env,
-        mode === "docker"
-          ? ["OH_CANVAS_SAFE_AUTOMATION_PORT", "AUTOMATION_PORT"]
-          : ["OH_CANVAS_SAFE_AUTOMATION_PORT"],
-        18001,
-      ),
-    },
+    serverPort(env, "mockLlm", ["MOCK_LLM_PORT"]),
+    serverPort(
+      env,
+      "ingress",
+      mode === "npm"
+        ? ["MOCK_LLM_INGRESS_PORT", "PORT"]
+        : ["MOCK_LLM_INGRESS_PORT"],
+    ),
+    serverPort(env, "publicMode", ["MOCK_LLM_PUBLIC_MODE_PORT"]),
+    serverPort(
+      env,
+      "backend",
+      mode === "docker"
+        ? ["OH_CANVAS_SAFE_BACKEND_PORT", "AGENT_SERVER_PORT"]
+        : ["OH_CANVAS_SAFE_BACKEND_PORT"],
+      mode === "npm" ? [VSCODE_OFFSET] : [],
+    ),
+    serverPort(
+      env,
+      "automation",
+      mode === "docker"
+        ? ["OH_CANVAS_SAFE_AUTOMATION_PORT", "AUTOMATION_PORT"]
+        : ["OH_CANVAS_SAFE_AUTOMATION_PORT"],
+    ),
   ];
   if (mode === "npm") {
-    specs.push({
-      name: "vite",
-      envName: "OH_CANVAS_SAFE_VITE_PORT",
-      preferred: preferredPort(env, ["OH_CANVAS_SAFE_VITE_PORT"], 3001),
-    });
+    specs.push(serverPort(env, "vite", ["OH_CANVAS_SAFE_VITE_PORT"]));
+  } else {
+    // The image binds a fixed vscode port (8001) unless told otherwise, and
+    // `--network host` would make two containers collide on it.
+    specs.push(serverPort(env, "vscode", ["MOCK_LLM_VSCODE_PORT"]));
   }
   specs.push(
-    childStack(env, "feOnly", "MOCK_LLM_FE_ONLY_PORT", 18310),
-    childStack(env, "beOnly", "MOCK_LLM_BE_ONLY_PORT", 18320),
-    childStack(env, "conflict", "MOCK_LLM_CONFLICT_PORT", 18330),
-    childStack(env, "conflictFree", "MOCK_LLM_CONFLICT_FREE_PORT", 18340),
-    childStack(env, "crossFe", "MOCK_LLM_CROSS_FE_PORT", 18370),
-    childStack(env, "crossBeA", "MOCK_LLM_CROSS_BE_A_PORT", 18380),
-    childStack(env, "crossBeB", "MOCK_LLM_CROSS_BE_B_PORT", 18390),
+    childStack(env, "feOnly", "MOCK_LLM_FE_ONLY_PORT"),
+    childStack(env, "beOnly", "MOCK_LLM_BE_ONLY_PORT"),
+    childStack(env, "conflict", "MOCK_LLM_CONFLICT_PORT"),
+    childStack(env, "conflictFree", "MOCK_LLM_CONFLICT_FREE_PORT"),
+    childStack(env, "crossFe", "MOCK_LLM_CROSS_FE_PORT"),
+    childStack(env, "crossBeA", "MOCK_LLM_CROSS_BE_A_PORT"),
+    childStack(env, "crossBeB", "MOCK_LLM_CROSS_BE_B_PORT"),
   );
   return specs;
 }
@@ -184,7 +180,9 @@ function blockPorts(
 
 function tryBind(port: number): Promise<Server | null> {
   return new Promise((resolve, reject) => {
-    const server = createServer();
+    // Reset connections so Playwright's pre-launch URL probe fails fast
+    // instead of waiting for an HTTP reply that never comes.
+    const server = createServer((socket) => socket.destroy());
     const onError = (err: NodeJS.ErrnoException) => {
       server.unref();
       if (err.code === "EADDRINUSE" || err.code === "EACCES") resolve(null);
@@ -600,4 +598,26 @@ export async function allocateMockLlmPorts<Name extends string>(
     [MOCK_LLM_PORT_SNAPSHOT_ENV]: JSON.stringify({ scope, ports: chosen }),
   });
   return applySnapshot(specs, chosen, env);
+}
+
+const MODULE_PATH = fileURLToPath(import.meta.url);
+
+/**
+ * Shell prefix for a webServer command: asks the runner to release the named
+ * held ports, then runs the rest of the command, which binds them.
+ */
+export function releasePortsCommand(names: string[]): string {
+  const modulePath = `'${MODULE_PATH.replaceAll("'", "'\\''")}'`;
+  return `node ${modulePath} release ${names.join(" ")} && `;
+}
+
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href &&
+  process.argv[2] === "release"
+) {
+  releaseHeldPorts(process.argv.slice(3)).catch((err: unknown) => {
+    console.error("Failed to release mock-LLM ports:", err);
+    process.exitCode = 1;
+  });
 }
