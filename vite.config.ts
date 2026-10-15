@@ -298,6 +298,7 @@ export default defineConfig(({ mode }) => {
         "@monaco-editor/react",
         "react-textarea-autosize",
         "react-markdown",
+        "mdast-util-from-markdown",
         "remark-gfm",
         "remark-breaks",
         "react-syntax-highlighter",
