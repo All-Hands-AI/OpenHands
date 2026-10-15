@@ -106,13 +106,17 @@ export function HomeChatLauncher() {
   const {
     isolated,
     dockerSelectable,
+    serverInfoLoading,
     unsupportedMessage: runtimeWorkspaceMessage,
   } = useConversationWorkspace();
   const workspaceModes = getWorkspaceModeOptions(dockerSelectable);
-  // A remembered mode the current server no longer offers falls back.
-  const effectiveWorkspaceMode = workspaceModes.includes(workspaceMode)
-    ? workspaceMode
-    : DEFAULT_WORKSPACE_MODE;
+  // A remembered mode the server no longer offers falls back, but only once
+  // server_info has answered: a pending probe must not silently turn a Docker
+  // choice into Local Repo (a server that cannot run it rejects the start).
+  const effectiveWorkspaceMode =
+    serverInfoLoading || workspaceModes.includes(workspaceMode)
+      ? workspaceMode
+      : DEFAULT_WORKSPACE_MODE;
   const workspacesUnsupportedMessage =
     runtimeWorkspaceMessage ??
     (isLocal ? getWorkspacesUnsupportedMessage(workspacesError, t) : null);

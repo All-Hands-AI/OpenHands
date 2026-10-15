@@ -620,6 +620,35 @@ describe("HomeChatLauncher", () => {
     );
   });
 
+  it("keeps a remembered Docker mode while server_info is still loading", async () => {
+    writeStoredLocalWorkspaceMode("docker_container");
+    mockUseConversationWorkspace.mockReturnValue({
+      isolated: false,
+      dockerSelectable: false,
+      serverInfoLoading: true,
+      unsupportedMessage: null,
+    });
+    const createSpy = vi
+      .spyOn(AgentServerConversationService, "createConversation")
+      .mockResolvedValue(
+        makeConversationResponse({ app_conversation_id: "conv-pending" }),
+      );
+    renderLauncher();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByTestId("open-workspace-button"));
+    await user.click(
+      await screen.findByTestId("stub-workspace-dialog-confirm"),
+    );
+    await user.click(screen.getByTestId("stub-chat-submit"));
+
+    await waitFor(() =>
+      expect(createSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ workspaceMode: "docker_container" }),
+      ),
+    );
+  });
+
   it("restores and updates the last selected local workspace mode", async () => {
     writeStoredLocalWorkspaceMode("new_worktree");
     const { unmount } = renderLauncher();

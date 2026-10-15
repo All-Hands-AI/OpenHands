@@ -30,6 +30,7 @@ export function useConversationWorkspace() {
     isolated,
     dockerSelectable:
       backend.kind === "local" && supportsDockerConversations(query.data),
+    serverInfoLoading: query.isLoading,
     unsupportedMessage: isolated
       ? t(I18nKey.HOME$ISOLATED_WORKSPACE_NOTICE)
       : null,
