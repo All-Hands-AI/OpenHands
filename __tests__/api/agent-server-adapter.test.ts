@@ -3,6 +3,7 @@ import type { MockInstance } from "vitest";
 import { getAcpProvider as getClientAcpProvider } from "@openhands/typescript-client";
 import { CANVAS_UI_CLIENT_TOOL_NAME } from "#/constants/canvas-ui";
 import { LAUNCH_CHILD_CONVERSATION_TOOL_NAME } from "#/constants/child-conversation";
+import { REQUEST_SECRET_TOOL_NAME } from "#/constants/secret-request";
 import { AUTOMATION_FORM_UPDATE_TOOL_NAME } from "#/constants/automation-form";
 
 import {
@@ -12,7 +13,8 @@ import {
   buildRuntimeServicesSystemSuffix,
   buildStartConversationRequest,
   buildStartConversationRequestWithEncryptedSettings,
-  fetchBackendRuntimeServicesInfo,
+  fetchBackendExecutionRuntime,
+  backendSupportsLaunchLlmOverride,
   getDefaultConversationTitle,
   parseRuntimeServicesInfo,
   toAppConversation,
@@ -854,6 +856,7 @@ describe("buildStartConversationRequest", () => {
       expect(payload.client_tools.map((tool) => tool.name)).toEqual([
         CANVAS_UI_CLIENT_TOOL_NAME,
         LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
+        REQUEST_SECRET_TOOL_NAME,
       ]);
     });
 
@@ -883,6 +886,7 @@ describe("buildStartConversationRequest", () => {
         expectedTools: [
           CANVAS_UI_CLIENT_TOOL_NAME,
           LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
+          REQUEST_SECRET_TOOL_NAME,
         ],
       },
       {
@@ -890,6 +894,7 @@ describe("buildStartConversationRequest", () => {
         expectedTools: [
           CANVAS_UI_CLIENT_TOOL_NAME,
           LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
+          REQUEST_SECRET_TOOL_NAME,
           AUTOMATION_FORM_UPDATE_TOOL_NAME,
         ],
       },
@@ -917,6 +922,7 @@ describe("buildStartConversationRequest", () => {
       expect(payload.client_tools.map((tool) => tool.name)).toEqual([
         CANVAS_UI_CLIENT_TOOL_NAME,
         LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
+        REQUEST_SECRET_TOOL_NAME,
       ]);
     });
 
@@ -1486,46 +1492,42 @@ describe("buildRuntimeServicesSystemSuffix", () => {
     expect(suffix).toContain("Automation backend: not running");
   });
 
-  it("fetches runtime services from cached server_info when available", async () => {
+  it("reads server_info from the cached probe when available", async () => {
     mockGetCachedAgentServerInfo.mockReturnValue({
       version: "1.48.0",
-      runtime_services: {
-        mode: "docker",
-        services: {
-          agent_server: { url_from_agent: "http://127.0.0.1:18000" },
-          automation: {
-            url_from_agent: "http://127.0.0.1:8000",
-            api_prefix: "/api/automation",
-            auth_env_var: "OPENHANDS_AUTOMATION_API_KEY",
-          },
-        },
-      },
+      execution_runtime: "docker",
     });
 
-    const info = await fetchBackendRuntimeServicesInfo();
+    const runtime = await fetchBackendExecutionRuntime();
 
-    expect(info?.mode).toBe("docker");
-    expect(info?.services?.automation?.url_from_agent).toBe(
-      "http://127.0.0.1:8000",
-    );
+    expect(runtime).toBe("docker");
     expect(mockGetServerInfo).not.toHaveBeenCalled();
   });
 
-  it("fetches runtime services from /server_info when there is no cached probe", async () => {
+  it("fetches /server_info when there is no cached probe", async () => {
     mockGetServerInfo.mockResolvedValue({
       version: "1.48.0",
-      runtime_services: {
-        mode: "dev:automation",
-        services: {
-          agent_server: { url_from_agent: "http://localhost:18000" },
-        },
-      },
+      execution_runtime: "local",
     });
 
-    const info = await fetchBackendRuntimeServicesInfo();
+    const runtime = await fetchBackendExecutionRuntime();
 
-    expect(info?.mode).toBe("dev:automation");
+    expect(runtime).toBe("local");
     expect(mockGetServerInfo).toHaveBeenCalledOnce();
+  });
+
+  it("reports the per-launch LLM override from server capabilities", async () => {
+    mockGetCachedAgentServerInfo.mockReturnValue({
+      version: "1.54.0",
+      capabilities: ["tool_catalog_v1"],
+    });
+    await expect(backendSupportsLaunchLlmOverride()).resolves.toBe(false);
+
+    mockGetCachedAgentServerInfo.mockReturnValue({
+      version: "1.54.0",
+      capabilities: ["tool_catalog_v1", "agent_launch_pipeline_v1"],
+    });
+    await expect(backendSupportsLaunchLlmOverride()).resolves.toBe(true);
   });
 });
 
@@ -1995,37 +1997,32 @@ describe("buildStartConversationRequest — ACP discriminator", () => {
     expect(payload.agent_settings.acp_command).toEqual([]);
   });
 
-  it("seeds the provider default when settings contains an empty acp_model", () => {
-    // The form may carry an empty string after a user clears the model
-    // input. Older behavior left ``acp_model`` absent and relied on the
-    // agent-server's own default; the registry-default path
-    // (resolveEffectiveAcpModel) is now authoritative on Canvas's side,
-    // so an empty string resolves to the provider's ``default_model``
-    // before the request leaves the client. Keeps the displayed Settings
-    // → Agent default in sync with what the runtime actually starts.
-    const payload = buildStartConversationRequest({
-      settings: {
-        ...DEFAULT_SETTINGS,
-        agent_settings: {
-          schema_version: 1,
-          agent_kind: "acp",
-          acp_server: "claude-code",
-          acp_command: [],
-          acp_model: "",
+  it.each([
+    ["claude-code", undefined],
+    ["gemini-cli", ACP_VERTEX_SAFE_MODEL],
+  ])(
+    "leaves an empty %s acp_model to the agent unless Canvas prefers one",
+    (acpServer, expected) => {
+      const payload = buildStartConversationRequest({
+        settings: {
+          ...DEFAULT_SETTINGS,
+          agent_settings: {
+            schema_version: 1,
+            agent_kind: "acp",
+            acp_server: acpServer,
+            acp_command: [],
+            acp_model: "",
+          },
         },
-      },
-    }) as {
-      agent_settings: Record<string, unknown> & { acp_model?: unknown };
-    };
+      }) as {
+        agent_settings: Record<string, unknown> & { acp_model?: unknown };
+      };
 
-    expect(payload.agent_settings.acp_model).toBe("opus[1m]");
-  });
+      expect(payload.agent_settings.acp_model).toBe(expected);
+    },
+  );
 
   it("omits acp_model for the custom preset when none is configured", () => {
-    // The Custom preset has no registered ``default_model``, so an empty
-    // ``acp_model`` falls through to ``undefined`` — the agent-server then
-    // applies its own default. Distinct from the built-in providers
-    // which substitute their registry default.
     const payload = buildStartConversationRequest({
       settings: {
         ...DEFAULT_SETTINGS,
