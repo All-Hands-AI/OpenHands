@@ -72,8 +72,12 @@ cheaper than the next and catches a different kind of rot.
    results, as [maintenance.md](maintenance.md) step 2 describes. The delta
    pass has a second half: every bullet whose Gotchas or Known failure note
    links an issue that closed since `BASE` (check each linked issue's state)
-   is re-driven too, its row recorded and its note updated. A fix that landed
-   in the Agent Server or the automation service shows up only this way.
+   is re-driven too, its row recorded and its note updated (a note with a
+   `known-bug` block is re-driven with `control-openhands bug run <ID>`; an
+   `xpass` goes to map review per [maintenance.md](maintenance.md) step 5). A fix that landed
+   in the Agent Server or the automation service shows up only this way. So is
+   every open `bug` issue opened since `BASE` that names a mapped feature: it
+   is reproduced and gets its note, so bugs filed outside a pass reach the map.
 3. **Smoke (every family, cheaply).** For each family not already driven in
    tier 2: open its first entry point, run the family's `errors --app-only`
    sweep, and drive the one bullet that proves the page's main state (a list
@@ -111,7 +115,8 @@ ledger>` when that ledger is at hand. Fail and blocked rows come first; the
 
 Triage as the skill does: map drift (fix, with live evidence), harness gap
 (extend the CLI, re-drive), product defect (keep the evidence, search issues,
-file in the owning repository, keep it out of the map PR), blocked (name the
+file in the owning repository, and add its Known failure note to the map PR;
+the fix stays out), blocked (name the
 prerequisite and the route). At most one PR of proven map and CLI corrections
 per pass, from current `main` (or from the previous pass's branch while its
 PR is open), carrying the moved baseline line and saying "delta" in its
@@ -135,4 +140,5 @@ names no run, revision or entry point does not count; a gap is not a pass.
   behavior without touching this repository.
 - Not CI: a green Playwright run or a passing `map check` is an input to a
   verdict, never the verdict.
-- Not a bug-fix lane: product defects are filed, not fixed, inside the pass.
+- Not a bug-fix lane: product defects are filed and mapped, not fixed, inside
+  the pass.
