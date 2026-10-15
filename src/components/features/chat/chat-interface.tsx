@@ -17,6 +17,7 @@ import { AgentState } from "#/types/agent-state";
 import { useFilteredEvents } from "#/hooks/use-filtered-events";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { useFollowStreamingReply } from "#/hooks/use-follow-streaming-reply";
+import { useIsRevealingStreamedText } from "#/hooks/use-streamed-text";
 import { useEventStore } from "#/stores/use-event-store";
 import { isStreamingDeltaEvent } from "#/types/agent-server/type-guards";
 import { useLoadOlderEvents } from "#/hooks/use-load-older-events";
@@ -464,10 +465,13 @@ export function ChatInterface({
   ]);
 
   // A streamed reply grows inside one event, which the effect above does not
-  // see; follow it frame by frame while the user is pinned to the bottom.
-  const isStreamingReply = useEventStore((state) =>
+  // see; follow it frame by frame while the user is pinned to the bottom. The
+  // reveal can still be typing out after the stream has finished.
+  const hasStreamingSlot = useEventStore((state) =>
     state.uiEvents.some(isStreamingDeltaEvent),
   );
+  const isRevealingStreamedText = useIsRevealingStreamedText();
+  const isStreamingReply = hasStreamingSlot || isRevealingStreamedText;
   const isRestoringScrollPosition = React.useCallback(
     () => preserveScrollPosition.current !== null,
     [],

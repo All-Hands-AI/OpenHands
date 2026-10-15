@@ -1,6 +1,9 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { act, renderHook } from "@testing-library/react";
-import { useStreamedText } from "#/hooks/use-streamed-text";
+import {
+  useIsRevealingStreamedText,
+  useStreamedText,
+} from "#/hooks/use-streamed-text";
 
 /** Drive `requestAnimationFrame` by hand so the reveal cadence is explicit. */
 function manualFrames() {
@@ -67,8 +70,10 @@ describe("useStreamedText", () => {
     expect(result.current.length).toBeGreaterThan("Hi".length);
     expect(result.current.length).toBeLessThan(202);
 
-    // It still catches up: the backlog drains within a short window.
-    frames.tick(40);
+    // At ~120 chars/s, 200 characters take about 1.7s rather than one burst.
+    frames.tick(60);
+    expect(result.current.length).toBeLessThan(150);
+    frames.tick(50);
     expect(result.current).toBe(`Hi${"x".repeat(200)}`);
     expect(frames.pending()).toBe(0);
   });
@@ -100,20 +105,42 @@ describe("useStreamedText", () => {
     expect(steps.filter((step) => step === 0).length).toBeLessThanOrEqual(1);
   });
 
-  it("catches up on a burst larger than the usual chunk", () => {
+  it("caps the pace for a fast model but never trails it far", () => {
     const { result, rerender } = renderHook(
       ({ text }) => useStreamedText(text),
       { initialProps: { text: "" } },
     );
-    // Learn a slow rate, then deliver a large burst.
-    for (let i = 1; i <= 3; i += 1) {
-      rerender({ text: "x".repeat(i * 5) });
-      frames.tick(13);
-    }
-    rerender({ text: "x".repeat(15 + 600) });
-    // Drained within roughly the lag cap, not at the slow rate (~2 minutes).
+    // A model streaming ~600 chars/s, one 10-char chunk per frame.
+    let length = 0;
+    const stream = (frameCount: number) => {
+      for (let f = 0; f < frameCount; f += 1) {
+        length += 10;
+        rerender({ text: "x".repeat(length) });
+        frames.tick();
+      }
+    };
+
+    stream(62); // ~1s
+    // Revealed at a reading pace, not at the model's 600 chars/s.
+    expect(result.current.length).toBeLessThan(200);
+
+    stream(560); // ~10s in total
+    // Past a few seconds' backlog it speeds up, so it stays within ~5s.
+    expect(length - result.current.length).toBeLessThan(600 * 5);
+  });
+
+  it("reports while text is still being revealed", () => {
+    const revealing = renderHook(() => useIsRevealingStreamedText());
+    const { rerender } = renderHook(({ text }) => useStreamedText(text), {
+      initialProps: { text: "Hi" },
+    });
+    expect(revealing.result.current).toBe(false);
+
+    rerender({ text: `Hi${"x".repeat(40)}` });
+    expect(revealing.result.current).toBe(true);
+
     frames.tick(40);
-    expect(result.current.length).toBe(615);
+    expect(revealing.result.current).toBe(false);
   });
 
   it("snaps when the text is not an extension of what is shown", () => {

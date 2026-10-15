@@ -1,18 +1,18 @@
 import React from "react";
 
 /**
- * Window over which a backlog is drained before the arrival rate is known.
- * Short enough that the text never visibly trails the model, long enough that
- * a burst of tokens reads as typing rather than as a paste.
+ * Fastest steady reveal, in characters per millisecond (120 chars/s). Fast
+ * models deliver several hundred characters a second; revealing at that pace
+ * reads as text being dumped rather than written.
  */
-const DRAIN_WINDOW_MS = 120;
+const MAX_PACE = 0.12;
 
 /**
- * Once the rate is known, the backlog is still drained at least this fast, so
- * a burst bigger than the usual chunk cannot leave the text trailing far
- * behind the model.
+ * How far the reveal may trail the model before it speeds up beyond
+ * `MAX_PACE`: past this backlog, it drains at least `backlog / MAX_LAG_MS`, so
+ * a long reply from a fast model never ends up more than a few seconds behind.
  */
-const MAX_LAG_MS = 250;
+const MAX_LAG_MS = 5000;
 
 /** Weight of the newest inter-arrival sample in the rate estimate. */
 const RATE_SMOOTHING = 0.3;
@@ -23,26 +23,60 @@ const MAX_ARRIVAL_GAP_MS = 1000;
 const now = () =>
   typeof performance !== "undefined" ? performance.now() : Date.now();
 
+// Hooks that are still revealing text, so the chat can keep following a reply
+// that is still typing out after its stream has already finished.
+const revealing = new Set<symbol>();
+const revealingListeners = new Set<() => void>();
+
+const setRevealing = (id: symbol, isRevealing: boolean) => {
+  const wasRevealing = revealing.size > 0;
+  if (isRevealing) {
+    revealing.add(id);
+  } else {
+    revealing.delete(id);
+  }
+  if (wasRevealing !== revealing.size > 0) {
+    revealingListeners.forEach((listener) => listener());
+  }
+};
+
+const subscribeRevealing = (listener: () => void) => {
+  revealingListeners.add(listener);
+  return () => {
+    revealingListeners.delete(listener);
+  };
+};
+
+/** Whether any streamed text is still being revealed on screen. */
+export function useIsRevealingStreamedText(): boolean {
+  return React.useSyncExternalStore(
+    subscribeRevealing,
+    () => revealing.size > 0,
+    () => false,
+  );
+}
+
 /**
  * Reveal `target` on a clock rather than at the granularity the network
  * happened to deliver it (#15493).
  *
- * Text is revealed at the rate it has been arriving, so chunks that land in
- * bursts read as a steady stream instead of a jump followed by a pause; a
- * backlog larger than that rate covers is drained within `MAX_LAG_MS`. Text
+ * Text is revealed at the rate it has been arriving, capped at `MAX_PACE`, so
+ * chunks that land in bursts read as steady writing instead of a jump followed
+ * by a pause; only a backlog worth more than `MAX_LAG_MS` speeds it up. Text
  * that is not an extension of what is already on screen (a superseding retry,
  * or a different slot) snaps immediately rather than being re-typed.
  */
 export function useStreamedText(target: string): string {
   const [revealed, setRevealed] = React.useState(target);
   const revealedRef = React.useRef(target);
-  // Fractional reveal position, so a rate of e.g. 3.4 characters per frame
-  // advances evenly instead of rounding up to 4 every frame and stalling.
+  // Fractional reveal position, so a pace of e.g. 1.9 characters per frame
+  // advances evenly instead of rounding every frame.
   const positionRef = React.useRef(target.length);
   const frameRef = React.useRef<number | null>(null);
   const arrivalRef = React.useRef<{ length: number; at: number } | null>(null);
   // Characters per millisecond, or null until two arrivals were seen.
   const rateRef = React.useRef<number | null>(null);
+  const [revealId] = React.useState(() => Symbol("streamed-text"));
 
   React.useEffect(() => {
     const commit = (next: string) => {
@@ -86,15 +120,9 @@ export function useStreamedText(target: string): string {
       lastTick = frameTime;
 
       const backlog = target.length - positionRef.current;
-      const rate = rateRef.current;
-      const step =
-        rate === null
-          ? (backlog * elapsed) / DRAIN_WINDOW_MS
-          : Math.max(rate * elapsed, (backlog * elapsed) / MAX_LAG_MS);
-      const position = Math.min(
-        target.length,
-        positionRef.current + Math.max(step, 1),
-      );
+      const pace = Math.min(rateRef.current ?? MAX_PACE, MAX_PACE);
+      const step = Math.max(pace, backlog / MAX_LAG_MS) * elapsed;
+      const position = Math.min(target.length, positionRef.current + step);
       const nextLength = Math.floor(position);
       if (nextLength !== revealedRef.current.length) {
         commit(target.slice(0, nextLength));
@@ -103,17 +131,21 @@ export function useStreamedText(target: string): string {
 
       if (nextLength < target.length) {
         frameRef.current = requestAnimationFrame(tick);
+      } else {
+        setRevealing(revealId, false);
       }
     };
 
+    setRevealing(revealId, true);
     frameRef.current = requestAnimationFrame(tick);
     return () => {
+      setRevealing(revealId, false);
       if (frameRef.current !== null) {
         cancelAnimationFrame(frameRef.current);
         frameRef.current = null;
       }
     };
-  }, [target]);
+  }, [target, revealId]);
 
   return revealed;
 }

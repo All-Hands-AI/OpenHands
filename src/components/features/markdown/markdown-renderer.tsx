@@ -16,6 +16,7 @@ import { blockquote } from "./blockquote";
 import { hr } from "./horizontal-rule";
 import { remarkGithubAlerts } from "./remark-github-alerts";
 import { advanceStableMarkdownBoundary } from "#/utils/split-stable-markdown";
+import { RevealClock, rehypeFadeInWords } from "./rehype-fade-in-words";
 
 // Build a sanitize schema that extends rehype-sanitize's defaults with a
 // few markdown-friendly additions. The defaults strip `<script>`, event
@@ -121,7 +122,8 @@ interface MarkdownRendererProps {
   /**
    * The content is still being appended to (a streamed reply). Finished
    * blocks are then parsed once and only the tail is re-parsed per update,
-   * so a long reply does not cost a full parse every frame.
+   * so a long reply does not cost a full parse every frame. Newly revealed
+   * words fade in.
    */
   streaming?: boolean;
 }
@@ -145,16 +147,28 @@ function MarkdownBlockComponent({
   source,
   components,
   rehypePlugins,
+  clock,
+  blockStart,
 }: {
   source: string;
   components: Components;
   rehypePlugins: PluggableList | undefined;
+  /** Set while streaming: fade in words as they are revealed. */
+  clock: RevealClock | undefined;
+  blockStart: number;
 }) {
+  const plugins = React.useMemo<PluggableList | undefined>(
+    () =>
+      clock
+        ? [...(rehypePlugins ?? []), [rehypeFadeInWords, { clock, blockStart }]]
+        : rehypePlugins,
+    [rehypePlugins, clock, blockStart],
+  );
   return (
     <Markdown
       components={components}
       remarkPlugins={remarkPlugins}
-      rehypePlugins={rehypePlugins}
+      rehypePlugins={plugins}
     >
       {source}
     </Markdown>
@@ -165,28 +179,43 @@ const MarkdownBlock = React.memo(MarkdownBlockComponent);
 
 /**
  * Split streamed markdown into its stable blocks plus the tail, remembering
- * the boundaries so each update parses only the text after the last one. Text
- * that is not an extension of the previous render (a retry) starts over.
+ * the boundaries so each update parses only the text after the last one, and
+ * record when each part was revealed. Text that is not an extension of the
+ * previous render (a retry) starts over, shown at once.
  */
 function useStreamedMarkdownBlocks(text: string, streaming: boolean) {
   const previousRef = React.useRef({ text: "", offsets: [0] });
+  const clockRef = React.useRef<RevealClock | null>(null);
+  if (clockRef.current === null) {
+    clockRef.current = new RevealClock();
+  }
+  const clock = clockRef.current;
 
-  return React.useMemo(() => {
+  const blocks = React.useMemo(() => {
     if (!streaming) {
-      return [text];
+      return [{ source: text, start: 0 }];
     }
     const previous = previousRef.current;
-    const offsets = text.startsWith(previous.text)
-      ? [...previous.offsets]
-      : [0];
+    const isExtension = text.startsWith(previous.text);
+    if (isExtension) {
+      clock.advance(text.length);
+    } else {
+      clock.reset(text.length);
+    }
+    const offsets = isExtension ? [...previous.offsets] : [0];
     const last = offsets[offsets.length - 1];
     const boundary = advanceStableMarkdownBoundary(text, last);
     if (boundary > last) {
       offsets.push(boundary);
     }
     previousRef.current = { text, offsets };
-    return offsets.map((start, index) => text.slice(start, offsets[index + 1]));
-  }, [text, streaming]);
+    return offsets.map((start, index) => ({
+      source: text.slice(start, offsets[index + 1]),
+      start,
+    }));
+  }, [text, streaming, clock]);
+
+  return { blocks, clock: streaming ? clock : undefined };
 }
 
 /**
@@ -241,7 +270,7 @@ function MarkdownRendererComponent({
     [customComponents, includeStandard, includeHeadings],
   );
 
-  const blocks = useStreamedMarkdownBlocks(
+  const { blocks, clock } = useStreamedMarkdownBlocks(
     content ?? children ?? "",
     streaming,
   );
@@ -252,7 +281,7 @@ function MarkdownRendererComponent({
   // spacing) matches the finished message rendered in one piece.
   return (
     <div data-testid="markdown-renderer">
-      {blocks.map((source, index) => (
+      {blocks.map(({ source, start }, index) => (
         // Blocks only ever append, so the index is a stable identity.
         <React.Fragment key={index}>
           {index > 0 && "\n"}
@@ -260,6 +289,8 @@ function MarkdownRendererComponent({
             source={source}
             components={components}
             rehypePlugins={rehypePlugins}
+            clock={clock}
+            blockStart={start}
           />
         </React.Fragment>
       ))}

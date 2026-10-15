@@ -46,11 +46,15 @@ describe("MarkdownRenderer while streaming", () => {
    * React updating a node in place can leave an emptied `style=""`, split
    * text nodes, or a different attribute order than a fresh render; none of
    * it changes what is shown, so compare DOM equality (attribute
-   * order-insensitive) with those normalized away.
+   * order-insensitive) with those normalized away. The per-word fade spans
+   * exist only while streaming, so they are unwrapped too.
    */
   const rendersSame = (actual: Element, expected: Element) => {
     const normalized = (element: Element) => {
       const clone = element.cloneNode(true) as Element;
+      clone
+        .querySelectorAll("[data-stream-word]")
+        .forEach((span) => span.replaceWith(...span.childNodes));
       clone
         .querySelectorAll('[style=""]')
         .forEach((node) => node.removeAttribute("style"));
