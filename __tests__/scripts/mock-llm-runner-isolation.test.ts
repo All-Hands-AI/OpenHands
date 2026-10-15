@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
+import { createServer, type AddressInfo, type Server } from "node:net";
 import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 import {
@@ -9,8 +10,26 @@ import {
   existsSync,
   rmSync,
 } from "node:fs";
+import {
+  allocateMockLlmPorts,
+  MOCK_LLM_PORT_SNAPSHOT_ENV,
+} from "../../tests/e2e/mock-llm/utils/allocate-mock-llm-ports";
 import globalTeardown from "../../tests/e2e/mock-llm/utils/global-teardown";
 import { uvCacheEnvForIsolatedHome } from "../../tests/e2e/mock-llm/utils/uv-cache-env";
+
+function listen(port: number): Promise<Server> {
+  return new Promise((resolve, reject) => {
+    const server = createServer();
+    server.once("error", reject);
+    server.listen(port, "127.0.0.1", () => resolve(server));
+  });
+}
+
+function closeServer(server: Server): Promise<void> {
+  return new Promise((resolve) => {
+    server.close(() => resolve());
+  });
+}
 
 describe("mock-LLM runner isolation", () => {
   const originalEnv = { ...process.env };
@@ -74,6 +93,122 @@ describe("mock-LLM runner isolation", () => {
           ".openhands",
           "skills",
         ),
+      );
+    });
+  });
+
+  describe("port allocation across config evaluations", () => {
+    const servers: Server[] = [];
+
+    afterEach(async () => {
+      await Promise.all(servers.splice(0).map((server) => closeServer(server)));
+    });
+
+    it("reuses the first ports when a later evaluation finds them busy", async () => {
+      const env: NodeJS.ProcessEnv = {};
+      const specs = [
+        {
+          name: "ingress" as const,
+          envName: "MOCK_LLM_INGRESS_PORT",
+          preferred: 0,
+        },
+        { name: "mockLlm" as const, envName: "MOCK_LLM_PORT", preferred: 0 },
+      ];
+
+      const first = await allocateMockLlmPorts(specs, "npm", env);
+      servers.push(
+        await listen(Number(first.ingress)),
+        await listen(Number(first.mockLlm)),
+      );
+
+      const second = await allocateMockLlmPorts(
+        specs.map((spec) => ({
+          ...spec,
+          preferred: Number(first[spec.name]),
+        })),
+        "npm",
+        env,
+      );
+
+      expect(second).toEqual(first);
+      expect(env.MOCK_LLM_INGRESS_PORT).toBe(first.ingress);
+      expect(env.MOCK_LLM_PORT).toBe(first.mockLlm);
+    });
+
+    it("keeps an explicit preferred port on the first allocation", async () => {
+      const held = await listen(0);
+      const preferred = (held.address() as AddressInfo).port;
+      await closeServer(held);
+
+      const env: NodeJS.ProcessEnv = {};
+      const allocated = await allocateMockLlmPorts(
+        [
+          {
+            name: "ingress",
+            envName: "MOCK_LLM_INGRESS_PORT",
+            preferred,
+          },
+        ],
+        "npm",
+        env,
+      );
+
+      expect(allocated.ingress).toBe(String(preferred));
+      expect(JSON.parse(env[MOCK_LLM_PORT_SNAPSHOT_ENV] ?? "")).toEqual({
+        scope: "npm",
+        ports: { ingress: preferred },
+      });
+    });
+
+    it("does not reallocate when the snapshot is missing a requested port", async () => {
+      const env: NodeJS.ProcessEnv = {
+        [MOCK_LLM_PORT_SNAPSHOT_ENV]: JSON.stringify({
+          scope: "npm",
+          ports: { ingress: 18300 },
+        }),
+        MOCK_LLM_PORT: "9999",
+      };
+
+      await expect(
+        allocateMockLlmPorts(
+          [
+            {
+              name: "ingress",
+              envName: "MOCK_LLM_INGRESS_PORT",
+              preferred: 1,
+            },
+            { name: "mockLlm", envName: "MOCK_LLM_PORT", preferred: 1 },
+          ],
+          "npm",
+          env,
+        ),
+      ).rejects.toThrow(/mockLlm/);
+      expect(env.MOCK_LLM_PORT).toBe("9999");
+    });
+
+    it("allocates again when the snapshot belongs to the other config", async () => {
+      const env: NodeJS.ProcessEnv = {
+        [MOCK_LLM_PORT_SNAPSHOT_ENV]: JSON.stringify({
+          scope: "npm",
+          ports: { ingress: 1 },
+        }),
+      };
+
+      const allocated = await allocateMockLlmPorts(
+        [
+          {
+            name: "ingress",
+            envName: "MOCK_LLM_INGRESS_PORT",
+            preferred: 0,
+          },
+        ],
+        "docker",
+        env,
+      );
+
+      expect(allocated.ingress).not.toBe("1");
+      expect(JSON.parse(env[MOCK_LLM_PORT_SNAPSHOT_ENV] ?? "").scope).toBe(
+        "docker",
       );
     });
   });
