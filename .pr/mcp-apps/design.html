@@ -521,6 +521,7 @@
           <li><a href="#api">Additive API, unchanged events</a></li>
           <li><a href="#flow">Text stays; an App joins the card</a></li>
           <li><a href="#boundaries">Origins and sessions stay bound</a></li>
+          <li><a href="#locale">Live locale, one App session</a></li>
           <li><a href="#files">File-by-file changes</a></li>
           <li><a href="#evidence">What the prototype proves</a></li>
           <li><a href="#remaining">Production work remains explicit</a></li>
@@ -554,11 +555,11 @@
           <li>
             <a href="#artifact"
               ><span class="tag">Added</span>mcp-app-artifact.tsx</a
-            ><small>+285 / −0 · bound lifecycle</small>
+            ><small>+302 / −0 · bound lifecycle</small>
           </li>
           <li>
             <a href="#bridge"><span class="tag">Added</span>mcp-app-bridge.ts</a
-            ><small>+379 / −0 · official AppBridge</small>
+            ><small>+397 / −0 · official AppBridge</small>
           </li>
           <li>
             <a href="#sandbox"
@@ -593,11 +594,13 @@
             A trusted embedding can associate an MCP result with a
             <code>ui://</code> resource and render an interactive, isolated App
             beside the existing tool text. The change adds frontend contracts,
-            rendering, an official protocol bridge, and a local fixture.
+            rendering, an official protocol bridge, live locale adaptation, and
+            a local fixture.
           </p>
           <div class="meta">
             <span>Additive library API</span
             ><span>Self-contained HTML Apps</span
+            ><span>16 supported UI languages</span
             ><span>In-memory demo evidence</span
             ><span>Temporary review document</span>
           </div>
@@ -619,19 +622,19 @@
             Sources:
             <a
               class="src"
-              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/specs/mcp-apps.md#L3"
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/specs/mcp-apps.md#L3"
               >specs/mcp-apps.md:3</a
             >
             ·
             <a
               class="src"
-              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-host-context.tsx#L12"
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-host-context.tsx#L12"
               >mcp-app-host-context.tsx:12</a
             >
             ·
             <a
               class="src"
-              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/chat/tool-visualizers/dispatcher.tsx#L37"
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/chat/tool-visualizers/dispatcher.tsx#L37"
               >dispatcher.tsx:37</a
             >
           </p>
@@ -643,14 +646,14 @@
             requirement, or version floor is introduced.
             <a
               class="src"
-              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/types/mcp-app.ts#L14"
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/types/mcp-app.ts#L14"
               >src/types/mcp-app.ts:14</a
             >
             ·
             <a
               class="src"
-              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/specs/mcp-apps.md#L17"
-              >specs/mcp-apps.md:17</a
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/specs/mcp-apps.md#L18"
+              >specs/mcp-apps.md:18</a
             >
           </div>
           <div class="decision-grid">
@@ -660,14 +663,14 @@
                 Descriptor normalization, visible inline cards,
                 <code>resources/read</code> through an injected session,
                 <code>ui/initialize</code>, input/result delivery, optional
-                tool/context/message callbacks, origin checks, abort and
-                teardown.
+                tool/context/message callbacks, live locale context, origin
+                checks, abort and teardown.
               </p>
               <p class="sources">
                 <a
                   class="src"
-                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L139"
-                  >mcp-app-bridge.ts:139</a
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-bridge.ts#L147"
+                  >mcp-app-bridge.ts:147</a
                 >
               </p>
             </div>
@@ -682,14 +685,14 @@
               <p class="sources">
                 <a
                   class="src"
-                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/fixtures/mcp-apps/demo.tsx#L119"
-                  >demo.tsx:119</a
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/fixtures/mcp-apps/demo.tsx#L178"
+                  >demo.tsx:178</a
                 >
                 ·
                 <a
                   class="src"
-                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/specs/mcp-apps.md#L84"
-                  >specs/mcp-apps.md:84</a
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/specs/mcp-apps.md#L93"
+                  >specs/mcp-apps.md:93</a
                 >
               </p>
             </div>
@@ -712,13 +715,13 @@
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/types/mcp-app.ts#L14"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/types/mcp-app.ts#L14"
                 >after: frontend contracts</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation/index.ts#L9"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/conversation/index.ts#L9"
                 >after: library exports</a
               >
             </div>
@@ -753,7 +756,7 @@
               <p class="sources">
                 <a
                   class="src"
-                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/types/mcp-app.ts#L15"
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/types/mcp-app.ts#L15"
                   >src/types/mcp-app.ts:15</a
                 >
               </p>
@@ -769,19 +772,19 @@
           <p class="sources">
             <a
               class="src"
-              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-host-context.tsx#L18"
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-host-context.tsx#L18"
               >mcp-app-host-context.tsx:18</a
             >
             ·
             <a
               class="src"
-              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/messages.tsx#L77"
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/conversation-events/chat/messages.tsx#L77"
               >messages.tsx:77</a
             >
             ·
             <a
               class="src"
-              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/utils/mcp-app-descriptor.ts#L50"
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/utils/mcp-app-descriptor.ts#L50"
               >mcp-app-descriptor.ts:50</a
             >
           </p>
@@ -795,14 +798,14 @@
             Actual fixture usage:
             <a
               class="src"
-              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/fixtures/mcp-apps/demo.tsx#L91"
-              >demo.tsx:91</a
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/fixtures/mcp-apps/demo.tsx#L92"
+              >demo.tsx:92</a
             >
             ·
             <a
               class="src"
-              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/fixtures/mcp-apps/demo.tsx#L185"
-              >demo.tsx:185</a
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/fixtures/mcp-apps/demo.tsx#L249"
+              >demo.tsx:249</a
             >
           </p>
           <div class="table-scroll">
@@ -825,7 +828,7 @@
                     Injected API; no built-in endpoint.
                     <a
                       class="src"
-                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/types/mcp-app.ts#L77"
+                      href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/types/mcp-app.ts#L77"
                       >types/mcp-app.ts:77</a
                     >
                   </td>
@@ -837,7 +840,7 @@
                     Complete MCP resource result; HTML MIME checked by bridge.
                     <a
                       class="src"
-                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/types/mcp-app.ts#L57"
+                      href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/types/mcp-app.ts#L57"
                       >types/mcp-app.ts:57</a
                     >
                   </td>
@@ -853,14 +856,14 @@
                     Context/message support is text-only.
                     <a
                       class="src"
-                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L179"
-                      >mcp-app-bridge.ts:179</a
+                      href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-bridge.ts#L187"
+                      >mcp-app-bridge.ts:187</a
                     >
                     ·
                     <a
                       class="src"
-                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L263"
-                      >:263</a
+                      href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-bridge.ts#L271"
+                      >:271</a
                     >
                   </td>
                 </tr>
@@ -872,14 +875,14 @@
                     checked before and after callback awaits.
                     <a
                       class="src"
-                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/types/mcp-app.ts#L28"
+                      href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/types/mcp-app.ts#L28"
                       >types/mcp-app.ts:28</a
                     >
                     ·
                     <a
                       class="src"
-                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L219"
-                      >mcp-app-bridge.ts:219</a
+                      href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-bridge.ts#L227"
+                      >mcp-app-bridge.ts:227</a
                     >
                   </td>
                 </tr>
@@ -1065,7 +1068,7 @@
 
               <g>
                 <a
-                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/types/agent-server/core/base/observation.ts#L9"
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/types/agent-server/core/base/observation.ts#L9"
                 >
                   <rect
                     class="existing"
@@ -1086,7 +1089,7 @@
               </g>
               <g>
                 <a
-                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/types/mcp-app.ts#L21"
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/types/mcp-app.ts#L21"
                 >
                   <rect
                     class="new"
@@ -1117,7 +1120,7 @@
               />
               <g>
                 <a
-                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/utils/mcp-app-descriptor.ts#L50"
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/utils/mcp-app-descriptor.ts#L50"
                 >
                   <rect
                     class="new"
@@ -1147,7 +1150,7 @@
               />
               <g>
                 <a
-                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/event-message-components/generic-event-message-wrapper.tsx#L71"
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/conversation-events/chat/event-message-components/generic-event-message-wrapper.tsx#L71"
                 >
                   <rect
                     class="changed"
@@ -1180,7 +1183,7 @@
               />
               <g>
                 <a
-                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/chat/tool-visualizers/mcp/mcp.tsx#L19"
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/chat/tool-visualizers/mcp/mcp.tsx#L19"
                 >
                   <rect
                     class="existing"
@@ -1201,7 +1204,7 @@
               </g>
               <g>
                 <a
-                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.tsx#L31"
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-artifact.tsx#L33"
                 >
                   <rect
                     class="new"
@@ -1216,7 +1219,7 @@
                     Host.open(binding) → readResource
                   </text>
                   <text class="location" x="727" y="467">
-                    mcp-app-artifact.tsx:31
+                    mcp-app-artifact.tsx:33
                   </text>
                 </a>
               </g>
@@ -1227,7 +1230,7 @@
               />
               <g>
                 <a
-                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L139"
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-bridge.ts#L147"
                 >
                   <rect
                     class="new"
@@ -1245,7 +1248,7 @@
                     callbacks via session
                   </text>
                   <text class="location" x="430" y="579">
-                    mcp-app-bridge.ts:139 · public/mcp-app-sandbox.html:46 → Fig
+                    mcp-app-bridge.ts:147 · public/mcp-app-sandbox.html:46 → Fig
                     3
                   </text>
                 </a>
@@ -1261,19 +1264,19 @@
               observation. Exact rendering edges:
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/chat/tool-visualizers/dispatcher.tsx#L26"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/chat/tool-visualizers/dispatcher.tsx#L26"
                 >dispatcher.tsx:26</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/chat/tool-visualizers/mcp/mcp.tsx#L10"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/chat/tool-visualizers/mcp/mcp.tsx#L10"
                 >mcp.tsx:10</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/public/mcp-app-sandbox.html#L46"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/public/mcp-app-sandbox.html#L46"
                 >sandbox.html:46</a
               >
             </figcaption>
@@ -1346,7 +1349,7 @@
               />
               <g>
                 <a
-                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/group-events.ts#L46"
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/conversation-events/chat/group-events.ts#L46"
                 >
                   <rect
                     class="existing"
@@ -1363,7 +1366,7 @@
               </g>
               <g>
                 <a
-                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/event-message-components/generic-event-message-wrapper.tsx#L122"
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/conversation-events/chat/event-message-components/generic-event-message-wrapper.tsx#L122"
                 >
                   <rect
                     class="changed"
@@ -1382,7 +1385,7 @@
               </g>
               <g>
                 <a
-                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/group-events.ts#L91"
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/conversation-events/chat/group-events.ts#L91"
                 >
                   <rect
                     class="existing"
@@ -1412,13 +1415,13 @@
               the source action’s reasoning survives. Evidence:
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/__tests__/components/conversation-events/chat/group-events.test.ts#L296"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/__tests__/components/conversation-events/chat/group-events.test.ts#L296"
                 >group-events.test.ts:296</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/__tests__/components/conversation-events/chat/messages-stable-event-props.test.tsx#L127"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/__tests__/components/conversation-events/chat/messages-stable-event-props.test.tsx#L127"
                 >messages-stable-event-props.test.tsx:127</a
               >
             </figcaption>
@@ -1435,25 +1438,25 @@
             <div class="inside sources">
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.tsx#L72"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-artifact.tsx#L80"
                 >binding and writable owner</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L40"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-bridge.ts#L48"
                 >SandboxTransport</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/public/mcp-app-sandbox.html#L23"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/public/mcp-app-sandbox.html#L23"
                 >trusted proxy</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/scripts/mcp-app-sandbox.mjs#L15"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/scripts/mcp-app-sandbox.mjs#L15"
                 >sandbox server headers</a
               >
             </div>
@@ -1504,7 +1507,7 @@
               </g>
               <g>
                 <a
-                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.tsx#L72"
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-artifact.tsx#L80"
                 >
                   <rect
                     class="new"
@@ -1524,7 +1527,7 @@
                     eventId · actionId · toolCallId · toolName · URI
                   </text>
                   <text class="location" x="56" y="167">
-                    mcp-app-artifact.tsx:72 / types/mcp-app.ts:40
+                    mcp-app-artifact.tsx:80 / types/mcp-app.ts:40
                   </text>
                 </a>
               </g>
@@ -1535,7 +1538,7 @@
               />
               <g>
                 <a
-                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L185"
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-bridge.ts#L193"
                 >
                   <rect
                     class="new"
@@ -1552,13 +1555,13 @@
                     source === proxy window &amp; origin === sandbox origin
                   </text>
                   <text class="location" x="56" y="286">
-                    mcp-app-bridge.ts:185 / :56
+                    mcp-app-bridge.ts:193 / :64
                   </text>
                 </a>
               </g>
               <g>
                 <a
-                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L219"
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-bridge.ts#L227"
                 >
                   <rect
                     class="changed"
@@ -1578,7 +1581,7 @@
                     Writes require current writableConversationId === owner
                   </text>
                   <text class="location" x="56" y="461">
-                    mcp-app-bridge.ts:219 / artifact.tsx:85
+                    mcp-app-bridge.ts:227 / artifact.tsx:93
                   </text>
                   <text class="location" x="56" y="480">
                     mode switch revokes writes; never retargets the View
@@ -1616,7 +1619,7 @@
               </g>
               <g>
                 <a
-                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/public/mcp-app-sandbox.html#L45"
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/public/mcp-app-sandbox.html#L45"
                 >
                   <rect
                     class="new"
@@ -1686,7 +1689,7 @@
               </g>
               <g>
                 <a
-                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/public/mcp-app-sandbox.html#L52"
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/public/mcp-app-sandbox.html#L52"
                 >
                   <rect
                     class="new"
@@ -1715,13 +1718,13 @@
                 "*" is used only toward the opaque inner document.
               </text>
               <a
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/public/mcp-app-sandbox.html#L68"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/public/mcp-app-sandbox.html#L68"
               >
                 <text class="location" x="578" y="473">sandbox.html:68–77</text>
               </a>
               <text class="location" x="22" y="545">
                 Sandbox URL must be HTTP(S), distinct from Canvas, and free of
-                userinfo (artifact.tsx:123 / bridge.ts:144).
+                userinfo (artifact.tsx:132 / bridge.ts:152).
               </text>
             </svg>
             <figcaption>
@@ -1731,13 +1734,13 @@
               from redirecting an App’s callbacks.
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.tsx#L85"
-                >artifact.tsx:85</a
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-artifact.tsx#L93"
+                >artifact.tsx:93</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/public/mcp-app-sandbox.html#L56"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/public/mcp-app-sandbox.html#L56"
                 >sandbox.html:56</a
               >
             </figcaption>
@@ -1751,14 +1754,14 @@
             permissions are rejected.
             <a
               class="src"
-              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/specs/mcp-apps.md#L45"
-              >specs/mcp-apps.md:45</a
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/specs/mcp-apps.md#L46"
+              >specs/mcp-apps.md:46</a
             >
             ·
             <a
               class="src"
-              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L99"
-              >bridge.ts:99</a
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-bridge.ts#L107"
+              >bridge.ts:107</a
             >
           </div>
           <p>
@@ -1771,27 +1774,403 @@
           <p class="sources">
             <a
               class="src"
-              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.tsx#L111"
-              >artifact.tsx:111</a
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-artifact.tsx#L120"
+              >artifact.tsx:120</a
             >
             ·
             <a
               class="src"
-              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.tsx#L161"
-              >artifact.tsx:161</a
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-artifact.tsx#L171"
+              >artifact.tsx:171</a
             >
             ·
             <a
               class="src"
-              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L340"
-              >bridge.ts:340</a
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-bridge.ts#L348"
+              >bridge.ts:348</a
             >
           </p>
         </section>
 
+        <section id="locale">
+          <h2>
+            <span class="num">5</span>The App follows the Canvas language
+            without restarting
+          </h2>
+          <details>
+            <summary>Source manifest</summary>
+            <div class="inside">
+              <p class="sources">
+                <a
+                  class="src"
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-artifact.tsx#L34"
+                  >src/components/features/mcp-apps/mcp-app-artifact.tsx:34</a
+                >
+                ·
+                <a
+                  class="src"
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-bridge.ts#L193"
+                  >src/components/features/mcp-apps/mcp-app-bridge.ts:193</a
+                >
+                ·
+                <a
+                  class="src"
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/fixtures/mcp-apps/demo.tsx#L33"
+                  >src/fixtures/mcp-apps/demo.tsx:33</a
+                >
+                ·
+                <a
+                  class="src"
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/fixtures/mcp-apps/market-app.html#L385"
+                  >src/fixtures/mcp-apps/market-app.html:385</a
+                >
+                ·
+                <a
+                  class="src"
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/i18n/index.ts#L15"
+                  >src/i18n/index.ts:15</a
+                >
+              </p>
+            </div>
+          </details>
+          <p>
+            The Host uses the active Canvas i18n instance:
+            <code>resolvedLanguage</code>, then <code>language</code>, then
+            <code>en</code>. The initial <code>ui/initialize</code> response
+            carries <code>hostContext.locale</code>. Later changes call the
+            official <code>AppBridge.setHostContext()</code>, which delivers
+            <code>ui/notifications/host-context-changed</code> through the
+            already bound bridge. Language changes do not enter the
+            session-opening effect or repeat a resource fetch.
+          </p>
+          <p class="sources">
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-artifact.tsx#L35"
+              >resolved locale:35</a
+            >
+            ·
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-artifact.tsx#L157"
+              >initial/pending value:157</a
+            >
+            ·
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-artifact.tsx#L220"
+              >existing bridge update:220</a
+            >
+            ·
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-bridge.ts#L193"
+              >host context:193</a
+            >
+            ·
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-bridge.ts#L388"
+              >updateLocale:388</a
+            >
+          </p>
+          <figure class="fig">
+            <svg
+              viewBox="0 0 960 490"
+              role="img"
+              aria-labelledby="locale-title locale-desc"
+            >
+              <title id="locale-title">
+                Canvas locale to an existing MCP App session
+              </title>
+              <desc id="locale-desc">
+                The existing Canvas language feeds artifact initialization and
+                live context updates. The sample App updates text and direction
+                while preserving the session and tool values.
+              </desc>
+              <defs>
+                <marker
+                  id="locale-arrow"
+                  viewBox="0 0 10 10"
+                  refX="9"
+                  refY="5"
+                  markerWidth="7"
+                  markerHeight="7"
+                  orient="auto-start-reverse"
+                >
+                  <path d="M0,0 L10,5 L0,10 Z" fill="var(--warn)" />
+                </marker>
+              </defs>
+              <text class="heading" x="28" y="30">EXISTING CANVAS STATE</text>
+              <rect
+                class="existing"
+                x="28"
+                y="48"
+                width="270"
+                height="82"
+                rx="6"
+              />
+              <text class="title" x="46" y="74">
+                useTranslation("openhands")
+              </text>
+              <text class="detail" x="46" y="96">
+                resolvedLanguage → language → en
+              </text>
+              <a
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-artifact.tsx#L34"
+              >
+                <text class="location" x="46" y="116">
+                  mcp-app-artifact.tsx:34–40
+                </text>
+              </a>
+              <path
+                class="delta"
+                d="M298,89 H365"
+                marker-end="url(#locale-arrow)"
+              />
+              <rect class="pill" x="306" y="66" width="50" height="17" rx="4" />
+              <text class="label" x="331" y="78" text-anchor="middle">
+                locale
+              </text>
+              <rect class="new" x="365" y="48" width="565" height="82" rx="6" />
+              <text class="title" x="384" y="74">
+                MCPAppArtifact: currentLocale + mountedBridge
+              </text>
+              <text class="detail" x="384" y="96">
+                Commit current locale; pending load/connection uses the latest
+                value.
+              </text>
+              <a
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-artifact.tsx#L157"
+              >
+                <text class="location" x="384" y="116">
+                  mcp-app-artifact.tsx:157,191,220–223
+                </text>
+              </a>
+              <path
+                class="delta"
+                d="M500,130 V185"
+                marker-end="url(#locale-arrow)"
+              />
+              <path
+                class="delta"
+                d="M785,130 V185"
+                marker-end="url(#locale-arrow)"
+              />
+              <rect
+                class="pill"
+                x="442"
+                y="151"
+                width="116"
+                height="18"
+                rx="4"
+              />
+              <text class="label" x="500" y="164" text-anchor="middle">
+                initial handshake
+              </text>
+              <rect
+                class="pill"
+                x="731"
+                y="151"
+                width="109"
+                height="18"
+                rx="4"
+              />
+              <text class="label" x="785" y="164" text-anchor="middle">
+                later change
+              </text>
+              <rect
+                class="new"
+                x="365"
+                y="185"
+                width="270"
+                height="91"
+                rx="6"
+              />
+              <text class="title" x="383" y="211">hostContext.locale</text>
+              <text class="detail" x="383" y="233">
+                AppBridge initialization context
+              </text>
+              <a
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-bridge.ts#L193"
+              >
+                <text class="location" x="383" y="256">
+                  mcp-app-bridge.ts:193–199
+                </text>
+              </a>
+              <rect
+                class="changed"
+                x="660"
+                y="185"
+                width="270"
+                height="91"
+                rx="6"
+              />
+              <text class="title" x="678" y="211">
+                updateLocale → setHostContext
+              </text>
+              <text class="detail" x="678" y="233">
+                Preserve platform/display fields.
+              </text>
+              <a
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-bridge.ts#L388"
+              >
+                <text class="location" x="678" y="256">
+                  mcp-app-bridge.ts:388–395
+                </text>
+              </a>
+              <path
+                class="delta"
+                d="M500,276 V315 H643 V343"
+                marker-end="url(#locale-arrow)"
+              />
+              <path class="delta" d="M795,276 V315 H643" />
+              <rect
+                class="new"
+                x="365"
+                y="343"
+                width="565"
+                height="111"
+                rx="6"
+              />
+              <text class="title" x="384" y="369">Sample App: applyLocale</text>
+              <text class="detail" x="384" y="391">
+                Translate text, labels, payload copy, title, and operation
+                status.
+              </text>
+              <text class="detail" x="384" y="412">
+                Set lang/dir; keep price, symbol, private result, and active
+                session.
+              </text>
+              <a
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/fixtures/mcp-apps/market-app.html#L385"
+              >
+                <text class="location" x="384" y="436">
+                  market-app.html:385–408,432,458–463
+                </text>
+              </a>
+              <rect
+                class="concept"
+                x="28"
+                y="185"
+                width="270"
+                height="269"
+                rx="6"
+              />
+              <text class="title" x="46" y="212">Review fixture controls</text>
+              <text class="detail" x="46" y="236">
+                AvailableLanguages: all 16 locales
+              </text>
+              <text class="detail" x="46" y="258">
+                Default en; selector or ?lang=ar
+              </text>
+              <a
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/fixtures/mcp-apps/demo.tsx#L33"
+              >
+                <text class="location" x="46" y="282">
+                  demo.tsx:33–38,56–68,268–278
+                </text>
+              </a>
+              <text class="title" x="46" y="330">Inert translation data</text>
+              <text class="detail" x="46" y="354">
+                Catalog JSON escapes &lt; as \u003c.
+              </text>
+              <text class="detail" x="46" y="376">
+                No new sandbox permissions.
+              </text>
+              <a
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/fixtures/mcp-apps/demo.tsx#L39"
+              >
+                <text class="location" x="46" y="400">demo.tsx:39–53</text>
+              </a>
+            </svg>
+            <figcaption>
+              Fig 4 · Locale is presentation state on the existing bridge. The
+              base branch has no MCP App host; this flow is additive to the
+              session boundary in Fig 3.
+            </figcaption>
+          </figure>
+          <div class="callout">
+            ★ <strong>One session, live presentation:</strong> switching
+            languages keeps the refreshed tool value and session #1. Changes
+            during resource reads or bridge connection also reach the App;
+            disposal prevents further updates.
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-artifact.test.tsx#L159"
+              >artifact lifecycle tests:159</a
+            >
+            ·
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/tests/e2e/mcp-apps/host.spec.ts#L102"
+              >all-locale browser check:102</a
+            >
+          </div>
+          <p>
+            The local fixture uses all 16 entries in
+            <code>AvailableLanguages</code> and defaults to English. A Language
+            selector updates <code>?lang=</code>; invalid URL values fall back
+            to English. Its shell and sample App use the shared Canvas catalog,
+            including accessible labels. Arabic sets <code>dir="rtl"</code>; the
+            numeric chart retains left-to-right order.
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/fixtures/mcp-apps/demo.tsx#L33"
+              >fixture locale:33</a
+            >
+            ·
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/fixtures/mcp-apps/market-app.html#L385"
+              >App localization:385</a
+            >
+          </p>
+          <p>
+            The sample App receives a filtered catalog as inert JSON, escaping
+            <code>&lt;</code> before embedding it. It localizes its own
+            interface and simulated user payloads through text/attribute APIs.
+            Real server tool content remains verbatim, and third-party Apps are
+            responsible for applying the locale to their own UI.
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/fixtures/mcp-apps/demo.tsx#L39"
+              >inert catalog:39</a
+            >
+            ·
+            <a
+              class="src"
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/specs/mcp-apps.md#L87"
+              >third-party boundary:87</a
+            >
+          </p>
+          <details>
+            <summary>Locale API and verification</summary>
+            <div class="inside">
+              <pre><code><span class="plus">+ mountMCPAppBridge({ ..., locale: currentLocale.current })</span>
+<span class="plus">+ mounted.updateLocale(locale) → AppBridge.setHostContext({ ...hostContext, locale })</span>
+<span class="plus">+ initialize: hostContext.locale</span>
+<span class="plus">+ later: ui/notifications/host-context-changed { locale }</span></code></pre>
+              <p class="sources">
+                <a
+                  class="src"
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/__tests__/components/features/mcp-apps/mcp-app-bridge.test.ts#L174"
+                  >protocol locale tests:174</a
+                >
+                ·
+                <a
+                  class="src"
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/tests/e2e/mcp-apps/host.spec.ts#L138"
+                  >URL, fallback, and RTL:138</a
+                >
+              </p>
+            </div>
+          </details>
+        </section>
+
         <section id="files">
           <h2>
-            <span class="num">5</span>File-by-file: small rendering changes
+            <span class="num">6</span>File-by-file: small rendering changes
             around a new host
           </h2>
           <p>
@@ -1815,25 +2194,25 @@
             <p class="sources">
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/types/mcp-app.ts#L15"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/types/mcp-app.ts#L15"
                 >IntegrationData:15</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/types/mcp-app.ts#L29"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/types/mcp-app.ts#L29"
                 >Scope:29</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/types/mcp-app.ts#L40"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/types/mcp-app.ts#L40"
                 >Binding:40</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/types/mcp-app.ts#L57"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/types/mcp-app.ts#L57"
                 >Session:57</a
               >
             </p>
@@ -1870,19 +2249,19 @@
             <p class="sources">
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/utils/mcp-app-descriptor.ts#L12"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/utils/mcp-app-descriptor.ts#L12"
                 >getResourceUri:12</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/utils/mcp-app-descriptor.ts#L50"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/utils/mcp-app-descriptor.ts#L50"
                 >getMCPAppDescriptor:50</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/utils/mcp-app-descriptor.test.ts#L47"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/utils/mcp-app-descriptor.test.ts#L47"
                 >ignores unpublished wire fields test:47</a
               >
             </p>
@@ -1917,19 +2296,19 @@
             <p class="sources">
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-host-context.tsx#L12"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-host-context.tsx#L12"
                 >default context:12</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-host-context.tsx#L26"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-host-context.tsx#L26"
                 >Provider:26</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-host-context.test.tsx#L79"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-host-context.test.tsx#L79"
                 >nested sidecar test:79</a
               >
             </p>
@@ -1969,7 +2348,7 @@
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/messages.tsx#L77"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/conversation-events/chat/messages.tsx#L77"
                 >after messages.tsx:77</a
               >
             </p>
@@ -2007,13 +2386,13 @@
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/group-events.ts#L46"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/conversation-events/chat/group-events.ts#L46"
                 >after group-events.ts:46</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/group-events.ts#L129"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/conversation-events/chat/group-events.ts#L129"
                 >thought extraction:129</a
               >
             </p>
@@ -2023,13 +2402,13 @@
               follow that action's grouping policy.
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/group-events.ts#L63"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/conversation-events/chat/group-events.ts#L63"
                 >group-events.ts:63</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/group-events.ts#L123"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/conversation-events/chat/group-events.ts#L123"
                 >corresponding action:123</a
               >
             </p>
@@ -2075,13 +2454,13 @@
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/event-message-components/generic-event-message-wrapper.tsx#L76"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/conversation-events/chat/event-message-components/generic-event-message-wrapper.tsx#L76"
                 >sidecar lookup:76</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/event-message-components/generic-event-message-wrapper.tsx#L122"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/conversation-events/chat/event-message-components/generic-event-message-wrapper.tsx#L122"
                 >expansion/key:122</a
               >
             </p>
@@ -2090,7 +2469,7 @@
               <code>titleTrailing</code>; App expansion does not replace it.
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/event-message-components/generic-event-message-wrapper.tsx#L136"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/conversation-events/chat/event-message-components/generic-event-message-wrapper.tsx#L136"
                 >wrapper.tsx:136</a
               >
             </p>
@@ -2127,19 +2506,19 @@
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/event-content-helpers/get-event-content.tsx#L316"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/conversation-events/chat/event-content-helpers/get-event-content.tsx#L316"
                 >after:316</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/event-content-helpers/get-event-content.tsx#L351"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/conversation-events/chat/event-content-helpers/get-event-content.tsx#L351"
                 >call shape:351</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation-events/chat/event-content-helpers/get-event-content.tsx#L356"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/conversation-events/chat/event-content-helpers/get-event-content.tsx#L356"
                 >rejected details:356</a
               >
             </p>
@@ -2178,7 +2557,7 @@
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/chat/tool-visualizers/dispatcher.tsx#L37"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/chat/tool-visualizers/dispatcher.tsx#L37"
                 >after dispatcher.tsx:37</a
               >
             </p>
@@ -2204,7 +2583,7 @@
             <p class="sources">
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/chat/tool-visualizers/mcp/mcp.tsx#L10"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/chat/tool-visualizers/mcp/mcp.tsx#L10"
                 >MCPBody:10</a
               >
             </p>
@@ -2221,38 +2600,40 @@
             <div class="file-title">
               <h3>MCPAppArtifact owns one bound lifecycle</h3>
               <span class="tag">Added</span
-              ><span class="counts">mcp-app-artifact.tsx · +285 / −0</span>
+              ><span class="counts">mcp-app-artifact.tsx · +302 / −0</span>
             </div>
             <p>
               The component selects the event’s main/planning owner, builds a
               trusted binding, validates the sandbox URL, opens a session, and
               reads the declared resource. It dynamically imports the bridge
               only after a resource arrives. A mode switch changes the write
-              predicate without redirecting the existing session.
+              predicate without redirecting the existing session. Locale updates
+              reach that same bridge, including changes while loading; see Fig
+              4.
             </p>
             <p class="sources">
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.tsx#L43"
-                >owner:43</a
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-artifact.tsx#L51"
+                >owner:51</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.tsx#L85"
-                >isWritable:85</a
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-artifact.tsx#L93"
+                >isWritable:93</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.tsx#L132"
-                >open/read:132</a
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-artifact.tsx#L141"
+                >open/read:141</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.tsx#L144"
-                >lazy import:144</a
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-artifact.tsx#L153"
+                >lazy import:153</a
               >
             </p>
             <p>
@@ -2264,13 +2645,13 @@
             <p class="sources">
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.tsx#L208"
-                >UI states:208</a
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-artifact.tsx#L225"
+                >UI states:225</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.module.css#L1"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-artifact.module.css#L1"
                 >height CSS:1</a
               >
             </p>
@@ -2290,7 +2671,7 @@
             <div class="file-title">
               <h3>The official AppBridge carries protocol semantics</h3>
               <span class="tag">Added</span
-              ><span class="counts">mcp-app-bridge.ts · +379 / −0</span>
+              ><span class="counts">mcp-app-bridge.ts · +397 / −0</span>
             </div>
             <p>
               <code>SandboxTransport</code> accepts JSON-RPC only from the exact
@@ -2301,20 +2682,20 @@
             <p class="sources">
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L56"
-                >receive:56</a
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-bridge.ts#L64"
+                >receive:64</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L94"
-                >resourceHTML:94</a
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-bridge.ts#L102"
+                >resourceHTML:102</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L156"
-                >full schema checks:156</a
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-bridge.ts#L164"
+                >full schema checks:164</a
               >
             </p>
             <p>
@@ -2328,20 +2709,20 @@
             <p class="sources">
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L247"
-                >callback routing:247</a
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-bridge.ts#L255"
+                >callback routing:255</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L219"
-                >invoke:219</a
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-bridge.ts#L227"
+                >invoke:227</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-bridge.ts#L304"
-                >initialized/data delivery:304</a
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-bridge.ts#L312"
+                >initialized/data delivery:312</a
               >
             </p>
             <details>
@@ -2378,19 +2759,19 @@
             <p class="sources">
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/public/mcp-app-sandbox.html#L25"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/public/mcp-app-sandbox.html#L25"
                 >parent origin:25</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/public/mcp-app-sandbox.html#L52"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/public/mcp-app-sandbox.html#L52"
                 >inner frame:52</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/public/mcp-app-sandbox.html#L72"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/public/mcp-app-sandbox.html#L72"
                 >inner message source:72</a
               >
             </p>
@@ -2421,25 +2802,25 @@
             <p class="sources">
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/scripts/mcp-app-sandbox.mjs#L16"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/scripts/mcp-app-sandbox.mjs#L16"
                 >server:16</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/scripts/mcp-app-sandbox.mjs#L26"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/scripts/mcp-app-sandbox.mjs#L26"
                 >packaged fallback:26</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/scripts/mcp-app-sandbox.mjs#L40"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/scripts/mcp-app-sandbox.mjs#L40"
                 >fixed path:40</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/scripts/mcp-app-sandbox.mjs#L50"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/scripts/mcp-app-sandbox.mjs#L50"
                 >CSP:50</a
               >
             </p>
@@ -2483,13 +2864,13 @@
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/routes/shared-conversation.tsx#L154"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/routes/shared-conversation.tsx#L154"
                 >after shared-conversation.tsx:154</a
               >
               ·
               <a
                 class="src"
-                href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/__tests__/routes/shared-conversation-viewer-behavior.test.tsx#L280"
+                href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/__tests__/routes/shared-conversation-viewer-behavior.test.tsx#L280"
                 >isolation test:280</a
               >
             </p>
@@ -2526,49 +2907,53 @@
                     <td>
                       <code>src/fixtures/mcp-apps/demo.tsx</code><br /><span
                         class="counts"
-                        >+394 / −0</span
+                        >+478 / −0</span
                       >
                     </td>
                     <td>
                       Canonical mock observation, independent map, real event
                       wrapper, in-memory Host, mode-change and origin-check
-                      controls. Host callbacks return local data or log strings.
+                      controls. All supported locales share the Canvas catalog;
+                      the fixture defaults to English and keeps its Host stable
+                      across language changes.
                     </td>
                     <td>
                       <a
                         class="src"
-                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/fixtures/mcp-apps/demo.tsx#L74"
-                        >event:74</a
+                        href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/fixtures/mcp-apps/demo.tsx#L72"
+                        >event:72</a
                       >
                       ·
                       <a
                         class="src"
-                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/fixtures/mcp-apps/demo.tsx#L119"
-                        >Host:119</a
+                        href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/fixtures/mcp-apps/demo.tsx#L178"
+                        >Host:178</a
                       >
                     </td>
                   </tr>
                   <tr>
                     <td>
                       <code>src/fixtures/mcp-apps/market-app.html</code
-                      ><br /><span class="counts">+442 / −0</span>
+                      ><br /><span class="counts">+511 / −0</span>
                     </td>
                     <td>
                       Self-contained sample App; explicit mock market UI, raw
                       ui/ JSON-RPC handshake/callbacks, private-result and
-                      isolation indicators, ResizeObserver height notifications.
+                      isolation indicators, live locale notifications,
+                      translated status/labels, RTL support, and ResizeObserver
+                      height notifications.
                     </td>
                     <td>
                       <a
                         class="src"
-                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/fixtures/mcp-apps/market-app.html#L335"
-                        >App script:335</a
+                        href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/fixtures/mcp-apps/market-app.html#L351"
+                        >App script:351</a
                       >
                       ·
                       <a
                         class="src"
-                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/fixtures/mcp-apps/market-app.html#L401"
-                        >resize/callbacks:401</a
+                        href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/fixtures/mcp-apps/market-app.html#L466"
+                        >resize/callbacks:466</a
                       >
                     </td>
                   </tr>
@@ -2587,13 +2972,13 @@
                     <td>
                       <a
                         class="src"
-                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/scripts/mcp-app-demo.mjs#L8"
+                        href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/scripts/mcp-app-demo.mjs#L8"
                         >origins:8</a
                       >
                       ·
                       <a
                         class="src"
-                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/scripts/mcp-app-demo.mjs#L14"
+                        href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/scripts/mcp-app-demo.mjs#L14"
                         >sandbox/Vite:14</a
                       >
                     </td>
@@ -2612,13 +2997,13 @@
                     <td>
                       <a
                         class="src"
-                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/fixtures/mcp-apps/demo.css#L1"
+                        href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/fixtures/mcp-apps/demo.css#L1"
                         >demo.css:1</a
                       >
                       ·
                       <a
                         class="src"
-                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/fixtures/mcp-apps/index.html#L1"
+                        href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/fixtures/mcp-apps/index.html#L1"
                         >index.html:1</a
                       >
                     </td>
@@ -2665,7 +3050,7 @@
                     <td>
                       <a
                         class="src"
-                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/conversation/index.ts#L9"
+                        href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/conversation/index.ts#L9"
                         >index.ts:9</a
                       >
                     </td>
@@ -2685,13 +3070,13 @@
                     <td>
                       <a
                         class="src"
-                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/package.json#L25"
+                        href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/package.json#L25"
                         >dependencies:25</a
                       >
                       ·
                       <a
                         class="src"
-                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/package.json#L109"
+                        href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/package.json#L109"
                         >scripts:109</a
                       >
                     </td>
@@ -2710,7 +3095,7 @@
                     <td>
                       <a
                         class="src"
-                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/package-lock.json#L1"
+                        href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/package-lock.json#L1"
                         >package-lock.json:1</a
                       >
                     </td>
@@ -2730,7 +3115,7 @@
                     <td>
                       <a
                         class="src"
-                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/vite.config.ts#L293"
+                        href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/vite.config.ts#L293"
                         >vite.config.ts:293</a
                       >
                     </td>
@@ -2740,16 +3125,17 @@
                       <code>src/i18n/translation.json</code><br /><span
                         class="tag mechanical"
                         >UI strings</span
-                      ><span class="counts">+72 / −0</span>
+                      ><span class="counts">+972 / −0</span>
                     </td>
                     <td>
-                      Adds title/loading/unavailable/error keys in all 16
-                      supported locales.
+                      Adds Host state copy plus 50 fixture and sample-App keys,
+                      each translated into all 16 supported locales;
+                      pre-existing translations remain unchanged.
                     </td>
                     <td>
                       <a
                         class="src"
-                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/i18n/translation.json#L2"
+                        href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/i18n/translation.json#L2"
                         >translation.json:2</a
                       >
                     </td>
@@ -2768,7 +3154,7 @@
                     <td>
                       <a
                         class="src"
-                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.module.css#L1"
+                        href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-artifact.module.css#L1"
                         >module.css:1</a
                       >
                     </td>
@@ -2787,7 +3173,7 @@
                     <td>
                       <a
                         class="src"
-                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/playwright.mcp-apps.config.ts#L5"
+                        href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/playwright.mcp-apps.config.ts#L5"
                         >config:5</a
                       >
                     </td>
@@ -2796,23 +3182,23 @@
                     <td>
                       <code>specs/mcp-apps.md</code> · feature
                       <code>README.md</code><br /><span class="tag">Added</span
-                      ><span class="counts">spec +90 / −0</span>
+                      ><span class="counts">spec +99 / −0</span>
                     </td>
                     <td>
-                      Four behavior IDs, boundary contracts, deployment/review
-                      instructions, and production follow-ups. README supplies
-                      the component map.
+                      Five behavior IDs, including MCA-005 locale adaptation,
+                      boundary contracts, deployment/review instructions, and
+                      production follow-ups. README supplies the component map.
                     </td>
                     <td>
                       <a
                         class="src"
-                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/specs/mcp-apps.md#L8"
+                        href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/specs/mcp-apps.md#L8"
                         >spec IDs:8</a
                       >
                       ·
                       <a
                         class="src"
-                        href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/README.md#L1"
+                        href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/README.md#L1"
                         >README:1</a
                       >
                     </td>
@@ -2825,7 +3211,7 @@
 
         <section id="evidence">
           <h2>
-            <span class="num">6</span>The evidence covers a real sandbox with
+            <span class="num">7</span>The evidence covers a real sandbox with
             mock backend data
           </h2>
           <p>
@@ -2839,24 +3225,26 @@
           <p class="sources">
             <a
               class="src"
-              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/fixtures/mcp-apps/demo.tsx#L129"
-              >readResource:129</a
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/fixtures/mcp-apps/demo.tsx#L188"
+              >readResource:188</a
             >
             ·
             <a
               class="src"
-              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/fixtures/mcp-apps/demo.tsx#L142"
-              >mock callbacks:142</a
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/fixtures/mcp-apps/demo.tsx#L201"
+              >mock callbacks:201</a
             >
           </p>
           <p>
-            <strong>Final feature validation:</strong> 115 focused Vitest tests,
-            144 additional compatibility tests, and all three Chromium
-            integration tests passed. The PR validation record holds the exact
-            commands, environment, builds, screenshots, and recording; these
-            counts apply to the source revision pinned by this page.
+            <strong>Locale increment validation:</strong> 43 focused Vitest
+            tests across six files, all five Chromium integration tests, and
+            TypeScript passed. Browser coverage switches through all 16
+            supported languages while preserving the refreshed price and active
+            session, and checks URL selection, unknown-language fallback, and
+            Arabic mobile RTL. The PR validation record holds the exact commands
+            and remaining build evidence.
             <a
-              href="https://github.com/FantasyChino/OpenHands/blob/e1ce2eaab2205760dd6b33b5db1b682ae7e5474c/.pr/mcp-apps/validation.md"
+              href="https://github.com/FantasyChino/OpenHands/blob/ba1a5e7e6a4f32dcbb93bf1698da5d3686a6d0e9/.pr/mcp-apps/validation.md"
               >Validation record</a
             >
           </p>
@@ -2871,6 +3259,23 @@
               </thead>
               <tbody>
                 <tr>
+                  <td>All supported locales share an existing session</td>
+                  <td>
+                    The browser suite includes switching every
+                    AvailableLanguages value, preserved refreshed price, URL
+                    fallback, and Arabic mobile RTL.
+                    <a
+                      class="src"
+                      href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/tests/e2e/mcp-apps/host.spec.ts#L102"
+                      >locale browser coverage:102</a
+                    >
+                  </td>
+                  <td>
+                    Localized fixture content only; external Apps must apply
+                    hostContext.locale themselves.
+                  </td>
+                </tr>
+                <tr>
                   <td>Text plus complete result in an isolated App</td>
                   <td>
                     Browser checks original text, input symbol, private
@@ -2878,8 +3283,8 @@
                     reflow.
                     <a
                       class="src"
-                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/tests/e2e/mcp-apps/host.spec.ts#L14"
-                      >host.spec.ts:14</a
+                      href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/tests/e2e/mcp-apps/host.spec.ts#L21"
+                      >host.spec.ts:21</a
                     >
                   </td>
                   <td>
@@ -2893,8 +3298,8 @@
                     rejects the next write without opening session #2.
                     <a
                       class="src"
-                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/tests/e2e/mcp-apps/host.spec.ts#L54"
-                      >host.spec.ts:54</a
+                      href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/tests/e2e/mcp-apps/host.spec.ts#L63"
+                      >host.spec.ts:63</a
                     >
                   </td>
                   <td>
@@ -2908,14 +3313,14 @@
                     tests also cover spoofed origin and malformed JSON-RPC.
                     <a
                       class="src"
-                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/tests/e2e/mcp-apps/host.spec.ts#L83"
-                      >host.spec.ts:83</a
+                      href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/tests/e2e/mcp-apps/host.spec.ts#L92"
+                      >host.spec.ts:92</a
                     >
                     ·
                     <a
                       class="src"
-                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/__tests__/components/features/mcp-apps/mcp-app-bridge.test.ts#L173"
-                      >bridge.test.ts:173</a
+                      href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/__tests__/components/features/mcp-apps/mcp-app-bridge.test.ts#L236"
+                      >bridge.test.ts:236</a
                     >
                   </td>
                   <td>No claim of a full adversarial sandbox audit.</td>
@@ -2929,13 +3334,13 @@
                     wire field alone is ignored.
                     <a
                       class="src"
-                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/__tests__/components/conversation-events/chat/messages-stable-event-props.test.tsx#L127"
+                      href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/__tests__/components/conversation-events/chat/messages-stable-event-props.test.tsx#L127"
                       >Messages test:127</a
                     >
                     ·
                     <a
                       class="src"
-                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/utils/mcp-app-descriptor.test.ts#L47"
+                      href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/utils/mcp-app-descriptor.test.ts#L47"
                       >descriptor test:47</a
                     >
                   </td>
@@ -2951,14 +3356,14 @@
                     close; component retries with fresh binding.
                     <a
                       class="src"
-                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/__tests__/components/features/mcp-apps/mcp-app-bridge.test.ts#L289"
-                      >bridge.test.ts:289</a
+                      href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/__tests__/components/features/mcp-apps/mcp-app-bridge.test.ts#L352"
+                      >bridge.test.ts:352</a
                     >
                     ·
                     <a
                       class="src"
-                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/src/components/features/mcp-apps/mcp-app-artifact.test.tsx#L128"
-                      >artifact.test.tsx:128</a
+                      href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/src/components/features/mcp-apps/mcp-app-artifact.test.tsx#L237"
+                      >artifact.test.tsx:237</a
                     >
                   </td>
                   <td>Unit lifecycle checks plus fixture browser behavior.</td>
@@ -2972,7 +3377,7 @@
                     provider.
                     <a
                       class="src"
-                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/__tests__/routes/shared-conversation-viewer-behavior.test.tsx#L280"
+                      href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/__tests__/routes/shared-conversation-viewer-behavior.test.tsx#L280"
                       >shared viewer test:280</a
                     >
                   </td>
@@ -2985,7 +3390,7 @@
                     <code>public/</code> is absent.
                     <a
                       class="src"
-                      href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/__tests__/scripts/mcp-app-sandbox.test.ts#L11"
+                      href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/__tests__/scripts/mcp-app-sandbox.test.ts#L11"
                       >sandbox.test.ts:11</a
                     >
                   </td>
@@ -3009,8 +3414,8 @@ npm run test:e2e:mcp-apps
               <p class="sources">
                 <a
                   class="src"
-                  href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/specs/mcp-apps.md#L71"
-                  >review instructions:71</a
+                  href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/specs/mcp-apps.md#L72"
+                  >review instructions:72</a
                 >
               </p>
             </div>
@@ -3023,29 +3428,29 @@ npm run test:e2e:mcp-apps
           </p>
           <p class="sources">
             <a
-              href="https://github.com/FantasyChino/OpenHands/blob/e1ce2eaab2205760dd6b33b5db1b682ae7e5474c/.pr/mcp-apps/validation.md"
+              href="https://github.com/FantasyChino/OpenHands/blob/ba1a5e7e6a4f32dcbb93bf1698da5d3686a6d0e9/.pr/mcp-apps/validation.md"
               >Validation record</a
             >
             ·
             <a
-              href="https://github.com/FantasyChino/OpenHands/blob/e1ce2eaab2205760dd6b33b5db1b682ae7e5474c/.pr/mcp-apps/desktop.png"
+              href="https://github.com/FantasyChino/OpenHands/blob/ba1a5e7e6a4f32dcbb93bf1698da5d3686a6d0e9/.pr/mcp-apps/desktop.png"
               >Desktop capture</a
             >
             ·
             <a
-              href="https://github.com/FantasyChino/OpenHands/blob/e1ce2eaab2205760dd6b33b5db1b682ae7e5474c/.pr/mcp-apps/mobile.png"
+              href="https://github.com/FantasyChino/OpenHands/blob/ba1a5e7e6a4f32dcbb93bf1698da5d3686a6d0e9/.pr/mcp-apps/mobile.png"
               >Mobile capture</a
             >
             ·
             <a
-              href="https://github.com/FantasyChino/OpenHands/blob/e1ce2eaab2205760dd6b33b5db1b682ae7e5474c/.pr/mcp-apps/interaction.webm"
+              href="https://github.com/FantasyChino/OpenHands/blob/ba1a5e7e6a4f32dcbb93bf1698da5d3686a6d0e9/.pr/mcp-apps/interaction.webm"
               >Interaction recording</a
             >
           </p>
         </section>
 
         <section id="remaining">
-          <h2><span class="num">7</span>Production work remains explicit</h2>
+          <h2><span class="num">8</span>Production work remains explicit</h2>
           <ol>
             <li>
               <strong>Published server/client contracts:</strong> preserve
@@ -3073,20 +3478,20 @@ npm run test:e2e:mcp-apps
             Declared follow-ups:
             <a
               class="src"
-              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/specs/mcp-apps.md#L84"
-              >specs/mcp-apps.md:84</a
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/specs/mcp-apps.md#L93"
+              >specs/mcp-apps.md:93</a
             >
             · callback policy:
             <a
               class="src"
-              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/specs/mcp-apps.md#L38"
-              >specs/mcp-apps.md:38</a
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/specs/mcp-apps.md#L39"
+              >specs/mcp-apps.md:39</a
             >
             · ACP boundary:
             <a
               class="src"
-              href="https://github.com/FantasyChino/OpenHands/blob/629caa65be46746c318f46f7bd726cdd4cf2b610/specs/mcp-apps.md#L50"
-              >specs/mcp-apps.md:50</a
+              href="https://github.com/FantasyChino/OpenHands/blob/fe0337abb102f64d0b77bfcd49a31512fe6aa8e8/specs/mcp-apps.md#L51"
+              >specs/mcp-apps.md:51</a
             >
           </p>
           <div class="callout">
