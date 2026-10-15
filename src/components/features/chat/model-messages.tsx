@@ -8,13 +8,21 @@ import type { ProfileInfo } from "#/api/profiles-service/profiles-service.api";
 import { useFreeModels } from "#/hooks/query/use-free-models";
 import { formatModelNameForDisplay } from "#/utils/format-model-name";
 import { GenericEventMessage } from "./generic-event-message";
+import { useRowExpansionKey } from "#/components/features/chat/row-expansion-context";
+import { usePersistentExpansion } from "#/stores/message-expansion-store";
 
 interface ProfileRowProps {
   profile: ProfileInfo;
 }
 
 function ProfileRow({ profile }: ProfileRowProps) {
-  const [expanded, setExpanded] = React.useState(false);
+  // Persisted by row + profile name so a remounted row restores which profile
+  // cards the user had opened.
+  const expansionKey = useRowExpansionKey(`profile-${profile.name}`);
+  const [expanded, toggleExpanded] = usePersistentExpansion(
+    expansionKey,
+    false,
+  );
   const freeModels = useFreeModels();
   const displayModel = formatModelNameForDisplay(profile.model, freeModels);
 
@@ -22,7 +30,7 @@ function ProfileRow({ profile }: ProfileRowProps) {
     <div className="border border-neutral-700 rounded-md overflow-hidden">
       <button
         type="button"
-        onClick={() => setExpanded((v) => !v)}
+        onClick={() => toggleExpanded()}
         aria-expanded={expanded}
         aria-label={`Toggle details for ${profile.name}`}
         className="w-full py-1.5 px-2 text-left flex items-center gap-2 hover:bg-neutral-700 transition-colors cursor-pointer"
@@ -75,6 +83,7 @@ export function ModelMessages({
           return (
             <GenericEventMessage
               key={entry.id}
+              expansionId={`model-switch-${entry.id}`}
               title={
                 <span className="inline-flex items-center gap-1.5">
                   <InfoCircleIcon
@@ -103,6 +112,7 @@ export function ModelMessages({
         return (
           <GenericEventMessage
             key={entry.id}
+            expansionId={`model-${entry.id}`}
             title={
               <span>
                 {isEmpty ? (
