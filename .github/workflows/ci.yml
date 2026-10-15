@@ -338,7 +338,7 @@ jobs:
           {
             echo "# PR Artifacts"
             echo
-            echo "This directory contains generated PR-only QA artifacts. The PR Artifacts workflow removes it after approval so these files do not enter the final squash merge."
+            echo "This directory contains generated PR-only QA artifacts. After the PR merges to main, the PR Artifacts workflow opens or updates a cleanup PR that removes this directory from main."
           } > .pr/README.md
 
           if [ -n "$SCREENSHOT_PATH" ]; then
