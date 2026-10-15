@@ -63,6 +63,8 @@ export const AGENT_SERVER_UI_DEFAULT_CSS_VARIABLES = {
   "--oh-success": "#a5e75e",
   "--oh-success-foreground": "var(--cool-grey-950)",
   "--oh-warning-foreground": "var(--cool-grey-950)",
+  // @spec WN-001 — Embedded roots can override warning text color
+  "--oh-feedback-warning": "#c9b974",
   "--oh-danger": "#e76a5e",
   "--oh-danger-foreground": "var(--cool-grey-50)",
   "--oh-segment": "var(--cool-grey-925)",

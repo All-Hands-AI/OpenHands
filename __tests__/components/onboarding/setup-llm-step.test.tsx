@@ -5,6 +5,7 @@ import {
   ONBOARDING_DEFAULT_LLM_MODEL,
   SetupLlmStep,
 } from "#/components/features/onboarding/steps/setup-llm-step";
+import { I18nKey } from "#/i18n/declaration";
 import type { SdkSectionSaveControl } from "#/components/features/settings/sdk-settings/sdk-section-page";
 import type { SettingsFormValues } from "#/utils/sdk-settings-schema";
 import { renderWithProviders } from "../../../test-utils";
@@ -591,7 +592,7 @@ describe("SetupLlmStep", () => {
 
     await waitFor(() =>
       expect(displayErrorToast).toHaveBeenCalledWith(
-        "Subscription models are not loaded yet.",
+        I18nKey.SETTINGS$SUBSCRIPTION_MODELS_NOT_LOADED,
       ),
     );
     expect(saveProfile).not.toHaveBeenCalled();
