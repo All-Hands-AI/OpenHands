@@ -61,7 +61,10 @@ import {
 import { useArchivedConversationsStore } from "#/stores/archived-conversations-store";
 import { usePinnedConversationsStore } from "#/stores/pinned-conversations-store";
 import { uniqueById } from "#/utils/unique-by-id";
-import { isEffectivelyArchivedConversation } from "#/utils/conversation-archive-status";
+import {
+  isEffectivelyArchivedConversation,
+  isMissingSandboxStatus,
+} from "#/utils/conversation-archive-status";
 import type { SandboxStatus } from "#/api/conversation-service/agent-server-conversation-service.types";
 
 interface ConversationPanelProps {
@@ -874,11 +877,15 @@ export function ConversationPanel({
       const isPinned = pinnedIds.includes(conversation.id);
       // The row presents as archived when the user archived it or its runtime
       // is missing; both drive list visibility, the chip, the dot, and the
-      // title. Every archived row offers exactly one direction — "Unarchive" —
-      // which clears the user's explicit archive intent and never attempts to
-      // resume the runtime. A runtime-derived row therefore stays archived
-      // (its runtime is still missing) while an explicit archive returns to the
-      // default list.
+      // title. Only an explicit archive is reversible from here: removing the
+      // stored id clears the row's effective archived state and returns it to
+      // the default list. A runtime-derived archive has no client-side way to
+      // change that state (the runtime is gone and non-resumable), so its menu
+      // offers neither "Archive" nor a no-op "Unarchive".
+      const runtimeArchived = isMissingSandboxStatus(
+        conversation.sandbox_status,
+      );
+      const explicitlyArchived = archivedIdSet.has(conversation.id);
       const isArchived = isRowArchived(conversation);
       if (compact) {
         return (
@@ -961,10 +968,11 @@ export function ConversationPanel({
               onDelete={() =>
                 handleDeleteProject(conversation.id, conversation.title ?? "")
               }
-              // Exactly one direction per row: "Archive" until the row is
-              // effectively archived, then "Unarchive" — including a
-              // runtime-derived archive, whose "Unarchive" clears the user's
-              // explicit intent (if any) without resuming the runtime.
+              // At most one direction per row, and only when it can take
+              // effect: "Archive" until the row is effectively archived, and
+              // "Unarchive" only for an explicit archive whose runtime is still
+              // present, where removing the stored id actually restores the
+              // row.
               onArchive={
                 isArchived
                   ? undefined
@@ -975,7 +983,7 @@ export function ConversationPanel({
                       )
               }
               onUnarchive={
-                isArchived
+                explicitlyArchived && !runtimeArchived
                   ? () => handleUnarchiveProject(conversation.id)
                   : undefined
               }

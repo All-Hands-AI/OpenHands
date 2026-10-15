@@ -150,7 +150,7 @@
           <text x="284" y="170" font-size="11">under "Show archived"</text>
           <rect x="470" y="134" width="180" height="46" rx="6" fill="var(--card)" stroke="var(--ok)"/>
           <text x="484" y="154" font-size="11">⋮ menu direction</text>
-          <text x="484" y="170" font-size="11">Unarchive (never Archive)</text>
+          <text x="484" y="170" font-size="11">Unarchive only if restorable</text>
           <path d="M365 180 L365 196" stroke="var(--accent)" stroke-width="1.2"/>
           <text x="365" y="212" font-size="10.5" fill="var(--muted)" text-anchor="middle">conversation-panel.tsx:208 isRowArchived()</text>
         </svg>
@@ -209,10 +209,13 @@ archivedIdSet.has(conversation.id)</code></pre>
       <p>Adds one <code>isRowArchived(conversation)</code> callback. The display filter, the <code>isArchived</code>
       handed to cards, and the ⋮ menu direction all call it instead of <code>archivedIdSet.has(id)</code>.
       Delete/prune logic still reads the unfiltered loaded set, so hiding a row never shrinks what can be deleted.</p>
-      <p>The ⋮ menu offers <b>exactly one</b> direction per row: <em>Archive</em> until the row is effectively
-      archived, then <em>Unarchive</em>. This holds for a runtime-derived archive too: "Unarchive" clears the user's
-      explicit archive intent (if any) and does not resume the runtime, so a missing-runtime row stays archived while
-      its runtime is missing and non-resumable — never a dead <em>Archive</em> direction nor a broken promise.</p>
+      <p>The ⋮ menu offers <b>at most one</b> direction per row, and only when it can take effect:
+      <em>Archive</em> until the row is effectively archived, and <em>Unarchive</em> only for an explicit
+      archive whose runtime is still present, where removing the stored id actually restores the row.
+      A runtime-derived archive (a missing, non-resumable runtime) has no client-side way to change that
+      state, so its menu offers neither direction — never a no-op <em>Unarchive</em> nor a dead
+      <em>Archive</em>. A row that is both explicitly archived and missing its runtime likewise offers
+      neither, since removing the id would leave the runtime-derived condition in place.</p>
 
       <h3>✏️ Status dot &amp; dimmed title</h3>
       <p><a class="src" href="https://github.com/OpenHands/OpenHands/blob/261a7ef99091348fd39a49dbc9238bcca7cc311b/src/components/features/conversation-panel/conversation-status-dot.tsx#L128">conversation-status-dot.tsx</a>,
@@ -260,7 +263,7 @@ archivedIdSet.has(conversation.id)</code></pre>
             <td>MISSING row <b>hidden</b> (archived); ERROR row shown with red "Error"</td></tr>
         <tr><td>⋮ menu on the archived row</td>
             <td><code>["Rename","Edit tags","Stop Conversation","Download conversation data","<b>Archive Conversation</b>","Delete Conversation"]</code></td>
-            <td><code>[…]</code> — exactly one direction, <b>Unarchive</b> (never "Archive"); it clears explicit intent without resuming the runtime</td></tr>
+            <td><code>[…]</code> — no archive-related direction: a runtime-derived archive cannot be restored from here, so "Unarchive" would be a no-op</td></tr>
         <tr><td>ERROR row presentation</td>
             <td>red "Error" dot, but dimmed title (wrongly archived)</td>
             <td>red "Error" dot, title not dimmed, never chipped/archived</td></tr>
@@ -278,13 +281,15 @@ archivedIdSet.has(conversation.id)</code></pre>
       (missing+non-resumable → <code>MISSING</code>; missing+resumable → <code>null</code>). The real-backend
       captures above reproduce exactly that: a conversation created in local mode, then read back after the server
       restarted in Docker mode, yields <code>runtime_status: "missing"</code> + <code>can_resume: false</code>.</div>
-      <div class="callout note"><b>ⓘ Why the ⋮ menu still offers "Unarchive" on a runtime-derived row.</b>
-      The issue's acceptance criteria commit to treating a missing runtime as archived "everywhere" and require
-      "exactly one direction — Unarchive, never Archive" for any archived row. On a purely runtime-derived archive,
-      "Unarchive" clears the user's explicit archive intent (if any) and never attempts to resume the runtime; the
-      row stays archived while the runtime is missing and non-resumable, which the criteria state explicitly. The
-      alternative — hiding the action entirely — would leave an archived row with no archive-related direction and
-      would violate that criterion.</div>
+      <div class="callout note"><b>ⓘ Why the ⋮ menu omits the action on a runtime-derived row.</b>
+      The menu offers exactly one direction <em>when it can take effect</em>: "Archive" until the row is
+      effectively archived, and "Unarchive" only for an explicit archive whose runtime is still present,
+      where removing the stored id returns the row to the default list. On a purely runtime-derived archive
+      the row's state comes from the sandbox status, which no client action can change — the runtime is gone
+      and non-resumable — so removing an archive id (there may be none) cannot restore it. Offering
+      "Unarchive" there would silently do nothing, which is the no-op this fix removes; offering "Archive"
+      would leave the row just as archived. The direction is therefore hidden on that row while the chip,
+      dot, and list visibility continue to present it as archived everywhere.</div>
     </section>
 
     <p style="margin-top:40px;font-size:12.5px;color:var(--subtle)">Temporary review artifact under <code>.pr/</code>; removed after merge.</p>

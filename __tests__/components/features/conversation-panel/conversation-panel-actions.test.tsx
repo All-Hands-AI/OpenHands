@@ -173,12 +173,14 @@ describe("ConversationPanel conversation actions", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("hides a missing-runtime conversation from the default list, reveals it with the Archived chip, and offers only Unarchive", async () => {
+  it("hides a missing-runtime conversation from the default list, reveals it with the Archived chip, and offers neither menu direction", async () => {
     // A conversation whose runtime is gone (adapter maps a local
     // `runtime_info.runtime_status: "missing"` + `can_resume: false` to
     // `sandbox_status: "MISSING"`) must be treated as archived everywhere:
-    // hidden by default, chipped when "Show archived" is on, and offering
-    // exactly one menu direction — "Unarchive", never "Archive".
+    // hidden by default and chipped when "Show archived" is on. Its archive
+    // state comes from the runtime, which no client action can change, so its
+    // menu must not offer a no-op "Unarchive" (nor an "Archive" that would
+    // leave the row archived anyway).
     vi.spyOn(
       AgentServerConversationService,
       "searchConversations",
@@ -217,20 +219,27 @@ describe("ConversationPanel conversation actions", () => {
       within(goneCard).getByTestId("conversation-card-archived-chip"),
     ).toBeInTheDocument();
 
-    // Exactly one direction, and it is Unarchive — never Archive.
+    // No archive-related direction is offered: removing an explicit id cannot
+    // restore a runtime-derived archive, so "Unarchive" would be a no-op, and
+    // "Archive" would leave the row archived. Assert the no-op is gone.
     await userEvent
       .setup()
       .click(within(goneCard).getByTestId("ellipsis-button"));
+    expect(screen.queryByTestId("unarchive-button")).not.toBeInTheDocument();
     expect(screen.queryByTestId("archive-button")).not.toBeInTheDocument();
-    const unarchive = screen.getByTestId("unarchive-button");
 
-    // Invoking Unarchive clears the user's explicit archive intent without
-    // resuming the runtime, so the row stays archived while its runtime is
-    // missing and non-resumable.
-    await userEvent.setup().click(unarchive);
+    // The row stays archived: turning "Show archived" off hides it again with
+    // no stored archive id, confirming the runtime-derived state and list
+    // visibility agree (the no-op "Unarchive" could not have changed either).
     expect(
-      screen.getByTestId("conversation-card-archived-chip"),
-    ).toBeInTheDocument();
+      useArchivedConversationsStore.getState().isArchived("default-local", "gone"),
+    ).toBe(false);
+    act(() => {
+      useConversationPanelPreferencesStore.setState({
+        showArchivedConversations: false,
+      });
+    });
+    expect(screen.queryByText("Gone Conversation")).not.toBeInTheDocument();
   });
 
   it("offers Unarchive on an explicitly archived row with a present runtime", async () => {
@@ -254,6 +263,42 @@ describe("ConversationPanel conversation actions", () => {
       .setup()
       .click(within(archivedCard).getByTestId("ellipsis-button"));
     expect(screen.getByTestId("unarchive-button")).toBeInTheDocument();
+    expect(screen.queryByTestId("archive-button")).not.toBeInTheDocument();
+  });
+
+  it("offers no direction on a row that is both explicitly archived and missing its runtime", async () => {
+    // A stored archive id on a missing-runtime row cannot be undone: removing
+    // the id clears explicit intent but the missing runtime keeps the row
+    // archived, so "Unarchive" would silently do nothing. Offer neither
+    // direction.
+    vi.spyOn(
+      AgentServerConversationService,
+      "searchConversations",
+    ).mockResolvedValue({
+      items: [
+        createMockConversation({
+          id: "gone",
+          title: "Gone Conversation",
+          sandbox_status: "MISSING",
+        }),
+      ],
+      next_page_id: null,
+    });
+    useArchivedConversationsStore
+      .getState()
+      .archiveConversation("default-local", "gone");
+    useConversationPanelPreferencesStore.setState({
+      showArchivedConversations: true,
+    });
+
+    renderConversationPanel();
+
+    const goneCard = await screen.findByText("Gone Conversation");
+    const card = goneCard.closest("[data-testid='conversation-card']")!;
+    await userEvent
+      .setup()
+      .click(within(card as HTMLElement).getByTestId("ellipsis-button"));
+    expect(screen.queryByTestId("unarchive-button")).not.toBeInTheDocument();
     expect(screen.queryByTestId("archive-button")).not.toBeInTheDocument();
   });
 
