@@ -1,102 +1,105 @@
-# MCP Apps prototype validation
+# MCP Apps validation
 
-Validated on 2026-10-14. Source: `629caa65be46746c318f46f7bd726cdd4cf2b610`.
+Updated on 2026-10-15. Localization source:
+`fe0337abb102f64d0b77bfcd49a31512fe6aa8e8`.
 
 ## Scope and environment
 
-Windows, Node.js 24+, local Chrome. The browser fixture uses the actual Canvas
-renderer, official MCP AppBridge, and two iframe origins. Backend:
-**in-memory MCPAppHost fixture**. Model: **none**. This is frontend regression
-and prototype evidence; no production Agent Server or live LLM result is claimed.
+Windows, Node.js 24+, installed Google Chrome. The fixture uses the actual
+Canvas renderer, official MCP AppBridge, and separate-origin sandbox.
+Backend: **in-memory MCPAppHost fixture**. Model: **none**. These are frontend
+integration checks; production Agent Server and live-model integration remain
+outside this increment.
 
-| Check                                      | Result                                                                                |
-| ------------------------------------------ | ------------------------------------------------------------------------------------- |
-| Focused Vitest suite                       | 12 files, 115 tests passed                                                            |
-| Existing conversation compatibility suites | 5 files, 144 tests passed                                                             |
-| Browser integration                        | 3 tests passed                                                                        |
-| TypeScript                                 | Passed                                                                                |
-| Changed source/test ESLint                 | 24 files passed                                                                       |
-| Script syntax checks                       | Passed                                                                                |
-| Prettier / git diff --check                | Passed for all 38 source paths                                                        |
-| build:app                                  | Passed                                                                                |
-| build:lib, including declaration emit      | Passed                                                                                |
-| npm pack --dry-run                         | Includes build/mcp-app-sandbox.html and scripts/mcp-app-sandbox.mjs                   |
-| Packaged sandbox HTTP/origin test          | Included in the passing focused suite                                                 |
-| Interaction recording                      | Completed, 0 browser page errors                                                      |
-| 1440px and 390px layouts                   | No horizontal overflow; mobile content height approximately 623.6px in a 624px iframe |
+## Current localization checks
 
-## Focused test command
+| Check                               | Result                                                                                         |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Focused Vitest suite                | 6 files, 43 tests passed                                                                       |
+| Chrome integration                  | 5 tests passed                                                                                 |
+| Translation coverage                | 50 new keys, all 16 supported languages; existing 2,905 keys preserved                         |
+| Live locale updates                 | Initialization and later host-context notifications; same session and retained price/tool data |
+| Default and fallback                | English by default; explicit query selection; unsupported locale falls back to English         |
+| RTL                                 | Arabic document/UI direction; market chart and timeline remain LTR                             |
+| Mobile layout                       | All 16 languages checked at 390px; no horizontal overflow in Canvas or the App                 |
+| Browser page errors                 | None during layout checks and recorded interactions                                            |
+| TypeScript                          | Passed, including library declaration check                                                    |
+| Source/test ESLint                  | No errors; existing fixture grid-theme warning remains                                         |
+| Translation generation/completeness | Passed                                                                                         |
+| Prettier / git diff --check         | Passed                                                                                         |
+| build:app / build:lib               | Passed                                                                                         |
+| Commit hooks                        | ESLint, formatting, staged typecheck, translation completeness passed                          |
+
+The 43-test suite covers the artifact, protocol bridge, renderer, Host provider,
+stable-event conversation rendering, and shared-view isolation:
 
 ```sh
 npm test -- \
-  src/utils/mcp-app-descriptor.test.ts \
-  src/components/features/mcp-apps/mcp-app-host-context.test.tsx \
   src/components/features/mcp-apps/mcp-app-artifact.test.tsx \
   __tests__/components/features/mcp-apps/mcp-app-bridge.test.ts \
   __tests__/components/features/chat/tool-visualizers/mcp/mcp.test.tsx \
-  __tests__/components/conversation-events/chat/group-events.test.ts \
+  src/components/features/mcp-apps/mcp-app-host-context.test.tsx \
   __tests__/components/conversation-events/chat/messages-stable-event-props.test.tsx \
-  __tests__/routes/shared-conversation-viewer-behavior.test.tsx \
-  src/utils/transcript-export/index.test.ts \
-  __tests__/scripts/mcp-app-sandbox.test.ts \
-  __tests__/package-library.test.ts \
-  src/api/no-direct-agent-server-calls.test.ts
+  __tests__/routes/shared-conversation-viewer-behavior.test.tsx
 ```
 
-Observed final Vitest output:
-
-```text
-Test Files  12 passed (12)
-     Tests  115 passed (115)
-```
-
-For local execution, the equivalent direct Node Vitest CLI was used. The
-TypeScript-client package emits existing missing-source sourcemap warnings.
-
-## Existing conversation compatibility command
+Behavioral coverage includes resolved locales, language changes while resources
+or the bridge are still initializing, updates after teardown, original-result
+preservation, and existing write-scope restrictions. The installed client package
+emits existing missing-source sourcemap warnings.
 
 ```sh
-npm test -- \
-  __tests__/components/conversation-events/get-event-content.test.tsx \
-  __tests__/components/conversation-events/chat/messages-confirmation.test.tsx \
-  __tests__/components/conversation-events/chat/event-message-components/event-group.test.tsx \
-  __tests__/components/conversation-events/chat/event-content-helpers/should-render-event.test.ts \
-  __tests__/components/features/chat/typing-indicator.test.ts
+npm run make-i18n
+npm run check-translation-completeness
+npm run typecheck
+npm run build:app
+npm run build:lib
 ```
-
-These five files pass 144 existing cases, including the original two-argument
-visualizer contract, user rejection presentation, grouping, activity hints, and
-secret-request filtering. No existing test assertions were weakened.
 
 ## Browser reproduction
 
 ```sh
 npm run demo:mcp-apps
 # Open http://127.0.0.1:3101/src/fixtures/mcp-apps/
+npm run test:e2e:mcp-apps
 ```
 
-The recorded interaction initializes the App, delivers the complete ToolResult
-and private View metadata, refreshes the mock price, updates text model context,
-sends a follow-up message, revokes writes on a mode switch, and restores them
-when returning to the originating writable conversation.
+Use the Language selector or a URL such as `?lang=ar` or `?lang=zh-CN`.
+Set `MCP_APPS_BROWSER_PATH` to an installed Chrome executable if needed.
+The dedicated tests block external Google Fonts requests because the fixture
+uses system fonts. A temporary Playwright config reused the running fixture
+service during the final verification; the committed config starts its own
+service when ports 3101/3102 are free.
 
-The 3 browser tests also check wrong-window rejection and 390px responsive
-height reporting. During this validation the demo service was started or reused by a temporary Playwright config; the committed
-`playwright.mcp-apps.config.ts` starts an isolated demo service when its ports
-are free. An installed Chrome executable was supplied using
-`MCP_APPS_BROWSER_PATH`.
+The five tests cover the original text and complete ToolResult, responsive
+height, declared callbacks and revoked writes, wrong-window rejection, live
+switching through all 16 languages without a second Host session, initial Arabic,
+mobile RTL, and unsupported-language fallback.
 
-- [Desktop screenshot](desktop.png)
-- [Mobile screenshot](mobile.png)
+The recording starts in English, refreshes the mock price, sends model context
+and a follow-up message, revokes/restores write access, then changes through
+Chinese, Arabic, and English while retaining the price and original session.
+
+- [English desktop screenshot](desktop.png)
+- [English mobile screenshot](mobile.png)
+- [Arabic RTL mobile screenshot](rtl-mobile.png)
 - [Actual interaction recording](interaction.webm)
+- [All 16 mobile layout measurements](locale-layout.json)
+
+## Earlier prototype verification
+
+The initial source `629caa65be46746c318f46f7bd726cdd4cf2b610` passed 12 focused
+Vitest files (115 tests), five existing conversation compatibility files
+(144 tests), and three browser tests before this localization follow-up.
+Its package check confirmed `build/mcp-app-sandbox.html`,
+`dist/mcp-app-sandbox.html`, and `scripts/mcp-app-sandbox.mjs` are included.
+The packaged sandbox HTTP/origin regression also passed. These earlier totals
+are historical results, not additional tests claimed for the current follow-up.
 
 ## Draft readiness
 
-No production Host adapter is wired into Canvas. Server provenance/resource/tool
-proxies, consent/visibility/audit policy, next-turn context consumption, Cloud
-history persistence, ACP support, and live backend/model evidence remain open.
-The human-authored PR testing note must be supplied by the contributor, and
-issue #16620 does not currently have the required `ready-for-dev` label.
-
-The prototype's successful tests do not establish completion of the issue's
-production acceptance criteria. The PR remains a draft.
+The production Host adapter, released resource/tool proxies, consent and audit
+policy, next-turn context consumption, Cloud history persistence, ACP support,
+and live backend/model evidence remain follow-ups. The human-only PR testing
+note must be written by the contributor; issue #16620 still requires the
+`ready-for-dev` label. The PR remains a draft.
