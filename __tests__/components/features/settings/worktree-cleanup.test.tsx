@@ -6,6 +6,15 @@ import WorktreesService, {
   type ConversationWorktree,
 } from "#/api/worktrees-service";
 import { WorktreeCleanup } from "#/components/features/settings/runtime/worktree-cleanup";
+import {
+  displayErrorToast,
+  displaySuccessToast,
+} from "#/utils/custom-toast-handlers";
+
+vi.mock("#/utils/custom-toast-handlers", () => ({
+  displayErrorToast: vi.fn(),
+  displaySuccessToast: vi.fn(),
+}));
 
 function worktree(
   name: string,
@@ -52,6 +61,37 @@ describe("WorktreeCleanup", () => {
     await userEvent.click(screen.getByTestId("remove-worktree-clean"));
 
     await waitFor(() => expect(remove).toHaveBeenCalledWith("clean"));
+  });
+
+  it("confirms removing the last worktree although its row is gone", async () => {
+    vi.spyOn(WorktreesService, "list")
+      .mockResolvedValueOnce([worktree("last")])
+      .mockResolvedValue([]);
+    vi.spyOn(WorktreesService, "remove").mockResolvedValue();
+    renderCleanup();
+
+    await userEvent.click(await screen.findByTestId("remove-worktree-last"));
+
+    await waitFor(() => expect(displaySuccessToast).toHaveBeenCalled());
+    expect(screen.queryByTestId("worktree-cleanup")).toBeNull();
+  });
+
+  it("shows why the server refused a removal", async () => {
+    vi.spyOn(WorktreesService, "list").mockResolvedValue([worktree("raced")]);
+    vi.spyOn(WorktreesService, "remove").mockRejectedValue(
+      Object.assign(new Error("HTTP 409"), {
+        response: { detail: "It has uncommitted or untracked changes" },
+      }),
+    );
+    renderCleanup();
+
+    await userEvent.click(await screen.findByTestId("remove-worktree-raced"));
+
+    await waitFor(() =>
+      expect(displayErrorToast).toHaveBeenCalledWith(
+        "It has uncommitted or untracked changes",
+      ),
+    );
   });
 
   it("shows nothing when there are no worktrees", async () => {

@@ -20,24 +20,25 @@ import {
 } from "#/utils/settings-list-classes";
 import { cn } from "#/utils/utils";
 
+const SIZE_UNITS = [
+  ["gigabyte", 1024 ** 3],
+  ["megabyte", 1024 ** 2],
+  ["kilobyte", 1024],
+] as const;
+
 function formatSize(bytes: number, locale: string): string {
-  const gigabytes = bytes / 1024 ** 3;
-  return gigabytes >= 1
-    ? new Intl.NumberFormat(locale, {
-        style: "unit",
-        unit: "gigabyte",
-        maximumFractionDigits: 1,
-      }).format(gigabytes)
-    : new Intl.NumberFormat(locale, {
-        style: "unit",
-        unit: "megabyte",
-        maximumFractionDigits: 0,
-      }).format(bytes / 1024 ** 2);
+  const [unit, size] =
+    SIZE_UNITS.find(([, unitSize]) => bytes >= unitSize) ?? SIZE_UNITS[2];
+  return new Intl.NumberFormat(locale, {
+    style: "unit",
+    unit,
+    maximumFractionDigits: unit === "gigabyte" ? 1 : 0,
+  }).format(bytes / size);
 }
 
 function WorktreeRow({ worktree }: { worktree: ConversationWorktree }) {
   const { t, i18n } = useTranslation("openhands");
-  const { mutate: removeWorktree, isPending } = useRemoveWorktree();
+  const { mutateAsync: removeWorktree, isPending } = useRemoveWorktree();
   const details = [
     worktree.repository?.split("/").pop(),
     formatSize(worktree.size_bytes, i18n.language),
@@ -72,16 +73,18 @@ function WorktreeRow({ worktree }: { worktree: ConversationWorktree }) {
           type="button"
           variant="secondary"
           isDisabled={isPending}
-          onClick={() =>
-            removeWorktree(worktree.name, {
-              onSuccess: () =>
-                displaySuccessToast(t(I18nKey.SETTINGS$WORKTREES_REMOVED)),
-              onError: (error) =>
-                displayErrorToast(
-                  getApiErrorMessage(error, t(I18nKey.ERROR$GENERIC)),
-                ),
-            })
-          }
+          onClick={async () => {
+            // Awaited rather than mutate() callbacks: the refreshed list drops
+            // this row, and React Query skips callbacks of an unmounted row.
+            try {
+              await removeWorktree(worktree.name);
+              displaySuccessToast(t(I18nKey.SETTINGS$WORKTREES_REMOVED));
+            } catch (error) {
+              displayErrorToast(
+                getApiErrorMessage(error, t(I18nKey.ERROR$GENERIC)),
+              );
+            }
+          }}
         >
           {t(I18nKey.SETTINGS$WORKTREES_REMOVE)}
         </BrandButton>
