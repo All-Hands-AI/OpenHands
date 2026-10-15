@@ -804,6 +804,38 @@ describe("AutomationSetupPanel", () => {
     );
   });
 
+  it("starts a Custom schedule from the preset it replaces", async () => {
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(screen.getByTestId("automation-setup-frequency-weekly"));
+    await user.selectOptions(
+      screen.getByTestId("automation-setup-weekday"),
+      "3",
+    );
+    fireEvent.change(screen.getByTestId("automation-setup-time"), {
+      target: { value: "10:30" },
+    });
+    await user.click(screen.getByTestId("automation-setup-frequency-custom"));
+
+    const custom = screen.getByTestId("automation-setup-custom-schedule");
+    expect(custom).toHaveValue("30 10 * * 3");
+
+    // Re-selecting Custom keeps what the user typed.
+    fireEvent.change(custom, { target: { value: "15 8 * * 1-5" } });
+    await user.click(screen.getByTestId("automation-setup-frequency-custom"));
+    expect(screen.getByTestId("automation-setup-custom-schedule")).toHaveValue(
+      "15 8 * * 1-5",
+    );
+
+    // Leaving for a preset and coming back starts from that preset again.
+    await user.click(screen.getByTestId("automation-setup-frequency-daily"));
+    await user.click(screen.getByTestId("automation-setup-frequency-custom"));
+    expect(screen.getByTestId("automation-setup-custom-schedule")).toHaveValue(
+      "30 10 * * *",
+    );
+  });
+
   it("creates plugin drafts with the selected plugin source", async () => {
     vi.mocked(AutomationService.createAutomationDraft).mockResolvedValue({
       id: "automation-1",
