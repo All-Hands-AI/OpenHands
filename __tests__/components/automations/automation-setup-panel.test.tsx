@@ -1857,6 +1857,42 @@ describe("AutomationSetupPanel", () => {
       );
     });
 
+    it("shows the API's reason and drops Ready to test when a draft save is refused", async () => {
+      const user = userEvent.setup();
+      renderPanel();
+      mockSavedDraftEcho();
+      await saveDraftAndWaitForTest(user);
+      expect(
+        screen.getByTestId("automation-setup-draft-validity"),
+      ).toHaveTextContent("AUTOMATION_SETUP$READY_TO_TEST");
+
+      vi.mocked(AutomationService.updateServerDraft).mockRejectedValue(
+        new HttpError(422, "Unprocessable Entity", {
+          detail: {
+            message: "Draft body does not match endpoint schema",
+            errors: [
+              {
+                field: "timeout",
+                code: "value_error",
+                message:
+                  "Value error, timeout must not exceed 1800 seconds (30 minutes)",
+              },
+            ],
+          },
+        }),
+      );
+      await user.click(screen.getByTestId("automation-setup-save-draft"));
+
+      await waitFor(() =>
+        expect(displayErrorToast).toHaveBeenCalledWith(
+          "Value error, timeout must not exceed 1800 seconds (30 minutes)",
+        ),
+      );
+      expect(
+        screen.queryByTestId("automation-setup-draft-validity"),
+      ).not.toBeInTheDocument();
+    });
+
     it("requires valid JSON before testing an event draft", async () => {
       const user = userEvent.setup();
       renderPanel();
