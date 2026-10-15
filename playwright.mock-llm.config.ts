@@ -21,7 +21,7 @@
 import { defineConfig, devices } from "@playwright/test";
 import { randomBytes } from "node:crypto";
 import { homedir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import {
   allocateMockLlmPorts,
   mockLlmPortSpecs,
@@ -50,16 +50,16 @@ const AUTOMATION_DB_DIR = resolve(
 );
 process.env.MOCK_LLM_AUTOMATION_DIR = AUTOMATION_DB_DIR;
 
-// Isolated test home for user-skills and user state so developer's
-// real ~/.openhands/skills is NEVER touched.
+// Isolated process home so the stack does not write into the developer's
+// real home. User skills live at dirname(STATE_DIR)/skills.
 const TEST_HOME = resolve(
   process.env.MOCK_LLM_TEST_HOME ?? join(RUN_ROOT, "home"),
 );
 process.env.MOCK_LLM_TEST_HOME = TEST_HOME;
 
-// HOME below is the isolated test home so the agent-server loads user skills
-// from TEST_HOME/.openhands/skills. uv must keep using the runner home, where
-// CI pre-warmed the cache, instead of the empty test home.
+// HOME is the isolated test home so the stack writes outside the developer's
+// real home. User skills are loaded from OH_PERSISTENCE_DIR/skills (the parent
+// of STATE_DIR). uv keeps using the runner home, where CI pre-warmed the cache.
 const runnerHome = process.env.HOME ?? homedir();
 const uvCacheEnv = uvCacheEnvForIsolatedHome(runnerHome, process.env);
 
@@ -70,7 +70,7 @@ process.env.MOCK_LLM_SKILL_REPOS_HOST_DIR = SKILL_REPOS_DIR;
 
 const USER_SKILLS_DIR = resolve(
   process.env.MOCK_LLM_USER_SKILLS_HOST_DIR ??
-    join(TEST_HOME, ".openhands", "skills"),
+    join(dirname(STATE_DIR), "skills"),
 );
 process.env.MOCK_LLM_USER_SKILLS_HOST_DIR = USER_SKILLS_DIR;
 
@@ -228,7 +228,11 @@ export default defineConfig({
     //    configured agent-server and automation ports.
     {
       command: [
-        "exec node scripts/static-server.mjs",
+        // No DigitalOcean bridge on the e2e public-mode server: nothing here
+        // uses it, and the Providers entry must not appear in these specs.
+        "exec env",
+        envAssignment("MARS_WEB", "0"),
+        "node scripts/static-server.mjs",
         "--dir build",
         `--port ${PUBLIC_MODE_PORT}`,
         "--host 127.0.0.1",

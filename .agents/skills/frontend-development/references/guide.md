@@ -1,3 +1,16 @@
+## Inline-style rollout
+
+`shadcn/no-inline-styles` runs at warning severity across source, including UI
+primitive implementations. Numeric CSS custom properties and semantic token
+references pass; hardcoded variable colors and style elements still warn.
+Do not add a blanket property allowance or blindly replace measured dimensions,
+portal coordinates, or renderer-library styles with static classes. Review the
+value's owner before moving it to classes or CSS variables.
+
+`src/components/providers/agent-server-ui-root.tsx` is the exact exception: its
+public `style` / `styleOverrides` API forwards caller-owned styles, so the
+implementation must accept an opaque object. Other lint policies keep their scope.
+
 ## Skill Loading
 
 Public skills are loaded from the `@openhands/extensions` npm package at build time through `SKILLS_CATALOG` from `@openhands/extensions/skills`. `SkillsService` maps catalog entries to `SkillInfo` and merges them with user and project skills fetched from the Agent Server using `load_public: false`.
@@ -8,6 +21,16 @@ Bundled catalog skills use the persisted `enabled_skills` allow-list defaulted f
 ## Workspace files
 
 Local Files discovery preferences belong to `misc_settings.app_preferences.workspace_file_discovery`, keyed by working directory on the active backend. `useWorkspaceFileDiscovery` reads the settings cache and saves sparse workspace patches. Preserve default exclusions and the 2,000-file cap when no configuration exists. Fetch one extra result to distinguish truncation from an exact-size list. Cloud keeps its server-side listing contract without these controls. See `specs/workspace-file-discovery.md`.
+
+## Caret appearance contracts
+
+`shadcn/no-restyle` recognizes direct, aliased, and namespaced imports from
+`#/ui/combobox-caret`. Caret callers retain layout, icon sizing, and text-color
+utilities; padding, background, shape, and effects belong to the primitive.
+Use `isOpen` for rotation on `ComboboxCaretButton` and `ComboboxCaretInline`.
+`ComboboxCaretIcon` is the generic SVG and still permits caller orientation.
+Primitive implementations remain exempt from no-restyle. The existing narrow
+static-class exceptions do not imply that opaque values are checked by no-restyle.
 
 ## No Magic Strings
 
@@ -99,7 +122,9 @@ When adding code that needs a new string, decide up front which rule it falls un
 - Public embedding entry points should use `AgentServerUIProviders` (scoped root on by default) or `AgentServerUIRoot` for manual control. The standalone app already renders its own scoped root in `src/root.tsx`, so `src/entry.client.tsx` must pass `withStyleRoot={false}` to avoid nesting duplicate shells. Keep `AgentServerUIRoot` and the scoping constants re-exported from `src/lib/index.ts` so library consumers can customize the host wrapper without reaching into private paths.
 - `AgentServerUIRoot`'s themed inner wrapper must set a default `color: var(--foreground)` in addition to the `dark` / `data-theme` markers; otherwise inherited text and `currentColor` SVG icons fall back to dark browser defaults after CSS scoping, causing dark-on-dark regressions on pages like the home screen.
 - Theme/customization tokens for the embedded shell are exposed as `--oh-*` CSS variables. Override them through `styleOverrides`, `style`, or host CSS targeting `[data-agent-server-ui]`; Tailwind theme tokens in `src/tailwind.css` should continue to reference those variables with `@theme inline` so host apps can restyle the UI without reworking component class names.
+- Small form feedback uses the `feedback-error` / `feedback-success` text roles (`--oh-feedback-error` / `--oh-feedback-success`), separately from the general danger/success control palette. Their built-in values must meet 4.5:1 on modal surfaces; host overrides remain owned by the embedding root. See `src/themes/README.md` and the theme contrast tests when migrating raw feedback colors.
 - Regression coverage for the CSS isolation work lives in `__tests__/agent-server-ui-providers.test.tsx`, `__tests__/agent-server-ui-style-scope.test.ts`, and the browser-level CSS-isolation test in `tests/e2e/mock-llm/regressions/mock-llm-ui-regressions.spec.ts`.
+- MCP credential selection: `SaveAsSecretToggle` keeps its native checkbox as the semantic control and uses `ToggleSwitchVisual` for the decorative track. Selection uses contrast/surface tokens. Keep both states' labels readable, allow long secret names to wrap with their help control, and preserve visible keyboard focus. See `specs/mcp-secret-selection.md` (MCP-005).
 
 - Conversation history is loaded lazily, REST-first then WebSocket:
   - `useConversationHistory` (in `src/hooks/query/use-conversation-history.ts`) fetches only the most recent `INITIAL_HISTORY_PAGE_SIZE` (default 50) events using `sort_order='TIMESTAMP_DESC'`, then reverses to chronological order. Older pages are paginated in via `useLoadOlderEvents` when the user scrolls near the top of the chat.
@@ -143,7 +168,7 @@ When adding code that needs a new string, decide up front which rule it falls un
   - The environment-switch overlay is split: lightweight store/triggers live in `components/features/backends/environment-switch-store.ts`; the React component lives in `environment-switch-overlay.tsx` (re-exports the store API for back-compat). Eagerly-mounted callers (e.g. `backend-selector.tsx`) MUST import trigger helpers from the store, not the overlay file. The overlay is `React.lazy`'d from `routes/root-layout.tsx`.
   - Conditional UI is `React.lazy`'d to keep eager graphs small. Current examples include `AlertBanner` and `CommandMenu` in `root-layout.tsx`, `SettingsModal` in the sidebar, and backend/onboarding modals in `root.tsx`. Tests that assert on these mounted nodes may need `await screen.findByTestId(...)` / `waitFor(...)` instead of synchronous `getByTestId(...)`.
   - The terminal tab (`components/features/terminal/terminal.tsx`) is `React.lazy`'d in `conversation-tab-content.tsx` alongside the other tabs, so xterm + addon-fit + xterm.css don't enter the conversation route's eager graph (they ship as a separate `terminal-*.js` chunk now).
-  - Avoid importing app code through `#/components/conversation-events/chat` or its `event-message-components/index.ts` barrel — they exist for `lib/index.ts` (npm subpath) consumers only. Internal callers use deep paths (`./messages`, `./event-message-components/<name>`, `./event-content-helpers/should-render-event`) so Vite dev doesn't fan out the barrel.
+  - `components/conversation-events/chat/` and `components/features/command-menu/` deliberately have no barrel `index.ts`. Import deep paths (`./messages`, `./event-message-components/<name>`, `./event-content-helpers/should-render-event`, `command-menu/command-menu`) so Vite dev doesn't fan out a barrel.
 
 
 

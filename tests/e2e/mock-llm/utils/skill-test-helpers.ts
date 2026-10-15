@@ -42,17 +42,16 @@ export const SKILL_REPOS_AGENT_DIR =
   process.env.MOCK_LLM_SKILL_REPOS_CONTAINER_DIR ?? SKILL_REPOS_DIR;
 
 /**
- * User-level skills directory — HOST-side (for file creation/removal).
- * In Docker mode, we use a local temp dir that is volume-mounted into the
- * container at the agent-server's expected `~/.openhands/skills/` path.
- * In npm mode, this resolves to the test-isolated user skills directory
- * instead of the developer's real ~/.openhands/skills.
+ * User-level skills directory on the host (for file creation/removal).
+ * The npm launcher sets OH_PERSISTENCE_DIR to the parent of STATE_DIR, and
+ * the agent-server loads user skills from `<OH_PERSISTENCE_DIR>/skills`.
+ * With a per-run STATE_DIR that directory stays inside the run root.
+ * Docker sets MOCK_LLM_USER_SKILLS_HOST_DIR to the host side of the mount
+ * at the container's `~/.openhands/skills` path.
  */
 export const USER_SKILLS_DIR = process.env.MOCK_LLM_USER_SKILLS_HOST_DIR
   ? resolve(process.env.MOCK_LLM_USER_SKILLS_HOST_DIR)
-  : process.env.MOCK_LLM_TEST_HOME
-    ? join(resolve(process.env.MOCK_LLM_TEST_HOME), ".openhands", "skills")
-    : join(dirname(STATE_DIR), "home", ".openhands", "skills");
+  : join(dirname(STATE_DIR), "skills");
 
 // ── Skill content builders ───────────────────────────────────────────
 

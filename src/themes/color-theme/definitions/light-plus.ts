@@ -62,6 +62,11 @@ export const LIGHT_PLUS_TOKENS: Partial<
   "--oh-color-base-secondary": "#F3F3F3",
   "--oh-color-danger": "#D13438",
   "--oh-color-success": "#16825D",
+  // Feedback text must remain readable on the light modal surface.
+  "--oh-feedback-error": "#C0282D",
+  "--oh-feedback-success": "#0F734D",
+  // @spec WN-001 — Darker warning text preserves contrast on light surfaces
+  "--oh-feedback-warning": "#7D5D08",
   "--oh-color-basic": "#616161",
   "--oh-color-tertiary": "#E5E5E5",
   "--oh-color-tertiary-light": "#4D4D4D",

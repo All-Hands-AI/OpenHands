@@ -70,19 +70,7 @@ describe("mock-LLM runner isolation", () => {
       expect(helpers.USER_SKILLS_DIR).toBe(path.resolve(customPath));
     });
 
-    it("uses MOCK_LLM_TEST_HOME/.openhands/skills when test home is set", async () => {
-      delete process.env.MOCK_LLM_USER_SKILLS_HOST_DIR;
-      const testHome = "/tmp/test-home-dir";
-      process.env.MOCK_LLM_TEST_HOME = testHome;
-
-      const helpers =
-        await import("../../tests/e2e/mock-llm/utils/skill-test-helpers");
-      expect(helpers.USER_SKILLS_DIR).toBe(
-        path.join(path.resolve(testHome), ".openhands", "skills"),
-      );
-    });
-
-    it("derives from OH_CANVAS_SAFE_STATE_DIR parent when neither override is set", async () => {
+    it("derives skills from the parent of OH_CANVAS_SAFE_STATE_DIR", async () => {
       delete process.env.MOCK_LLM_USER_SKILLS_HOST_DIR;
       delete process.env.MOCK_LLM_TEST_HOME;
       const stateDir = "/tmp/mock-llm-123/state";
@@ -91,12 +79,7 @@ describe("mock-LLM runner isolation", () => {
       const helpers =
         await import("../../tests/e2e/mock-llm/utils/skill-test-helpers");
       expect(helpers.USER_SKILLS_DIR).toBe(
-        path.join(
-          path.dirname(path.resolve(stateDir)),
-          "home",
-          ".openhands",
-          "skills",
-        ),
+        path.join(path.dirname(path.resolve(stateDir)), "skills"),
       );
     });
   });
