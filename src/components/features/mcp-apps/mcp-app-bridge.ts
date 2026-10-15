@@ -2,6 +2,7 @@ import {
   AppBridge,
   RESOURCE_MIME_TYPE,
   type McpUiHostCapabilities,
+  type McpUiHostContext,
 } from "@modelcontextprotocol/ext-apps/app-bridge";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import {
@@ -22,10 +23,12 @@ const OUTER_SANDBOX_PERMISSIONS = "allow-scripts allow-same-origin";
 const INNER_SANDBOX_PERMISSIONS = "allow-scripts";
 const TEARDOWN_TIMEOUT_MS = 1000;
 const MAX_APP_HEIGHT = 4096;
+const DEFAULT_APP_LOCALE = "en";
 const HOST_INFO = { name: "OpenHands Agent Canvas", version: "1" };
 
 interface MountMCPAppBridgeOptions {
   iframe: HTMLIFrameElement;
+  locale: string;
   sandboxUrl: string;
   resource: ReadResourceResult;
   descriptor: MCPAppDescriptor;
@@ -35,6 +38,11 @@ interface MountMCPAppBridgeOptions {
   onReady: () => void;
   onError: (error: unknown) => void;
   onSizeChange: (height: number) => void;
+}
+
+export interface MountedMCPAppBridge {
+  dispose: () => Promise<void>;
+  updateLocale: (locale: string) => void;
 }
 
 // @spec MCA-003 — The proxy transport authenticates both its window and origin
@@ -138,7 +146,7 @@ function resourceHTML(resource: ReadResourceResult, uri: string): string {
 // @spec MCA-003 — App lifecycle starts only inside a distinct HTTP(S) sandbox
 export async function mountMCPAppBridge(
   options: MountMCPAppBridgeOptions,
-): Promise<{ dispose: () => Promise<void> }> {
+): Promise<MountedMCPAppBridge> {
   const { iframe, descriptor, session, signal } = options;
   signal.throwIfAborted();
   const sandbox = new URL(options.sandboxUrl);
@@ -182,13 +190,13 @@ export async function mountMCPAppBridge(
   if (session.updateModelContext) {
     capabilities.updateModelContext = { text: {} };
   }
-  const bridge = new AppBridge(null, HOST_INFO, capabilities, {
-    hostContext: {
-      platform: "web",
-      displayMode: "inline",
-      availableDisplayModes: ["inline"],
-    },
-  });
+  const hostContext: McpUiHostContext = {
+    platform: "web",
+    displayMode: "inline",
+    availableDisplayModes: ["inline"],
+    locale: options.locale || DEFAULT_APP_LOCALE,
+  };
+  const bridge = new AppBridge(null, HOST_INFO, capabilities, { hostContext });
   const lifetime = new AbortController();
   let disposed = false;
   let initialized = false;
@@ -375,5 +383,15 @@ export async function mountMCPAppBridge(
     await dispose();
     throw error;
   }
-  return { dispose };
+  return {
+    dispose,
+    // @spec MCA-005 — The official context update preserves non-locale fields.
+    updateLocale: (locale) => {
+      if (disposed || signal.aborted) return;
+      bridge.setHostContext({
+        ...hostContext,
+        locale: locale || DEFAULT_APP_LOCALE,
+      });
+    },
+  };
 }

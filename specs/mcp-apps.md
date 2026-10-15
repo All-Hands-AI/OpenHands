@@ -5,12 +5,13 @@ Agent Server 1.54.0 does not expose the resource/tool proxy required for product
 MCP Apps. The default Canvas has no adapter and continues to render ordinary tool
 text. No new Agent Server endpoint, wire requirement, or version floor is added.
 
-| ID      | Behavior                                                                                                                                                                                                                                                                                                                 |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| MCA-001 | An MCP observation with separately owned frontend presentation data can declare a UI through tool-definition metadata. Missing/invalid sidecar data retains the existing text renderer; unpublished App-shaped event fields are ignored. The complete result remains available to the View.                              |
-| MCA-002 | App results remain outside collapsed tool groups and initially expand their cards. Their original text remains visible while loading, unavailable, or failed.                                                                                                                                                            |
-| MCA-003 | A configured adapter reads resources and an official AppBridge handles initialization and data delivery. A separate-origin proxy embeds self-contained HTML in an opaque-origin iframe. Both Host and proxy validate message sources. External resources and additional permissions are not supported in this increment. |
-| MCA-004 | Sessions bind to the originating backend, generation, conversation, and tool call. Shared views override injected hosts. Write callbacks recheck the current writable owner; mode switches never retarget a View. Abort, retry, and unmount dispose old work.                                                            |
+| ID      | Behavior                                                                                                                                                                                                                                                                                                                                        |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| MCA-001 | An MCP observation with separately owned frontend presentation data can declare a UI through tool-definition metadata. Missing/invalid sidecar data retains the existing text renderer; unpublished App-shaped event fields are ignored. The complete result remains available to the View.                                                     |
+| MCA-002 | App results remain outside collapsed tool groups and initially expand their cards. Their original text remains visible while loading, unavailable, or failed.                                                                                                                                                                                   |
+| MCA-003 | A configured adapter reads resources and an official AppBridge handles initialization and data delivery. A separate-origin proxy embeds self-contained HTML in an opaque-origin iframe. Both Host and proxy validate message sources. External resources and additional permissions are not supported in this increment.                        |
+| MCA-004 | Sessions bind to the originating backend, generation, conversation, and tool call. Shared views override injected hosts. Write callbacks recheck the current writable owner; mode switches never retarget a View. Abort, retry, and unmount dispose old work.                                                                                   |
+| MCA-005 | Host presentation follows the active Canvas language. Initialization carries its resolved locale and later changes update the existing App through host-context notifications. The review fixture supports all AvailableLanguages, defaults to English, and applies RTL direction for Arabic without reopening sessions or replacing tool data. |
 
 ## Frontend integration data
 
@@ -80,6 +81,14 @@ conversation-mode change. It does not connect to an Agent Server or an LLM.
 Run `npm run test:e2e:mcp-apps` for the dedicated Chromium checks. Set
 `MCP_APPS_BROWSER_PATH` when using an installed browser instead of Playwright's
 managed Chromium.
+
+The review fixture defaults to English. Use its Language selector or add
+`?lang=zh-CN` (or another supported language code) to the URL. It uses the existing
+Canvas translation catalog for all 16 supported languages. The Host passes the
+resolved Canvas locale in `hostContext.locale` and updates it without reopening
+the session. The sample App updates its own text and direction; third-party Apps
+remain responsible for localizing their content. Tool results from real servers
+remain verbatim.
 
 ## Remaining production work
 

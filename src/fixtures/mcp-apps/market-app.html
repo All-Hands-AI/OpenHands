@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en" dir="ltr">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>OPEN 模拟行情</title>
+    <title data-i18n="MCP$DEMO_APP_TITLE">OPEN market demo</title>
     <style>
       :root {
         color-scheme: dark;
@@ -90,7 +90,7 @@
         display: flex;
         align-items: center;
         gap: 4px;
-        margin-left: auto;
+        margin-inline-start: auto;
         color: var(--accent);
         font-size: 13px;
         font-weight: 500;
@@ -107,6 +107,7 @@
         width: 100%;
         height: 128px;
         overflow: visible;
+        direction: ltr;
       }
       .grid-line {
         stroke: var(--border);
@@ -131,6 +132,7 @@
         color: var(--secondary);
         font-size: 11px;
         font-variant-numeric: tabular-nums;
+        direction: ltr;
       }
       .meta {
         display: grid;
@@ -255,9 +257,11 @@
           <div class="eyebrow">
             <span class="symbol-mark" aria-hidden="true">O</span> OPEN / USD
           </div>
-          <h2>本地交互式行情</h2>
+          <h2 data-i18n="MCP$DEMO_APP_HEADING">Interactive market overview</h2>
         </div>
-        <span class="badge">模拟数据</span>
+        <span class="badge" data-i18n="MCP$DEMO_APP_SIMULATED"
+          >Simulated data</span
+        >
       </div>
       <div class="metric">
         <strong id="price">128.40</strong>
@@ -275,12 +279,17 @@
           +3.18%
         </span>
       </div>
-      <figure class="chart" aria-label="模拟日内走势，上涨 3.18%">
+      <figure
+        class="chart"
+        aria-label="Simulated intraday trend, up 3.18%"
+        data-i18n-aria-label="MCP$DEMO_APP_CHART_DESCRIPTION"
+      >
         <svg
           viewBox="0 0 620 128"
           preserveAspectRatio="none"
           role="img"
-          aria-label="模拟走势"
+          aria-label="Simulated trend"
+          data-i18n-aria-label="MCP$DEMO_APP_CHART_LABEL"
         >
           <path class="grid-line" d="M0 20H620 M0 64H620 M0 108H620" />
           <path
@@ -300,16 +309,16 @@
       </figure>
       <dl class="meta">
         <div>
-          <dt>工具输入</dt>
-          <dd id="symbol">等待中</dd>
+          <dt data-i18n="MCP$DEMO_APP_TOOL_INPUT">Tool input</dt>
+          <dd id="symbol" data-i18n="MCP$DEMO_APP_WAITING">Waiting</dd>
         </div>
         <div>
-          <dt>私有结果</dt>
-          <dd id="private">等待中</dd>
+          <dt data-i18n="MCP$DEMO_APP_PRIVATE_RESULT">Private result</dt>
+          <dd id="private" data-i18n="MCP$DEMO_APP_WAITING">Waiting</dd>
         </div>
         <div>
-          <dt>沙箱状态</dt>
-          <dd id="isolation">检查中</dd>
+          <dt data-i18n="MCP$DEMO_APP_SANDBOX_STATUS">Sandbox status</dt>
+          <dd id="isolation" data-i18n="MCP$DEMO_APP_CHECKING">Checking</dd>
         </div>
       </dl>
       <div class="actions">
@@ -325,15 +334,27 @@
               d="M20 7v5h-5M4 17v-5h5M6.1 6.1A8 8 0 0 1 20 12M4 12a8 8 0 0 0 13.9 5.9"
             />
           </svg>
-          刷新数据
+          <span data-i18n="MCP$DEMO_APP_REFRESH">Refresh data</span>
         </button>
-        <button id="context" type="button">加入模型上下文</button>
-        <button id="message" type="button">发送后续消息</button>
+        <button id="context" type="button" data-i18n="MCP$DEMO_APP_CONTEXT">
+          Add to model context
+        </button>
+        <button id="message" type="button" data-i18n="MCP$DEMO_APP_MESSAGE">
+          Send follow-up message
+        </button>
       </div>
-      <p id="status" role="status">正在初始化…</p>
+      <p id="status" role="status">Initializing…</p>
     </main>
+    <script type="application/json" id="mcp-demo-translations">
+      __MCP_DEMO_TRANSLATIONS__
+    </script>
     <script>
       (() => {
+        const translations = JSON.parse(
+          document.getElementById("mcp-demo-translations").textContent,
+        );
+        let locale = "en";
+        let statusState = { key: "MCP$DEMO_APP_INITIALIZING", message: "" };
         let nextId = 0;
         let initialized = false;
         const pending = new Map();
@@ -345,8 +366,15 @@
           pending.set(id, action);
           post({ jsonrpc: "2.0", id, method, params });
         };
-        const status = (text) => {
-          document.getElementById("status").textContent = text;
+        const t = (key) => translations[locale]?.[key] ?? translations.en[key];
+        const renderStatus = () => {
+          document.getElementById("status").textContent = t(
+            statusState.key,
+          ).replaceAll("{{message}}", () => statusState.message);
+        };
+        const status = (key, message = "") => {
+          statusState = { key, message };
+          renderStatus();
         };
         const reportSize = () => {
           if (initialized)
@@ -354,14 +382,42 @@
               height: Math.ceil(document.body.getBoundingClientRect().height),
             });
         };
+        const applyLocale = (requestedLocale = "en") => {
+          const supported = Object.keys(translations);
+          const normalized = requestedLocale.toLowerCase();
+          locale =
+            supported.find((value) => value.toLowerCase() === normalized) ??
+            supported.find(
+              (value) => value.toLowerCase() === normalized.split("-")[0],
+            ) ??
+            "en";
+          document.documentElement.lang = locale;
+          document.documentElement.dir = locale === "ar" ? "rtl" : "ltr";
+          document.querySelectorAll("[data-i18n]").forEach((element) => {
+            element.textContent = t(element.dataset.i18n);
+          });
+          document
+            .querySelectorAll("[data-i18n-aria-label]")
+            .forEach((element) => {
+              element.setAttribute(
+                "aria-label",
+                t(element.dataset.i18nAriaLabel),
+              );
+            });
+          renderStatus();
+          reportSize();
+        };
 
         try {
           localStorage.setItem("mcp-app-probe", "1");
           document.cookie = "mcp_app_probe=1";
-          document.getElementById("isolation").textContent = "未隔离";
+          document.getElementById("isolation").dataset.i18n =
+            "MCP$DEMO_APP_NOT_ISOLATED";
         } catch {
-          document.getElementById("isolation").textContent = "已隔离";
+          document.getElementById("isolation").dataset.i18n =
+            "MCP$DEMO_APP_ISOLATED";
         }
+        applyLocale();
 
         addEventListener("message", (event) => {
           if (event.source !== parent) return;
@@ -371,30 +427,39 @@
             const action = pending.get(String(message.id));
             pending.delete(String(message.id));
             if (message.error) {
-              status("请求被拒绝：" + message.error.message);
+              status("MCP$DEMO_APP_REQUEST_REJECTED", message.error.message);
             } else if (action === "initialize") {
+              applyLocale(message.result.hostContext?.locale);
               initialized = true;
               notify("ui/notifications/initialized");
-              status("Host 握手完成");
+              status("MCP$DEMO_APP_READY");
               reportSize();
             } else if (action === "refresh") {
               document.getElementById("price").textContent =
                 message.result.structuredContent.price;
-              status("数据已刷新");
+              status("MCP$DEMO_APP_REFRESHED");
             } else if (action === "context") {
-              status("已加入模型上下文");
+              status("MCP$DEMO_APP_CONTEXT_SENT");
             } else if (action === "message") {
-              status("后续消息已发送");
+              status("MCP$DEMO_APP_MESSAGE_SENT");
             }
             return;
           }
           if (message.method === "ui/notifications/tool-input") {
-            document.getElementById("symbol").textContent =
-              message.params.arguments.symbol;
+            const symbol = document.getElementById("symbol");
+            symbol.removeAttribute("data-i18n");
+            symbol.textContent = message.params.arguments.symbol;
           }
           if (message.method === "ui/notifications/tool-result") {
-            document.getElementById("private").textContent =
-              message.params._meta.privateSelection;
+            const privateResult = document.getElementById("private");
+            privateResult.removeAttribute("data-i18n");
+            privateResult.textContent = message.params._meta.privateSelection;
+          }
+          if (
+            message.method === "ui/notifications/host-context-changed" &&
+            typeof message.params?.locale === "string"
+          ) {
+            applyLocale(message.params.locale);
           }
         });
 
@@ -408,21 +473,25 @@
               "refresh",
             ),
           );
-        document
-          .getElementById("context")
-          .addEventListener("click", () =>
-            request(
-              "ui/update-model-context",
-              { content: [{ type: "text", text: "Selected OPEN" }] },
-              "context",
-            ),
-          );
+        document.getElementById("context").addEventListener("click", () =>
+          request(
+            "ui/update-model-context",
+            {
+              content: [
+                { type: "text", text: t("MCP$DEMO_APP_CONTEXT_PAYLOAD") },
+              ],
+            },
+            "context",
+          ),
+        );
         document.getElementById("message").addEventListener("click", () =>
           request(
             "ui/message",
             {
               role: "user",
-              content: [{ type: "text", text: "Explain this movement" }],
+              content: [
+                { type: "text", text: t("MCP$DEMO_APP_MESSAGE_PAYLOAD") },
+              ],
             },
             "message",
           ),

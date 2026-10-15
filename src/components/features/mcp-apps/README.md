@@ -1,79 +1,86 @@
 # MCP Apps in Agent Canvas
 
-Agent Canvas 作为 **host**，把 MCP server 通过工具结果返回的交互式 UI（`ui://…`）
-渲染成对话流里的内联 artifact。工具原有的文本结果照旧渲染，App 是叠加在其上的
-渐进增强。
+Agent Canvas acts as the **host**, rendering interactive UIs declared by an MCP
+server (`ui://…`) as inline artifacts in the conversation stream. The tool's
+original text result remains visible; the App enhances that existing result.
 
-对应 issue：[OpenHands/OpenHands#16620][issue]。
-本增量是**前端集成骨架 + 自包含 HTML host**：Agent Server 1.54.0 尚未提供生产所需的
-resource / tool 代理，所以默认 Canvas **不装配 adapter**，行为与今天完全一致——
-没有新的 wire 字段、没有版本下限、没有新的 Agent Server endpoint。
+Related issue: [OpenHands/OpenHands#16620][issue].
+This increment provides a **frontend integration seam and a self-contained HTML
+host**. Agent Server 1.54.0 does not expose the resource/tool proxy required for
+production use, so the default Canvas has **no adapter installed** and retains
+its existing behavior. It adds no wire fields, Agent Server endpoint, or minimum
+Server version requirement.
 
-> 规格细节与验收条目见 [`specs/mcp-apps.md`](../../../../specs/mcp-apps.md)。
-> 本文件只讲架构：分层、数据流、契约边界、安全模型与本地验证方式。
+> See [`specs/mcp-apps.md`](../../../../specs/mcp-apps.md) for specification details
+> and acceptance criteria. This document explains the architecture: layers, data
+> flow, contract boundaries, security model, and local verification.
 
 ---
 
-## 1. 数据流
+## 1. Data flow
 
 ```mermaid
 flowchart TD
-  AS["Agent Server / 事件流<br/>MCPToolObservation"] -->|canonical event| D
-  S["MCPAppHostProvider<br/>artifacts: eventId-keyed sidecar"] -->|"独立前端表示数据"| D
+  AS["Agent Server / event stream<br/>MCPToolObservation"] -->|canonical event| D
+  S["MCPAppHostProvider<br/>artifacts: eventId-keyed sidecar"] -->|"Separate frontend presentation data"| D
   D["getMCPAppDescriptor()<br/>src/utils/mcp-app-descriptor.ts"] -->|descriptor| V
-  V["MCPBody<br/>tool-visualizers/mcp/mcp.tsx"] -->|原文本 + artifact| A
-  A["MCPAppArtifact<br/>（会话绑定 / 状态机 / 尺寸）"] -->|"host.open(binding)"| H
-  H["MCPAppHost adapter<br/>（由嵌出方安装）"] -->|MCPAppSession| A
-  A -->|"mountMCPAppBridge()（懒加载）"| B
+  V["MCPBody<br/>tool-visualizers/mcp/mcp.tsx"] -->|Original text + artifact| A
+  A["MCPAppArtifact<br/>(Conversation binding / state machine / size)"] -->|"host.open(binding)"| H
+  H["MCPAppHost adapter<br/>(Installed by the embedding application)"] -->|MCPAppSession| A
+  A -->|"mountMCPAppBridge() (lazy-loaded)"| B
   B["AppBridge + SandboxTransport<br/>mcp-app-bridge.ts"] <-->|postMessage JSON-RPC| P
-  P["独立 origin 代理页 public/mcp-app-sandbox.html<br/>默认 origin:3102"] <-->|postMessage| APP
-  APP["App 内层 iframe<br/>srcdoc · opaque origin · allow-scripts"]
+  P["Separate-origin proxy public/mcp-app-sandbox.html<br/>Default origin:3102"] <-->|postMessage| APP
+  APP["Inner App iframe<br/>srcdoc · opaque origin · allow-scripts"]
 
   H -.->|readResource / callTool<br/>updateModelContext / sendMessage| M["MCP Server"]
 ```
 
-四个阶段各自独立、可分别替换：
+The four stages are independent and can be replaced separately:
 
-1. **识别**：Provider 独立拥有的 sidecar 中有没有该事件的 UI 声明？
-2. **取回**：adapter 从正确的 server 取 `ui://` 资源与工具结果。
-3. **桥接**：官方 `AppBridge` 完成握手与数据投递，见 §5。
-4. **隔离**：独立 origin 的双层 iframe 承载不可信 HTML，见 §6。
-
----
-
-## 2. 文件地图
-
-| 路径                                                        | 职责                                                                                                                                 |
-| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `src/types/mcp-app.ts`                                      | 全部对外类型契约：`MCPAppIntegrationData` / `Artifacts` / `Descriptor` / `Binding` / `Scope` / `Session` / `Host` / `RequestOptions` |
-| `src/utils/mcp-app-descriptor.ts`                           | 验证 canonical MCP event 与独立的 sidecar 数据，含 `_meta.ui.resourceUri` 解析与轻量校验；忽略事件上未发布的 App 字段                |
-| `src/components/features/chat/tool-visualizers/mcp/mcp.tsx` | 工具可视化器：原文本 markdown + App artifact                                                                                         |
-| `src/components/features/mcp-apps/mcp-app-artifact.tsx`     | React 宿主组件：会话绑定、加载状态机、超时、重试、高度控制                                                                           |
-| `src/components/features/mcp-apps/mcp-app-bridge.ts`        | 协议层：`SandboxTransport`、capability 声明、回调路由、销毁                                                                          |
-| `src/components/features/mcp-apps/mcp-app-host-context.tsx` | `MCPAppHostProvider` / `useMCPAppHost`：显式的 host、scope 与独立 artifacts map 注入点                                               |
-| `public/mcp-app-sandbox.html`                               | 独立 origin 代理页：静态、无凭证，负责转发与 `srcdoc` 注入                                                                           |
-| `scripts/mcp-app-sandbox.mjs`                               | 代理页的 HTTP 服务（CSP / frame-ancestors / no-store / no-referrer）                                                                 |
-| `scripts/mcp-app-demo.mjs`                                  | 本地原型：Vite app(3101) + sandbox(3102) 一键起                                                                                      |
-| `src/fixtures/mcp-apps/`                                    | 使用真实渲染器与真实协议桥的 demo harness（含内存版 Host adapter）                                                                   |
-| `tests/e2e/mcp-apps/host.spec.ts`                           | Chromium 端到端：真实双层 iframe、回调路由、越权拒绝                                                                                 |
-| `playwright.mcp-apps.config.ts`                             | 上述 e2e 的独立配置（自动拉起 demo server）                                                                                          |
-
-集成改动（相对主干）：
-
-| 文件                                       | 改动                                                                                             |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------ |
-| `tool-visualizers/dispatcher.tsx`          | 显式传入 sidecar descriptor 时渲染专用 `MCPBody`，否则 `MCPToolObservation` 仍走原 markdown 路径 |
-| `conversation-events/chat/messages.tsx`    | 读取 Provider sidecar，sidecar 变化触发分组更新，canonical event 数组保持不变                    |
-| `conversation-events/chat/group-events.ts` | App 结果不进折叠工具组；thought 卡片提取前移（见 §4）                                            |
-| `.../generic-event-message-wrapper.tsx`    | 带 App 的卡片默认展开                                                                            |
-| `routes/shared-conversation.tsx`           | 公开分享页强制 `host={null} scope={null}`                                                        |
-| `components/conversation/index.ts`         | 导出 Provider 与类型，供嵌出方使用                                                               |
-| `vite.config.ts`                           | `@modelcontextprotocol/ext-apps/app-bridge` 独立 chunk                                           |
-| `src/i18n/translation.json`                | `MCP$APP_TITLE` / `_LOADING` / `_ERROR` / `_UNAVAILABLE`（16 个 locale）                         |
+1. **Identify:** Does the Provider's separately owned sidecar declare a UI for
+   this event?
+2. **Retrieve:** The adapter obtains `ui://` resources and tool results from the
+   correct server.
+3. **Bridge:** The official `AppBridge` handles initialization and data delivery;
+   see §5.
+4. **Isolate:** Two iframe layers on a separate origin contain untrusted HTML;
+   see §6.
 
 ---
 
-## 3. 契约一：Provider 独立拥有的前端 sidecar
+## 2. File map
+
+| Path                                                        | Responsibility                                                                                                                                                            |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/types/mcp-app.ts`                                      | Public type contracts: `MCPAppIntegrationData` / `Artifacts` / `Descriptor` / `Binding` / `Scope` / `Session` / `Host` / `RequestOptions`                                 |
+| `src/utils/mcp-app-descriptor.ts`                           | Validates the canonical MCP event and separate sidecar data, including `_meta.ui.resourceUri` parsing and lightweight checks; ignores unpublished App-shaped event fields |
+| `src/components/features/chat/tool-visualizers/mcp/mcp.tsx` | Tool visualizer: original Markdown text plus App artifact                                                                                                                 |
+| `src/components/features/mcp-apps/mcp-app-artifact.tsx`     | React host component: conversation binding, loading state machine, timeout, retry, height, and active UI locale                                                           |
+| `src/components/features/mcp-apps/mcp-app-bridge.ts`        | Protocol layer: `SandboxTransport`, capability declarations, callback routing, host-context updates, and disposal                                                         |
+| `src/components/features/mcp-apps/mcp-app-host-context.tsx` | `MCPAppHostProvider` / `useMCPAppHost`: explicit injection point for the host, scope, and separate artifacts map                                                          |
+| `public/mcp-app-sandbox.html`                               | Static, credential-free proxy on a separate origin; forwards messages and injects `srcdoc`                                                                                |
+| `scripts/mcp-app-sandbox.mjs`                               | HTTP service for the proxy page: CSP / frame-ancestors / no-store / no-referrer                                                                                           |
+| `scripts/mcp-app-demo.mjs`                                  | Starts the local prototype: Vite app on port 3101 and sandbox on port 3102                                                                                                |
+| `src/fixtures/mcp-apps/`                                    | Demo harness using the real renderer and protocol bridge with an in-memory Host adapter and localized sample App                                                          |
+| `tests/e2e/mcp-apps/host.spec.ts`                           | Chromium end-to-end coverage: real iframe layers, callback routing, unauthorized-write rejection, and locale changes                                                      |
+| `playwright.mcp-apps.config.ts`                             | Dedicated E2E configuration that starts the demo server automatically                                                                                                     |
+
+Integration changes relative to the main branch:
+
+| File                                       | Change                                                                                                                                           |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `tool-visualizers/dispatcher.tsx`          | Renders a dedicated `MCPBody` when an explicit sidecar descriptor is provided; otherwise `MCPToolObservation` retains its original Markdown path |
+| `conversation-events/chat/messages.tsx`    | Reads the Provider sidecar and recomputes grouping when it changes, preserving the canonical event array                                         |
+| `conversation-events/chat/group-events.ts` | Excludes App results from collapsed tool groups; extracts thought cards before deciding whether to group an event (§4)                           |
+| `.../generic-event-message-wrapper.tsx`    | Initially expands cards containing an App                                                                                                        |
+| `routes/shared-conversation.tsx`           | Forces `host={null} scope={null}` on public shared views                                                                                         |
+| `components/conversation/index.ts`         | Exports the Provider and types for embedding applications                                                                                        |
+| `vite.config.ts`                           | Keeps `@modelcontextprotocol/ext-apps/app-bridge` in a separate chunk                                                                            |
+| `src/i18n/translation.json`                | Host title/loading/error/unavailable copy, demo UI, and sample-App copy for all 16 supported locales                                             |
+
+---
+
+## 3. Contract: separately owned frontend sidecar
 
 ```ts
 const artifacts: MCPAppArtifacts = new Map([
@@ -88,46 +95,56 @@ const artifacts: MCPAppArtifacts = new Map([
 </MCPAppHostProvider>
 ```
 
-**canonical event 不添加任何字段。** 可信嵌入 adapter 或 fixture 是 sidecar 的唯一
-所有者，通过 event ID 查找该事件的独立 `MCPAppIntegrationData`。更新时替换 map，
-使 React 能响应数据到达或移除。标准事件流、历史、LLM-ready observation 与 transcript
-export 都不携带 App 私有结果。Provider 默认空 map，嵌套 Provider 不继承外层 sidecar。
-未来生产 adapter 需通过已发布的 SDK/client 契约填充此 view model。
+**No fields are added to canonical events.** A trusted embedding adapter or
+fixture is the sole owner of the sidecar and looks up separate
+`MCPAppIntegrationData` by event ID. Replace the map on updates so React can
+respond to data arrival or removal. The standard event stream, history,
+LLM-ready observation, and transcript export do not carry private App results.
+The Provider defaults to an empty map, and nested Providers do not inherit an
+outer sidecar. A future production adapter must populate this view model through
+published SDK/client contracts.
 
-解析规则（`getMCPAppDescriptor`）：
+Parsing rules in `getMCPAppDescriptor`:
 
-- 仅接受 `source === "environment"`、`observation.kind === "MCPToolObservation"` 的事件；
-- `tool._meta.ui.resourceUri` 是标准入口；
-- 已废弃的 `tool._meta["ui/resourceUri"]` 只在**没有**嵌套声明时兜底；
-- 嵌套声明存在但格式非法时**不回退**到 legacy key —— 否则会静默加载与 server
-  当前声明不同的 app；
-- URI 必须匹配 `^ui:\/\/\S+$`，`toolResult` 需通过轻量结构检查（完整 schema 校验
-  推迟到懒加载的协议层，避免拖累普通消息路径）。
+- Accept only events with `source === "environment"` and
+  `observation.kind === "MCPToolObservation"`.
+- `tool._meta.ui.resourceUri` is the standard entry point.
+- The deprecated `tool._meta["ui/resourceUri"]` is a fallback only when no nested
+  declaration exists.
+- An invalid nested declaration does **not** fall back to the legacy key, which
+  could silently load a different App from the server's current declaration.
+- The URI must match `^ui:\/\/\S+$`, and `toolResult` must pass lightweight
+  structural checks. Full schema validation runs later in the lazy-loaded
+  protocol layer to keep ordinary message rendering lightweight.
 
-任一条件不满足 → 返回 `null`，调用方保持既有文本渲染。
+If any condition fails, the function returns `null` and callers retain the
+existing text renderer.
 
-## 4. 契约二：视觉与分组行为
+## 4. Contract: rendering and grouping
 
-- **MCA-001**：只有显式集成数据才会点亮 App。`dispatcher` 对无 descriptor 的
-  `MCPToolObservation` 直接返回 `null`，落回既有 markdown；完整结果始终可在 View 里看到。
-- **MCA-002**：App 结果**不参与**折叠工具组（`isGroupableEvent` 返回 `false`），
-  且卡片初始展开，省掉一次 chevron 点击。
-- 原文本与 artifact 同属 `MCPBody`：`MCPAppArtifact` **不**拥有原始
-  文本，加载中 / 不可用 / 失败时原文本始终可见。
-- `group-events.ts` 里 thought 卡片的提取被前移到分组判断之前。这不只是移动：
-  被 App 打断的 run 在 `flushRun()` 时也必须先发出对应的 thought 卡片，否则思考
-  内容会随折叠组一起消失。
+- **MCA-001:** Only explicit integration data enables an App. For an
+  `MCPToolObservation` without a descriptor, `dispatcher` returns `null` and
+  falls back to the existing Markdown path. The complete result remains
+  available to the View.
+- **MCA-002:** App results stay outside collapsed tool groups
+  (`isGroupableEvent` returns `false`), and their cards initially expand.
+- Original text and the artifact both belong to `MCPBody`. `MCPAppArtifact`
+  does not own the original text, which remains visible while the App is
+  loading, unavailable, or failed.
+- `group-events.ts` extracts thought cards before its grouping decision. When an
+  App interrupts a run, `flushRun()` must also emit the associated thought cards
+  first, so that thought content does not disappear into the collapsed group.
 
-## 5. 契约三：Host 与 Session
+## 5. Contract: Host and Session
 
 ```ts
 interface MCPAppHost {
-  sandboxUrl: string; // 独立 HTTP(S) origin，必须 != Canvas origin
+  sandboxUrl: string; // Separate HTTP(S) origin; must differ from the Canvas origin.
   open(binding, { signal }): Promise<MCPAppSession>;
 }
 
 interface MCPAppSession {
-  readResource(uri, options): Promise<ReadResourceResult>; // 必需
+  readResource(uri, options): Promise<ReadResourceResult>; // Required.
   callTool?(params, options): Promise<CallToolResult>;
   updateModelContext?(params, options): Promise<EmptyResult>;
   sendMessage?(params, options): Promise<McpUiMessageResult>;
@@ -135,144 +152,227 @@ interface MCPAppSession {
 }
 ```
 
-- **Provider 显式注入**：`MCPAppHostProvider` 接收 `host`、`scope` 与独立 `artifacts`，
-  默认上下文是空 sidecar 和 null host/scope。没有 host 的合法 sidecar 渲染不可用提示。
-- **capability 随回调收敛**：`serverResources` 永远声明；`serverTools` /
-  `message` / `updateModelContext` 仅在对应回调存在时声明。声明与实现不一致会
-  在协议层被拒（`MethodNotFound`）。
-- **内容限制**：本增量只支持文本。`ui/message` 与 `ui/update-model-context` 收到
-  非 text content 或 `structuredContent` 时返回 `InvalidParams`。
-- **资源限制**：只有 `mimeType === text/html;profile=mcp-app`，且 `_meta.ui.csp`
-  与 `_meta.ui.permissions` 为空（不允许任何外部域名或权限）才可加载；blob 形式
-  按 UTF-8 严格解码。
-- **凭证隔离**：adapter 自己负责鉴权、工具可见性、审计与下一轮上下文消费。
-  **凭证与运行时 URL 绝不进入沙箱初始化载荷。**
-- **上游优先**：真实 Agent Server 支持到位后，adapter 必须使用已发布的类型化 API
-  将数据填充到独立 view model，Canvas 不自行扩展 wire event。
+- **Explicit Provider injection:** `MCPAppHostProvider` accepts `host`, `scope`,
+  and a separate `artifacts` map. Its default context has an empty sidecar and
+  null host/scope. Valid sidecar data without a host displays an unavailable
+  message.
+- **Capabilities match callbacks:** `serverResources` is always declared.
+  `serverTools`, `message`, and `updateModelContext` are declared only when
+  their callbacks exist. Unsupported methods are rejected with
+  `MethodNotFound` in the protocol layer.
+- **Content limits:** This increment supports text only. `ui/message` and
+  `ui/update-model-context` reject non-text content or `structuredContent` with
+  `InvalidParams`.
+- **Resource limits:** Resources must have
+  `mimeType === "text/html;profile=mcp-app"` and empty `_meta.ui.csp` and
+  `_meta.ui.permissions`. External domains and additional permissions are not
+  permitted. Blob content is decoded strictly as UTF-8.
+- **Credential isolation:** Adapters own authentication, tool visibility,
+  audit, and consumption of context on the next turn. Credentials and runtime
+  URLs must never enter the sandbox initialization payload.
+- **Published APIs first:** Once real Agent Server support exists, adapters
+  must use published typed APIs to populate the separate view model. Canvas
+  does not extend wire events itself.
 
-## 6. 契约四：沙箱与安全模型（MCA-003）
+## 6. Contract: sandbox and security model (MCA-003)
 
-双层 iframe，两层 origin 都与 Canvas 不同：
+Both iframe layers have origins different from Canvas:
 
-| 层             | sandbox                                       | origin                               | 说明                                          |
-| -------------- | --------------------------------------------- | ------------------------------------ | --------------------------------------------- |
-| 外层（代理页） | `allow-scripts allow-same-origin`             | 独立 origin（默认 `127.0.0.1:3102`） | 固定静态页面，无凭证，只做转发                |
-| 内层（App）    | `allow-scripts`（**无** `allow-same-origin`） | opaque（`null`）                     | `srcdoc` 注入，无法读写 cookie / localStorage |
+| Layer       | Sandbox                                      | Origin                                    | Purpose                                                          |
+| ----------- | -------------------------------------------- | ----------------------------------------- | ---------------------------------------------------------------- |
+| Outer proxy | `allow-scripts allow-same-origin`            | Separate origin, default `127.0.0.1:3102` | Fixed static page with no credentials; forwards messages only    |
+| Inner App   | `allow-scripts`, without `allow-same-origin` | Opaque (`null`)                           | Injected through `srcdoc`; cannot access cookies or localStorage |
 
-具体机制：
+Mechanisms:
 
-- **代理页只服务固定文档**：`scripts/mcp-app-sandbox.mjs` 仅对 `GET /sandbox.html`
-  且 `parentOrigin` 参数匹配的请求返回内容，其余 404。响应头强制 `no-store`、
-  `nosniff`、`no-referrer`、`Permissions-Policy` 全禁用、`frame-ancestors <parent>`，
-  以及 `default-src 'none'` 起底的 CSP（仅放行 inline script/style 与 data:/blob: 媒体）。
-- **HTML 惰性注入**：代理页用 `DOMParser` 在**惰性文档**里解析 App HTML，额外插入
-  一条更严格的内层 CSP（`connect-src 'none'`、`frame-src 'none'`）后再赋给
-  `srcdoc`。不可信元素从不进入代理页 DOM。
-- **双向来源校验**：
-  - 代理页只接受来自 `event.source === parent && event.origin === parentOrigin` 的
-    消息，以及来自**内层 iframe window 且 `event.origin === "null"`** 的消息；
-  - Canvas 侧 `SandboxTransport` 同时校验 `event.source === iframe.contentWindow`
-    与 `event.origin === sandbox.origin`，并用 `JSONRPCMessageSchema` 解析；
-  - `mountMCPAppBridge` 还校验 sandbox URL 是 http(s)、origin 不等于自身、不含
-    username/password。把代理页挂在 Canvas 同源下会被直接拒绝。
-- **越权写入不受信**：来自错误 window 的 JSON-RPC 会被静默丢弃——后台日志里没有
-  任何 Host 调用记录。
+- **Fixed proxy document:** `scripts/mcp-app-sandbox.mjs` returns content only
+  for `GET /sandbox.html` when the `parentOrigin` parameter matches its configured
+  parent. Other requests return 404. Headers enforce `no-store`, `nosniff`,
+  `no-referrer`, disabled `Permissions-Policy`, `frame-ancestors <parent>`, and
+  a CSP based on `default-src 'none'`. Only inline scripts/styles and
+  data:/blob: media are permitted.
+- **Inert HTML injection:** The proxy parses App HTML with `DOMParser` in an
+  inert document, adds a stricter inner CSP including `connect-src 'none'` and
+  `frame-src 'none'`, then assigns it to `srcdoc`. Untrusted elements never enter
+  the proxy page's DOM.
+- **Source checks in both directions:**
+  - The proxy accepts parent messages only when
+    `event.source === parent && event.origin === parentOrigin`, and App messages
+    only from the inner iframe window with `event.origin === "null"`.
+  - Canvas's `SandboxTransport` checks both
+    `event.source === iframe.contentWindow` and
+    `event.origin === sandbox.origin`, then parses the payload with
+    `JSONRPCMessageSchema`.
+  - `mountMCPAppBridge` also requires an HTTP(S) sandbox URL on a different
+    origin, without username/password credentials. A proxy hosted on the Canvas
+    origin is rejected.
+- **Messages from unauthorized windows are ignored:** JSON-RPC from the wrong
+  window is silently discarded and produces no Host callback log.
 
-> 这套机制**不等于**用户授权。原型允许不弹确认就启动合法 artifact；生产 Host 在
-> 启用 tool / message / context 回调前，必须补齐可见性、确认、审计与限流策略。
-> `scope` 校验只防"改挂到别的会话"，不是用户同意。
+> These mechanisms do not establish user authorization. The prototype starts
+> valid artifacts without a consent prompt. Before enabling tool, message, or
+> context callbacks, a production Host must add visibility, confirmation, audit,
+> and rate-limit policies. Scope validation prevents retargeting to another
+> conversation; it does not represent user consent.
 
-## 7. 契约五：会话绑定与生命周期（MCA-004）
+## 7. Contract: conversation binding and lifecycle (MCA-004)
 
-`MCPAppBinding` 记录**来源身份**：`backendId`、`orgId`、`connectionRevision`、
-`ownerConversationId`、`eventId`、`actionId`、`toolCallId`、`toolName`、`resourceUri`。
+`MCPAppBinding` records source identity: `backendId`, `orgId`,
+`connectionRevision`, `ownerConversationId`, `eventId`, `actionId`, `toolCallId`,
+`toolName`, and `resourceUri`.
 
-- **owner 解析**：规划会话事件取 `scope.planningConversationId`，否则取
-  `scope.conversationId`。`isWritable()` 要求当前 host 引用、backend、org、
-  revision、`readOnly`、以及 `writableConversationId === owner` 全部匹配——
-  **模式切换只撤销写权限，绝不重定向 View**；已打开的 session 不会被重定向给新会话。
-- **失效即拒绝**：`invoke()` 把 session signal、bridge lifetime signal 与请求自身
-  signal 合成一个 `AbortSignal`，调用前后各校验一次。未初始化、已销毁、已 abort
-  的请求抛 `RequestError` / `InvalidRequest`；回调抛出的非 `McpError` 统一收敛为
-  `InternalError`，不泄漏内部错误细节。
-- **销毁路径确定**：`abort`、重试、组件卸载都会清理监听、bridge 与 transport。
-  完成初始化的 App 会先尝试 `ui/resource-teardown`（1s 超时）；未初始化时直接清理。
-  App 崩溃或无响应也必须释放 transport。
-- **加载状态机**：`loading → ready | error`，30s 超时兜底；失败时移除 iframe `src`
-  并暴露重试按钮（重试走全新 binding）。iframe 高度初始 360px，运行期由
-  `sizechange` 通知驱动，组件侧夹到 `[160, 1200]`，协议侧另夹到 4096。
-- **共享视图覆盖**：`routes/shared-conversation.tsx` 用 `host={null} scope={null}`
-  包裹 `Messages`，因此公开历史页**不会**继承外层应用的 live host。
+- **Owner resolution:** Planning events use `scope.planningConversationId`;
+  other events use `scope.conversationId`. `isWritable()` requires the current
+  host reference, backend, organization, revision, `readOnly` state, and
+  `writableConversationId === owner` to match. Mode changes revoke write access
+  without retargeting the View. An open session is never redirected to the new
+  conversation.
+- **Reject invalidated work:** `invoke()` combines the session signal, bridge
+  lifetime signal, and request signal into one `AbortSignal`, and checks
+  authorization before and after each call. Uninitialized, disposed, or aborted
+  requests throw `RequestError` / `InvalidRequest`. Callback exceptions other
+  than `McpError` become `InternalError`, keeping internal error details private.
+- **Deterministic disposal:** Abort, retry, and component unmount remove
+  listeners and dispose the bridge and transport. An initialized App first
+  attempts `ui/resource-teardown` with a one-second timeout; an uninitialized
+  App is cleaned up directly. Crashed or unresponsive Apps must also release
+  their transports.
+- **Loading state machine:** `loading → ready | error`, with a 30-second timeout.
+  Failure removes the iframe's `src` and displays a retry button; retry creates
+  a new binding. Iframe height starts at 360px. Runtime `sizechange` notifications
+  drive height updates, clamped to `[160, 1200]` by the component and separately
+  capped at 4096 by the protocol layer.
+- **Shared-view override:** `routes/shared-conversation.tsx` wraps `Messages`
+  with `host={null} scope={null}`, so public history pages cannot inherit the
+  embedding application's live host.
 
-## 8. 打包与性能
+## 8. Locale adaptation (MCA-005)
 
-- 协议 SDK 通过 `await import("./mcp-app-bridge")` 懒加载，只在工具结果带有效
-  descriptor 且 host 就绪后才进入图；普通对话首屏不受影响。
-- `vite.config.ts` 把 `@modelcontextprotocol/ext-apps/app-bridge` 列入开发期的
-  `optimizeDeps.include`，避免首次载入的依赖优化错误；生产桥 chunk 由动态 import
-  分割。`resourceHTML` 与 `JSONRPCMessageSchema` 校验都在懒加载之后执行。
-- 依赖：`@modelcontextprotocol/ext-apps@1.7.5`、`@modelcontextprotocol/sdk@1.29.0`、
-  `zod@4.4.3`（均为 exact-pin）。
+Host presentation uses Canvas's existing `openhands` translation namespace and
+supports all 16 entries in `AvailableLanguages`: `en`, `ja`, `zh-CN`, `zh-TW`,
+`ko-KR`, `no`, `ar`, `de`, `fr`, `it`, `pt`, `es`, `ca`, `tr`, `uk`, and `id`.
+The catalog includes Host loading/error/unavailable copy, demo controls and
+fixture text, and the sample App's labels, accessibility descriptions, status
+messages, and model-context/message payloads.
 
-## 9. 本地验证
+`MCPAppArtifact` reads the active i18n instance's `resolvedLanguage`, falling back
+to its language and then English. Initialization passes that value in
+`hostContext.locale`. Later language changes call the mounted bridge's
+`updateLocale`; the official `AppBridge.setHostContext()` sends a
+`ui/notifications/host-context-changed` notification while preserving the other
+host-context fields. The existing session, iframe, tool inputs, and private
+results remain intact. A locale change does not fetch the resource again or
+reopen the session. Changes during a pending resource read or bridge connection
+use the latest committed locale.
+
+The review fixture defaults to English. Choose a language from its Language
+selector or open a URL such as
+`http://127.0.0.1:3101/src/fixtures/mcp-apps/?lang=zh-CN`. Any supported code can
+replace `zh-CN`; an unsupported query value falls back to English. The selector
+updates the existing app without navigation.
+
+Apps own localization of their content. The self-contained sample App receives
+its translation catalog as inert JSON, renders translated text and attributes,
+and responds to initialization and subsequent host-context notifications. It
+sets `lang` and uses right-to-left direction for Arabic, while keeping tool data
+and current operation status. Third-party Apps must implement their own locale
+handling. Real server tool results remain verbatim; Canvas does not translate
+their content. Product names, protocol methods, tool identifiers, and diagnostic
+log identifiers retain their technical spelling.
+
+Source documentation, commit messages, and PR descriptions for this contribution
+use English by default, independently of the UI language selected by a user.
+
+## 9. Packaging and performance
+
+- The protocol SDK is lazy-loaded through `await import("./mcp-app-bridge")`
+  only when a tool result has a valid descriptor and a host is available.
+  Ordinary conversation startup does not load this bridge.
+- `vite.config.ts` includes `@modelcontextprotocol/ext-apps/app-bridge` in
+  development `optimizeDeps.include` to prevent first-load dependency
+  optimization errors. Dynamic imports split the production bridge chunk.
+  `resourceHTML` and `JSONRPCMessageSchema` validation run after lazy loading.
+- Exact-pinned dependencies: `@modelcontextprotocol/ext-apps@1.7.5`,
+  `@modelcontextprotocol/sdk@1.29.0`, and `zod@4.4.3`.
+
+## 10. Local verification
 
 ```bash
-# 原型：真实渲染器 + 真实协议桥 + 内存 Host adapter（不连 Agent Server / LLM）
+# Prototype: real renderer and protocol bridge, in-memory Host adapter.
+# No Agent Server or LLM connection.
 npm run demo:mcp-apps
-# → 打开 http://127.0.0.1:3101/src/fixtures/mcp-apps/
-#   sandbox 同时起在 http://127.0.0.1:3102/sandbox.html
+# Open http://127.0.0.1:3101/src/fixtures/mcp-apps/
+# The sandbox also starts at http://127.0.0.1:3102/sandbox.html.
+# Use the Language selector or add ?lang=ja to review another locale.
 
-# 端到端（Chromium，自动拉起上面的 demo server）
+# End-to-end tests: Chromium, with the demo server started automatically.
 npm run test:e2e:mcp-apps
-#   可用 MCP_APPS_BROWSER_PATH 指定本机浏览器
-#   可用 MCP_APPS_SCREENSHOT_PATH 导出 App 截图
+# MCP_APPS_BROWSER_PATH selects an installed browser.
+# MCP_APPS_SCREENSHOT_PATH exports an App screenshot.
 
-# 单元测试
+# Unit tests.
 npm test -- mcp-app
+
+# After editing translation.json, regenerate and validate locale bundles.
+npm run make-i18n
+npm run check-translation-completeness
 ```
 
-单独跑沙箱服务（远程/HTTPS 部署时用独立 HTTPS origin，并保留脚本强制的响应头）：
+Run the sandbox service separately when needed. Remote/HTTPS deployments must
+use a dedicated HTTPS origin and retain the response headers enforced by the
+script:
 
 ```bash
 node scripts/mcp-app-sandbox.mjs --parent-origin http://127.0.0.1:3101
 ```
 
-脚本优先读取源码布局的 `public/mcp-app-sandbox.html`；在 npm 发布布局中，
-回退读取固定的 `build/mcp-app-sandbox.html`。生产安装所需的 HTML 随静态构建发布。
+The script first reads `public/mcp-app-sandbox.html` in a source checkout, then
+falls back to the fixed `build/mcp-app-sandbox.html` path in an npm package
+layout. The required HTML is shipped with the static build.
 
-原型覆盖的行为：原文本保留、完整 `toolResult`（含 View-only `_meta`）投递、
-`callServerTool` / `updateModelContext` / 后续消息三条回调、来源过滤、模式切换后
-写权限撤销。**它不代表生产链路**——`scripts/mcp-app-sandbox.mjs` 不会被生产启动器
-自动拉起。
+The prototype covers original-text preservation, delivery of the complete
+`toolResult` including View-only `_meta`, the `callServerTool`,
+`updateModelContext`, and follow-up-message callbacks, source filtering, write
+revocation after mode changes, and live locale updates. This does not validate
+the production integration: production launchers do not automatically start
+`scripts/mcp-app-sandbox.mjs`.
 
-## 10. Spec ID → 测试映射
+## 11. Spec ID to test mapping
 
-| ID      | 行为                                          | 主要测试                                                                                                                                                       |
-| ------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| MCA-001 | 仅显式集成数据点亮 App，否则保留文本          | `__tests__/components/features/chat/tool-visualizers/mcp/mcp.test.tsx`、`src/utils/mcp-app-descriptor.test.ts`                                                 |
-| MCA-002 | 不进折叠组、默认展开                          | `__tests__/components/conversation-events/chat/group-events.test.ts`                                                                                           |
-| MCA-003 | adapter 读取 + 官方 bridge + 独立 origin 代理 | `__tests__/components/features/mcp-apps/mcp-app-bridge.test.ts`、`tests/e2e/mcp-apps/host.spec.ts`                                                             |
-| MCA-004 | 会话绑定、写权限复核、失效即销毁              | `src/components/features/mcp-apps/mcp-app-artifact.test.tsx`、`mcp-app-host-context.test.tsx`、`__tests__/routes/shared-conversation-viewer-behavior.test.tsx` |
+| ID      | Behavior                                                                                                  | Main tests                                                                                                                                                       |
+| ------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| MCA-001 | Explicit integration data enables Apps; other results keep their text                                     | `__tests__/components/features/chat/tool-visualizers/mcp/mcp.test.tsx`, `src/utils/mcp-app-descriptor.test.ts`                                                   |
+| MCA-002 | App cards start expanded and stay outside collapsed groups                                                | `__tests__/components/conversation-events/chat/group-events.test.ts`                                                                                             |
+| MCA-003 | Adapter resource reads, official bridge, and separate-origin proxy                                        | `__tests__/components/features/mcp-apps/mcp-app-bridge.test.ts`, `tests/e2e/mcp-apps/host.spec.ts`                                                               |
+| MCA-004 | Conversation binding, write-access rechecks, disposal after invalidation                                  | `src/components/features/mcp-apps/mcp-app-artifact.test.tsx`, `mcp-app-host-context.test.tsx`, `__tests__/routes/shared-conversation-viewer-behavior.test.tsx`   |
+| MCA-005 | All supported locales, default English, live host-context updates, Arabic RTL, and preserved session/data | `src/components/features/mcp-apps/mcp-app-artifact.test.tsx`, `__tests__/components/features/mcp-apps/mcp-app-bridge.test.ts`, `tests/e2e/mcp-apps/host.spec.ts` |
 
-## 11. 尚未完成（生产化待办）
+## 12. Remaining production work
 
-1. SDK / Agent Server 侧的 metadata 与 provenance 保留。
-2. 绑定会话的 resource / tool 代理。
-3. 工具可见性、用户确认与审计；限流。
-4. 下一轮 App 上下文（`updateModelContext` 真正进入模型上下文）。
-5. Cloud 历史持久化；ACP 支持（现有 ACP 事件缺少等价来源信息与资源路由）。
-6. 真实 Host adapter，以及按安装方式确定沙箱部署方案。
-7. 若最终需要新的 Server 契约，再更新 `config/defaults.json` 的
-   `compatibility.minimumAgentServer`。
+1. Preserve metadata and provenance in the SDK / Agent Server.
+2. Provide conversation-bound resource/tool proxies.
+3. Implement tool visibility, user confirmation, audit, and rate limits.
+4. Consume App context on the next turn, so `updateModelContext` reaches the
+   actual model context.
+5. Persist Cloud history and support ACP. Existing ACP events lack equivalent
+   provenance and resource routing.
+6. Supply a real Host adapter and determine sandbox deployment for each install
+   mode.
+7. Update `compatibility.minimumAgentServer` in `config/defaults.json` if the
+   final integration requires a new Server contract.
 
-## 12. 修改这一区域时必须守住的不变量
+## 13. Invariants for future changes
 
-- 不要从普通文本、`raw_output` 或 iframe 提供的任意 metadata 推断 UI 资源。
-- 不要把 App 相关私有 metadata 混进发给 LLM 的消息。
-- 不要在沙箱初始化载荷里放凭证或运行时 URL。
-- 不要让代理页与 Canvas 同源。
-- 不要给内层 iframe 加 `allow-same-origin`。
-- 不要让写回调在 owner 变化后继续生效，也不要把原 session 重定向给新会话。
-- 不要让公开分享页继承 live host。
+- Do not infer UI resources from ordinary text, `raw_output`, or arbitrary
+  iframe-supplied metadata.
+- Keep private App metadata out of messages sent to the LLM.
+- Keep credentials and runtime URLs out of sandbox initialization payloads.
+- Keep the proxy on a different origin from Canvas.
+- Never add `allow-same-origin` to the inner iframe.
+- Reject writes after ownership changes and never redirect an existing session
+  to a new conversation.
+- Prevent public shared views from inheriting a live host.
+- Locale changes update presentation through the existing bridge; they do not
+  recreate sessions or replace real tool data.
 
 [issue]: https://github.com/OpenHands/OpenHands/issues/16620

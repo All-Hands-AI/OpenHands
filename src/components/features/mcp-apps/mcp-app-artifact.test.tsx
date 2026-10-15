@@ -1,5 +1,13 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createInstance, type i18n } from "i18next";
+import { I18nextProvider } from "react-i18next";
 import type { ObservationEvent } from "#/types/agent-server/core";
 import type { MCPToolObservation } from "#/types/agent-server/core/base/observation";
 import type {
@@ -10,6 +18,10 @@ import type {
 } from "#/types/mcp-app";
 import { MCPAppArtifact } from "./mcp-app-artifact";
 import { MCPAppHostProvider } from "./mcp-app-host-context";
+
+vi.unmock("react-i18next");
+
+let language: i18n;
 
 const bridgeMocks = vi.hoisted(() => ({
   mount: vi.fn(),
@@ -53,12 +65,18 @@ const scope: MCPAppScope = {
   writableConversationId: "conversation-main",
 };
 
-function renderArtifact(host: MCPAppHost | null, currentScope = scope) {
-  return render(
-    <MCPAppHostProvider host={host} scope={currentScope}>
-      <MCPAppArtifact event={event} descriptor={descriptor} />
-    </MCPAppHostProvider>,
+function artifactView(host: MCPAppHost | null, currentScope = scope) {
+  return (
+    <I18nextProvider i18n={language}>
+      <MCPAppHostProvider host={host} scope={currentScope}>
+        <MCPAppArtifact event={event} descriptor={descriptor} />
+      </MCPAppHostProvider>
+    </I18nextProvider>
   );
+}
+
+function renderArtifact(host: MCPAppHost | null, currentScope = scope) {
+  return render(artifactView(host, currentScope));
 }
 
 function createHost(readResource = vi.fn(async () => ({ contents: [] }))) {
@@ -70,11 +88,25 @@ function createHost(readResource = vi.fn(async () => ({ contents: [] }))) {
   return { host, session };
 }
 
-beforeEach(() => {
+beforeEach(async () => {
+  language = createInstance();
+  await language.init({
+    lng: "en",
+    fallbackLng: "en",
+    defaultNS: "openhands",
+    resources: {
+      en: { openhands: { MCP$APP_TITLE: "Interactive App" } },
+      ja: { openhands: { MCP$APP_TITLE: "App in Japanese" } },
+      ar: { openhands: { MCP$APP_TITLE: "App in Arabic" } },
+    },
+  });
   bridgeMocks.mount.mockReset();
   bridgeMocks.mount.mockImplementation(async (options) => {
     options.onReady();
-    return { dispose: vi.fn(async () => undefined) };
+    return {
+      dispose: vi.fn(async () => undefined),
+      updateLocale: vi.fn(),
+    };
   });
 });
 
@@ -111,18 +143,95 @@ describe("MCPAppArtifact", () => {
     const bridgeOptions = bridgeMocks.mount.mock.calls[0][0];
     expect(bridgeOptions.isWritable()).toBe(true);
     view.rerender(
-      <MCPAppHostProvider
-        host={host}
-        scope={{ ...scope, writableConversationId: "conversation-plan" }}
-      >
-        <MCPAppArtifact event={event} descriptor={descriptor} />
-      </MCPAppHostProvider>,
+      artifactView(host, {
+        ...scope,
+        writableConversationId: "conversation-plan",
+      }),
     );
 
     expect(host.open).toHaveBeenCalledOnce();
     expect(bridgeOptions.isWritable()).toBe(false);
     view.unmount();
     await waitFor(() => expect(session.dispose).toHaveBeenCalledOnce());
+  });
+
+  // @spec MCA-005 — Language changes update the active View without reopening it.
+  it("uses the resolved UI locale and updates the existing bridge when language changes", async () => {
+    await language.changeLanguage("ja-JP");
+    const { host, session } = createHost();
+    const view = renderArtifact(host);
+    await waitFor(() => expect(bridgeMocks.mount).toHaveBeenCalledOnce());
+    const options = bridgeMocks.mount.mock.calls[0][0];
+    expect(options.locale).toBe("ja");
+    const mounted = await bridgeMocks.mount.mock.results[0].value;
+    const iframe = screen.getByTitle("App in Japanese");
+
+    await act(() => language.changeLanguage("ar"));
+
+    expect(mounted.updateLocale).toHaveBeenLastCalledWith("ar");
+    expect(screen.getByTitle("App in Arabic")).toBe(iframe);
+    expect(host.open).toHaveBeenCalledOnce();
+    expect(session.readResource).toHaveBeenCalledOnce();
+    expect(bridgeMocks.mount).toHaveBeenCalledOnce();
+    view.unmount();
+    mounted.updateLocale.mockClear();
+    await act(() => language.changeLanguage("en"));
+    expect(mounted.updateLocale).not.toHaveBeenCalled();
+  });
+
+  it("keeps the latest locale across pending resource reads and bridge connection", async () => {
+    let finishRead: ((resource: { contents: [] }) => void) | undefined;
+    const { host } = createHost(
+      vi.fn(
+        () =>
+          new Promise((resolve) => {
+            finishRead = resolve;
+          }),
+      ),
+    );
+    const mounted = {
+      dispose: vi.fn(async () => undefined),
+      updateLocale: vi.fn(),
+    };
+    let finishMount: (() => void) | undefined;
+    bridgeMocks.mount.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishMount = () => resolve(mounted);
+        }),
+    );
+    renderArtifact(host);
+    await waitFor(() => expect(finishRead).toBeDefined());
+    await act(() => language.changeLanguage("ja"));
+    await act(async () => finishRead?.({ contents: [] }));
+    await waitFor(() => expect(bridgeMocks.mount).toHaveBeenCalledOnce());
+    expect(bridgeMocks.mount.mock.calls[0][0].locale).toBe("ja");
+    await act(() => language.changeLanguage("ar"));
+    await act(async () => finishMount?.());
+    expect(mounted.updateLocale).toHaveBeenLastCalledWith("ar");
+    expect(host.open).toHaveBeenCalledOnce();
+  });
+
+  it("disposes an abandoned pending bridge without updating its locale", async () => {
+    const { host } = createHost();
+    const mounted = {
+      dispose: vi.fn(async () => undefined),
+      updateLocale: vi.fn(),
+    };
+    let finishMount: (() => void) | undefined;
+    bridgeMocks.mount.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishMount = () => resolve(mounted);
+        }),
+    );
+    const view = renderArtifact(host);
+    await waitFor(() => expect(finishMount).toBeDefined());
+    view.unmount();
+    await act(() => language.changeLanguage("ar"));
+    await act(async () => finishMount?.());
+    expect(mounted.dispose).toHaveBeenCalledOnce();
+    expect(mounted.updateLocale).not.toHaveBeenCalled();
   });
 
   it("disposes a failed session and retries with a fresh binding", async () => {
@@ -146,7 +255,7 @@ describe("MCPAppArtifact", () => {
     bridgeMocks.mount.mockImplementationOnce(async (options) => {
       options.iframe.setAttribute("src", options.sandboxUrl);
       options.onError(new Error("invalid handshake"));
-      return { dispose: bridgeDispose };
+      return { dispose: bridgeDispose, updateLocale: vi.fn() };
     });
     const { host, session } = createHost();
     renderArtifact(host);

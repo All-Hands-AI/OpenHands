@@ -54,6 +54,7 @@ function createHarness(sessionOverrides: Partial<MCPAppSession> = {}) {
   };
   const options = {
     iframe,
+    locale: "en",
     sandboxUrl: `${SANDBOX_ORIGIN}/sandbox.html`,
     resource: {
       contents: [
@@ -167,6 +168,68 @@ describe("mountMCPAppBridge", () => {
         (call) => call[1] === SANDBOX_ORIGIN,
       ),
     ).toBe(true);
+    await mounted.dispose();
+  });
+
+  // @spec MCA-005 — Apps receive the latest locale and live context notifications.
+  it("initializes with the latest locale while preserving the other host context", async () => {
+    const harness = createHarness();
+    const mounted = await mountMCPAppBridge(harness.options);
+    mounted.updateLocale("ja");
+    mounted.updateLocale("ar");
+    await harness.initialize();
+    expect(
+      harness.messages.find((m) => "id" in m && m.id === "init"),
+    ).toMatchObject({
+      result: {
+        hostContext: {
+          locale: "ar",
+          platform: "web",
+          displayMode: "inline",
+          availableDisplayModes: ["inline"],
+        },
+      },
+    });
+    await mounted.dispose();
+  });
+
+  it("notifies the initialized App once per changed locale and stops after disposal", async () => {
+    const harness = createHarness();
+    const mounted = await mountMCPAppBridge(harness.options);
+    await harness.initialize();
+    mounted.updateLocale("zh-CN");
+    mounted.updateLocale("zh-CN");
+    await vi.waitFor(() =>
+      expect(
+        harness.messages.filter(
+          (m) =>
+            "method" in m &&
+            m.method === "ui/notifications/host-context-changed",
+        ),
+      ).toEqual([
+        {
+          jsonrpc: "2.0",
+          method: "ui/notifications/host-context-changed",
+          params: { locale: "zh-CN" },
+        },
+      ]),
+    );
+    expect(harness.options.onReady).toHaveBeenCalledOnce();
+    await mounted.dispose();
+    const count = harness.messages.length;
+    mounted.updateLocale("ja");
+    expect(harness.messages).toHaveLength(count);
+  });
+
+  it("falls back to English when no locale is available", async () => {
+    const harness = createHarness();
+    const mounted = await mountMCPAppBridge({ ...harness.options, locale: "" });
+    await harness.initialize();
+    expect(
+      harness.messages.find((m) => "id" in m && m.id === "init"),
+    ).toMatchObject({
+      result: { hostContext: { locale: "en" } },
+    });
     await mounted.dispose();
   });
 

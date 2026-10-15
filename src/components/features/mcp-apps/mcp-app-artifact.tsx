@@ -11,6 +11,7 @@ import type {
   MCPAppDescriptor,
   MCPAppSession,
 } from "#/types/mcp-app";
+import type { MountedMCPAppBridge } from "./mcp-app-bridge";
 import { useMCPAppHost } from "./mcp-app-host-context";
 import styles from "./mcp-app-artifact.module.css";
 
@@ -18,6 +19,7 @@ const INITIAL_FRAME_HEIGHT = 360;
 const MIN_FRAME_HEIGHT = 160;
 const MAX_FRAME_HEIGHT = 1200;
 const APP_LOAD_TIMEOUT_MS = 30_000;
+const DEFAULT_APP_LOCALE = "en";
 
 type AppStatus = "loading" | "ready" | "error";
 
@@ -29,7 +31,13 @@ interface MCPAppArtifactProps {
 /** The visualizer owns the original text; this component owns only the App. */
 // @spec MCA-003 — Load the App through an explicitly installed Host adapter.
 export function MCPAppArtifact({ event, descriptor }: MCPAppArtifactProps) {
-  const { t } = useTranslation("openhands");
+  const { t, i18n } = useTranslation("openhands");
+  const locale = i18n.resolvedLanguage || i18n.language || DEFAULT_APP_LOCALE;
+  const currentLocale = React.useRef(locale);
+  const mountedBridge = React.useRef<MountedMCPAppBridge | null>(null);
+  React.useLayoutEffect(() => {
+    currentLocale.current = locale;
+  }, [locale]);
   const { host, scope } = useMCPAppHost();
   const currentHost = React.useRef({ host, scope });
   React.useLayoutEffect(() => {
@@ -65,7 +73,7 @@ export function MCPAppArtifact({ event, descriptor }: MCPAppArtifactProps) {
 
     const controller = new AbortController();
     let session: MCPAppSession | null = null;
-    let bridge: { dispose: () => Promise<void> } | null = null;
+    let bridge: MountedMCPAppBridge | null = null;
     setStatus("loading");
     setHeight(INITIAL_FRAME_HEIGHT);
 
@@ -101,6 +109,7 @@ export function MCPAppArtifact({ event, descriptor }: MCPAppArtifactProps) {
       const opened = session;
       bridge = null;
       session = null;
+      if (mountedBridge.current === mounted) mountedBridge.current = null;
       try {
         await mounted?.dispose();
       } finally {
@@ -145,6 +154,7 @@ export function MCPAppArtifact({ event, descriptor }: MCPAppArtifactProps) {
         if (controller.signal.aborted) return;
         const mounted = await mountMCPAppBridge({
           iframe,
+          locale: currentLocale.current,
           sandboxUrl: sandbox.href,
           descriptor,
           resource,
@@ -177,6 +187,8 @@ export function MCPAppArtifact({ event, descriptor }: MCPAppArtifactProps) {
           return;
         }
         bridge = mounted;
+        mountedBridge.current = mounted;
+        mounted.updateLocale(currentLocale.current);
       } catch {
         fail();
       }
@@ -204,6 +216,11 @@ export function MCPAppArtifact({ event, descriptor }: MCPAppArtifactProps) {
     descriptor.toolInput,
     descriptor.toolResult,
   ]);
+
+  // @spec MCA-005 — Locale updates keep the current App and its session alive.
+  React.useEffect(() => {
+    mountedBridge.current?.updateLocale(locale);
+  }, [locale]);
 
   if (!host || !owner || !backendId || readOnly) {
     return (
