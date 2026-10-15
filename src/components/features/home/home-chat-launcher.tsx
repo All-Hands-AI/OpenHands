@@ -181,11 +181,7 @@ export function HomeChatLauncher() {
         workingDir: pendingWorkspace.path,
         workspaceMode: effectiveWorkspaceMode,
       };
-    } else if (
-      isLocal &&
-      !isolated &&
-      effectiveWorkspaceMode === "docker_container"
-    ) {
+    } else if (isLocal && effectiveWorkspaceMode === "docker_container") {
       // No workspace: the container gets its own, so only the runtime is sent.
       variables = { ...variables, workspaceMode: effectiveWorkspaceMode };
     } else if (!isLocal && pendingRepository && pendingBranch) {

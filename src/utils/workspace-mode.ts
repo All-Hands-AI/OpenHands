@@ -13,7 +13,7 @@ const HOST_WORKSPACE_MODES: WorkspaceMode[] = ["local_repo", "new_worktree"];
  */
 export function getWorkspaceModeOptions(
   dockerSelectable: boolean,
-  hasWorkspace = true,
+  hasWorkspace: boolean,
 ): WorkspaceMode[] {
   if (!hasWorkspace) {
     return dockerSelectable ? ["local_repo", "docker_container"] : [];

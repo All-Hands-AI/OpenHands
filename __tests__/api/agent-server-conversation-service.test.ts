@@ -905,6 +905,34 @@ describe("AgentServerConversationService", () => {
       expect(loadWorkspaceHooks).not.toHaveBeenCalled();
     });
 
+    it("records a docker conversation started without a workspace", async () => {
+      mockGetSettings.mockResolvedValue({
+        agent_settings: { llm: { model: "gpt-4o" } },
+        conversation_settings: {},
+      });
+      mockGetSettingsForConversation.mockResolvedValue({
+        agentSettings: { llm: { model: "gpt-4o" } },
+        conversationSettings: {},
+        secretsEncrypted: true,
+      });
+      mockHttpPost.mockResolvedValue({
+        data: {
+          id: "docker-no-workspace",
+          created_at: "2024-01-01",
+          updated_at: "2024-01-01",
+        },
+      });
+
+      const created = await AgentServerConversationService.createConversation({
+        workspaceMode: "docker_container",
+      });
+
+      // Hooks and restarts read it to keep the conversation in its container.
+      expect(getStoredConversationMetadata(created.id)?.workspace_mode).toBe(
+        "docker_container",
+      );
+    });
+
     it("asks a server offering both runtimes for the local one in a host mode", async () => {
       server.use(
         http.get("*/server_info", () =>
