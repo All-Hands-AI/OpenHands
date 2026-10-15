@@ -75,7 +75,7 @@ export function HomeChatLauncher() {
   const workspaceMode =
     pickedWorkspaceMode ??
     getDefaultWorkspaceMode(
-      isLocal ? settings?.conversation_settings?.conversation_runtime : null,
+      isLocal ? settings?.conversation_settings?.default_runtime : null,
       lastUsedWorkspaceMode,
     );
   const [selectedPlugins, setSelectedPlugins] = useState<PluginSpec[]>([]);

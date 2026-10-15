@@ -52487,7 +52487,7 @@
     "ca": "Local",
     "id": "Lokal"
   },
-  "SCHEMA$CONVERSATION_RUNTIME$LABEL": {
+  "SCHEMA$DEFAULT_RUNTIME$LABEL": {
     "en": "Default runtime",
     "ja": "既定のランタイム",
     "zh-CN": "默认运行时",
@@ -52505,25 +52505,25 @@
     "ca": "Entorn d'execució per defecte",
     "id": "Runtime default"
   },
-  "SCHEMA$CONVERSATION_RUNTIME$DESCRIPTION": {
-    "en": "Where new conversations start; you can still change it on Home. Empty starts on the one you used last. Docker needs an agent-server that offers it.",
-    "ja": "新しい会話の開始場所です。ホームで変更することもできます。空欄の場合は前回使用したものになります。Docker には、それを提供するエージェントサーバーが必要です。",
-    "zh-CN": "新会话的起始位置；仍可在主页上更改。留空则使用上次所用的方式。Docker 需要提供该功能的 agent-server。",
-    "zh-TW": "新對話的起始位置；仍可在首頁上變更。留空則使用上次所用的方式。Docker 需要提供該功能的 agent-server。",
-    "ko-KR": "새 대화가 시작되는 위치이며 홈에서 변경할 수 있습니다. 비워 두면 마지막으로 사용한 방식으로 시작합니다. Docker는 이를 제공하는 agent-server가 필요합니다.",
-    "no": "Hvor nye samtaler starter; du kan fortsatt endre det på Hjem. Tom starter med det du brukte sist. Docker krever en agent-server som tilbyr det.",
-    "it": "Dove iniziano le nuove conversazioni; puoi comunque cambiarlo nella Home. Vuoto usa l'ultima scelta. Docker richiede un agent-server che lo offra.",
-    "pt": "Onde as novas conversas começam; você ainda pode alterar isso na Página inicial. Vazio usa a última opção usada. Docker requer um agent-server que o ofereça.",
-    "es": "Dónde empiezan las nuevas conversaciones; puedes cambiarlo en Inicio. Vacío usa la última opción usada. Docker necesita un agent-server que lo ofrezca.",
-    "ar": "مكان بدء المحادثات الجديدة، ويمكنك تغييره من الصفحة الرئيسية. تركه فارغًا يبدأ بآخر خيار استخدمته. يتطلب Docker خادم agent-server يوفّره.",
-    "fr": "Où démarrent les nouvelles conversations ; vous pouvez toujours le changer sur l'accueil. Vide reprend le dernier choix utilisé. Docker nécessite un agent-server qui le propose.",
-    "tr": "Yeni konuşmaların başladığı yer; Ana sayfada yine de değiştirebilirsiniz. Boş bırakılırsa son kullandığınız seçenekle başlar. Docker, onu sunan bir agent-server gerektirir.",
-    "de": "Wo neue Unterhaltungen starten; auf der Startseite weiterhin änderbar. Leer startet mit der zuletzt verwendeten Auswahl. Docker braucht einen agent-server, der es anbietet.",
-    "uk": "Де починаються нові розмови; це можна змінити на головній сторінці. Порожнє значення використовує останній вибір. Docker потребує agent-server, який його підтримує.",
-    "ca": "On comencen les converses noves; encara ho pots canviar a l'Inici. Buit comença amb l'última opció usada. Docker necessita un agent-server que l'ofereixi.",
-    "id": "Tempat percakapan baru dimulai; tetap bisa diubah di Beranda. Kosong memakai pilihan terakhir. Docker memerlukan agent-server yang menyediakannya."
+  "SCHEMA$DEFAULT_RUNTIME$DESCRIPTION": {
+    "en": "Where new conversations start; you can still change it on Home. Each runtime shows its own options below. Docker needs an agent-server that offers it.",
+    "ja": "新しい会話の開始場所です。ホームで変更することもできます。各ランタイムのオプションは下に表示されます。Docker には、それを提供するエージェントサーバーが必要です。",
+    "zh-CN": "新会话的起始位置；仍可在主页上更改。每种运行时的选项显示在下方。Docker 需要提供该功能的 agent-server。",
+    "zh-TW": "新對話的起始位置；仍可在首頁上變更。每種執行環境的選項顯示在下方。Docker 需要提供該功能的 agent-server。",
+    "ko-KR": "새 대화가 시작되는 위치이며 홈에서 변경할 수 있습니다. 각 런타임의 옵션은 아래에 표시됩니다. Docker는 이를 제공하는 agent-server가 필요합니다.",
+    "no": "Hvor nye samtaler starter; du kan fortsatt endre det på Hjem. Hvert kjøremiljø viser sine egne valg nedenfor. Docker krever en agent-server som tilbyr det.",
+    "it": "Dove iniziano le nuove conversazioni; puoi comunque cambiarlo nella Home. Ogni runtime mostra qui sotto le sue opzioni. Docker richiede un agent-server che lo offra.",
+    "pt": "Onde as novas conversas começam; você ainda pode alterar isso na Página inicial. Cada runtime mostra suas opções abaixo. Docker requer um agent-server que o ofereça.",
+    "es": "Dónde empiezan las nuevas conversaciones; puedes cambiarlo en Inicio. Cada entorno muestra sus opciones abajo. Docker necesita un agent-server que lo ofrezca.",
+    "ar": "مكان بدء المحادثات الجديدة، ويمكنك تغييره من الصفحة الرئيسية. تظهر خيارات كل بيئة تشغيل أدناه. يتطلب Docker خادم agent-server يوفّره.",
+    "fr": "Où démarrent les nouvelles conversations ; vous pouvez toujours le changer sur l'accueil. Chaque environnement affiche ses options ci-dessous. Docker nécessite un agent-server qui le propose.",
+    "tr": "Yeni konuşmaların başladığı yer; Ana sayfada yine de değiştirebilirsiniz. Her çalışma ortamı kendi seçeneklerini aşağıda gösterir. Docker, onu sunan bir agent-server gerektirir.",
+    "de": "Wo neue Unterhaltungen starten; auf der Startseite weiterhin änderbar. Jede Laufzeit zeigt unten ihre eigenen Optionen. Docker braucht einen agent-server, der es anbietet.",
+    "uk": "Де починаються нові розмови; це можна змінити на головній сторінці. Параметри кожного середовища показано нижче. Docker потребує agent-server, який його підтримує.",
+    "ca": "On comencen les converses noves; encara ho pots canviar a l'Inici. Cada entorn mostra les seves opcions a sota. Docker necessita un agent-server que l'ofereixi.",
+    "id": "Tempat percakapan baru dimulai; tetap bisa diubah di Beranda. Setiap runtime menampilkan opsinya di bawah. Docker memerlukan agent-server yang menyediakannya."
   },
-  "SCHEMA$CONVERSATION_RUNTIME$CHOICE$LOCAL": {
+  "SCHEMA$DEFAULT_RUNTIME$CHOICE$LOCAL": {
     "en": "Local",
     "ja": "ローカル",
     "zh-CN": "本地",
@@ -52541,7 +52541,25 @@
     "ca": "Local",
     "id": "Lokal"
   },
-  "SCHEMA$CONVERSATION_RUNTIME$CHOICE$DOCKER": {
+  "SCHEMA$DEFAULT_RUNTIME$CHOICE$WORKTREE": {
+    "en": "New Worktree",
+    "ja": "新規ワークツリー",
+    "zh-CN": "新工作树",
+    "zh-TW": "新工作樹",
+    "ko-KR": "새 워크트리",
+    "fr": "Nouveau worktree",
+    "es": "Nuevo worktree",
+    "de": "Neuer Worktree",
+    "it": "Nuovo worktree",
+    "pt": "Novo worktree",
+    "ar": "شجرة عمل جديدة",
+    "no": "Ny worktree",
+    "tr": "Yeni Çalışma Ağacı",
+    "uk": "Нове робоче дерево",
+    "ca": "Nou worktree",
+    "id": "Worktree Baru"
+  },
+  "SCHEMA$DEFAULT_RUNTIME$CHOICE$DOCKER": {
     "en": "Docker Container",
     "ja": "Docker コンテナ",
     "zh-CN": "Docker 容器",

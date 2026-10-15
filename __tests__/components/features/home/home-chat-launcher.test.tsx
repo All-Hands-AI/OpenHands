@@ -626,7 +626,7 @@ describe("HomeChatLauncher", () => {
     writeStoredLocalWorkspaceMode("new_worktree");
     vi.spyOn(SettingsService, "getSettings").mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
-      conversation_settings: { conversation_runtime: "docker" },
+      conversation_settings: { default_runtime: "docker" },
     });
     mockUseConversationWorkspace.mockReturnValue({
       isolated: false,

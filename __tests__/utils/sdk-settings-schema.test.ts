@@ -1198,6 +1198,19 @@ describe("sdk settings schema helpers", () => {
       expect(isSettingsFieldVisible(dependent, { one: true })).toBe(false);
     });
 
+    it("shows a field that depends on a choice only for that value", () => {
+      const dockerOnly = getMockField({
+        depends_on: ["default_runtime=docker"],
+      });
+
+      expect(
+        isSettingsFieldVisible(dockerOnly, { default_runtime: "docker" }),
+      ).toBe(true);
+      expect(
+        isSettingsFieldVisible(dockerOnly, { default_runtime: "worktree" }),
+      ).toBe(false);
+    });
+
     it("keeps only fields allowed by exclusions, view, and dependencies", () => {
       const visible = getMockField({ key: "visible" });
       const excluded = getMockField({ key: "excluded" });

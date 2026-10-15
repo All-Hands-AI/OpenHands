@@ -23,20 +23,25 @@ export function getWorkspaceModeOptions(
     : HOST_WORKSPACE_MODES;
 }
 
+const MODE_BY_DEFAULT_RUNTIME: Record<string, WorkspaceMode> = {
+  local: "local_repo",
+  worktree: "new_worktree",
+  docker: "docker_container",
+};
+
 /**
  * The mode the launcher starts on: the Settings → Runtime default
- * (`conversation_settings.conversation_runtime`) when set, else the last one
- * used. A local default keeps the last host mode (repo or worktree).
+ * (`conversation_settings.default_runtime`), or the last one used on a server
+ * whose settings have no such field.
  */
 export function getDefaultWorkspaceMode(
   defaultRuntime: unknown,
   lastUsed: WorkspaceMode,
 ): WorkspaceMode {
-  if (defaultRuntime === "docker") return "docker_container";
-  if (defaultRuntime === "local" && lastUsed === "docker_container") {
-    return DEFAULT_WORKSPACE_MODE;
-  }
-  return lastUsed;
+  return typeof defaultRuntime === "string" &&
+    defaultRuntime in MODE_BY_DEFAULT_RUNTIME
+    ? MODE_BY_DEFAULT_RUNTIME[defaultRuntime]
+    : lastUsed;
 }
 
 export const LAST_LOCAL_WORKSPACE_MODE_STORAGE_KEY =
