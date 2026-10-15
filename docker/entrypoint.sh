@@ -83,6 +83,12 @@ report_unwritable() {
       log_error "The container runs as uid $(id -u); the bind-mounted host dir"
       log_error "must be writable by that uid. Run ON THE HOST (dirs only):"
       log_error "  find $host_hint -type d -exec chmod a+rwX {} +"
+      if [ "$label" = "Workspace directory" ]; then
+        log_error "Existing project files also need read/write access. Run ON THE HOST:"
+        log_error "  find $host_hint -type f -exec chmod a+rw {} +"
+        log_error "This grants all host users read/write access to project files; executable bits stay unchanged."
+        log_error "Keep the workspace separate from ~/.openhands so secret-file modes stay private."
+      fi
       log_error "Use your actual host bind-mount path if different from the example."
       log_error "This grants all host users directory write access; existing file modes stay unchanged."
       log_error "If Docker created root-owned dirs, use sudo find ... for the same command."

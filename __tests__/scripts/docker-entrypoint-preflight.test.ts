@@ -102,6 +102,26 @@ describe("docker/entrypoint.sh startup preflight", () => {
       expect(result.stderr).toContain("root-owned");
       expect(result.stderr).toContain("sudo find");
       expect(result.stderr).not.toContain("--user");
+      expect(result.stderr).not.toContain("-type f");
+    },
+  );
+
+  it.skipIf(process.platform === "win32")(
+    "includes existing-file permissions only for the workspace hint",
+    () => {
+      const result = runScript(
+        `report_unwritable "Workspace directory" "/projects" "Permission denied" "~/projects"`,
+      );
+
+      expect(result.status).toBe(0);
+      expect(result.stderr).toContain(
+        "find ~/projects -type d -exec chmod a+rwX {} +",
+      );
+      expect(result.stderr).toContain(
+        "find ~/projects -type f -exec chmod a+rw {} +",
+      );
+      expect(result.stderr).toContain("all host users read/write access");
+      expect(result.stderr).toContain("secret-file modes stay private");
     },
   );
 

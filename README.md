@@ -105,12 +105,16 @@ container below:
 
 ```sh
 find "$HOME/.openhands" "$PROJECTS_PATH" -type d -exec chmod a+rwX {} +
+find "$PROJECTS_PATH" -type f -exec chmod a+rw {} +
 ```
 
-This grants **all host users** directory write access. Existing files keep their
-permissions; project files must also be writable by uid 10001 for the agent to
-edit them. Docker Desktop on macOS/Windows handles bind-mount permissions, so
-you can skip this command there.
+This grants **all host users** directory write access and read/write access to
+existing project files, so uid 10001 can save edits as well as create files.
+Existing executable permissions are preserved. Files under `~/.openhands`
+keep their permissions, including the `600` secret files; keep `PROJECTS_PATH`
+separate from that state directory. Use only a workspace you are comfortable
+sharing with other host users. Docker Desktop on macOS/Windows handles
+bind-mount permissions, so you can skip these commands there.
 
 **2. Start Agent Canvas**
 
@@ -128,16 +132,18 @@ Open [http://localhost:8000/canvas](http://localhost:8000/canvas).
 <summary>Linux permission troubleshooting</summary>
 
 If startup reports `Permission denied`, check the host directory named in the
-error. If Docker created it owned by root, run the directory-only command with
+error. If Docker created it owned by root, run the commands with
 `sudo` on the host:
 
 ```sh
 sudo find "$HOME/.openhands" "$PROJECTS_PATH" -type d -exec chmod a+rwX {} +
+sudo find "$PROJECTS_PATH" -type f -exec chmod a+rw {} +
 ```
 
-Keep `-type d` in this command. It preserves the `600` permissions on
-`secret-key.txt` and `api-key.txt`; a recursive `chmod -R` would make those
-secrets readable by other host users.
+Keep the state-directory command scoped to `-type d`. It preserves the `600`
+permissions on `secret-key.txt` and `api-key.txt`; a recursive `chmod -R` would make those
+secrets readable by other host users. The file-mode change applies only to
+project files, which become readable and writable by all host users.
 
 Keep the default container user. Running with `--user` can prevent creation of
 `/home/openhands/.config` and disable browser tools even when the backends start.
@@ -151,14 +157,17 @@ A fresh named volume inherits the image directory's ownership, so uid 10001 can
 write state without changing permissions on `~/.openhands`.
 
 Use the `PROJECTS_PATH` prepared in step 1. On Linux Docker Engine, grant
-directory write access to that workspace before starting the container:
+directory and existing-file write access to that workspace before starting the
+container:
 
 ```sh
 find "$PROJECTS_PATH" -type d -exec chmod a+rwX {} +
+find "$PROJECTS_PATH" -type f -exec chmod a+rw {} +
 ```
 
-The same permission caveats apply: all host users gain directory write access,
-and existing project files must also be writable by uid 10001.
+The same permission caveats apply: all host users gain directory write access
+and read/write access to existing project files. Existing executable permissions
+are preserved. Keep this workspace separate from `~/.openhands`.
 
 ```sh
 docker run -it --rm \
