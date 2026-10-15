@@ -146,7 +146,10 @@ secrets readable by other host users. The file-mode change applies only to
 project files, which become readable and writable by all host users.
 
 Keep the default container user. Running with `--user` can prevent creation of
-`/home/openhands/.config` and disable browser tools even when the backends start.
+`/home/openhands/.config`, which browser tools need. Startup checks this path
+(or `XDG_CONFIG_HOME` when set) and fails early if it is unwritable. If you
+override the user, configure a writable `XDG_CONFIG_HOME` as well as writable
+state and workspace mounts.
 
 </details>
 

@@ -39,6 +39,8 @@
 #                          Override in production when the external URL differs.
 #   AUTOMATION_WORKSPACE_BASE – Directory for automation run workspaces
 #                          (default: ~/.openhands/workspaces)
+#   XDG_CONFIG_HOME     – Browser-tool configuration directory
+#                          (default: $HOME/.config; must be writable)
 #   Any agent-server or automation env vars are passed through.
 # ═══════════════════════════════════════════════════════════════════════════════
 set -uo pipefail
@@ -80,6 +82,11 @@ report_unwritable() {
   fi
   case "$err" in
     *"Permission denied"*|*"permission denied"*|*"Operation not permitted"*|*"operation not permitted"*)
+      if [ "$label" = "Browser config directory" ]; then
+        log_error "Browser tools need a config directory writable by uid $(id -u)."
+        log_error "Set XDG_CONFIG_HOME to a writable directory, or keep the default openhands user."
+        return
+      fi
       log_error "The container runs as uid $(id -u); the bind-mounted host dir"
       log_error "must be writable by that uid. Run ON THE HOST (dirs only):"
       log_error "  find $host_hint -type d -exec chmod a+rwX {} +"
@@ -129,6 +136,15 @@ if [ -d /projects ]; then
   fi
   rm -f /projects/.write-test
 fi
+
+# Browser tools create configuration under XDG_CONFIG_HOME (or $HOME/.config).
+# Catch an inaccessible config path before the backends start with broken tools.
+BROWSER_CONFIG_DIR="${XDG_CONFIG_HOME:-${HOME}/.config}"
+if ! err=$(mkdir -p "$BROWSER_CONFIG_DIR" 2>&1 && touch "$BROWSER_CONFIG_DIR/.write-test" 2>&1); then
+  report_unwritable "Browser config directory" "$BROWSER_CONFIG_DIR" "$err" "~/.config"
+  exit 1
+fi
+rm -f "$BROWSER_CONFIG_DIR/.write-test"
 
 # OH_SECRET_KEY is required for settings/secrets encryption. Without it the
 # agent-server refuses to return encrypted secrets → conversation creation

@@ -14,7 +14,13 @@
 // These tests execute the preflight region lifted out of the real script, so
 // they exercise the branch logic rather than a copy of it.
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -30,18 +36,16 @@ const entrypoint = readFileSync(
   "utf-8",
 );
 
-// `report_unwritable` plus both preflight blocks, ending at the `fi` that
-// closes the optional /projects block.
+// Include all preflight blocks, ending before secret-key initialization.
 function extractPreflight(): string {
   const start = entrypoint.indexOf("report_unwritable() {");
-  const projects = entrypoint.indexOf("if [ -d /projects ]; then");
-  const closing = entrypoint.indexOf("\nfi\n", projects);
-  if (start < 0 || projects < 0 || closing < 0) {
+  const end = entrypoint.indexOf("# OH_SECRET_KEY is required", start);
+  if (start < 0 || end < 0) {
     throw new Error(
       "could not locate the preflight region in docker/entrypoint.sh",
     );
   }
-  return entrypoint.slice(start, closing + "\nfi\n".length);
+  return entrypoint.slice(start, end);
 }
 
 const preflight = extractPreflight();
@@ -69,6 +73,8 @@ function runScript(body: string, env: NodeJS.ProcessEnv = {}) {
     encoding: "utf-8",
     env: {
       ...process.env,
+      HOME: path.join(scratch, "home"),
+      XDG_CONFIG_HOME: path.join(scratch, "config"),
       OPENHANDS_DIR: writable,
       OH_PERSISTENCE_DIR: writable,
       OH_CONVERSATIONS_PATH: writable,
@@ -86,6 +92,66 @@ function runReport(osError: string) {
 }
 
 describe("docker/entrypoint.sh startup preflight", () => {
+  it.skipIf(process.platform === "win32").each(["default", "override"])(
+    "creates and probes the %s browser config directory",
+    (mode) => {
+      const home = path.join(scratch, `browser-home-${mode}`);
+      const config = path.join(scratch, `browser-config-${mode}`);
+      const expected = mode === "default" ? path.join(home, ".config") : config;
+
+      const result = runScript("", {
+        HOME: home,
+        XDG_CONFIG_HOME: mode === "default" ? "" : config,
+      });
+
+      expect(result.status).toBe(0);
+      expect(existsSync(expected)).toBe(true);
+      expect(existsSync(path.join(expected, ".write-test"))).toBe(false);
+      if (mode === "override") {
+        expect(existsSync(path.join(home, ".config"))).toBe(false);
+      }
+    },
+  );
+
+  it.skipIf(process.platform === "win32").each(["default", "override"])(
+    "fails before startup when the %s browser config path is inaccessible",
+    (mode) => {
+      const blocker = path.join(scratch, `browser-blocker-${mode}`);
+      writeFileSync(blocker, "");
+      const home = mode === "default" ? blocker : path.join(scratch, "home");
+      const config = path.join(blocker, ".config");
+
+      const result = runScript("printf 'STARTED_BACKENDS'", {
+        HOME: home,
+        XDG_CONFIG_HOME: mode === "default" ? "" : config,
+      });
+
+      expect(result.status).toBe(1);
+      expect(result.stdout).not.toContain("STARTED_BACKENDS");
+      expect(result.stderr).toContain(
+        `Browser config directory is not writable: ${config}`,
+      );
+      expect(result.stderr).toContain("Underlying error:");
+      expect(result.stderr).not.toMatch(/^(mkdir|touch):/m);
+    },
+  );
+
+  it.skipIf(process.platform === "win32")(
+    "suggests a writable config path for browser permission failures",
+    () => {
+      const result = runScript(
+        `report_unwritable "Browser config directory" "/home/openhands/.config" "Permission denied" "~/.config"`,
+      );
+
+      expect(result.status).toBe(0);
+      expect(result.stderr).toContain(
+        "Set XDG_CONFIG_HOME to a writable directory",
+      );
+      expect(result.stderr).toContain("keep the default openhands user");
+      expect(result.stderr).not.toContain("Run ON THE HOST");
+    },
+  );
+
   it.skipIf(process.platform === "win32")(
     "suggests directory-only host permissions without changing the container user",
     () => {
