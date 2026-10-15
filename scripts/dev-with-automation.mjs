@@ -1133,13 +1133,14 @@ function shutdown() {
 }
 
 /**
- * Wait for the automation backend to answer, and fail the launch if it exits
- * first. It exits during startup when, for example, a database migration
- * fails (#18299); announcing the stack anyway left Automate silently
- * unavailable. A slow start (first-run download) only logs a timeout, as
- * before.
+ * Watch the automation backend until it answers, and stop the stack if it
+ * exits first. It exits during startup when, for example, a database
+ * migration fails (#18299); leaving the stack up made Automate silently
+ * unavailable. The launcher announces the stack without waiting for this, so
+ * a healthy start is not delayed; a failure stops every service and then calls
+ * `onFailure`. A slow start (first-run download) only logs a timeout.
  */
-async function waitForAutomationStartup(config, proc, timeoutMs) {
+async function watchAutomationStartup(config, proc, timeoutMs, onFailure) {
   const ready = await waitForService(
     "automation",
     `http://127.0.0.1:${config.autoBackendPort}${AUTOMATION_ROUTE_PREFIX}/health`,
@@ -1157,7 +1158,7 @@ async function waitForAutomationStartup(config, proc, timeoutMs) {
     "Its [automation] log lines show why.";
   logError(message);
   await stopServices();
-  throw new Error(message);
+  onFailure(new Error(message));
 }
 
 process.on("SIGINT", shutdown);
@@ -1524,6 +1525,11 @@ async function main(options = {}) {
     // download / install progress to the user. `level` is one of
     // "stdout" | "stderr" | "info" | "warn" | "error".
     onServiceLog,
+    // Called with an Error when the automation backend exits before it
+    // becomes healthy, after every service has been stopped. That can happen
+    // after `main()` has returned. Defaults to exiting the process with
+    // code 1; embedded launchers (Electron) pass their own handler.
+    onAutomationStartupFailure = () => process.exit(1),
   } = options;
 
   // Install the listener early so log lines emitted before the first
@@ -1696,17 +1702,18 @@ async function main(options = {}) {
   // Wait for ingress to start
   await delay(1000);
 
-  // 7. Only announce the stack once the automation backend is up; this throws,
-  //    after stopping every service, if it exited instead.
+  printBanner(config);
+
+  // 7. Watch the automation backend in the background: if it exits before it
+  //    is healthy, stop the stack and report the failure.
   if (automationProc) {
-    await waitForAutomationStartup(
+    void watchAutomationStartup(
       config,
       automationProc,
       agentServerReadyTimeoutMs,
+      onAutomationStartupFailure,
     );
   }
-
-  printBanner(config);
 
   // Return the resolved config + readiness signal so embedded launchers can
   // (a) build URLs from the actual allocated ports and (b) decide whether to

@@ -1149,7 +1149,7 @@ describe("dev-with-automation CLI", () => {
     });
 
   it.skipIf(process.platform === "win32")(
-    "stops the stack and fails when the automation backend exits during startup",
+    "stops the stack and exits 1 when the automation backend exits during startup",
     async () => {
       // Exits the way automation does when a database migration fails.
       const stack = await launchBackendOnly(
@@ -1161,12 +1161,15 @@ describe("dev-with-automation CLI", () => {
 
         const output = stack.output();
         expect(exitCode, output).toBe(1);
-        expect(output).toContain(
-          "FAILED: The automation backend exited during startup (code 3).",
+        // The stack is announced without waiting for automation, then
+        // stopped once automation exits. "Ingress:" is the banner's first
+        // entry, printed in every launch mode.
+        const banner = output.indexOf("Ingress:");
+        const failure = output.indexOf(
+          "The automation backend exited during startup (code 3).",
         );
-        expect(output).not.toContain("LAUNCHED");
-        // The banner's first entry, printed in every launch mode.
-        expect(output).not.toContain("Ingress:");
+        expect(banner, output).toBeGreaterThan(-1);
+        expect(failure, output).toBeGreaterThan(banner);
         expect(await isListening(stack.ingressPort)).toBe(false);
       } finally {
         await stack.stop();
@@ -1176,10 +1179,10 @@ describe("dev-with-automation CLI", () => {
   );
 
   it.skipIf(process.platform === "win32")(
-    "announces the stack only after the automation backend reports healthy",
+    "announces the stack without waiting for the automation backend",
     async () => {
       // Listening but not ready yet: the first two health probes get 503, so
-      // the launcher can only log "Ready" after it has polled and waited.
+      // "Ready" is only logged after the launcher has polled and waited.
       const stack = await launchBackendOnly(
         [
           'import http from "node:http";',
@@ -1202,12 +1205,19 @@ describe("dev-with-automation CLI", () => {
           stack.output(),
         ).toBe(true);
 
+        const readyLine = `Ready at http://127.0.0.1:${stack.automationPort}/api/automation/health`;
+        expect(
+          await stack.waitForOutput(readyLine, 20_000),
+          stack.output(),
+        ).toBe(true);
+
         const output = stack.output();
-        const ready = output.indexOf(
-          `Ready at http://127.0.0.1:${stack.automationPort}/api/automation/health`,
-        );
-        expect(ready, output).toBeGreaterThan(-1);
-        expect(output.indexOf("Ingress:"), output).toBeGreaterThan(ready);
+        const ready = output.indexOf(readyLine);
+        expect(output.indexOf("Ingress:"), output).toBeGreaterThan(-1);
+        expect(output.indexOf("Ingress:"), output).toBeLessThan(ready);
+        // A healthy start keeps the stack up.
+        expect(await stack.exitCode(1_000)).toBe("timed out");
+        expect(await isListening(stack.ingressPort)).toBe(true);
       } finally {
         await stack.stop();
       }
