@@ -8,6 +8,7 @@ import { useSlashCommand } from "#/hooks/chat/use-slash-command";
 import { ChatInputGrip } from "./components/chat-input-grip";
 import { ChatInputContainer } from "./components/chat-input-container";
 import { HiddenFileInput } from "./components/hidden-file-input";
+import { isImeComposingEvent } from "#/components/features/chat/utils/chat-input.utils";
 import { useConversationStore } from "#/stores/conversation-store";
 import { cn } from "#/utils/utils";
 
@@ -135,15 +136,23 @@ export function CustomChatInput({
     syncCanSubmit();
   }, [handleSubmit, syncCanSubmit]);
 
-  const { handleInput, handlePaste, handleKeyDown, handleBlur, handleFocus } =
-    useChatInputEvents(
-      chatInputRef as React.RefObject<HTMLDivElement | null>,
-      smartResize,
-      increaseHeightForEmptyContent,
-      checkIsContentEmpty,
-      onFocus,
-      onBlur,
-    );
+  const {
+    handleInput,
+    handlePaste,
+    handleKeyDown,
+    handleBlur,
+    handleFocus,
+    handleCompositionStart,
+    handleCompositionEnd,
+    isImeSessionActive,
+  } = useChatInputEvents(
+    chatInputRef as React.RefObject<HTMLDivElement | null>,
+    smartResize,
+    increaseHeightForEmptyContent,
+    checkIsContentEmpty,
+    onFocus,
+    onBlur,
+  );
 
   const {
     isMenuOpen: isSlashMenuOpen,
@@ -202,8 +211,9 @@ export function CustomChatInput({
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          onInput={() => {
-            handleInput();
+          onInput={(e) => {
+            handleInput(e);
+            if (isImeComposingEvent(e) || isImeSessionActive()) return;
             updateSlashMenu();
             saveDraft();
             syncCanSubmit();
@@ -212,6 +222,13 @@ export function CustomChatInput({
           onKeyDown={(e) => {
             if (handleSlashKeyDown(e)) return;
             handleKeyDown(e, isDisabled, handleSubmitAndSync);
+          }}
+          onCompositionStart={handleCompositionStart}
+          onCompositionEnd={() => {
+            handleCompositionEnd();
+            updateSlashMenu();
+            saveDraft();
+            syncCanSubmit();
           }}
           onFocus={handleFocus}
           onBlur={() => {
