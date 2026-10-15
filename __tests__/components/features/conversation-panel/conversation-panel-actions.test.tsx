@@ -232,7 +232,9 @@ describe("ConversationPanel conversation actions", () => {
     // no stored archive id, confirming the runtime-derived state and list
     // visibility agree (the no-op "Unarchive" could not have changed either).
     expect(
-      useArchivedConversationsStore.getState().isArchived("default-local", "gone"),
+      useArchivedConversationsStore
+        .getState()
+        .isArchived("default-local", "gone"),
     ).toBe(false);
     act(() => {
       useConversationPanelPreferencesStore.setState({
