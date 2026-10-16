@@ -450,7 +450,7 @@ function DraftStatusBar({
   const validityClassName = cn(
     "max-w-full min-w-0 whitespace-normal rounded-full px-2.5 py-0.5 text-left text-xs leading-4",
     validationMessage
-      ? "w-fit bg-red-500/5 text-feedback-error"
+      ? "w-fit bg-feedback-error/5 text-feedback-error"
       : "bg-[var(--oh-success)]/10 text-[var(--oh-success)]",
   );
 
@@ -581,7 +581,7 @@ function DraftRunsPage({
           key={message}
           role="alert"
           data-testid="automation-setup-draft-runs-error"
-          className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-feedback-error"
+          className="rounded-xl border border-feedback-error/40 bg-feedback-error/10 px-4 py-3 text-sm text-feedback-error"
         >
           {message}
         </p>
