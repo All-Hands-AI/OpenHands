@@ -94,3 +94,10 @@ test("file count changes during pagination fail closed", async () => {
     head: { sha: "head" }, base: { sha: "base" }, changed_files: 2,
   } }))[0], /changed/i);
 });
+
+test("a mixed PR's failure says how to split it and lists both sides", async () => {
+  const [message] = await check([file(verify), file("src/app.py")]);
+  assert.match(message, /split this PR/);
+  assert.match(message, new RegExp(`- ${verify.replaceAll(".", "\\.")}`));
+  assert.match(message, /- src\/app\.py/);
+});
