@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -103,7 +103,7 @@ for (const width of [390, 767, 768, 820, 1023, 1024, 1440]) {
   });
 }
 
-test("settings switch thumbs stay inside their tracks in a right-to-left language", async ({
+test("switch thumbs stay inside their tracks in a right-to-left language", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 1024 });
@@ -113,27 +113,40 @@ test("settings switch thumbs stay inside their tracks in a right-to-left languag
   await page.getByTestId("submit-button").click();
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
 
-  const thumbOverflow = (testId: string) =>
-    page.getByTestId(testId).evaluate((input) => {
-      const track = input
-        .closest("label")!
-        .querySelector<HTMLElement>("span[aria-hidden='true']")!;
-      const outer = track.getBoundingClientRect();
-      const thumb = track.firstElementChild!.getBoundingClientRect();
-      return {
-        checked: (input as HTMLInputElement).checked,
-        overflow: Math.max(outer.left - thumb.left, thumb.right - outer.right),
-      };
+  // Thumbs slide for 200ms after a toggle or a direction change, so wait
+  // for the slide to finish before measuring.
+  const thumbOverflow = (track: Locator) =>
+    track.evaluate(async (element) => {
+      const thumb = element.firstElementChild!;
+      await Promise.all(thumb.getAnimations().map((slide) => slide.finished));
+      const outer = element.getBoundingClientRect();
+      const inner = thumb.getBoundingClientRect();
+      return Math.max(outer.left - inner.left, inner.right - outer.right);
     });
 
-  // The checklist switch starts on and the sound switch off, so both thumb
-  // positions are covered.
+  // Settings switches (`md`). The checklist switch starts on and the sound
+  // switch off, so both thumb positions are covered.
   for (const [testId, checked] of [
     ["show-getting-started-checklist-switch", true],
     ["enable-sound-notifications-switch", false],
   ] as const) {
-    const thumb = await thumbOverflow(testId);
-    expect(thumb.checked).toBe(checked);
-    expect(thumb.overflow).toBeLessThanOrEqual(0);
+    const input = page.getByTestId(testId);
+    if (checked) await expect(input).toBeChecked();
+    else await expect(input).not.toBeChecked();
+    const track = page
+      .locator("label", { has: input })
+      .locator("span[aria-hidden='true']");
+    expect(await thumbOverflow(track)).toBeLessThanOrEqual(0);
+  }
+
+  // Menu-row switch (`sm`): hide older conversations, off and then on.
+  await page.getByTestId("conversation-layouts-toggle").click();
+  await page.getByTestId("advanced-options-row").click();
+  const hideOlder = page.getByTestId("toggle-older-conversations");
+  const compactTrack = hideOlder.locator(":scope > span[aria-hidden='true']");
+  for (const checked of ["false", "true"]) {
+    if (checked === "true") await compactTrack.click();
+    await expect(hideOlder).toHaveAttribute("aria-checked", checked);
+    expect(await thumbOverflow(compactTrack)).toBeLessThanOrEqual(0);
   }
 });
