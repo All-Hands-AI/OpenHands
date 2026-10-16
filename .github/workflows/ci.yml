@@ -14,10 +14,9 @@ on:
         required: true
 
 concurrency:
-  # Push runs get a per-COMMIT group and never cancel: the "Release Tag" ruleset
-  # requires `test-and-build (ubuntu)` to be green on the exact commit release-please
-  # tags (the release-PR merge commit), so a later push to main must not cancel an
-  # earlier commit's checks. PR/dispatch runs keep cheap cancel-on-update.
+  # Push runs get a per-COMMIT group and never cancel: release.yml waits for
+  # `test-and-build (ubuntu)` on the release-PR merge commit, so a later push to
+  # main must not cancel its checks. PR/dispatch runs keep cheap cancel-on-update.
   group: ci-${{ github.workflow }}-${{ github.event_name == 'push' && github.sha || github.ref }}
   cancel-in-progress: ${{ github.event_name != 'push' }}
 
@@ -53,14 +52,18 @@ jobs:
         if: >-
           matrix.full_checks &&
           ((github.event_name == 'pull_request' && startsWith(github.head_ref, 'release-please--')) ||
+           github.event_name == 'workflow_dispatch' ||
            (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'chore(') &&
             contains(github.event.head_commit.message, '): release ')))
         env:
           HEAD_MSG: ${{ github.event.head_commit.message }}
         run: |
           set -euo pipefail
-          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+          if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
             # Keep this subject match aligned with release.yml's tagging gate.
+            if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+              HEAD_MSG="$(git log -1 --format=%s)"
+            fi
             subject="${HEAD_MSG%%$'\n'*}"
             case "$subject" in
               chore\(*\):\ release\ *) : ;;
