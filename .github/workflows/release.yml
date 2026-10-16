@@ -11,35 +11,18 @@ on:
       - 'release/**'   # maintenance branches; the release is scoped to this branch
 
 jobs:
-  # Release PRs land as squash commits `chore(<scope>): release <version>`.
-  # Wait for their required CI before tagging. A later ordinary push can retry
-  # an untagged release, so also inspect every pending release's exact merge tree.
+  # release-please only creates a tag/Release on the release-PR-merge push, which
+  # lands as a squash commit `chore(<scope>): release <version>`. The "Release Tag"
+  # ruleset requires the `test-and-build (ubuntu)` check to be green on the tagged
+  # commit, so wait for it here first — otherwise release-please races CI and the
+  # tag push is rejected with a pre-receive rule violation (the manual-re-run
+  # problem). Non-release pushes skip the wait entirely: release-please only
+  # upserts the release PR on those and never touches a tag.
   await-required-checks:
     runs-on: ubuntu-latest
     permissions:
       checks: read
-      contents: read
-      pull-requests: read
     steps:
-      - name: Reject temporary artifacts in pending releases
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          # Match release-please's merged, untagged candidates on this branch.
-          release_shas="$(gh pr list --repo "$GITHUB_REPOSITORY" \
-            --base "$GITHUB_REF_NAME" --state merged --label 'autorelease: pending' \
-            --limit 200 --json mergeCommit --jq '.[].mergeCommit.oid')"
-          while IFS= read -r release_sha; do
-            [ -n "$release_sha" ] || continue
-            has_artifacts="$(gh api "repos/$GITHUB_REPOSITORY/git/trees/$release_sha" \
-              --jq 'any(.tree[]; .path == ".pr")')"
-            if [ "$has_artifacts" = "true" ]; then
-              echo "::error::Pending release $release_sha contains temporary .pr artifacts. Withdraw this pending release and prepare a clean release; later cleanup does not change this commit."
-              exit 1
-            fi
-          done <<< "$release_shas"
-
       - name: Wait for test-and-build (ubuntu) on the release commit
         env:
           GH_TOKEN: ${{ github.token }}
@@ -51,12 +34,12 @@ jobs:
         run: |
           set -euo pipefail
 
-          # The preflight above also covers retries from a later ordinary push.
+          # Only the release-PR-merge commit creates a tag, so only it needs to wait.
           subject="${HEAD_MSG%%$'\n'*}"
           case "$subject" in
             chore\(*\):\ release\ *) : ;; # chore(main): release X.Y.Z / chore(release/1.2): release ...
             *)
-              echo "::notice::'$subject' is not a release commit; pending release trees passed the artifact check. Not waiting for this push's CI."
+              echo "::notice::'$subject' is not a release commit; release-please will only upsert the release PR. Not waiting."
               exit 0
               ;;
           esac
