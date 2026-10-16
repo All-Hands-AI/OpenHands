@@ -906,7 +906,6 @@ describe("AgentServerConversationService", () => {
       __resetActiveStoreForTests();
     });
 
-    // @spec CD-002 — Planning lookup and deletion keep the captured transport
     it("keeps planning lookup and deletion on the original backend during a switch", async () => {
       const original: Backend = { id: "delete-origin", kind: "local", name: "Original", host: "http://original.test", apiKey: "original-key" };
       const next: Backend = { ...original, id: "delete-next", host: "http://next.test", apiKey: "next-key" };

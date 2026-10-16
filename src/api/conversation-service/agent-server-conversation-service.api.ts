@@ -1039,7 +1039,6 @@ class AgentServerConversationService {
     return toConversationPage(requireConversationSearchPage(data));
   }
 
-  // @spec CD-002 — Capture the confirmed backend and organization
   static createConversationDeletionScope(): ConversationDeletionScope {
     const backend = getActiveBackend().backend;
     if (backend.kind === "cloud") {

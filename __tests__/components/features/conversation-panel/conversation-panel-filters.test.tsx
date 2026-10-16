@@ -549,7 +549,6 @@ describe("ConversationPanel filters and pagination", () => {
       ).toHaveTextContent("main");
     });
 
-    // @spec CD-001 — Complete, unique enumeration precedes confirmation
     it("loads every page before confirming deletion, including hidden archives and overlapping rows", async () => {
       // Arrange: only the first page is visible; the second page is still
       // loading and repeats a row while introducing a hidden archived row.
