@@ -483,6 +483,19 @@ button.extension-module-card-interactive {
   }
 }
 
+/*
+ * Syntax-highlighter tokens are inline text runs. Prism names each span after
+ * its grammar type (`token table` for TOML section headers and Markdown
+ * tables, `token static`, ...), and Tailwind generates a utility for any of
+ * those words it finds in the sources (`.table` is `display: table`, which
+ * puts `[`, the section name and `]` on separate lines). Theme colors arrive
+ * as inline styles, so they still apply. Unlayered, so it outranks utilities.
+ */
+code .token {
+  display: inline;
+  position: static;
+}
+
 /* Custom styling for xterm */
 /* XTerm.js scrollbar styling - follows custom-scrollbar pattern */
 .xterm-viewport::-webkit-scrollbar {
