@@ -2102,6 +2102,19 @@ export function AutomationSetupPanel({
                   }}
                   streamingField={streamingField}
                   setFrequency={(value) => {
+                    if (value === "custom" && frequency !== "custom") {
+                      // Start Custom from the preset the user configured.
+                      updateField(
+                        "customSchedule",
+                        toCron(
+                          time,
+                          frequency,
+                          customSchedule,
+                          scheduleDateTime || defaultScheduleDateTimeLocal(),
+                          weekday,
+                        ),
+                      );
+                    }
                     updateField("frequency", value);
                     if (value === "once" && !scheduleDateTime.trim()) {
                       updateField(
