@@ -60,6 +60,14 @@ describe("color themes", () => {
         ).toBeGreaterThanOrEqual(4.5);
       }
 
+      expect(
+        contrast(
+          luminance(resolve("--oh-modal-description-foreground")),
+          modalSurface,
+        ),
+        "--oh-modal-description-foreground against the modal surface",
+      ).toBeGreaterThanOrEqual(4.5);
+
       const statusSurfaces = ["--oh-color-base", "--oh-color-base-secondary"];
       const statusTextRoles = [
         ["--oh-feedback-success", "--oh-status-success"],
