@@ -28,10 +28,10 @@ interface ContextMeterProps {
 }
 
 /**
- * Context-fill progress bar: neutral below
- * {@link CONTEXT_FILL_WARNING_PERCENT}, amber above it, red above
- * {@link CONTEXT_FILL_DANGER_PERCENT}. Shows the raw token numbers underneath.
+ * Context-fill progress bar with theme-aware warning and danger states. Shows
+ * the raw token numbers underneath.
  */
+// @spec WN-001 — Context usage indicators use readable warning and error roles.
 export function ContextMeter({
   perTurnToken,
   contextWindow,
@@ -67,9 +67,9 @@ export function ContextMeter({
           className={cn(
             "shrink-0 text-xs",
             isDanger
-              ? "text-red-500"
+              ? "text-feedback-error"
               : isWarning
-                ? "text-amber-500"
+                ? "text-feedback-warning"
                 : "text-muted",
           )}
         >
@@ -82,9 +82,9 @@ export function ContextMeter({
           className={cn(
             "absolute inset-y-0 left-0 rounded-full transition-all duration-300",
             isDanger
-              ? "bg-red-500"
+              ? "bg-status-error"
               : isWarning
-                ? "bg-amber-500"
+                ? "bg-feedback-warning"
                 : "bg-foreground",
           )}
           // runtime usage-percentage width

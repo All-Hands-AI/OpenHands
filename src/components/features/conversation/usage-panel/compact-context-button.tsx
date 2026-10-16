@@ -21,6 +21,7 @@ interface CompactContextButtonProps {
  * call-to-action once the context fill passes
  * {@link CONTEXT_FILL_WARNING_PERCENT}.
  */
+// @spec WN-001 — Compact context warnings use the readable warning role.
 export function CompactContextButton({
   fillPercent,
   perTurnToken = 0,
@@ -36,7 +37,7 @@ export function CompactContextButton({
       className="flex flex-col gap-2 border-t border-border-subtle pt-3"
     >
       {isHighFill && (
-        <span className="text-xs text-amber-500">
+        <span className="text-xs text-feedback-warning">
           {t(I18nKey.CONVERSATION$CONTEXT_FILLING_UP)}
         </span>
       )}
