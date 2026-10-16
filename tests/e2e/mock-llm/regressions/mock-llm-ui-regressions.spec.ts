@@ -416,6 +416,77 @@ test.describe("UI regressions", () => {
     expect(probeStyles.outsideBackground).toBe("rgba(0, 0, 0, 0)");
   });
 
+  // @spec BM-004 — Backend feedback consumes the embedding host's theme roles
+  test("backend connection feedback follows host color overrides", async ({
+    page,
+  }) => {
+    await routeSessionApiKey(page);
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    const shell = page.locator("[data-agent-server-ui]").first();
+    await expect(shell).toBeVisible();
+    await shell.evaluate((el) => {
+      const scope = el as HTMLElement;
+      scope.style.setProperty("--oh-feedback-error", "#8b1029");
+      scope.style.setProperty("--oh-feedback-success", "#17642f");
+    });
+
+    await page.getByTestId("backend-selector").click();
+    await page.getByTestId("manage-backends-menu-item").click();
+    await expect(page.getByTestId("manage-backends-status-Local")).toHaveCSS(
+      "color",
+      "rgb(23, 100, 47)",
+    );
+    await page.getByTestId("manage-backends-done").click();
+
+    await page.getByTestId("backend-selector").click();
+    await page.getByTestId("add-backend-menu-item").click();
+    await page.getByTestId("add-backend-option-agent-server").click();
+    await page.getByTestId("add-backend-name").fill("Unavailable server");
+    await page.getByTestId("add-backend-host").fill("http://127.0.0.1:9");
+    await page.getByTestId("add-backend-submit").click();
+    await expect(page.getByTestId("add-backend-error")).toHaveCSS(
+      "color",
+      "rgb(139, 16, 41)",
+    );
+  });
+
+  // @spec TN-001 — Toasts follow the embedding host's contrast ink
+  test("error and success toasts follow the host contrast color", async ({
+    page,
+  }) => {
+    await routeSessionApiKey(page);
+    // A host stylesheet override that survives full-page navigation.
+    await page.addInitScript(() => {
+      document.addEventListener("DOMContentLoaded", () => {
+        const style = document.createElement("style");
+        style.textContent =
+          "[data-agent-server-ui] { --oh-contrast: #8b1029 !important; }";
+        document.head.append(style);
+      });
+    });
+
+    await page.goto("/conversations/0123456789abcdef0123456789abcdef", {
+      waitUntil: "domcontentloaded",
+    });
+    await expect(
+      page.getByRole("status").filter({ hasText: "does not exist" }),
+    ).toHaveCSS("color", "rgb(139, 16, 41)");
+
+    await page.goto("/settings/app", { waitUntil: "domcontentloaded" });
+    const soundSwitch = page.getByText("Sound Notifications", { exact: true });
+    const saveButton = page.getByRole("button", { name: "Save Changes" });
+    await soundSwitch.click();
+    await saveButton.click();
+    await expect(
+      page.getByRole("status").filter({ hasText: "Settings saved" }),
+    ).toHaveCSS("color", "rgb(139, 16, 41)");
+
+    // Restore the original setting for later serial scenarios.
+    await soundSwitch.click();
+    await saveButton.click();
+    await expect(saveButton).toBeDisabled();
+  });
+
   // ── critic result rendering ──────────────────────────────────────
 
   test("renders critic results on agent messages and finish actions", async ({
@@ -650,5 +721,98 @@ test.describe("UI regressions", () => {
     const dropdown = page.getByTestId("workspace-dropdown");
     await expect(dropdown).toBeEnabled({ timeout: 15_000 });
     await expect(dropdown).toHaveValue("");
+  });
+
+  // @spec FF-001 — Validation feedback follows the embedding host's error role
+  test("profile validation feedback follows the host error role", async ({
+    page,
+  }) => {
+    await routeSessionApiKey(page);
+    // Isolate the missing-model state from profiles saved by earlier scenarios.
+    // Mock the underlying read contract, while the real editor and built CSS run.
+    await page.route("**/api/profiles", async (route, request) => {
+      if (request.method() !== "GET") return route.fallback();
+      return route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ profiles: [], active_profile: null }),
+      });
+    });
+    await page.goto("/settings/agents", { waitUntil: "domcontentloaded" });
+    await page.getByTestId("add-agent-profile").click();
+    await expect(page.getByTestId("agent-profile-no-llm")).toBeVisible();
+    await page.getByTestId("agent-profile-no-llm").evaluate((el) => {
+      const scope = el.closest("[data-agent-server-ui]");
+      if (!scope) throw new Error("Agent Server UI theme scope not found");
+      (scope as HTMLElement).style.setProperty(
+        "--oh-feedback-error",
+        "#8b1029",
+      );
+    });
+    await expect(page.getByTestId("agent-profile-no-llm")).toHaveCSS(
+      "color",
+      "rgb(139, 16, 41)",
+    );
+  });
+
+  // @spec WN-001 — Home warning icon follows the embedding host warning role
+  test("home warning icon follows the host warning color", async ({ page }) => {
+    await routeSessionApiKey(page);
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await expect(
+      page.getByTestId("home-llm-not-configured-banner"),
+    ).toBeVisible();
+    const icon = page
+      .getByTestId("home-llm-not-configured-banner")
+      .locator("svg")
+      .first();
+    await icon.evaluate((element) => {
+      const scope = element.closest("[data-agent-server-ui]");
+      if (!scope) throw new Error("Agent Server UI theme scope not found");
+      (scope as HTMLElement).style.setProperty(
+        "--oh-feedback-warning",
+        "#8b1029",
+      );
+    });
+    await expect(icon).toHaveCSS("color", "rgb(139, 16, 41)");
+  });
+
+  // @spec WN-001 — Canvas Apps trust notice follows the host warning role
+  test("Apps trust notice follows the host warning color", async ({ page }) => {
+    await routeSessionApiKey(page);
+    await page.goto("/apps", { waitUntil: "domcontentloaded" });
+    const notice = page.getByText("This app runs trusted JavaScript", {
+      exact: false,
+    });
+    await expect(notice).toBeVisible();
+    await notice.evaluate((element) => {
+      const scope = element.closest("[data-agent-server-ui]");
+      if (!scope) throw new Error("Agent Server UI theme scope not found");
+      (scope as HTMLElement).style.setProperty(
+        "--oh-feedback-warning",
+        "#8b1029",
+      );
+    });
+    await expect(notice).toHaveCSS("color", "rgb(139, 16, 41)");
+  });
+
+  // @spec HL-001 — Home mode labels follow the embedding host's contrast ink
+  test("home mode toggle labels follow the host contrast color", async ({
+    page,
+  }) => {
+    await routeSessionApiKey(page);
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    const toggle = page.getByTestId("home-launcher-mode-toggle");
+    const selected = toggle.getByRole("radio", { checked: true });
+    const unselected = toggle.getByRole("radio", { checked: false });
+    await expect(selected).toBeVisible();
+    await toggle.evaluate((element) => {
+      const scope = element.closest("[data-agent-server-ui]");
+      if (!scope) throw new Error("Agent Server UI theme scope not found");
+      (scope as HTMLElement).style.setProperty("--oh-contrast", "#8b1029");
+    });
+
+    await expect(selected).toHaveCSS("color", "rgb(139, 16, 41)");
+    await unselected.hover();
+    await expect(unselected).toHaveCSS("color", "rgb(139, 16, 41)");
   });
 });

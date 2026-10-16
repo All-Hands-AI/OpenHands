@@ -4,6 +4,7 @@ import {
   buildAutomationBackendEnv,
   buildLocalServiceRouteArgs,
   parseArgs,
+  buildMarsWebEnv,
 } from "../../scripts/dev-static.mjs";
 import { buildFrontendEnv } from "../../scripts/static-build.mjs";
 
@@ -60,5 +61,19 @@ describe("dev-static", () => {
     expect(args).toContain("/api/automation=http://127.0.0.1:18001");
     expect(args).toContain("/server_info=http://127.0.0.1:18000");
     expect(args.filter((arg: string) => arg.includes("localhost"))).toEqual([]);
+  });
+});
+
+describe("dev-static MARS web bridge env", () => {
+  it("puts the bridge on the ingress behind the session key, and off the static child", () => {
+    const config = { sessionApiKey: "stack-key" } as never;
+    expect(buildMarsWebEnv("ingress", config)).toEqual({
+      MARS_WEB_KEY: "stack-key",
+    });
+    expect(buildMarsWebEnv("static", config)).toEqual({ MARS_WEB: "0" });
+  });
+
+  it("mounts nothing when the stack has no session key", () => {
+    expect(buildMarsWebEnv("ingress", {} as never)).toEqual({ MARS_WEB: "0" });
   });
 });
