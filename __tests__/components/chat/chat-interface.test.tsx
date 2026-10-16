@@ -7,6 +7,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
+import { flushSync } from "react-dom";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderWithProviders, useParamsMock } from "test-utils";
@@ -1313,5 +1314,82 @@ describe("ChatInterface - Build plan keyboard shortcut", () => {
     await waitFor(() => {
       expect(sentBuildPrompt()).toBe(true);
     });
+  });
+
+  it("sends the build prompt from the empty composer when the chat re-renders during the keypress", async () => {
+    act(() => {
+      useConversationStore.setState({
+        conversationMode: "plan",
+        planContent: "# Plan\n\n- step one",
+      });
+    });
+    // In the app React's root listeners sit on `document` ahead of this
+    // shortcut, and the browser commits the composer's keydown update between
+    // listeners. Commit a re-render at that point.
+    const commitMidKeypress = () => {
+      flushSync(() => {
+        useConversationStore.setState({
+          planContent: "# Plan\n\n- step one\n- step two",
+        });
+      });
+    };
+    document.addEventListener("keydown", commitMidKeypress, { once: true });
+    renderInterface();
+    const composer = screen.getByTestId("chat-input");
+    composer.focus();
+
+    composer.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Enter",
+        ctrlKey: true,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(sentBuildPrompt()).toBe(true);
+    });
+  });
+
+  it("leaves Ctrl+Enter to a pending confirmation", () => {
+    vi.mocked(useAgentState).mockReturnValue({
+      curAgentState: AgentState.AWAITING_USER_CONFIRMATION,
+    });
+    act(() => {
+      useConversationStore.setState({
+        conversationMode: "plan",
+        planContent: "# Plan\n\n- step one",
+      });
+    });
+
+    try {
+      renderInterface();
+      pressBuildShortcut();
+
+      expect(sentBuildPrompt()).toBe(false);
+    } finally {
+      vi.mocked(useAgentState).mockReturnValue({
+        curAgentState: AgentState.AWAITING_USER_INPUT,
+      });
+    }
+  });
+
+  it("leaves Ctrl+Enter to the composer when it has text", () => {
+    act(() => {
+      useConversationStore.setState({
+        conversationMode: "plan",
+        planContent: "# Plan\n\n- step one",
+      });
+    });
+    renderInterface();
+    const composer = screen.getByTestId("chat-input");
+    composer.focus();
+    composer.textContent = "Refine step one";
+    fireEvent.input(composer);
+
+    fireEvent.keyDown(composer, { key: "Enter", ctrlKey: true });
+
+    expect(sentBuildPrompt()).toBe(false);
   });
 });
