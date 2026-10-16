@@ -191,7 +191,6 @@ function AppSettingsForm() {
     !gitUserNameHasChanged &&
     !gitUserEmailHasChanged;
 
-  // @spec APS-001 — Pending saves retain the mounted, disabled form.
   const shouldBeLoading = !settings || isLoading || areLlmProfilesLoading;
 
   return (
