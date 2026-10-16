@@ -14,6 +14,7 @@ import {
   buildStartConversationRequest,
   buildStartConversationRequestWithEncryptedSettings,
   fetchBackendExecutionRuntime,
+  backendSupportsLaunchLlmOverride,
   getDefaultConversationTitle,
   parseRuntimeServicesInfo,
   toAppConversation,
@@ -1513,6 +1514,20 @@ describe("buildRuntimeServicesSystemSuffix", () => {
 
     expect(runtime).toBe("local");
     expect(mockGetServerInfo).toHaveBeenCalledOnce();
+  });
+
+  it("reports the per-launch LLM override from server capabilities", async () => {
+    mockGetCachedAgentServerInfo.mockReturnValue({
+      version: "1.54.0",
+      capabilities: ["tool_catalog_v1"],
+    });
+    await expect(backendSupportsLaunchLlmOverride()).resolves.toBe(false);
+
+    mockGetCachedAgentServerInfo.mockReturnValue({
+      version: "1.54.0",
+      capabilities: ["tool_catalog_v1", "agent_launch_pipeline_v1"],
+    });
+    await expect(backendSupportsLaunchLlmOverride()).resolves.toBe(true);
   });
 });
 

@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { getStoredConversationMetadata } from "#/api/conversation-metadata-store";
+import ProfilesService from "#/api/profiles-service/profiles-service.api";
 
 const {
   mockHttpPost,
@@ -141,6 +142,7 @@ describe("useCreateConversation persists selected repository metadata", () => {
 
   afterEach(() => {
     window.localStorage.clear();
+    vi.restoreAllMocks();
   });
 
   it("stores the selected repo/branch/provider in the metadata store after a successful create", async () => {
@@ -198,9 +200,10 @@ describe("useCreateConversation persists selected repository metadata", () => {
   });
 
   it("stamps the active LLM profile even when no repo or workspace is attached (#1082)", async () => {
-    mockUseLlmProfiles.mockReturnValue({
-      data: { active_profile: "team-default" },
-    });
+    vi.spyOn(ProfilesService, "listProfiles").mockResolvedValue({
+      profiles: [{ name: "team-default" }],
+      active_profile: "team-default",
+    } as never);
 
     const { result } = renderHook(() => useCreateConversation(), { wrapper });
 
@@ -212,10 +215,7 @@ describe("useCreateConversation persists selected repository metadata", () => {
       selected_repository: null,
       selected_branch: null,
       git_provider: null,
-      selected_workspace: null,
-      workspace_mode: null,
       active_profile: "team-default",
-      plugins: null,
     });
   });
 
