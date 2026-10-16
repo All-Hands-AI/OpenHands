@@ -86,20 +86,15 @@ export const Messages: React.FC<MessagesProps> = React.memo(
         const request = unanchored.get(event.tool_call_id);
         if (!request) continue;
         unanchored.delete(event.tool_call_id);
-        byAnchorId.set(String(event.id), request);
+        byAnchorId.set(event.id, request);
       }
       return { byAnchorId, unanchored: [...unanchored.values()] };
     }, [pendingSecretRequests, messages]);
 
-    const renderSecretRequest = (request: SecretRequest | undefined) =>
-      request ? (
-        <SecretRequestCard key={request.toolCallId} request={request} />
-      ) : null;
-
-    const maybeRenderSecretRequest = (eventId: string | number | undefined) =>
-      eventId === undefined
-        ? null
-        : renderSecretRequest(secretRequests.byAnchorId.get(String(eventId)));
+    const maybeRenderSecretRequest = (eventId: string | undefined) => {
+      const request = eventId && secretRequests.byAnchorId.get(eventId);
+      return request ? <SecretRequestCard request={request} /> : null;
+    };
 
     // Fold consecutive action/observation events into collapsible groups so a
     // long sequence of tool calls doesn't dominate the chat scroll. Items that
@@ -184,7 +179,9 @@ export const Messages: React.FC<MessagesProps> = React.memo(
             </React.Fragment>
           );
         })}
-        {secretRequests.unanchored.map(renderSecretRequest)}
+        {secretRequests.unanchored.map((request) => (
+          <SecretRequestCard key={request.toolCallId} request={request} />
+        ))}
         <ConversationConfirmationButtons />
       </>
     );
