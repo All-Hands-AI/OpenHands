@@ -137,19 +137,24 @@ describe("color themes", () => {
       }
 
       // @spec FF-001 — Theme-aware validation and load errors
-      // The automation setup draft bar's error pill: Tailwind red-500
-      // (#fb2c36) at 5% over the theme surface.
-      const surface = channels(resolve("--oh-surface"));
-      const errorPillSurface = channels("#fb2c36").map(
-        (channel, index) => channel * 0.05 + surface[index] * 0.95,
-      );
-      expect(
-        contrast(
-          luminance(resolve("--oh-feedback-error")),
-          luminance(errorPillSurface),
-        ),
-        "--oh-feedback-error against the draft bar error pill",
-      ).toBeGreaterThanOrEqual(4.5);
+      // Validate the automation pill and Test runs alert on their actual surfaces.
+      for (const [surfaceRole, opacity] of [
+        ["--oh-surface", 0.05],
+        ["--oh-color-base", 0.1],
+      ] as const) {
+        const surface = channels(resolve(surfaceRole));
+        const tintedSurface = channels(resolve("--oh-feedback-error")).map(
+          (channel, index) =>
+            channel * opacity + surface[index] * (1 - opacity),
+        );
+        expect(
+          contrast(
+            luminance(resolve("--oh-feedback-error")),
+            luminance(tintedSurface),
+          ),
+          `--oh-feedback-error against its ${opacity * 100}% tint over ${surfaceRole}`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
 
       // @spec HL-001 — Home mode labels stay readable on the hover pill
       expect(
