@@ -294,9 +294,7 @@ class CanvasExtensionsService {
     if (enabled && consent) {
       const info = await client.get<AppBackendServerInfo>("/server_info");
       if (
-        !info.data.capabilities?.includes(
-          "canvas_app_backend_enable_lifecycle_v1",
-        )
+        !info.capabilities?.includes("canvas_app_backend_enable_lifecycle_v1")
       ) {
         throw new Error("Upgrade Agent Server to enable managed Apps safely.");
       }
