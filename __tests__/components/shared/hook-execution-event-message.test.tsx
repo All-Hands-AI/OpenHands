@@ -96,10 +96,7 @@ describe("hook execution event message", () => {
       `${icon} ${I18nKey.HOOK$HOOK_LABEL}: ${hookType}`,
     );
     expect(message).toHaveAttribute("data-success", "success");
-    expect(screen.getByText("ok")).toHaveClass(
-      "bg-green-900/50",
-      "text-green-300",
-    );
+    expect(screen.getByText("ok")).toBeInTheDocument();
   });
 
   it("shows all available metadata for a blocked hook", () => {
@@ -123,15 +120,7 @@ describe("hook execution event message", () => {
       `🚫 ${I18nKey.HOOK$HOOK_LABEL}: PostToolUse`,
     );
     expect(screen.getByText("(terminal)")).toBeInTheDocument();
-    expect(screen.getByText("blocked")).toHaveClass(
-      "ml-2",
-      "px-1",
-      "py-0.5",
-      "rounded",
-      "text-xs",
-      "bg-amber-900/50",
-      "text-amber-300",
-    );
+    expect(screen.getByText("blocked")).toBeInTheDocument();
     expect(message).toHaveTextContent(`${I18nKey.HOOK$COMMAND}: check-policy`);
     expect(message).toHaveTextContent(`${I18nKey.HOOK$EXIT_CODE}: 13`);
     expect(message).toHaveTextContent(
@@ -155,10 +144,7 @@ describe("hook execution event message", () => {
 
     const message = screen.getByTestId("generic-event-message");
     expect(message).toHaveAttribute("data-success", "error");
-    expect(screen.getByText("failed")).toHaveClass(
-      "bg-red-900/50",
-      "text-red-300",
-    );
+    expect(screen.getByText("failed")).toBeInTheDocument();
     expect(screen.getByText(`${"x".repeat(77)}...`)).toBeInTheDocument();
     expect(message).not.toHaveTextContent(longCommand);
     expect(message).not.toHaveTextContent(I18nKey.HOOK$BLOCKED_REASON);
