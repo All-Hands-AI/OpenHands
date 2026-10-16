@@ -309,7 +309,7 @@ function DeviceFlowStatusContent({
               href={validVerificationUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="max-h-16 overflow-auto break-all text-center text-xs text-blue-400 hover:underline"
+              className="max-h-16 overflow-auto break-all text-center text-xs text-contrast hover:underline"
             >
               {validVerificationUrl}
             </a>
@@ -330,11 +330,11 @@ function DeviceFlowStatusContent({
 
   return (
     <div
-      className="flex flex-col gap-3 rounded-lg border border-red-700 bg-red-900/20 p-4"
+      className="flex flex-col gap-3 rounded-lg border border-status-error/40 bg-status-error/5 p-4"
       data-testid={`${testIdRoot}-auth-error`}
       role="alert"
     >
-      <p className="text-sm text-red-400">{error}</p>
+      <p className="text-sm text-feedback-error">{error}</p>
       <BrandButton
         type="button"
         variant="secondary"
