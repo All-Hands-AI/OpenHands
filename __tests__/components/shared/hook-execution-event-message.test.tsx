@@ -1,6 +1,9 @@
 import { render, screen } from "@testing-library/react";
+import { compile } from "@tailwindcss/node";
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import { HookExecutionEventMessage } from "#/components/shared/hook-execution-event-message";
 import { I18nKey } from "#/i18n/declaration";
 import type {
@@ -62,7 +65,54 @@ const makeHookEvent = (
 const renderHookEvent = (overrides: Partial<HookExecutionEvent> = {}) =>
   render(<HookExecutionEventMessage event={makeHookEvent(overrides)} />);
 
+let compiler: Awaited<ReturnType<typeof compile>>;
+
+beforeAll(async () => {
+  compiler = await compile(
+    await readFile(resolve("src/tailwind.css"), "utf8"),
+    { base: resolve("src"), onDependency: () => {} },
+  );
+});
+
 describe("hook execution event message", () => {
+  it.each([
+    ["blocked", { blocked: true, success: false }, "--oh-feedback-warning"],
+    ["ok", { blocked: false, success: true }, "--oh-feedback-success"],
+    ["failed", { blocked: false, success: false }, "--oh-feedback-error"],
+  ] as const)(
+    "builds theme feedback ink and tint for the %s badge",
+    (status, event, role) => {
+      renderHookEvent(event);
+      const badge = screen.getByText(status);
+
+      // Compile the component's emitted classes through the production stylesheet.
+      // This checks the CSS contract without prescribing a utility class spelling.
+      const css = compiler.build([...badge.classList]);
+      const declarations = [
+        ...css.matchAll(/\.((?:\\.|[\w-])+)\s*\{([^}]+)\}/g),
+      ]
+        .filter(([, selector]) =>
+          badge.classList.contains(selector.replace(/\\(.)/g, "$1")),
+        )
+        .map(([, , body]) => body)
+        .join("\n");
+
+      const property = (name: "color" | "background-color") =>
+        [
+          ...declarations.matchAll(
+            new RegExp(String.raw`(?:^|\n)\s*${name}:\s*([^;]+);`, "g"),
+          ),
+        ]
+          .at(-1)?.[1]
+          .trim();
+
+      expect(property("color")).toBe(`var(${role})`);
+      expect(property("background-color")).toBe(
+        `color-mix(in oklab, var(${role}) 10%, transparent)`,
+      );
+    },
+  );
+
   it("renders nothing for an event from another event family", () => {
     const event = {
       id: "state-event-1",
