@@ -67,7 +67,6 @@ import {
   knownBugBlocks,
   parseBugPredicate,
   proofVerdict,
-  transcriptViewport,
 } from "./lib/known-bug.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -2298,42 +2297,6 @@ test("only a mismatch at the bug line on a healthy stack counts as reproducing",
     { assertion: { kind: "other-symptom" } },
   ])
     assert.equal(c(o).status, "fail", JSON.stringify(o));
-});
-
-test("historical viewport recovery needs successful observed receipts from the exact recipe", () => {
-  const recipe = knownBugBlocks(
-    "```sh known-bug F14.create desktop\ncontrol-openhands browser viewport phone\ncontrol-openhands assert --field count --equals 1 --bug-shows 0 -- evidence list # bug\n```",
-  )[0];
-  const transcript = {
-    id: recipe.id,
-    name: recipe.name,
-    script: recipe.script,
-    stdout:
-      '{"ok":true,"viewport":{"width":390,"height":844}}\n{"ok":false,"kind":"mismatch"}\n',
-  };
-  assert.equal(transcriptViewport(recipe, transcript), "390x844");
-  for (const changed of [
-    { id: "F14.other" },
-    { name: "phone" },
-    { script: `${recipe.script}\ntrue` },
-    { stdout: '{"ok":false,"viewport":{"width":390,"height":844}}' },
-    { stdout: '{"ok":true,"viewport":{"width":"390","height":844}}' },
-    { stdout: '{"ok":true,"viewport":{"width":390,"height":0}}' },
-    { stdout: "not a JSON receipt" },
-    { stdout: "" },
-  ])
-    assert.equal(
-      transcriptViewport(recipe, { ...transcript, ...changed }),
-      undefined,
-    );
-  assert.equal(
-    transcriptViewport(recipe, {
-      ...transcript,
-      stdout:
-        '{"ok":true,"viewport":{"width":390,"height":844}}\n{"ok":true,"viewport":{"width":1440,"height":900}}',
-    }),
-    "1440x900",
-  );
 });
 
 test("a fix is verified only by two reproductions and two passes under the same inputs", () => {

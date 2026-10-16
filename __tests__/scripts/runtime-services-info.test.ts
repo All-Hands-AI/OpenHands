@@ -30,7 +30,6 @@ interface RuntimeServicesInfoShape {
 }
 
 describe("runtime-services-info.mjs", () => {
-  // @spec LAR-003 — Accurate backend-only metadata
   it.each([false, true])(
     "describes only active ingress routes (frontend %s)",
     (frontend) => {

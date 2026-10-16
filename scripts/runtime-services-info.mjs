@@ -97,7 +97,6 @@ export function buildRuntimeServicesInfo(options) {
   };
 
   if (ingressPort !== undefined) {
-    // @spec LAR-003 — Accurate backend-only metadata
     services.ingress = {
       description:
         "Unified entry point. Routes /api/automation/* to the automation " +

@@ -274,7 +274,6 @@ export async function assertPortsFree(portConfigs, host = "127.0.0.1") {
     .map(({ name, port }) => `   • ${name}: port ${port}`)
     .join("\n");
   const error = new Error(
-    // @spec LAR-002 — Expected occupied-port errors
     `Cannot start: the following ports are already in use:\n\n${lines}\n\n` +
       `Another agent-canvas instance may already be running.\n` +
       `Stop it first, or override the occupied ports via environment variables (for ingress, --port <other> or PORT=<other>).`,

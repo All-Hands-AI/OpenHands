@@ -681,10 +681,6 @@ const handlers = {
       viewport: activePage.viewportSize(),
     };
   },
-  async metadata() {
-    // No DOM read: a recovery-gate navigation can destroy title()'s context.
-    return { url: activePage.url(), viewport: activePage.viewportSize() };
-  },
   async click({
     selector,
     timeout,
