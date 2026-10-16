@@ -10,7 +10,8 @@ name: Verify skill isolation
 # fix must not also rewrite the rules the fix is checked against.
 #
 # Rule: a PR that changes anything under .agents/skills/verify-*/ may change
-# nothing else, except files named exactly AGENTS.md (at any depth).
+# nothing else, except files named exactly AGENTS.md (at any depth) and the
+# temporary .pr/ evidence directory at the repository root.
 # A PR that changes no verify-* skill file always passes.
 #
 # How to fix a failing PR: split it. Keep the product change (source, tests,
@@ -36,7 +37,7 @@ jobs:
             # the PR or execute its code in this pull_request_target workflow.
             # .github/scripts/tests/verify-skill-isolation.test.cjs runs this exact
             # script body, so keep `script: |` the last key in this file.
-            - uses: actions/github-script@v8
+            - uses: actions/github-script@v9
               with:
                   script: |
                       try {
@@ -66,10 +67,13 @@ jobs:
                           if (file.previous_filename) paths.push(file.previous_filename);
                         }
                         const isVerify = (path) => /^\.agents\/skills\/verify-[^/]+\//.test(path);
-                        const isAgentsMd = (path) => path.split("/").pop() === "AGENTS.md";
+                        // AGENTS.md files and the temporary .pr/ evidence directory (removed
+                        // before merge by pr-artifacts.yml) may ride along with skill changes.
+                        const isExempt = (path) =>
+                          path.split("/").pop() === "AGENTS.md" || path.startsWith(".pr/");
                         const skillPaths = [...new Set(paths.filter(isVerify))];
                         const otherPaths = [...new Set(paths.filter((path) =>
-                          !isVerify(path) && !isAgentsMd(path)))];
+                          !isVerify(path) && !isExempt(path)))];
                         if (skillPaths.length && otherPaths.length) {
                           const list = (items) => items.map((item) => `  - ${item}`).join("\n");
                           core.setFailed([
@@ -77,7 +81,8 @@ jobs:
                             "",
                             "The verify-* skills (feature maps, known-bug recipes, control-openhands) define",
                             "expected behavior. The same PR must not change both those rules and the code",
-                            "they check. Only AGENTS.md files may accompany .agents/skills/verify-*/ changes.",
+                            "they check. Only AGENTS.md files and .pr/ evidence may accompany",
+                            ".agents/skills/verify-*/ changes.",
                             "",
                             "What to do: split this PR in two.",
                             "  1. Keep the product change here and restore every verify-* skill path below",
@@ -85,8 +90,8 @@ jobs:
                             "  2. Open a separate PR with only the verify-* skill change. For a bug fix,",
                             "     open it after the fix merges, so a different context updates the skill",
                             "     than the one that wrote the fix.",
-                            "Do not edit this workflow, move content into AGENTS.md, or relocate skill",
-                            "files to get around the check.",
+                            "Do not edit this workflow, move content into AGENTS.md or .pr/, or relocate",
+                            "skill files to get around the check.",
                             "",
                             `verify-* skill paths (${skillPaths.length}):`,
                             list(skillPaths),
@@ -96,7 +101,7 @@ jobs:
                           ].join("\n"));
                         } else {
                           core.info(skillPaths.length
-                            ? "Verify skill isolation passed: only verify-* skill files (and AGENTS.md) changed."
+                            ? "Verify skill isolation passed: only verify-* skill files (plus AGENTS.md or .pr/) changed."
                             : "Verify skill isolation passed: no verify-* skill files changed.");
                         }
                       } catch (error) {
