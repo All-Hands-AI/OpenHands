@@ -57,6 +57,23 @@ import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { I18nKey } from "#/i18n/declaration";
 import { hasConversationStarted } from "./components/resolve-picker-kind";
 import { ComposerDockedProvider } from "#/context/composer-docked-context";
+import { isContentEmpty } from "./utils/chat-input.utils";
+
+// Ctrl/Cmd+Enter in a text field that holds text belongs to that field (the
+// composer sends it); an empty field or any other target builds the plan.
+function isTextFieldWithText(target: EventTarget | null): boolean {
+  if (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement
+  ) {
+    return target.value.trim() !== "";
+  }
+  if (target instanceof HTMLElement) {
+    const editable = target.closest<HTMLDivElement>("[contenteditable='true']");
+    return editable !== null && !isContentEmpty(editable);
+  }
+  return false;
+}
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -171,7 +188,11 @@ export function ChatInterface({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       // Check for Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux)
-      if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+      if (
+        (event.metaKey || event.ctrlKey) &&
+        event.key === "Enter" &&
+        !isTextFieldWithText(event.target)
+      ) {
         event.preventDefault();
         event.stopPropagation();
         handleBuildPlanClick(event);
@@ -179,10 +200,14 @@ export function ChatInterface({
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown);
+    // Capture phase, so this runs before React's own `document` listeners
+    // hand the key to the focused composer: the re-render its handler commits
+    // between listeners re-subscribes this effect, and the browser skips a
+    // listener removed or added mid-dispatch.
+    document.addEventListener("keydown", handleKeyDown, true);
 
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keydown", handleKeyDown, true);
     };
   }, [
     isAgentRunning,
