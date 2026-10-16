@@ -31,7 +31,6 @@ interface ContextMeterProps {
  * Context-fill progress bar with theme-aware warning and danger states. Shows
  * the raw token numbers underneath.
  */
-// @spec WN-001 — Context usage indicators use readable warning and error roles.
 export function ContextMeter({
   perTurnToken,
   contextWindow,

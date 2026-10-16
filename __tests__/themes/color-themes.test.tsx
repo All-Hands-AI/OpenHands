@@ -84,7 +84,7 @@ describe("color themes", () => {
         "--oh-contrast against the Home mode toggle pill",
       ).toBeGreaterThanOrEqual(4.5);
 
-      // @spec WN-001 — Context meter text and fills preserve contrast in each palette.
+      // Context meter text and fills preserve contrast in each palette.
       const contextMeterSurface = luminance(resolve("--oh-surface-raised"));
       const contextMeterTrack = luminance(resolve("--oh-color-tertiary"));
       for (const role of ["--oh-feedback-error", "--oh-feedback-warning"]) {

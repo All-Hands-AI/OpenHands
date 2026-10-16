@@ -36,7 +36,6 @@ describe("ContextMeter", () => {
     expect(bar.style.width).toBe("50%");
   });
 
-  // @spec WN-001 — Warning meter text and fill use readable theme roles.
   it("warns above 70% fill", () => {
     render(<ContextMeter perTurnToken={75} contextWindow={100} />);
 
@@ -75,7 +74,6 @@ describe("ContextMeter", () => {
   });
 });
 
-// @spec WN-001 — The compact action warning uses the same readable text role.
 describe("CompactContextButton", () => {
   it("uses warning feedback color when context is above the threshold", () => {
     render(<CompactContextButton fillPercent={75} />);
