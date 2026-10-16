@@ -46,7 +46,21 @@
  */
 
 import { spawn, spawnSync } from "node:child_process";
-import { mkdirSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { randomBytes } from "node:crypto";
+import {
+  closeSync,
+  constants as fsConstants,
+  existsSync,
+  fchmodSync,
+  fstatSync,
+  linkSync,
+  lstatSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { join, resolve, dirname, isAbsolute } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { homedir } from "node:os";
@@ -945,24 +959,84 @@ function buildAutomationTelemetryEnv(env = process.env) {
 // docker/entrypoint.sh pins to the same file.
 const AUTOMATION_KV_SECRET_FILE = "automation-kv-secret.txt";
 
+// The pin follows one contract in both launchers (docker/entrypoint.sh has
+// the shell version): it must be a regular file, not a symbolic link; an
+// existing pin is made private (0600) before it is used; it is created
+// without replacing anything, so concurrent first launches all end up with
+// the one value that won; and any failure stops the launch.
+function readPinnedKvSecret(filePath) {
+  let stat;
+  try {
+    stat = lstatSync(filePath);
+  } catch (error) {
+    if (error?.code === "ENOENT") return null;
+    throw error;
+  }
+  if (stat.isSymbolicLink()) {
+    throw new Error(`${filePath} is a symbolic link; refusing to use it`);
+  }
+  // O_NOFOLLOW closes the gap between the lstat above and the open, where the
+  // platform has it (not on Windows).
+  const fd = openSync(
+    filePath,
+    fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0),
+  );
+  try {
+    const opened = fstatSync(fd);
+    if (!opened.isFile()) {
+      throw new Error(`${filePath} is not a regular file`);
+    }
+    if (process.platform !== "win32" && opened.mode & 0o077) {
+      fchmodSync(fd, 0o600);
+    }
+    // Read the same way as docker/entrypoint.sh: trailing line breaks are not
+    // part of the key, and a blank file counts as not pinned yet.
+    return readFileSync(fd, "utf8").replace(/[\r\n]+$/, "");
+  } finally {
+    closeSync(fd);
+  }
+}
+
+// Writes the key to a private temporary file, then links it into place. A
+// link never replaces an existing file, so only one concurrent launcher wins,
+// and the others read a pin that is already complete. Returns false if
+// another launcher pinned first.
+function createPinnedKvSecret(filePath, key) {
+  const tmpPath = `${filePath}.${process.pid}.${randomBytes(6).toString("hex")}.tmp`;
+  writeFileSync(tmpPath, `${key}\n`, { mode: 0o600, flag: "wx" });
+  try {
+    linkSync(tmpPath, filePath);
+    return true;
+  } catch (error) {
+    if (error?.code === "EEXIST") return false;
+    throw error;
+  } finally {
+    rmSync(tmpPath, { force: true });
+  }
+}
+
 function resolveAutomationKvSecret(config, env = process.env) {
   if (env.AUTOMATION_KV_SECRET) return env.AUTOMATION_KV_SECRET;
 
   const filePath = join(config.stateDir, AUTOMATION_KV_SECRET_FILE);
-  try {
-    // Read the same way as docker/entrypoint.sh: trailing line breaks are not
-    // part of the key, and a blank file counts as not pinned yet.
-    const pinned = readFileSync(filePath, "utf8").replace(/[\r\n]+$/, "");
-    if (pinned.trim()) return pinned;
-  } catch (error) {
-    // Only a missing file means "not pinned yet". Falling back to the session
-    // key past an unreadable pin could encrypt new state with the wrong key.
-    if (error?.code !== "ENOENT") throw error;
-  }
   mkdirSync(config.stateDir, { recursive: true });
-  writeFileSync(filePath, `${config.sessionApiKey}\n`, { mode: 0o600 });
-  logService("automation", `Pinned AUTOMATION_KV_SECRET in ${filePath}`, c.dim);
-  return config.sessionApiKey;
+  // An unreadable pin throws instead of falling back to the session key, which
+  // could encrypt new state with the wrong key. A few attempts cover losing
+  // the race to a concurrent launcher that is replacing a blank pin.
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const pinned = readPinnedKvSecret(filePath);
+    if (pinned?.trim()) return pinned;
+    if (pinned !== null) rmSync(filePath, { force: true });
+    if (createPinnedKvSecret(filePath, config.sessionApiKey)) {
+      logService(
+        "automation",
+        `Pinned AUTOMATION_KV_SECRET in ${filePath}`,
+        c.dim,
+      );
+      return config.sessionApiKey;
+    }
+  }
+  throw new Error(`Could not pin AUTOMATION_KV_SECRET in ${filePath}`);
 }
 
 function startAgentServer(config) {

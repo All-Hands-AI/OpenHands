@@ -240,28 +240,70 @@ export AUTOMATION_AGENT_SERVER_API_KEY="${AUTOMATION_AGENT_SERVER_API_KEY:-${EFF
 # and keep it. scripts/dev-with-automation.mjs pins to the same file and reads
 # it the same way: trailing line breaks are not part of the key, and a blank
 # file counts as not pinned yet.
+# The pin follows the same contract as the npm launcher: a regular file, not
+# a symbolic link; an existing pin is made private (0600) before it is used;
+# it is created without replacing anything (a fully written temporary file is
+# hard-linked into place), so concurrent first starts all end up with the one
+# value that won; and every failure stops the start.
 # Deleting the file does not rotate the KV key; it strands existing KV state.
 AUTOMATION_KV_SECRET_FILE="${STATE_DIR}/automation-kv-secret.txt"
+kv_secret_fail() {
+  log_error "$1"
+  exit 1
+}
 if [ -z "${AUTOMATION_KV_SECRET:-}" ]; then
-  PINNED_KV_SECRET=""
-  if [ -e "$AUTOMATION_KV_SECRET_FILE" ]; then
-    PINNED_KV_SECRET="$(cat "$AUTOMATION_KV_SECRET_FILE")" || {
-      log_error "Cannot read $AUTOMATION_KV_SECRET_FILE"
-      exit 1
-    }
-    while [[ "$PINNED_KV_SECRET" == *[$'\r\n'] ]]; do
-      PINNED_KV_SECRET="${PINNED_KV_SECRET%?}"
-    done
-  fi
-  if [[ "$PINNED_KV_SECRET" == *[![:space:]]* ]]; then
-    AUTOMATION_KV_SECRET="$PINNED_KV_SECRET"
-  else
-    AUTOMATION_KV_SECRET="$EFFECTIVE_SESSION_KEY"
-    mkdir -p "$(dirname "$AUTOMATION_KV_SECRET_FILE")"
-    printf '%s' "$AUTOMATION_KV_SECRET" > "$AUTOMATION_KV_SECRET_FILE"
-    chmod 600 "$AUTOMATION_KV_SECRET_FILE"
-    log "Pinned AUTOMATION_KV_SECRET (persisted to $AUTOMATION_KV_SECRET_FILE)"
-  fi
+  mkdir -p "$STATE_DIR" ||
+    kv_secret_fail "Cannot create $STATE_DIR for automation-kv-secret.txt"
+  for _kv_attempt in 1 2 3; do
+    if [ -L "$AUTOMATION_KV_SECRET_FILE" ]; then
+      kv_secret_fail "$AUTOMATION_KV_SECRET_FILE is a symbolic link; refusing to use it"
+    fi
+    if [ -e "$AUTOMATION_KV_SECRET_FILE" ]; then
+      [ -f "$AUTOMATION_KV_SECRET_FILE" ] ||
+        kv_secret_fail "$AUTOMATION_KV_SECRET_FILE is not a regular file"
+      _kv_mode="$(stat -c '%a' "$AUTOMATION_KV_SECRET_FILE" 2>/dev/null ||
+        stat -f '%Lp' "$AUTOMATION_KV_SECRET_FILE")" ||
+        kv_secret_fail "Cannot read the permissions of $AUTOMATION_KV_SECRET_FILE"
+      [[ "$_kv_mode" =~ ^[0-7]+$ ]] ||
+        kv_secret_fail "Cannot read the permissions of $AUTOMATION_KV_SECRET_FILE"
+      if (( 8#$_kv_mode & 8#077 )); then
+        chmod 600 "$AUTOMATION_KV_SECRET_FILE" ||
+          kv_secret_fail "Cannot make $AUTOMATION_KV_SECRET_FILE private (chmod 600)"
+      fi
+      PINNED_KV_SECRET="$(cat "$AUTOMATION_KV_SECRET_FILE")" ||
+        kv_secret_fail "Cannot read $AUTOMATION_KV_SECRET_FILE"
+      while [[ "$PINNED_KV_SECRET" == *[$'\r\n'] ]]; do
+        PINNED_KV_SECRET="${PINNED_KV_SECRET%?}"
+      done
+      if [[ "$PINNED_KV_SECRET" == *[![:space:]]* ]]; then
+        AUTOMATION_KV_SECRET="$PINNED_KV_SECRET"
+        break
+      fi
+      # A blank pin counts as not pinned yet: replace it.
+      rm -f "$AUTOMATION_KV_SECRET_FILE" ||
+        kv_secret_fail "Cannot replace the blank $AUTOMATION_KV_SECRET_FILE"
+    fi
+    # mktemp creates the file with mode 0600.
+    _kv_tmp="$(mktemp "${AUTOMATION_KV_SECRET_FILE}.XXXXXX")" ||
+      kv_secret_fail "Cannot write to $STATE_DIR"
+    if ! printf '%s' "$EFFECTIVE_SESSION_KEY" > "$_kv_tmp"; then
+      rm -f "$_kv_tmp"
+      kv_secret_fail "Cannot write $_kv_tmp"
+    fi
+    if ln "$_kv_tmp" "$AUTOMATION_KV_SECRET_FILE" 2>/dev/null; then
+      rm -f "$_kv_tmp"
+      AUTOMATION_KV_SECRET="$EFFECTIVE_SESSION_KEY"
+      log "Pinned AUTOMATION_KV_SECRET (persisted to $AUTOMATION_KV_SECRET_FILE)"
+      break
+    fi
+    rm -f "$_kv_tmp"
+    # Another start pinned first: read its value on the next pass. Anything
+    # else is a failure to persist.
+    [ -e "$AUTOMATION_KV_SECRET_FILE" ] || [ -L "$AUTOMATION_KV_SECRET_FILE" ] ||
+      kv_secret_fail "Cannot create $AUTOMATION_KV_SECRET_FILE"
+  done
+  [ -n "${AUTOMATION_KV_SECRET:-}" ] ||
+    kv_secret_fail "Could not pin AUTOMATION_KV_SECRET in $AUTOMATION_KV_SECRET_FILE"
 fi
 export AUTOMATION_KV_SECRET
 # <<< automation-kv-secret

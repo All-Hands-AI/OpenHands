@@ -342,7 +342,7 @@ describe("resolveAutomationKvSecret", () => {
         { stateDir: dir, sessionApiKey: "session-key-a" },
         {},
       ),
-    ).toThrow(/EISDIR/);
+    ).toThrow(/not a regular file/);
   });
 });
 
