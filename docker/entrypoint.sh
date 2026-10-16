@@ -244,17 +244,23 @@ export AUTOMATION_AGENT_SERVER_API_KEY="${AUTOMATION_AGENT_SERVER_API_KEY:-${EFF
 # a symbolic link; an existing pin is made private (0600) before it is used;
 # it is created without replacing anything (a fully written temporary file is
 # hard-linked into place), so concurrent first starts all end up with the one
-# value that won; and every failure stops the start.
+# value that won; a blank pin is replaced by one start holding
+# automation-kv-secret.txt.lock, while the others wait for its value; and
+# every failure stops the start.
 # Deleting the file does not rotate the KV key; it strands existing KV state.
 AUTOMATION_KV_SECRET_FILE="${STATE_DIR}/automation-kv-secret.txt"
+AUTOMATION_KV_SECRET_LOCK="${AUTOMATION_KV_SECRET_FILE}.lock"
+_kv_locked=""
 kv_secret_fail() {
+  [ -z "$_kv_locked" ] || rmdir "$AUTOMATION_KV_SECRET_LOCK" 2>/dev/null
   log_error "$1"
   exit 1
 }
 if [ -z "${AUTOMATION_KV_SECRET:-}" ]; then
   mkdir -p "$STATE_DIR" ||
     kv_secret_fail "Cannot create $STATE_DIR for automation-kv-secret.txt"
-  for _kv_attempt in 1 2 3; do
+  # Up to about 5 seconds of waiting on another start that replaces a blank pin.
+  for ((_kv_attempt = 0; _kv_attempt < 50; _kv_attempt++)); do
     if [ -L "$AUTOMATION_KV_SECRET_FILE" ]; then
       kv_secret_fail "$AUTOMATION_KV_SECRET_FILE is a symbolic link; refusing to use it"
     fi
@@ -279,9 +285,28 @@ if [ -z "${AUTOMATION_KV_SECRET:-}" ]; then
         AUTOMATION_KV_SECRET="$PINNED_KV_SECRET"
         break
       fi
-      # A blank pin counts as not pinned yet: replace it.
-      rm -f "$AUTOMATION_KV_SECRET_FILE" ||
+      # A blank pin counts as not pinned yet. One start takes the lock and
+      # reads the pin again under it; the others wait for the new value.
+      if [ -z "$_kv_locked" ]; then
+        if mkdir "$AUTOMATION_KV_SECRET_LOCK" 2>/dev/null; then
+          _kv_locked=1
+        else
+          sleep 0.1
+        fi
+        continue
+      fi
+      # Still blank under the lock: rename a fully written file over it, so
+      # the pin never goes missing for the starts that are waiting.
+      _kv_tmp="$(mktemp "${AUTOMATION_KV_SECRET_FILE}.XXXXXX")" ||
+        kv_secret_fail "Cannot write to $STATE_DIR"
+      if ! printf '%s' "$EFFECTIVE_SESSION_KEY" > "$_kv_tmp" ||
+        ! mv -f "$_kv_tmp" "$AUTOMATION_KV_SECRET_FILE"; then
+        rm -f "$_kv_tmp"
         kv_secret_fail "Cannot replace the blank $AUTOMATION_KV_SECRET_FILE"
+      fi
+      AUTOMATION_KV_SECRET="$EFFECTIVE_SESSION_KEY"
+      log "Pinned AUTOMATION_KV_SECRET (persisted to $AUTOMATION_KV_SECRET_FILE)"
+      break
     fi
     # mktemp creates the file with mode 0600.
     _kv_tmp="$(mktemp "${AUTOMATION_KV_SECRET_FILE}.XXXXXX")" ||
@@ -303,7 +328,11 @@ if [ -z "${AUTOMATION_KV_SECRET:-}" ]; then
       kv_secret_fail "Cannot create $AUTOMATION_KV_SECRET_FILE"
   done
   [ -n "${AUTOMATION_KV_SECRET:-}" ] ||
-    kv_secret_fail "Could not pin AUTOMATION_KV_SECRET in $AUTOMATION_KV_SECRET_FILE"
+    kv_secret_fail "Could not pin AUTOMATION_KV_SECRET in $AUTOMATION_KV_SECRET_FILE (if no other start is running, remove $AUTOMATION_KV_SECRET_LOCK)"
+  if [ -n "$_kv_locked" ]; then
+    rmdir "$AUTOMATION_KV_SECRET_LOCK"
+    _kv_locked=""
+  fi
 fi
 export AUTOMATION_KV_SECRET
 # <<< automation-kv-secret

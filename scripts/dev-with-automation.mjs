@@ -58,6 +58,7 @@ import {
   mkdirSync,
   openSync,
   readFileSync,
+  renameSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -968,7 +969,9 @@ const AUTOMATION_KV_SECRET_FILE = "automation-kv-secret.txt";
 // the shell version): it must be a regular file, not a symbolic link; an
 // existing pin is made private (0600) before it is used; it is created
 // without replacing anything, so concurrent first launches all end up with
-// the one value that won; and any failure stops the launch.
+// the one value that won; a blank pin is replaced by one launcher holding
+// automation-kv-secret.txt.lock, while the others wait for its value; and any
+// failure stops the launch.
 function readPinnedKvSecret(filePath) {
   let stat;
   try {
@@ -1020,28 +1023,78 @@ function createPinnedKvSecret(filePath, key) {
   }
 }
 
+// Renames a fully written private file over a blank pin, so the pin never
+// goes missing for launchers that are waiting on it. Only the holder of the
+// pin lock calls this.
+function replaceBlankPinnedKvSecret(filePath, key) {
+  const tmpPath = `${filePath}.${process.pid}.${randomBytes(6).toString("hex")}.tmp`;
+  writeFileSync(tmpPath, `${key}\n`, { mode: 0o600, flag: "wx" });
+  try {
+    renameSync(tmpPath, filePath);
+  } catch (error) {
+    rmSync(tmpPath, { force: true });
+    throw error;
+  }
+}
+
+function tryLockKvSecretPin(lockPath) {
+  try {
+    mkdirSync(lockPath);
+    return true;
+  } catch (error) {
+    if (error?.code === "EEXIST") return false;
+    throw error;
+  }
+}
+
+function sleepSync(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
 function resolveAutomationKvSecret(config, env = process.env) {
   if (env.AUTOMATION_KV_SECRET) return env.AUTOMATION_KV_SECRET;
 
   const filePath = join(config.stateDir, AUTOMATION_KV_SECRET_FILE);
+  const lockPath = `${filePath}.lock`;
   mkdirSync(config.stateDir, { recursive: true });
+  const pinned = (key) => {
+    logService(
+      "automation",
+      `Pinned AUTOMATION_KV_SECRET in ${filePath}`,
+      c.dim,
+    );
+    return key;
+  };
   // An unreadable pin throws instead of falling back to the session key, which
-  // could encrypt new state with the wrong key. A few attempts cover losing
-  // the race to a concurrent launcher that is replacing a blank pin.
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const pinned = readPinnedKvSecret(filePath);
-    if (pinned?.trim()) return pinned;
-    if (pinned !== null) rmSync(filePath, { force: true });
-    if (createPinnedKvSecret(filePath, config.sessionApiKey)) {
-      logService(
-        "automation",
-        `Pinned AUTOMATION_KV_SECRET in ${filePath}`,
-        c.dim,
-      );
-      return config.sessionApiKey;
+  // could encrypt new state with the wrong key. The attempts allow about 5
+  // seconds of waiting on a concurrent launcher that is replacing a blank pin.
+  let locked = false;
+  try {
+    for (let attempt = 0; attempt < 50; attempt += 1) {
+      const current = readPinnedKvSecret(filePath);
+      if (current?.trim()) return current;
+      if (current === null) {
+        if (createPinnedKvSecret(filePath, config.sessionApiKey)) {
+          return pinned(config.sessionApiKey);
+        }
+        continue;
+      }
+      // A blank pin counts as not pinned yet. One launcher takes the lock and
+      // reads the pin again under it; the others wait for the new value.
+      if (!locked) {
+        locked = tryLockKvSecretPin(lockPath);
+        if (!locked) sleepSync(100);
+        continue;
+      }
+      replaceBlankPinnedKvSecret(filePath, config.sessionApiKey);
+      return pinned(config.sessionApiKey);
     }
+  } finally {
+    if (locked) rmSync(lockPath, { recursive: true, force: true });
   }
-  throw new Error(`Could not pin AUTOMATION_KV_SECRET in ${filePath}`);
+  throw new Error(
+    `Could not pin AUTOMATION_KV_SECRET in ${filePath} (if no other launch is running, remove ${lockPath})`,
+  );
 }
 
 function startAgentServer(config) {

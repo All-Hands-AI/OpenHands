@@ -4,6 +4,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
 import {
   chmodSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -335,6 +336,26 @@ describe("Docker automation KV secret", () => {
           "utf-8",
         ).replace(/[\r\n]+$/, "");
         expect(new Set(keys)).toEqual(new Set([pinned]));
+      });
+
+      it("gives every concurrent launch on a blank pin the one pinned key", async () => {
+        // The race is timing-dependent, so run several rounds.
+        for (let round = 0; round < 10; round += 1) {
+          const dir = freshStateDir();
+          const pin = path.join(dir, "automation-kv-secret.txt");
+          writeFileSync(pin, "\n", { mode: 0o600 });
+
+          const keys = await Promise.all(
+            Array.from({ length: 6 }, (_, i) =>
+              racingLauncher(launcher, dir, `session-key-${i}`),
+            ),
+          );
+
+          const pinned = readFileSync(pin, "utf-8").replace(/[\r\n]+$/, "");
+          expect(new Set(keys)).toEqual(new Set([pinned]));
+          expect(existsSync(`${pin}.lock`)).toBe(false);
+          rmSync(dir, { recursive: true, force: true });
+        }
       });
     },
   );
