@@ -1116,7 +1116,6 @@ interface BackendOptionTabProps {
  * the center. Selection uses a bottom bar instead of recoloring the full
  * outline, preserving the group as one visual control.
  */
-// @spec TI-001 — Backend keyboard focus follows the host focus role
 function BackendOptionTab({
   value,
   selectedValue,
@@ -1225,7 +1224,6 @@ function AnimatedPanelHeight({ children }: AnimatedPanelHeightProps) {
  * height animates without a fixed `max-height` guess. Content stays mounted
  * so the toggle does not remount the docs link on every expand.
  */
-// @spec TI-001 — Guidance keyboard focus follows the host focus role
 function AgentServerGuidance({ location }: { location: AgentServerLocation }) {
   const { t } = useTranslation("openhands");
   const [isExpanded, setIsExpanded] = React.useState(false);

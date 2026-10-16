@@ -816,7 +816,6 @@ test.describe("UI regressions", () => {
     await expect(unselected).toHaveCSS("color", "rgb(139, 16, 41)");
   });
 
-  // @spec TI-001 — Backend keyboard focus follows the host focus role
   test("backend keyboard focus follows the host focus role", async ({
     page,
   }) => {

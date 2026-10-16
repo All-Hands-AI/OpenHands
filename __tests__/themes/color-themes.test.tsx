@@ -16,7 +16,6 @@ const defaultWarningColor = readFileSync(
 
 describe("color themes", () => {
   // @spec MCP-004 — Form feedback follows readable theme text roles
-  // @spec TI-001 — Keyboard focus stays visible on neutral and hovered surfaces
   // @spec WN-001 — Warning feedback also meets the small-text contrast contract
   it.each(Object.entries(COLOR_THEMES))(
     "keeps feedback and keyboard focus readable on the %s theme surfaces",
@@ -61,7 +60,7 @@ describe("color themes", () => {
         ).toBeGreaterThanOrEqual(4.5);
       }
 
-      // @spec TI-001 — Focus contrast includes each neutral control surface
+      // Focus contrast includes each neutral control surface.
       for (const surfaceRole of [
         "--oh-color-base",
         "--oh-color-base-secondary",

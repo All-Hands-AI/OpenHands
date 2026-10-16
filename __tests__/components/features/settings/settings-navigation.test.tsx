@@ -66,7 +66,6 @@ describe("SettingsNavigation", () => {
     ).toBeGreaterThan(0);
   });
 
-  // @spec TI-002 — Legacy drawer scrim compiles to half opacity
   it("builds a half-transparent backdrop for the exported mobile drawer", async () => {
     renderSettingsNavigation(
       <SettingsNavigation

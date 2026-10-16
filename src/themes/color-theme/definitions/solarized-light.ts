@@ -114,7 +114,7 @@ const SOLARIZED_LIGHT_TOKENS: Partial<
   "--oh-border-input": "#C8C1AE",
   "--oh-border-subtle": "#E6DFCC",
   "--oh-separator": "rgba(88, 110, 117, 0.22)",
-  // @spec TI-001 — Focus remains visible on neutral and hovered surfaces
+  // Focus remains visible on neutral and hovered surfaces.
   "--oh-focus": "#227FBE",
   "--oh-status-success": "#859900",
   "--oh-status-error": "#DC322F",
