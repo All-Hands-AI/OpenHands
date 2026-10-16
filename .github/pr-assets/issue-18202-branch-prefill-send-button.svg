@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="960" height="480">
+  <defs>
+    <style>
+      .title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 20px; font-weight: 700; fill: #1f2937; }
+      .subtitle { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 500; fill: #4b5563; }
+      .box-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 600; }
+      .text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; fill: #374151; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11.5px; fill: #1f2937; }
+      .badge-err { fill: #ef4444; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 11px; font-weight: 600; }
+      .badge-ok { fill: #10b981; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 11px; font-weight: 600; }
+    </style>
+    <filter id="shadow" x="-4%" y="-4%" width="108%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.08" />
+    </filter>
+  </defs>
+
+  <rect width="960" height="480" fill="#f9fafb" rx="8" />
+
+  <text x="32" y="42" class="title">OpenHands #18202: Send Enabled State After Composer Prefill</text>
+  <text x="32" y="65" class="subtitle">Ensuring programmatic text writes and draft restorations dispatch InputEvent and synchronize submit readiness</text>
+
+  <!-- Left: Before Fix -->
+  <g transform="translate(32, 90)">
+    <rect width="430" height="360" rx="8" fill="#ffffff" stroke="#e5e7eb" stroke-width="1.5" filter="url(#shadow)" />
+    <rect width="430" height="40" rx="8" fill="#fee2e2" />
+    <rect y="32" width="430" height="8" fill="#fee2e2" />
+    <text x="18" y="25" class="box-title" fill="#991b1b">BEFORE: Send button stays disabled</text>
+
+    <!-- Step 1 -->
+    <rect x="18" y="55" width="394" height="60" rx="6" fill="#f3f4f6" stroke="#d1d5db" />
+    <text x="28" y="75" class="text" font-weight="600">1. User Message → Branch from here</text>
+    <text x="28" y="98" class="code">fork seeds draft: setConversationState(id, { draftMessage })</text>
+
+    <!-- Step 2 -->
+    <rect x="18" y="130" width="394" height="85" rx="6" fill="#fef2f2" stroke="#fca5a5" />
+    <text x="28" y="152" class="text" font-weight="600" fill="#991b1b">2. Draft restored without input event</text>
+    <text x="28" y="174" class="code">element.textContent = draftMessage;</text>
+    <text x="28" y="196" class="text" fill="#b91c1c">❌ No onInput event fired, syncCanSubmit() skipped</text>
+
+    <!-- Step 3 -->
+    <rect x="18" y="230" width="394" height="100" rx="6" fill="#f9fafb" stroke="#e5e7eb" />
+    <text x="28" y="252" class="text" font-weight="600">3. Resulting UI State</text>
+    <rect x="28" y="265" width="280" height="32" rx="6" fill="#ffffff" stroke="#d1d5db" />
+    <text x="38" y="286" class="text" fill="#111827">QA send persistence check</text>
+    <!-- Disabled Send Button -->
+    <circle cx="340" cy="281" r="16" fill="#f3f4f6" stroke="#d1d5db" />
+    <path d="M340 273 L340 289 M334 279 L340 273 L346 279" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" />
+    <text x="368" y="286" class="badge-err">DISABLED</text>
+    <text x="28" y="318" class="text" fill="#ef4444">User cannot click Send without typing a dummy character first</text>
+  </g>
+
+  <!-- Right: After Fix -->
+  <g transform="translate(498, 90)">
+    <rect width="430" height="360" rx="8" fill="#ffffff" stroke="#e5e7eb" stroke-width="1.5" filter="url(#shadow)" />
+    <rect width="430" height="40" rx="8" fill="#d1fae5" />
+    <rect y="32" width="430" height="8" fill="#d1fae5" />
+    <text x="18" y="25" class="box-title" fill="#065f46">AFTER: Send button enabled immediately</text>
+
+    <!-- Step 1 -->
+    <rect x="18" y="55" width="394" height="60" rx="6" fill="#f3f4f6" stroke="#d1d5db" />
+    <text x="28" y="75" class="text" font-weight="600">1. User Message → Branch from here</text>
+    <text x="28" y="98" class="code">fork seeds draft: setConversationState(id, { draftMessage })</text>
+
+    <!-- Step 2 -->
+    <rect x="18" y="130" width="394" height="85" rx="6" fill="#ecfdf5" stroke="#a7f3d0" />
+    <text x="28" y="152" class="text" font-weight="600" fill="#065f46">2. Programmatic write dispatches InputEvent</text>
+    <text x="28" y="174" class="code">element.dispatchEvent(new InputEvent("input", { bubbles: true }))</text>
+    <text x="28" y="196" class="text" fill="#047857">✓ Fires onInput, adjusts height, and runs syncCanSubmit()</text>
+
+    <!-- Step 3 -->
+    <rect x="18" y="230" width="394" height="100" rx="6" fill="#f9fafb" stroke="#e5e7eb" />
+    <text x="28" y="252" class="text" font-weight="600">3. Resulting UI State</text>
+    <rect x="28" y="265" width="280" height="32" rx="6" fill="#ffffff" stroke="#d1d5db" />
+    <text x="38" y="286" class="text" fill="#111827">QA send persistence check</text>
+    <!-- Enabled Send Button -->
+    <circle cx="340" cy="281" r="16" fill="#2563eb" />
+    <path d="M340 273 L340 289 M334 279 L340 273 L346 279" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
+    <text x="368" y="286" class="badge-ok">ENABLED</text>
+    <text x="28" y="318" class="text" fill="#10b981">Send button is ready to click immediately or edit first</text>
+  </g>
+</svg>
