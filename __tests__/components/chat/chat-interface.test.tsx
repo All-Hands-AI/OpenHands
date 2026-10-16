@@ -32,6 +32,8 @@ import { AgentState } from "#/types/agent-state";
 import { useConversationStore } from "#/stores/conversation-store";
 import { useGoalStore } from "#/stores/goal-store";
 import { act } from "@testing-library/react";
+import ProfilesService from "#/api/profiles-service/profiles-service.api";
+import { getConversationState } from "#/utils/conversation-local-storage";
 
 const mockSend = vi.fn();
 vi.mock("#/hooks/use-send-message", () => ({
@@ -781,6 +783,89 @@ describe("ChatInterface - Pending message queue", () => {
     const messages = screen.getAllByTestId("user-message");
     expect(messages[0]).toHaveTextContent("first");
     expect(messages[1]).toHaveTextContent("second");
+  });
+});
+
+describe("ChatInterface - Saved draft after submit", () => {
+  const CONVERSATION_ID = "test-conversation-id";
+
+  beforeEach(() => {
+    // jsdom has no innerText, which the composer reads its text from.
+    Object.defineProperty(HTMLElement.prototype, "innerText", {
+      configurable: true,
+      get(this: HTMLElement) {
+        return this.textContent ?? "";
+      },
+    });
+    mockSend.mockReset();
+    mockSend.mockResolvedValue({ queued: false });
+    localStorage.clear();
+    useOptimisticUserMessageStore.getState().clearPendingMessages();
+    (useConfig as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: {},
+    });
+    (
+      useUnifiedUploadFiles as unknown as ReturnType<typeof vi.fn>
+    ).mockReturnValue({ mutateAsync: vi.fn(), isLoading: false });
+    vi.spyOn(ProfilesService, "listProfiles").mockResolvedValue({
+      profiles: [],
+      active_profile: null,
+    } as Awaited<ReturnType<typeof ProfilesService.listProfiles>>);
+  });
+
+  afterEach(() => {
+    Reflect.deleteProperty(HTMLElement.prototype, "innerText");
+    vi.restoreAllMocks();
+    useOptimisticUserMessageStore.getState().clearPendingMessages();
+  });
+
+  function renderInterface() {
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter initialEntries={[`/${CONVERSATION_ID}`]}>
+          <Routes>
+            <Route path=":conversationId" element={<ChatInterface />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+  }
+
+  async function typeAndWaitForSavedDraft(text: string) {
+    const input = screen.getByTestId("chat-input");
+    input.textContent = text;
+    fireEvent.input(input);
+    // The draft is saved after the input debounce.
+    await waitFor(
+      () =>
+        expect(getConversationState(CONVERSATION_ID).draftMessage).toBe(text),
+      { timeout: 2000 },
+    );
+    return input;
+  }
+
+  it.each(["/model", "/new"])(
+    "clears the saved draft of a %s command that the chat handles itself",
+    async (command) => {
+      renderInterface();
+      const input = await typeAndWaitForSavedDraft(command);
+
+      fireEvent.keyDown(input, { key: "Enter" });
+
+      expect(input).toHaveTextContent("");
+      expect(getConversationState(CONVERSATION_ID).draftMessage).toBeNull();
+      expect(mockSend).not.toHaveBeenCalled();
+    },
+  );
+
+  it("keeps the saved draft of a sent message until the agent confirms it", async () => {
+    renderInterface();
+    const input = await typeAndWaitForSavedDraft("hello");
+
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    await waitFor(() => expect(mockSend).toHaveBeenCalled());
+    expect(getConversationState(CONVERSATION_ID).draftMessage).toBe("hello");
   });
 });
 
