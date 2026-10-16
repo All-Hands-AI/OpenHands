@@ -33,6 +33,7 @@ import {
   DEFAULT_AUTOMATION_REPO,
   DEFAULT_AUTOMATION_PACKAGE,
   DEFAULT_AUTOMATION_VERSION,
+  buildMarsWebEnv,
 } from "../../scripts/dev-with-automation.mjs";
 import {
   buildAgentServerEnv,
@@ -1177,5 +1178,30 @@ describe("dev-with-automation CLI", () => {
     expect(exitResult.timedOut).toBe(false);
     expect(exitResult.code).toBe(1);
     expect(output).toContain("uvx");
+  });
+});
+
+describe("buildMarsWebEnv", () => {
+  it("puts the bridge on the ingress behind the session key, off the static child", () => {
+    const config = { sessionApiKey: "stack-key", marsWebBridge: true } as never;
+    expect(buildMarsWebEnv("ingress", config)).toEqual({
+      MARS_WEB_KEY: "stack-key",
+    });
+    expect(buildMarsWebEnv("static", config)).toEqual({ MARS_WEB: "0" });
+  });
+
+  it("mounts nothing without a session key", () => {
+    expect(
+      buildMarsWebEnv("ingress", { marsWebBridge: true } as never),
+    ).toEqual({ MARS_WEB: "0" });
+  });
+
+  it("mounts nothing under Electron (marsWebBridge: false), even with a key", () => {
+    expect(
+      buildMarsWebEnv("ingress", {
+        sessionApiKey: "k",
+        marsWebBridge: false,
+      } as never),
+    ).toEqual({ MARS_WEB: "0" });
   });
 });

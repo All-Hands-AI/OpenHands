@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CANVAS_UI_CLIENT_TOOL_NAME } from "#/constants/canvas-ui";
 import { LAUNCH_CHILD_CONVERSATION_TOOL_NAME } from "#/constants/child-conversation";
+import { REQUEST_SECRET_TOOL_NAME } from "#/constants/secret-request";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import type { Settings } from "#/types/settings";
 import {
@@ -746,7 +747,32 @@ describe("buildStartConversationRequest — agentProfileId path", () => {
     expect(payload.client_tools.map((tool) => tool.name)).toEqual([
       CANVAS_UI_CLIENT_TOOL_NAME,
       LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
+      REQUEST_SECRET_TOOL_NAME,
     ]);
+  });
+
+  it("carries a per-launch LLM override only on a profile launch", () => {
+    const settings = makeSettings({
+      agent_kind: "openhands",
+      llm: { model: "litellm_proxy/openai/gpt-5.5", api_key: "sk-test" },
+    });
+
+    const profileLaunch = buildStartConversationRequest({
+      settings,
+      agentProfileId: "profile-xyz",
+      agentProfileKind: "openhands",
+      llmProfileOverride: "fast",
+    });
+    expect(profileLaunch.agent_launch_additions).toEqual({
+      llm_profile_ref: "fast",
+    });
+
+    const settingsLaunch = buildStartConversationRequest({
+      settings,
+      llmProfileOverride: "fast",
+    });
+    expect(settingsLaunch.agent_launch_additions).toBeUndefined();
+    expect(settingsLaunch.agent_settings).toBeDefined();
   });
 
   it("suppresses the ACP server tag when launching from a profile", () => {

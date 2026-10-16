@@ -86,6 +86,43 @@ afterEach(() => {
 });
 
 describe("BackendFormModal – edit mode (BackendForm entry point)", () => {
+  it("bounds the edit dialog to the viewport with its close control outside the scrollable form", () => {
+    renderWithProviders(
+      <BackendFormModal
+        mode="edit"
+        backend={{
+          id: "seeded-id",
+          name: "My Server",
+          host: "http://localhost:9000",
+          apiKey: "",
+          kind: "local",
+        }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const dialog = screen.getByTestId("edit-backend-modal");
+    expect(dialog).toHaveClass(
+      MODAL_WIDTH_CLASS.md,
+      MODAL_MAX_WIDTH_VIEWPORT,
+      "max-h-[92dvh]",
+    );
+
+    const scrollRegion = screen
+      .getByTestId("edit-backend-form")
+      .closest(".overflow-y-auto");
+    expect(scrollRegion).toHaveClass("min-h-0");
+    expect(scrollRegion).toContainElement(
+      screen.getByTestId("edit-backend-cancel"),
+    );
+    expect(scrollRegion).toContainElement(
+      screen.getByTestId("edit-backend-submit"),
+    );
+    expect(scrollRegion).not.toContainElement(
+      screen.getByTestId("edit-backend-close"),
+    );
+  });
+
   it("pre-fills fields with the backend data passed as prop", () => {
     renderWithProviders(
       <BackendFormModal
@@ -311,27 +348,5 @@ describe("BackendFormModal – edit mode (BackendForm entry point)", () => {
     expect(
       screen.queryByTestId("add-backend-cloud-host"),
     ).not.toBeInTheDocument();
-  });
-
-  it("caps edit mode body at 90vw and supports vertical scrolling to prevent phone-width clipping", () => {
-    renderWithProviders(
-      <BackendFormModal
-        mode="edit"
-        backend={{
-          id: "seeded-id",
-          name: "My Server",
-          host: "http://localhost:9000",
-          apiKey: "sk-old",
-          kind: "local",
-        }}
-        onClose={vi.fn()}
-      />,
-    );
-
-    const modal = screen.getByTestId("edit-backend-modal");
-    expect(modal).toHaveClass(MODAL_WIDTH_CLASS.md);
-    expect(modal).toHaveClass(MODAL_MAX_WIDTH_VIEWPORT);
-    expect(modal).toHaveClass("max-h-[90vh]");
-    expect(modal).toHaveClass("overflow-y-auto");
   });
 });

@@ -109,19 +109,16 @@ export function AgentProfilesLocalView() {
     [profilesData],
   );
 
-  // The shared validator rejects whitespace, so duplicate checks compare raw.
-  const isNameValid = useMemo(() => {
-    if (!isProfileNameValid(profileName, { isRequired: true })) return false;
-    if (viewMode === "create" && existingNames.has(profileName)) return false;
-    if (
-      viewMode === "edit" &&
-      profileName !== editingProfile?.name &&
-      existingNames.has(profileName)
-    ) {
-      return false;
-    }
-    return true;
-  }, [profileName, viewMode, existingNames, editingProfile?.name]);
+  // The shared validator rejects whitespace, so the duplicate check compares raw.
+  const isNameFormatValid = isProfileNameValid(profileName, {
+    isRequired: true,
+  });
+  const isDuplicateName =
+    isNameFormatValid &&
+    existingNames.has(profileName) &&
+    (viewMode === "create" ||
+      (viewMode === "edit" && profileName !== editingProfile?.name));
+  const isNameValid = isNameFormatValid && !isDuplicateName;
 
   const handleAddProfile = useCallback(() => {
     setProfileName("");
@@ -322,6 +319,11 @@ export function AgentProfilesLocalView() {
         value={profileName}
         onChange={setProfileName}
         isRequired
+        error={
+          isDuplicateName
+            ? t(I18nKey.SETTINGS$AGENT_PROFILE_NAME_TAKEN)
+            : undefined
+        }
       />
 
       {/* Reuse the existing Agent settings form to define the agent. */}
@@ -334,6 +336,7 @@ export function AgentProfilesLocalView() {
         }
       />
 
+      {/* @spec FF-001 — Profile validation feedback follows the host error role */}
       {/* OpenHands profiles reference an LLM profile (required). */}
       {isOpenHands &&
         (llmProfiles.length > 0 ? (
@@ -351,7 +354,7 @@ export function AgentProfilesLocalView() {
         ) : (
           <p
             data-testid="agent-profile-no-llm"
-            className="text-sm text-red-400"
+            className="text-sm text-feedback-error"
           >
             {t(I18nKey.SETTINGS$AGENT_PROFILE_NO_LLM)}
           </p>
