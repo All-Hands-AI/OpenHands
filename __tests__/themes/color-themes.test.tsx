@@ -182,6 +182,23 @@ describe("color themes", () => {
         ).toBeGreaterThanOrEqual(4.5);
       }
 
+      // Critic scores and small supporting text render directly on the chat canvas.
+      for (const role of [
+        "--oh-feedback-success",
+        "--oh-feedback-warning",
+        "--oh-feedback-error",
+        "--oh-text-tertiary",
+        "--oh-contrast",
+      ]) {
+        expect(
+          contrast(
+            luminance(resolve(role)),
+            luminance(resolve("--oh-color-base")),
+          ),
+          `${role} against the critic canvas surface`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+
       // @spec TN-001 — Toast text stays readable on the toast surface
       expect(
         contrast(
