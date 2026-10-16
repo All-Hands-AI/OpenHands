@@ -18,7 +18,7 @@ describe("color themes", () => {
   // @spec MCP-004 — Form feedback follows readable theme text roles
   // @spec WN-001 — Warning feedback also meets the small-text contrast contract
   it.each(Object.entries(COLOR_THEMES))(
-    "keeps feedback and keyboard focus readable on the %s theme surfaces",
+    "keeps feedback, links, and keyboard focus readable on the %s theme surfaces",
     (_key, theme) => {
       // Resolve the shipped palette, including stylesheet-owned defaults.
       const variables: Record<string, string> = {
@@ -58,6 +58,41 @@ describe("color themes", () => {
           contrast(luminance(resolve(role)), modalSurface),
           `${role} against the modal surface`,
         ).toBeGreaterThanOrEqual(4.5);
+      }
+
+      // Markdown links appear in chat, user bubbles, and file/plan previews.
+      for (const surfaceRole of [
+        "--oh-color-base",
+        "--oh-color-base-secondary",
+        "--oh-surface-raised",
+        "--oh-color-tertiary",
+      ]) {
+        expect(
+          contrast(
+            luminance(resolve("--oh-link")),
+            luminance(resolve(surfaceRole)),
+          ),
+          `--oh-link against ${surfaceRole}`,
+        ).toBeGreaterThanOrEqual(4.5);
+
+        // Single GitHub alert panels tint each Markdown host surface at 10%.
+        // These are the shipped Tailwind v4 alert colors resolved to sRGB.
+        for (const [alert, color] of [
+          ["Note", "#2b7fff"],
+          ["Tip", "#00bc7d"],
+          ["Important", "#ad46ff"],
+          ["Warning", "#efb100"],
+          ["Caution", "#ff2056"],
+        ]) {
+          const host = channels(resolve(surfaceRole));
+          const alertSurface = channels(color).map(
+            (channel, index) => channel * 0.1 + host[index] * 0.9,
+          );
+          expect(
+            contrast(luminance(resolve("--oh-link")), luminance(alertSurface)),
+            `--oh-link against ${alert} tint over ${surfaceRole}`,
+          ).toBeGreaterThanOrEqual(4.5);
+        }
       }
 
       const statusSurfaces = ["--oh-color-base", "--oh-color-base-secondary"];
@@ -102,19 +137,24 @@ describe("color themes", () => {
       }
 
       // @spec FF-001 — Theme-aware validation and load errors
-      // The automation setup draft bar's error pill: Tailwind red-500
-      // (#fb2c36) at 5% over the theme surface.
-      const surface = channels(resolve("--oh-surface"));
-      const errorPillSurface = channels("#fb2c36").map(
-        (channel, index) => channel * 0.05 + surface[index] * 0.95,
-      );
-      expect(
-        contrast(
-          luminance(resolve("--oh-feedback-error")),
-          luminance(errorPillSurface),
-        ),
-        "--oh-feedback-error against the draft bar error pill",
-      ).toBeGreaterThanOrEqual(4.5);
+      // Validate the automation pill and Test runs alert on their actual surfaces.
+      for (const [surfaceRole, opacity] of [
+        ["--oh-surface", 0.05],
+        ["--oh-color-base", 0.1],
+      ] as const) {
+        const surface = channels(resolve(surfaceRole));
+        const tintedSurface = channels(resolve("--oh-feedback-error")).map(
+          (channel, index) =>
+            channel * opacity + surface[index] * (1 - opacity),
+        );
+        expect(
+          contrast(
+            luminance(resolve("--oh-feedback-error")),
+            luminance(tintedSurface),
+          ),
+          `--oh-feedback-error against its ${opacity * 100}% tint over ${surfaceRole}`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
 
       // @spec HL-001 — Home mode labels stay readable on the hover pill
       expect(
