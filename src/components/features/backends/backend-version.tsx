@@ -24,7 +24,6 @@ export function BackendVersion({ backend }: { backend: Backend }) {
     retry: false,
     staleTime: 60_000,
     enabled: backend.kind === "local",
-    // @spec RGP-001 — Quiet model and version probes
     meta: { disableToast: true },
   });
 
