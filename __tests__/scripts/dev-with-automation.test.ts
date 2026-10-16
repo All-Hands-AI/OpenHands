@@ -6,6 +6,7 @@
 // http://localhost:3000/), breaking that resolution; the Node environment
 // has the standard WHATWG URL behavior that honors the file:// base.
 import net from "node:net";
+import http from "node:http";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -445,6 +446,119 @@ describe("buildConfig", () => {
     );
 
     expect(config.ingressPort).toBe(19502);
+  });
+
+  it("attaches to existing healthy agent-server when requested instead of throwing", async () => {
+    const busyPort = 19910;
+    const httpServer = http.createServer((req, res) => {
+      if (req.url === "/alive") {
+        res.writeHead(200, { "Content-Type": "text/plain" });
+        res.end("OK");
+      } else {
+        res.writeHead(404);
+        res.end();
+      }
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      httpServer.listen(busyPort, "127.0.0.1", () => {
+        servers.push(httpServer);
+        resolve();
+      });
+      httpServer.on("error", reject);
+    });
+
+    const env = envWithIsolatedKeyPath({
+      OH_CANVAS_SAFE_BACKEND_PORT: busyPort.toString(),
+      OH_CANVAS_ATTACH_EXISTING_AGENT_SERVER: "1",
+    });
+
+    const config = await buildConfig({}, env);
+    expect(config.agentServerPort).toBe(busyPort);
+    expect(config.attachExistingAgentServer).toBe(true);
+  });
+
+  it("attaches to existing healthy agent-server via args.attachExistingAgentServer", async () => {
+    const busyPort = 19913;
+    const httpServer = http.createServer((req, res) => {
+      if (req.url === "/alive") {
+        res.writeHead(200, { "Content-Type": "text/plain" });
+        res.end("OK");
+      } else {
+        res.writeHead(404);
+        res.end();
+      }
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      httpServer.listen(busyPort, "127.0.0.1", () => {
+        servers.push(httpServer);
+        resolve();
+      });
+      httpServer.on("error", reject);
+    });
+
+    const env = envWithIsolatedKeyPath({
+      OH_CANVAS_SAFE_BACKEND_PORT: busyPort.toString(),
+    });
+
+    const config = await buildConfig({ attachExistingAgentServer: true }, env);
+    expect(config.agentServerPort).toBe(busyPort);
+    expect(config.attachExistingAgentServer).toBe(true);
+  });
+
+  it("throws when agent-server port is busy and attach is not requested", async () => {
+    const busyPort = 19911;
+    const httpServer = http.createServer((req, res) => {
+      if (req.url === "/alive") {
+        res.writeHead(200, { "Content-Type": "text/plain" });
+        res.end("OK");
+      } else {
+        res.writeHead(404);
+        res.end();
+      }
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      httpServer.listen(busyPort, "127.0.0.1", () => {
+        servers.push(httpServer);
+        resolve();
+      });
+      httpServer.on("error", reject);
+    });
+
+    const env = envWithIsolatedKeyPath({
+      OH_CANVAS_SAFE_BACKEND_PORT: busyPort.toString(),
+    });
+
+    await expect(buildConfig({}, env)).rejects.toThrow(
+      /agent-server.*port 19911/i,
+    );
+  });
+
+  it("throws when agent-server port is busy with an unhealthy process even if attach is requested", async () => {
+    const busyPort = 19912;
+    const httpServer = http.createServer((_req, res) => {
+      res.writeHead(500);
+      res.end("Unhealthy");
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      httpServer.listen(busyPort, "127.0.0.1", () => {
+        servers.push(httpServer);
+        resolve();
+      });
+      httpServer.on("error", reject);
+    });
+
+    const env = envWithIsolatedKeyPath({
+      OH_CANVAS_SAFE_BACKEND_PORT: busyPort.toString(),
+      OH_CANVAS_ATTACH_EXISTING_AGENT_SERVER: "1",
+    });
+
+    await expect(buildConfig({}, env)).rejects.toThrow(
+      /agent-server.*port 19912/i,
+    );
   });
 
   it("applies automationGitRef from args to env", async () => {

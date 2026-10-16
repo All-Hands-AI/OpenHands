@@ -6,6 +6,7 @@
 // the Node environment has the standard WHATWG URL behavior that honors
 // the file:// base.
 import net from "node:net";
+import http from "node:http";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { homedir } from "node:os";
@@ -16,6 +17,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it, afterEach } from "vitest";
 import {
   assertPortsFree,
+  checkAgentServerAlive,
   buildSafeDevConfig,
   buildSafeDevConfigAsync,
   buildNpmScriptCommand,
@@ -232,6 +234,36 @@ describe("buildSafeDevConfigAsync", () => {
       }),
     ).rejects.toThrow(/agent-server.*port 19600/i);
   });
+
+  it("attaches to existing healthy agent-server when requested instead of throwing", async () => {
+    const busyPort = 19601;
+    const httpServer = http.createServer((req, res) => {
+      if (req.url === "/alive") {
+        res.writeHead(200, { "Content-Type": "text/plain" });
+        res.end("OK");
+      } else {
+        res.writeHead(404);
+        res.end();
+      }
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      httpServer.listen(busyPort, "127.0.0.1", () => {
+        servers.push(httpServer);
+        resolve();
+      });
+      httpServer.on("error", reject);
+    });
+
+    const config = await buildSafeDevConfigAsync(repoRoot, {
+      OH_CANVAS_SAFE_BACKEND_PORT: busyPort.toString(),
+      OH_CANVAS_ATTACH_EXISTING_AGENT_SERVER: "1",
+      OH_SESSION_API_KEY_PATH: tempKeyPath(),
+    });
+
+    expect(config.backendPort).toBe(busyPort);
+    expect(config.attachExistingAgentServer).toBe(true);
+  });
 });
 
 describe("assertPortsFree", () => {
@@ -300,6 +332,93 @@ describe("assertPortsFree", () => {
         { name: "vite", port: portB },
       ]),
     ).rejects.toThrow(/ingress.*vite|vite.*ingress/is);
+  });
+
+  it("suggests OH_CANVAS_ATTACH_EXISTING_AGENT_SERVER when busy agent-server port answers /alive", async () => {
+    const busyPort = 19702;
+    const httpServer = http.createServer((req, res) => {
+      if (req.url === "/alive") {
+        res.writeHead(200, { "Content-Type": "text/plain" });
+        res.end("OK");
+      } else {
+        res.writeHead(404);
+        res.end();
+      }
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      httpServer.listen(busyPort, "127.0.0.1", () => {
+        servers.push(httpServer);
+        resolve();
+      });
+      httpServer.on("error", reject);
+    });
+
+    await expect(
+      assertPortsFree([{ name: "agent-server", port: busyPort }]),
+    ).rejects.toThrow(/OH_CANVAS_ATTACH_EXISTING_AGENT_SERVER=1/i);
+  });
+});
+
+describe("checkAgentServerAlive", () => {
+  const servers: (net.Server | http.Server)[] = [];
+
+  afterEach(() => {
+    for (const server of servers) {
+      server.close();
+    }
+    servers.length = 0;
+  });
+
+  it("returns true when endpoint responds with 200 OK to /alive", async () => {
+    const server = http.createServer((req, res) => {
+      if (req.url === "/alive") {
+        res.writeHead(200, { "Content-Type": "text/plain" });
+        res.end("OK");
+      } else {
+        res.writeHead(404);
+        res.end();
+      }
+    });
+
+    const port = await new Promise<number>((resolve, reject) => {
+      server.listen(0, "127.0.0.1", () => {
+        const addr = server.address();
+        if (addr && typeof addr === "object") {
+          servers.push(server);
+          resolve(addr.port);
+        } else {
+          server.close();
+          reject(new Error("Failed to get address"));
+        }
+      });
+    });
+
+    const isAlive = await checkAgentServerAlive(port, "127.0.0.1");
+    expect(isAlive).toBe(true);
+  });
+
+  it("returns false when endpoint responds with non-200 or port is closed", async () => {
+    const server = http.createServer((_req, res) => {
+      res.writeHead(500);
+      res.end("Error");
+    });
+
+    const port = await new Promise<number>((resolve, reject) => {
+      server.listen(0, "127.0.0.1", () => {
+        const addr = server.address();
+        if (addr && typeof addr === "object") {
+          servers.push(server);
+          resolve(addr.port);
+        } else {
+          server.close();
+          reject(new Error("Failed to get address"));
+        }
+      });
+    });
+
+    expect(await checkAgentServerAlive(port, "127.0.0.1")).toBe(false);
+    expect(await checkAgentServerAlive(19999, "127.0.0.1")).toBe(false);
   });
 });
 

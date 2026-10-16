@@ -59,7 +59,9 @@ import {
   buildAgentServerEnv,
   buildNpmScriptCommand,
   buildRuntimeServicesInfo,
+  checkAgentServerAlive,
   formatMissingUvxGuidance,
+  tryPort,
   validateFrontendDependencies,
   validateLocalAgentServerPath,
 } from "./dev-safe.mjs";
@@ -183,6 +185,7 @@ function parseArgs() {
     frontendOnly: false,
     backendOnly: false,
     host: null,
+    attachExistingAgentServer: false,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -190,6 +193,9 @@ function parseArgs() {
       case "-p":
       case "--port":
         config.port = parseInt(args[++i], 10);
+        break;
+      case "--attach-existing-agent-server":
+        config.attachExistingAgentServer = true;
         break;
       case "--automation-ref":
         config.automationGitRef = args[++i];
@@ -259,12 +265,14 @@ OPTIONS:
   --dynamic                   Force Vite dev server when a wrapper defaults static
   --frontend-only             Start only the frontend behind ingress
   --backend-only              Start only agent-server + automation behind ingress
+  --attach-existing-agent-server  Attach to an existing healthy agent-server on port 18000
   -v, --verbose               Show detailed output
   -h, --help                  Show this help
 
 ENVIRONMENT VARIABLES:
   PORT                        Alternative to --port
   OH_BIND_HOST                Alternative to --host (default: 127.0.0.1)
+  OH_CANVAS_ATTACH_EXISTING_AGENT_SERVER  Set to 1 to attach to an existing healthy agent-server on port 18000
   OH_AUTOMATION_GIT_REF       Git ref for automation (overrides default version)
   OH_AUTOMATION_VERSION       Specific PyPI version for automation (default: ${DEFAULT_AUTOMATION_VERSION})
   OH_AUTOMATION_LOCAL_PATH    Absolute path to a local automation checkout (overridden only by --automation-git-ref)
@@ -445,9 +453,34 @@ async function buildConfig(args, env = process.env) {
     parseInt(env.OH_CANVAS_SAFE_AUTOMATION_PORT, 10) || DEFAULT_AUTOMATION_PORT;
   const preferredVitePort = parseInt(env.OH_CANVAS_SAFE_VITE_PORT, 10) || 3001;
 
+  const shouldAttach = Boolean(
+    args.attachExistingAgentServer ||
+    env.OH_CANVAS_ATTACH_EXISTING_AGENT_SERVER === "1" ||
+    env.OH_CANVAS_ATTACH_EXISTING_AGENT_SERVER === "true",
+  );
+
+  let attachExistingAgentServer = false;
+  if (launchAgentServer && shouldAttach) {
+    const isFree = await tryPort(preferredBackendPort, "127.0.0.1");
+    if (!isFree) {
+      const isAlive = await checkAgentServerAlive(
+        preferredBackendPort,
+        "127.0.0.1",
+      );
+      if (isAlive) {
+        logService(
+          "agent-server",
+          `Detected healthy agent-server on port ${preferredBackendPort}, attaching...`,
+          c.cyan,
+        );
+        attachExistingAgentServer = true;
+      }
+    }
+  }
+
   // Fail fast if any preferred port for a service in this mode is already in use.
   const requiredPorts = [{ name: "ingress", port: preferredIngressPort }];
-  if (launchAgentServer) {
+  if (launchAgentServer && !attachExistingAgentServer) {
     requiredPorts.push({ name: "agent-server", port: preferredBackendPort });
   }
   if (launchAutomation) {
@@ -543,6 +576,7 @@ async function buildConfig(args, env = process.env) {
     launchFrontend,
     launchAgentServer,
     launchAutomation,
+    attachExistingAgentServer,
 
     verbose: args.verbose,
     bindHost,
@@ -1520,6 +1554,9 @@ async function main(options = {}) {
   if (isPublicOverride != null) {
     args.public = isPublicOverride;
   }
+  if (options.attachExistingAgentServer != null) {
+    args.attachExistingAgentServer = Boolean(options.attachExistingAgentServer);
+  }
 
   // Allow options to override CLI args (for bin/agent-canvas.mjs)
   const useStaticMode =
@@ -1635,14 +1672,23 @@ async function main(options = {}) {
   // before that completes triggers axios "Request timeout" popups on the first
   // SPA fetch that hits an unbound port 18000.
   if (config.launchAgentServer) {
-    const agentServerStarter = startAgentServerOverride ?? startAgentServer;
-    agentServerStarter(config);
+    if (config.attachExistingAgentServer) {
+      logService(
+        "agent-server",
+        `Attached to existing healthy agent-server at ${getAgentServerBaseUrl(config)}`,
+        c.green,
+      );
+      agentServerReady = true;
+    } else {
+      const agentServerStarter = startAgentServerOverride ?? startAgentServer;
+      agentServerStarter(config);
 
-    agentServerReady = await waitForService(
-      "agent-server",
-      `${getAgentServerBaseUrl(config)}/server_info`,
-      agentServerReadyTimeoutMs,
-    );
+      agentServerReady = await waitForService(
+        "agent-server",
+        `${getAgentServerBaseUrl(config)}/server_info`,
+        agentServerReadyTimeoutMs,
+      );
+    }
   }
 
   // 2. Seed automation API key into agent-server secrets
