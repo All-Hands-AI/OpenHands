@@ -93,6 +93,8 @@ Preconditions:
 - **Check for errors.** Run `control-openhands browser errors --app-only` after each group; it reports `pageErrors` `0` and `appErrors` `0`. External `registry.npmjs.org` and `cdn.simpleicons.org` failures are sandbox noise.
 - **Restore.** Leave the sidebar expanded, unpinned, with the checklist shown and expanded, at `browser viewport desktop`.
 
+- **Existing conversations while collapsed (`F02.sidebar-collapse`).** With at least one sidebar conversation, run `control-openhands browser click 'testid=sidebar-collapse-toggle'`, `control-openhands browser snapshot` and `control-openhands browser count 'testid=conversation-panel'`. Known failure (reproduced 2026-10-12, [#15662](https://github.com/OpenHands/OpenHands/issues/15662)): the count is `0`, and the rail has no chooser for existing conversations; expansion is required. Restore with `control-openhands browser hover 'role=link[name="OpenHands Logo"]'` and `control-openhands browser click 'testid=sidebar-collapse-toggle'`.
+
 ## Gotchas
 
 - The rail animates its width for 200 ms. A `bbox` taken right after the collapse click reads an intermediate width (about 70); measure after `browser reload`.

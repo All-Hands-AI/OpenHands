@@ -23,6 +23,10 @@ import { basename, dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { redactStorage } from "./lib/redact-storage.mjs";
 import { HeldKeys } from "./lib/held-keys.mjs";
+import {
+  observeWebSocket,
+  isWebSocketObservation,
+} from "./lib/websocket-events.mjs";
 import { SECRET_KEY, SECRET_PATH, redactBody } from "./lib/network-bodies.mjs";
 import { buildLocator, toCss } from "./lib/selectors.mjs";
 import {
@@ -157,6 +161,7 @@ await context.addInitScript(() => {
 });
 
 let dialogPolicy = "dismiss";
+let networkOffline = false;
 // Events survive a daemon restart (`restart`, `browser reset`): reload the
 // ones recorded since the last `errors --clear` mark.
 const events = [];
@@ -196,7 +201,10 @@ const heldKeys = new HeldKeys();
 
 function originOf(url) {
   try {
-    return new URL(url).origin;
+    const parsed = new URL(url);
+    if (parsed.protocol === "ws:") parsed.protocol = "http:";
+    if (parsed.protocol === "wss:") parsed.protocol = "https:";
+    return parsed.origin;
   } catch {
     return "";
   }
@@ -221,6 +229,12 @@ function record(kind, page, detail) {
 }
 
 function watch(page) {
+  page.on("websocket", (socket) =>
+    observeWebSocket(socket, (kind, detail) => record(kind, page, detail), {
+      connectionId: randomBytes(8).toString("hex"),
+      pageUrl: () => page.url(),
+    }),
+  );
   page.on("pageerror", (error) =>
     record("pageerror", page, {
       message: String(error?.message ?? error).slice(0, 2000),
@@ -979,6 +993,7 @@ const handlers = {
     const relevant = slice.filter(
       (e) =>
         !["page-opened", "download", "dialog", "mark"].includes(e.kind) &&
+        !isWebSocketObservation(e.kind) &&
         !(noWarnings && e.kind === "console.warning"),
     );
     const filtered = appOnly ? relevant.filter((e) => e.appOrigin) : relevant;
@@ -1167,6 +1182,18 @@ const handlers = {
     const area = session ? "sessionStorage" : "localStorage";
     if (keysOnly !== false) return { area, keys: Object.keys(data).sort() };
     return { area, storage: redactStorage(data) };
+  },
+  async "network-state"({ state }) {
+    if (!["offline", "online", "status"].includes(state))
+      throw new Error("network-state needs offline | online | status");
+    if (state !== "status") {
+      const offline = state === "offline";
+      if (offline !== networkOffline) {
+        await context.setOffline(offline);
+        networkOffline = offline;
+      }
+    }
+    return { offline: networkOffline };
   },
   async network({ clear, external, last, filter, bodies }) {
     const re = filter ? new RegExp(filter) : null;
