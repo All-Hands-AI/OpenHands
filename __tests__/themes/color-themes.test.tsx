@@ -60,6 +60,15 @@ describe("color themes", () => {
         ).toBeGreaterThanOrEqual(4.5);
       }
 
+      // Confirmation dialog descriptions are small body text on the modal surface.
+      expect(
+        contrast(
+          luminance(resolve("--oh-modal-description-foreground")),
+          modalSurface,
+        ),
+        "--oh-modal-description-foreground against the modal surface",
+      ).toBeGreaterThanOrEqual(4.5);
+
       const statusSurfaces = ["--oh-color-base", "--oh-color-base-secondary"];
       const statusTextRoles = [
         ["--oh-feedback-success", "--oh-status-success"],
