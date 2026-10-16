@@ -66,6 +66,14 @@ Detailed contributor knowledge is split into skills so it loads only for relevan
 
 The detailed rules live in each skill's `references/guide.md`; do not copy them back into this file. Update the owning skill whenever an invariant changes.
 
+### Keep verify skills and specs out of implementation PRs
+
+The `verify-*` skills under `.agents/skills/` (feature maps, known-bug recipes, `control-openhands` and its fixtures) and the files under `specs/` define expected behavior. The PR that changes product code must not also change them, even when an issue's acceptance criteria ask for it: whoever writes a fix must not rewrite the rules the fix is checked against.
+
+- An implementation PR carries product code and tests only. It is verified against the feature map as it stands on the base branch, including any known-bug entry the fix makes obsolete.
+- Do not update the feature map in the fix PR. The scheduled verify-openhands passes test the new main against the existing map, re-check a changed result, then update the map in their own PR.
+- A verify-skill PR changes only `.agents/skills/verify-*/`, plus `AGENTS.md` files and `.pr/` evidence. The `Verify skill isolation` check enforces this.
+
 ## Testing Baseline
 
 Create TDD tests for behavioral changes. Keep tests focused on user behavior and real code paths:
