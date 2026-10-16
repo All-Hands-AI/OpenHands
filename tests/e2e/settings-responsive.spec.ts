@@ -102,3 +102,38 @@ for (const width of [390, 767, 768, 820, 1023, 1024, 1440]) {
       await expect(page.getByTestId("settings-navbar-desktop")).toBeVisible();
   });
 }
+
+test("settings switch thumbs stay inside their tracks in a right-to-left language", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1024 });
+  await openMockPage(page, "/settings/app");
+  await page.getByTestId("language-input").click();
+  await page.getByRole("option", { name: "Arabic" }).click();
+  await page.getByTestId("submit-button").click();
+  await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+
+  const thumbOverflow = (testId: string) =>
+    page.getByTestId(testId).evaluate((input) => {
+      const track = input
+        .closest("label")!
+        .querySelector<HTMLElement>("span[aria-hidden='true']")!;
+      const outer = track.getBoundingClientRect();
+      const thumb = track.firstElementChild!.getBoundingClientRect();
+      return {
+        checked: (input as HTMLInputElement).checked,
+        overflow: Math.max(outer.left - thumb.left, thumb.right - outer.right),
+      };
+    });
+
+  // The checklist switch starts on and the sound switch off, so both thumb
+  // positions are covered.
+  for (const [testId, checked] of [
+    ["show-getting-started-checklist-switch", true],
+    ["enable-sound-notifications-switch", false],
+  ] as const) {
+    const thumb = await thumbOverflow(testId);
+    expect(thumb.checked).toBe(checked);
+    expect(thumb.overflow).toBeLessThanOrEqual(0);
+  }
+});
