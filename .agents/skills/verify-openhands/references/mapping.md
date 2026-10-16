@@ -83,6 +83,14 @@ that ID instead of re-mapping it.
 
 ## 3. Write each entry
 
+Describe current behavior and how to verify it. Once a fix is proven, keep
+the corrected expectations and normal recipe steps, and remove the fix's
+PR or closed-issue references, verification dates or device lists, old UI
+wording, and descriptions of checkouts without the fix. Keep that history
+in the maintenance PR and evidence ledger. Retain links for known open
+bugs, authorizing PRs for retired IDs, and version or environment
+distinctions that still affect a supported run.
+
 Each file starts with an H1 title, one paragraph describing the user-visible
 behavior, and one `Source:` line with the main implementation paths (for drift
 checks and `map affected`; keep other implementation detail out). Every path
@@ -122,7 +130,13 @@ sections, in this order:
    exemptions). The map should know every open bug. Record one on the bullet
    that reproduces it, next to the expected result, as `Known failure
    (reproduced <date>, #<issue>): <what happens>`; list it here as
-   `Known issue #<issue>: ...` only when no recipe can drive it.
+   `Known issue #<issue>: ...` only when no recipe can drive it. The completed
+   [existing-bug backfill](backfills/2026-10-12-open-bugs.md) accounts for its frozen
+   inventory; the [main refresh](backfills/2026-10-16-main-refresh.md) records later
+   reconciliation. [bug-backfill.md](bug-backfill.md) defines ongoing intake and outcome
+   labels. Absence of `ready-for-dev` is not an exclusion.
+   Use full repository-qualified links for SDK and automation issues, so their
+   numbers cannot be mistaken for Canvas issue numbers.
 
    Make the note executable when a recipe can drive it: indent a fenced block
    under it, opened with `` ```sh known-bug <ID> [name] `` (the name tells
