@@ -6,6 +6,7 @@ import type {
 } from "@openhands/typescript-client";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { Settings, SettingsSchema, SettingsValue } from "#/types/settings";
+import { isSdkHttpError } from "#/utils/sdk-http-error";
 import {
   applyMcpServerPatch,
   getSdkMcpServerMap,
@@ -142,6 +143,9 @@ const mergeRecords = (
 
 /**
  * Retry helper for API calls with exponential backoff.
+ * Deterministic client errors (HTTP 4xx) are surfaced immediately: retrying
+ * them with backoff cannot succeed and only delays the error the user sees
+ * (see #17932).
  */
 async function withRetry<T>(
   fn: () => Promise<T>,
@@ -152,6 +156,13 @@ async function withRetry<T>(
     try {
       return await fn();
     } catch (error) {
+      if (isSdkHttpError(error)) {
+        const status = (error as { status: unknown }).status;
+        if (typeof status === "number" && status >= 400 && status < 500) {
+          throw error;
+        }
+      }
+
       if (attempt >= maxRetries - 1) {
         throw error;
       }

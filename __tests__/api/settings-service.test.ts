@@ -343,6 +343,54 @@ describe("SettingsService", () => {
     ]);
   });
 
+  it("does not retry a 422 validation error on save: one request, then the error surfaces", async () => {
+    // Regression test for #17932: a deterministic 4xx from
+    // PATCH /api/settings must not be retried with backoff. Previously the
+    // save was attempted three times (~1.5s of "Saving...") before the
+    // validation error reached the user.
+    let patchCount = 0;
+    server.use(
+      http.patch("*/api/settings", () => {
+        patchCount += 1;
+        return HttpResponse.json(
+          { detail: "Settings validation failed" },
+          { status: 422 },
+        );
+      }),
+    );
+
+    await expect(
+      SettingsService.saveSettings({ disabled_skills: ["SSH Microagent"] }),
+    ).rejects.toThrow();
+    expect(patchCount).toBe(1);
+  });
+
+  it("still retries a 500 error on save", async () => {
+    // 5xx failures remain retryable: the first attempt fails, the retry
+    // succeeds, and the save resolves.
+    let patchCount = 0;
+    server.use(
+      http.patch("*/api/settings", () => {
+        patchCount += 1;
+        if (patchCount === 1) {
+          return HttpResponse.json({ detail: "boom" }, { status: 500 });
+        }
+        return HttpResponse.json({
+          agent_settings: {},
+          conversation_settings: {},
+          llm_api_key_is_set: false,
+        });
+      }),
+    );
+
+    const result = await SettingsService.saveSettings({
+      disabled_skills: ["SSH Microagent"],
+    });
+
+    expect(result).toBe(true);
+    expect(patchCount).toBe(2);
+  });
+
   // @spec WFD-002 — Workspace-scoped server persistence
   it("sends a sparse workspace preference patch and hydrates the saved options", async () => {
     const options = {
@@ -1258,7 +1306,8 @@ describe("SettingsService", () => {
     ).rejects.toBeDefined();
 
     expect(getCount).toBe(0);
-    expect(patchBodies).toHaveLength(3);
+    // A deterministic 400 validation failure is not retried (#17932).
+    expect(patchBodies).toHaveLength(1);
     expect(patchBodies).not.toContainEqual({
       agent_settings_diff: { mcp_config: null },
     });
