@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CANVAS_UI_CLIENT_TOOL_NAME } from "#/constants/canvas-ui";
 import { LAUNCH_CHILD_CONVERSATION_TOOL_NAME } from "#/constants/child-conversation";
+import { REQUEST_SECRET_TOOL_NAME } from "#/constants/secret-request";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import type { Settings } from "#/types/settings";
 import {
@@ -712,6 +713,22 @@ describe("buildStartPlanningConversationRequestWithEncryptedSettings", () => {
 });
 
 describe("buildStartConversationRequest — agentProfileId path", () => {
+  it("appends the saved global suffix to a profile launch", () => {
+    const payload = buildStartConversationRequest({
+      settings: makeSettings({
+        agent_kind: "openhands",
+        agent_context: { system_message_suffix: "MARKER-GLOBAL-RULES" },
+      }),
+      agentProfileId: "profile-xyz",
+      agentProfileKind: "openhands",
+    });
+
+    expect(payload.agent_launch_additions).toEqual({
+      system_message_suffix_append: "MARKER-GLOBAL-RULES",
+    });
+    expect(payload.agent_settings).toBeUndefined();
+  });
+
   it("sends agent_profile_id and omits agent_settings (mutually exclusive)", () => {
     const settings = makeSettings({
       agent_kind: "openhands",
@@ -726,10 +743,36 @@ describe("buildStartConversationRequest — agentProfileId path", () => {
 
     expect(payload.agent_profile_id).toBe("profile-xyz");
     expect(payload.agent_settings).toBeUndefined();
+    expect(payload.agent_launch_additions).toBeUndefined();
     expect(payload.client_tools.map((tool) => tool.name)).toEqual([
       CANVAS_UI_CLIENT_TOOL_NAME,
       LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
+      REQUEST_SECRET_TOOL_NAME,
     ]);
+  });
+
+  it("carries a per-launch LLM override only on a profile launch", () => {
+    const settings = makeSettings({
+      agent_kind: "openhands",
+      llm: { model: "litellm_proxy/openai/gpt-5.5", api_key: "sk-test" },
+    });
+
+    const profileLaunch = buildStartConversationRequest({
+      settings,
+      agentProfileId: "profile-xyz",
+      agentProfileKind: "openhands",
+      llmProfileOverride: "fast",
+    });
+    expect(profileLaunch.agent_launch_additions).toEqual({
+      llm_profile_ref: "fast",
+    });
+
+    const settingsLaunch = buildStartConversationRequest({
+      settings,
+      llmProfileOverride: "fast",
+    });
+    expect(settingsLaunch.agent_launch_additions).toBeUndefined();
+    expect(settingsLaunch.agent_settings).toBeDefined();
   });
 
   it("suppresses the ACP server tag when launching from a profile", () => {

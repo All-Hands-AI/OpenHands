@@ -47,23 +47,6 @@ const DEFAULT_MODEL =
     ? llmDefaults.model
     : "openhands/claude-opus-4-5-20251101";
 
-export const createMockWebClientConfig = (
-  overrides: Partial<WebClientConfig> = {},
-): WebClientConfig => ({
-  feature_flags: {
-    hide_llm_settings: false,
-    hide_users_page: false,
-    ...overrides.feature_flags,
-  },
-  providers_configured: [],
-  maintenance_start_time: null,
-  recaptcha_site_key: null,
-  faulty_models: [],
-  error_message: null,
-  updated_at: new Date().toISOString(),
-  ...overrides,
-});
-
 const MOCK_AGENT_SETTINGS_SCHEMA: NonNullable<
   Settings["agent_settings_schema"]
 > = {
@@ -73,36 +56,6 @@ const MOCK_AGENT_SETTINGS_SCHEMA: NonNullable<
       key: "general",
       label: "General",
       fields: [
-        {
-          key: "enable_sub_agents",
-          label: "Enable sub-agents",
-          description:
-            "Allow the agent to delegate work to specialized built-in sub-agents.",
-          section: "general",
-          section_label: "General",
-          value_type: "boolean",
-          default: false,
-          choices: [],
-          depends_on: [],
-          prominence: "major",
-          secret: false,
-          required: false,
-        },
-        {
-          key: "enable_switch_llm_tool",
-          label: "Enable LLM switching tool",
-          description:
-            "Allow the agent to move the conversation to another saved LLM profile on its own.",
-          section: "general",
-          section_label: "General",
-          value_type: "boolean",
-          default: true,
-          choices: [],
-          depends_on: [],
-          prominence: "major",
-          secret: false,
-          required: false,
-        },
         {
           key: "tool_concurrency_limit",
           label: "Parallel tool calls",
@@ -478,7 +431,6 @@ export const MOCK_DEFAULT_USER_SETTINGS: Settings = {
       enable_default_condenser: true,
       condenser_max_size: null,
     },
-    enable_sub_agents: false,
     tool_concurrency_limit: 1,
   },
   conversation_settings_schema: MOCK_CONVERSATION_SETTINGS_SCHEMA,
@@ -671,11 +623,8 @@ const MOCK_VERIFIED_MODELS_BY_PROVIDER = MOCK_MODELS.reduce<
 }, {});
 
 // Matches the pinned `@openhands/typescript-client`, so mock mode models a
-// server that actually ships this schema. At 1.29.3 the mocked settings schema
-// advertised fields (`enable_switch_llm_tool`) that the mocked server's own
-// profile model would have rejected, and version-gated UI hid controls the
-// rest of the mocks were serving.
-const MOCK_AGENT_SERVER_VERSION = "1.48.0";
+// server that actually ships this schema.
+const MOCK_AGENT_SERVER_VERSION = "1.55.0";
 
 // --- Handlers for options/config/settings ---
 // Uses wildcard "*" prefix to match both relative paths and absolute URLs

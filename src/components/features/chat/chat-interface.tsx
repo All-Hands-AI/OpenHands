@@ -1,8 +1,10 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router";
 import { useTracking } from "#/hooks/use-tracking";
 import { useTranslation } from "react-i18next";
 import { isAcpAuthErrorCode } from "#/utils/acp-error-codes";
+import { getLockedCloudHost } from "#/api/agent-server-config";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { createChatMessage } from "#/services/chat-service";
 import { BtwMessages } from "./btw-messages";
@@ -14,6 +16,7 @@ import { InteractiveChatBox } from "./interactive-chat-box";
 import { AgentState } from "#/types/agent-state";
 import { useFilteredEvents } from "#/hooks/use-filtered-events";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
+import { useIsRevealingStreamedText } from "#/hooks/use-streamed-text";
 import { useLoadOlderEvents } from "#/hooks/use-load-older-events";
 import { useAutoRefreshFilesOnEdit } from "#/hooks/use-auto-refresh-files-on-edit";
 import { WorkspaceFilesForChatProvider } from "./chat-markdown-path-code";
@@ -53,6 +56,7 @@ import { useOptionalConversationId } from "#/hooks/use-conversation-id";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { I18nKey } from "#/i18n/declaration";
 import { hasConversationStarted } from "./components/resolve-picker-kind";
+import { ComposerDockedProvider } from "#/context/composer-docked-context";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -63,7 +67,21 @@ function getEntryPoint(
   return "direct";
 }
 
-export function ChatInterface() {
+export function ChatInterface({
+  showGitControlBar = true,
+  showEmptyStateSuggestions = true,
+  composerDockTarget = null,
+  onDockedComposerSubmit,
+  minimalComposer = false,
+  composerPlaceholder,
+}: {
+  showGitControlBar?: boolean;
+  showEmptyStateSuggestions?: boolean;
+  composerDockTarget?: HTMLElement | null;
+  onDockedComposerSubmit?: () => void;
+  minimalComposer?: boolean;
+  composerPlaceholder?: string;
+} = {}) {
   useAutoRefreshFilesOnEdit();
 
   const { trackInitialQuerySubmitted, trackUserMessageSent } = useTracking();
@@ -101,6 +119,9 @@ export function ChatInterface() {
   );
   const { t } = useTranslation("openhands");
   const scrollRef = React.useRef<HTMLDivElement>(null);
+  // A streamed reply grows inside one event as it is revealed, so follow it
+  // frame by frame while it does.
+  const isRevealingStreamedText = useIsRevealingStreamedText();
   const {
     scrollDomToBottom,
     onChatBodyScroll,
@@ -108,7 +129,7 @@ export function ChatInterface() {
     autoScroll,
     setAutoScroll,
     setHitBottom,
-  } = useScrollToBottom(scrollRef);
+  } = useScrollToBottom(scrollRef, isRevealingStreamedText);
   const {
     mutate: newConversationCommand,
     isPending: isNewConversationPending,
@@ -140,8 +161,9 @@ export function ChatInterface() {
   // Global keyboard shortcut for Build button (Cmd+Enter / Ctrl+Enter)
   // This is placed here instead of PlanPreview to avoid duplicate listeners
   // when multiple PlanPreview components exist in the chat.
-  // Gated on the same conditions as the Build button (ConversationTabs'
-  // `isBuildDisabled`) so it cannot fire outside the plan flow.
+  // Gated on the same conditions as the Build button
+  // (ConversationPlannerBuildBar's `isBuildDisabled`) so it cannot fire
+  // outside the plan flow.
   React.useEffect(() => {
     if (isAgentRunning || conversationMode !== "plan" || !planContent) {
       return undefined;
@@ -498,6 +520,33 @@ export function ChatInterface() {
     t,
   });
 
+  const isComposerDocked = Boolean(composerDockTarget);
+  const isMinimalComposer = isComposerDocked || minimalComposer;
+  const composer = (
+    <ComposerDockedProvider
+      enabled={isComposerDocked}
+      minimal={isMinimalComposer}
+    >
+      <InteractiveChatBox
+        onSubmit={(content, images, files) => {
+          if (isComposerDocked) onDockedComposerSubmit?.();
+          return handleSendMessage(content, images, files);
+        }}
+        disabled={isNewConversationPending || llmBlocked}
+        hasStartedConversation={hasStartedConversation}
+        showGitControlBar={showGitControlBar}
+        placeholder={
+          isMinimalComposer
+            ? t(I18nKey.AUTOMATION_SETUP$DOCKED_COMPOSER_PLACEHOLDER)
+            : composerPlaceholder
+        }
+      />
+    </ComposerDockedProvider>
+  );
+  const dockedOrInlineComposer = composerDockTarget
+    ? createPortal(composer, composerDockTarget)
+    : composer;
+
   return (
     <WorkspaceFilesForChatProvider>
       <ScrollProvider value={scrollProviderValue}>
@@ -517,7 +566,8 @@ export function ChatInterface() {
             // disabled). They're also a `pointer-events-auto` overlay that would
             // sit over the LlmNotConfiguredBanner below and swallow clicks on its
             // setup button — so hide them and let the banner be the lone CTA.
-            !llmBlocked && (
+            !llmBlocked &&
+            showEmptyStateSuggestions && (
               <ChatSuggestions
                 onSuggestionsClick={(message) => setMessageToSend(message)}
               />
@@ -611,8 +661,10 @@ export function ChatInterface() {
                     ? () => conversationWebSocket?.reconnect()
                     : undefined
                 }
+                // Locked-to-Cloud blocks the Canvas agent settings page
+                // (OHE-3457).
                 onReauth={
-                  isAcpAuthErrorCode(errorCode)
+                  isAcpAuthErrorCode(errorCode) && getLockedCloudHost() === null
                     ? () => navigate("/settings/agents")
                     : undefined
                 }
@@ -670,11 +722,7 @@ export function ChatInterface() {
                   </div>
                 </div>
 
-                <InteractiveChatBox
-                  onSubmit={handleSendMessage}
-                  disabled={isNewConversationPending || llmBlocked}
-                  hasStartedConversation={hasStartedConversation}
-                />
+                {dockedOrInlineComposer}
               </div>
             )}
           </div>
