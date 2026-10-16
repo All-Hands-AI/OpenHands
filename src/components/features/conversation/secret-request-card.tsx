@@ -1,27 +1,35 @@
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { SecretForm } from "#/components/features/settings/secrets-settings/secret-form";
 import { useOptionalConversationId } from "#/hooks/use-conversation-id";
 import { I18nKey } from "#/i18n/declaration";
 import { completeSecretRequest } from "#/services/secret-request";
-import { useSecretRequestStore } from "#/stores/secret-request-store";
+import {
+  type SecretRequest,
+  useSecretRequestStore,
+} from "#/stores/secret-request-store";
+
+/** The current conversation's pending secret requests, oldest first. */
+export function usePendingSecretRequests(): SecretRequest[] {
+  const { conversationId } = useOptionalConversationId();
+  const requests = useSecretRequestStore((s) => s.requests);
+  return React.useMemo(
+    () => requests.filter((r) => r.conversationId === conversationId),
+    [requests, conversationId],
+  );
+}
 
 /**
- * Collects the secrets the agent asked for with `request_secret`, as cards at
- * the end of the chat. They do not block the conversation: the agent keeps
- * working and the user answers whenever they are ready. The value goes
- * straight to the secrets store; the agent only learns the outcome.
+ * Collects a secret the agent asked for with `request_secret`, as a card in
+ * the chat. It does not block the conversation: the agent keeps working and
+ * the user answers whenever they are ready. The value goes straight to the
+ * secrets store; the agent only learns the outcome.
  */
-export function SecretRequestCards() {
+export function SecretRequestCard({ request }: { request: SecretRequest }) {
   const { t } = useTranslation("openhands");
-  const { conversationId } = useOptionalConversationId();
-  const allRequests = useSecretRequestStore((s) => s.requests);
-  const requests = allRequests.filter(
-    (r) => r.conversationId === conversationId,
-  );
 
-  return requests.map((request) => (
+  return (
     <section
-      key={request.toolCallId}
       data-testid="secret-request-card"
       aria-label={t(I18nKey.SECRETS$REQUEST_TITLE)}
       className="mt-4 flex flex-col gap-3 rounded-xl border border-border bg-surface p-4"
@@ -46,5 +54,5 @@ export function SecretRequestCards() {
         onCancel={() => void completeSecretRequest(request, null)}
       />
     </section>
-  ));
+  );
 }

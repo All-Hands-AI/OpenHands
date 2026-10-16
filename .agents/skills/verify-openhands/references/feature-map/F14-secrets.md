@@ -19,7 +19,7 @@ Source: `src/routes/secrets-settings.tsx`, `src/components/features/settings/sec
 - `F14.rename`: the Edit form's name is editable; renaming with the value left blank keeps the stored value under the new name, and renaming onto an existing name is refused with `Secret already exists`.
 - `F14.edit-value`: typing a value in the Edit form (labelled "Secret Value (leave blank to preserve the existing value)") replaces the stored value for new conversations.
 - `F14.delete-escape`: Escape closes the delete confirmation without deleting.
-- `F14.agent-request`: in a local conversation the agent's `request_secret` tool adds a **The agent needs a secret** card at the end of the chat with its reason and the name prefilled; it does not block the conversation, so the agent can keep working and the user answers when ready. Add secret saves it, attaches it to the running conversation and reports `saved` to the agent, Cancel reports `not_saved`, and a name that is already saved is attached without a card. The value never reaches the agent's events.
+- `F14.agent-request`: in a local conversation the agent's `request_secret` tool adds a **The agent needs a secret** card in the chat, right after the tool call, with its reason and the name prefilled; it does not block the conversation, so the agent can keep working and the user answers when ready. Add secret saves it, attaches it to the running conversation and reports `saved` to the agent, Cancel reports `not_saved`, and a name that is already saved is attached without a card. The value never reaches the agent's events.
 
 ## How to get to it (user POV)
 

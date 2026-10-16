@@ -14,7 +14,11 @@ import { useModelStore } from "#/stores/model-store";
 import { ModelMessages } from "#/components/features/chat/model-messages";
 import { useOptionalConversationId } from "#/hooks/use-conversation-id";
 import { ConversationConfirmationButtons } from "#/components/shared/buttons/conversation-confirmation-buttons";
-import { SecretRequestCards } from "#/components/features/conversation/secret-request-card";
+import type { SecretRequest } from "#/stores/secret-request-store";
+import {
+  SecretRequestCard,
+  usePendingSecretRequests,
+} from "#/components/features/conversation/secret-request-card";
 
 interface MessagesProps {
   messages: OpenHandsEvent[]; // UI events (actions replaced by observations)
@@ -67,6 +71,36 @@ export const Messages: React.FC<MessagesProps> = React.memo(
       );
     };
 
+    // Pending `request_secret` forms sit right after their tool call, so what
+    // the agent writes next lands below them. A call that is not loaded falls
+    // back to the end of the chat.
+    const pendingSecretRequests = usePendingSecretRequests();
+    const secretRequests = React.useMemo(() => {
+      const unanchored = new Map(
+        pendingSecretRequests.map((request) => [request.toolCallId, request]),
+      );
+      const byAnchorId = new Map<string, SecretRequest>();
+      for (const event of messages) {
+        if (unanchored.size === 0) break;
+        if (!isActionEvent(event) && !isObservationEvent(event)) continue;
+        const request = unanchored.get(event.tool_call_id);
+        if (!request) continue;
+        unanchored.delete(event.tool_call_id);
+        byAnchorId.set(String(event.id), request);
+      }
+      return { byAnchorId, unanchored: [...unanchored.values()] };
+    }, [pendingSecretRequests, messages]);
+
+    const renderSecretRequest = (request: SecretRequest | undefined) =>
+      request ? (
+        <SecretRequestCard key={request.toolCallId} request={request} />
+      ) : null;
+
+    const maybeRenderSecretRequest = (eventId: string | number | undefined) =>
+      eventId === undefined
+        ? null
+        : renderSecretRequest(secretRequests.byAnchorId.get(String(eventId)));
+
     // Fold consecutive action/observation events into collapsible groups so a
     // long sequence of tool calls doesn't dominate the chat scroll. Items that
     // can't be grouped (or that fall in a short run) are still rendered one by
@@ -110,6 +144,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
                     duplication. */}
                 {renderEventMessage(item.event, item.index, true)}
                 {maybeRenderModelMessages(item.event.id)}
+                {maybeRenderSecretRequest(item.event.id)}
               </React.Fragment>
             );
           }
@@ -143,12 +178,13 @@ export const Messages: React.FC<MessagesProps> = React.memo(
               {item.events.map((event) => (
                 <React.Fragment key={`model-${event.id}`}>
                   {maybeRenderModelMessages(event.id)}
+                  {maybeRenderSecretRequest(event.id)}
                 </React.Fragment>
               ))}
             </React.Fragment>
           );
         })}
-        <SecretRequestCards />
+        {secretRequests.unanchored.map(renderSecretRequest)}
         <ConversationConfirmationButtons />
       </>
     );

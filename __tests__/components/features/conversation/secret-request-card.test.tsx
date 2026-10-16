@@ -2,7 +2,10 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SecretsService } from "#/api/secrets-service";
-import { SecretRequestCards } from "#/components/features/conversation/secret-request-card";
+import {
+  SecretRequestCard,
+  usePendingSecretRequests,
+} from "#/components/features/conversation/secret-request-card";
 import {
   type SecretRequest,
   useSecretRequestStore,
@@ -25,15 +28,21 @@ const request: SecretRequest = {
   reason: "Push the factory branch; needs repo scope.",
 };
 
+function PendingSecretRequestCards() {
+  return usePendingSecretRequests().map((r) => (
+    <SecretRequestCard key={r.toolCallId} request={r} />
+  ));
+}
+
 const renderCards = async (requests: SecretRequest[] = [request]) => {
   useSecretRequestStore.setState({ requests });
-  renderWithProviders(<SecretRequestCards />);
+  renderWithProviders(<PendingSecretRequestCards />);
   if (requests.some((r) => r.conversationId === request.conversationId)) {
     await screen.findAllByTestId("secret-request-card");
   }
 };
 
-describe("SecretRequestCards", () => {
+describe("SecretRequestCard", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     // Like the real service, completing a request removes it from the queue.
