@@ -32,6 +32,7 @@ import {
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
 import { I18nKey } from "#/i18n/declaration";
+import { getApiErrorMessage } from "#/utils/api-error-message";
 import {
   deriveProfileNameFromModel,
   isProfileNameValid,
@@ -420,7 +421,7 @@ export function LlmSettingsLocalView() {
       handleBackToList();
     } catch (error) {
       console.error("Failed to save profile:", error);
-      displayErrorToast(t(I18nKey.ERROR$GENERIC));
+      displayErrorToast(getApiErrorMessage(error, t(I18nKey.ERROR$GENERIC)));
     } finally {
       setIsValidating(false);
       setIsSaving(false);
