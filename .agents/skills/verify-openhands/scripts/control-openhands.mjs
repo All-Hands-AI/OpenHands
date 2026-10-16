@@ -2821,6 +2821,16 @@ async function cmdBrowser({ positional, flags }) {
       result = { stopped, profileCleared: true, ...(await startBrowser(run)) };
       break;
     }
+    case "network-state": {
+      const state = rest[0];
+      if (rest.length !== 1 || !["offline", "online", "status"].includes(state))
+        usage(
+          "browser network-state needs offline | online | status",
+          "control-openhands browser network-state offline",
+        );
+      result = await browserCall(run, "network-state", { state });
+      break;
+    }
     case "network":
       result = await browserCall(run, "network", {
         clear: Boolean(flags.clear),
@@ -3890,6 +3900,7 @@ const BROWSER_VERBS = new Set([
   "tooltip",
   "media",
   "network",
+  "network-state",
   "toasts",
   "reset",
   "clipboard",
@@ -4755,7 +4766,9 @@ Verbs
                                          whose page should see it; the server's clock is untouched)
   errors [--clear] [--all] [--app-only] [--no-warnings]        page/console/HTTP errors since last clear
                                          (--clear prints the list, then empties it: run it before the action)
-  events [--kinds pageerror,dialog,download] [--last N]
+  events [--kinds pageerror,dialog,download,websocket-created,websocket-open,websocket-close,websocket-error] [--last N]
+        (WebSocket metadata: redacted URLs/pages, numeric after_seq, timestamps and frame counts; no bodies/headers)
+        (websocket-open is the first observed frame, not the handshake timestamp; counts update at lifecycle entries)
   eval <js expression>                   read-only inspection; never mutate app state with it
   tabs | tab <i> | tab new [/path] [--allow-external] | close-tab <i> | dialogs [--policy accept|dismiss]
         (tab new: a plain second tab, no opener and no sessionStorage, as a user opening the app again)
@@ -4765,6 +4778,8 @@ Verbs
   storage [--session] [--values]         localStorage (or sessionStorage) keys; values only on request
                                          (keys, tokens and secrets inside values are redacted)
   media [--clear]                        media playback recorded since load (sound features)
+  network-state offline|online|status     interrupt or restore this browser context's real network; status is read-only
+                                         (all its tabs; restore online before doctor/cleanup; no request interception)
   network [--external] [--filter REGEX] [--clear] [--last N] [--bodies]   requests with status and redacted query (rows under "recent")
         (--bodies adds each app-origin write's body, JSON with credential values and env/header maps
          replaced by their length, URL userinfo and secret-named query values redacted in any string;
