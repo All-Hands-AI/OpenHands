@@ -35,7 +35,7 @@ jobs:
         steps:
             # Use only trusted base-branch code and GitHub metadata. Never check out
             # the PR or execute its code in this pull_request_target workflow.
-            # .github/scripts/tests/verify-skill-isolation.test.cjs runs this exact
+            # .github/scripts/tests/verify-skill-isolation.cjs runs this exact
             # script body, so keep `script: |` the last key in this file.
             - uses: actions/github-script@v9
               with:

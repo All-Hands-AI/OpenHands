@@ -489,7 +489,6 @@ export default defineConfig(({ mode }) => {
             exclude: [
               ...configDefaults.exclude,
               "tests",
-              ".github/scripts/tests/**",
               ...NODE_ENV_PILOT_TESTS,
             ],
           },
