@@ -321,7 +321,7 @@ export function AgentProfilesLocalView() {
         isRequired
         error={
           isDuplicateName
-            ? t(I18nKey.SETTINGS$META_PROFILE_NAME_TAKEN)
+            ? t(I18nKey.SETTINGS$AGENT_PROFILE_NAME_TAKEN)
             : undefined
         }
       />
@@ -336,6 +336,7 @@ export function AgentProfilesLocalView() {
         }
       />
 
+      {/* @spec FF-001 — Profile validation feedback follows the host error role */}
       {/* OpenHands profiles reference an LLM profile (required). */}
       {isOpenHands &&
         (llmProfiles.length > 0 ? (
@@ -353,7 +354,7 @@ export function AgentProfilesLocalView() {
         ) : (
           <p
             data-testid="agent-profile-no-llm"
-            className="text-sm text-red-400"
+            className="text-sm text-feedback-error"
           >
             {t(I18nKey.SETTINGS$AGENT_PROFILE_NO_LLM)}
           </p>

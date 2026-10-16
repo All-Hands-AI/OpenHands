@@ -1,6 +1,16 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { CompactContextButton } from "./compact-context-button";
 import { ContextMeter } from "./context-meter";
+
+vi.mock("#/hooks/use-compact-context-action", () => ({
+  useCompactContextAction: () => ({
+    handleCompact: vi.fn(),
+    isCompacting: false,
+    isDisabled: false,
+    description: "Compact context",
+  }),
+}));
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -26,16 +36,23 @@ describe("ContextMeter", () => {
     expect(bar.style.width).toBe("50%");
   });
 
+  // @spec WN-001 — Warning meter text and fill use readable theme roles.
   it("warns above 70% fill", () => {
     render(<ContextMeter perTurnToken={75} contextWindow={100} />);
 
-    expect(screen.getByTestId("context-meter-bar")).toHaveClass("bg-amber-500");
+    expect(screen.getByTestId("context-meter-bar")).toHaveClass(
+      "bg-feedback-warning",
+    );
+    expect(screen.getByText(/75%/)).toHaveClass("text-feedback-warning");
   });
 
   it("signals danger above 90% fill", () => {
     render(<ContextMeter perTurnToken={95} contextWindow={100} />);
 
-    expect(screen.getByTestId("context-meter-bar")).toHaveClass("bg-red-500");
+    expect(screen.getByTestId("context-meter-bar")).toHaveClass(
+      "bg-status-error",
+    );
+    expect(screen.getByText(/95%/)).toHaveClass("text-feedback-error");
     expect(screen.getByTestId("context-meter")).toHaveTextContent(
       "95% CONVERSATION$USED (5% CONVERSATION$LEFT)",
     );
@@ -55,5 +72,16 @@ describe("ContextMeter", () => {
     expect(meter).toHaveTextContent((31778).toLocaleString());
     expect(meter).not.toHaveTextContent("/ 0");
     expect(meter).not.toHaveTextContent("0.0%");
+  });
+});
+
+// @spec WN-001 — The compact action warning uses the same readable text role.
+describe("CompactContextButton", () => {
+  it("uses warning feedback color when context is above the threshold", () => {
+    render(<CompactContextButton fillPercent={75} />);
+
+    expect(screen.getByText("CONVERSATION$CONTEXT_FILLING_UP")).toHaveClass(
+      "text-feedback-warning",
+    );
   });
 });

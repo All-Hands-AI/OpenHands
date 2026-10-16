@@ -73,6 +73,7 @@ vi.mock("#/routes/llm-settings", async () => {
           "llm.model": model,
           "llm.api_key": apiKey,
           "llm.base_url": baseUrl,
+          "llm.temperature": temperature,
         };
         onSaveControlChange?.({
           save: vi.fn(),
@@ -526,10 +527,10 @@ describe("LlmSettingsLocalView", () => {
 
       expect(nameInput).toHaveAttribute("aria-invalid", "true");
       expect(nameInput).toHaveAccessibleDescription(
-        "SETTINGS$META_PROFILE_NAME_TAKEN",
+        "SETTINGS$LLM_PROFILE_NAME_TAKEN",
       );
       expect(screen.getByRole("alert")).toHaveTextContent(
-        "SETTINGS$META_PROFILE_NAME_TAKEN",
+        "SETTINGS$LLM_PROFILE_NAME_TAKEN",
       );
       expect(screen.getByTestId("save-profile-btn")).toBeDisabled();
 
@@ -562,7 +563,7 @@ describe("LlmSettingsLocalView", () => {
 
       expect(nameInput).toHaveAttribute("aria-invalid", "true");
       expect(nameInput).toHaveAccessibleDescription(
-        "SETTINGS$META_PROFILE_NAME_TAKEN",
+        "SETTINGS$LLM_PROFILE_NAME_TAKEN",
       );
       expect(screen.getByTestId("save-profile-btn")).toBeDisabled();
     });
@@ -1042,6 +1043,40 @@ describe("LlmSettingsLocalView", () => {
       const savedLlm = mockSaveMutateAsync.mock.calls[0][0].request.llm;
       expect(savedLlm.model).toBe("openhands/claude-sonnet-4-20250514");
       expect(savedLlm).not.toHaveProperty("base_url");
+    });
+  });
+
+  describe("create mode save", () => {
+    it("saves a new profile with the prefilled default model even though the model was never touched", async () => {
+      // Arrange — the model is prefilled and left alone; only an unrelated
+      // field is edited, so the dirty payload carries no model at all.
+      const user = userEvent.setup();
+      mockSaveMutateAsync.mockResolvedValueOnce({ success: true });
+      renderWithProviders(<LlmSettingsLocalView />);
+      await user.click(screen.getByTestId("add-llm-profile"));
+      await waitFor(() =>
+        expect(screen.getByTestId("profile-name-input")).toHaveValue(
+          "gpt-5.6-sol",
+        ),
+      );
+
+      // Act — go to the All tab (whose dirty payload is temperature only) and save.
+      await user.click(await screen.findByTestId("sdk-section-all-toggle"));
+      const temperatureInput = await screen.findByTestId(
+        "sdk-settings-llm.temperature",
+      );
+      await user.clear(temperatureInput);
+      await user.type(temperatureInput, "0.3");
+      await waitFor(() => {
+        expect(screen.getByTestId("save-profile-btn")).not.toBeDisabled();
+      });
+      await user.click(screen.getByTestId("save-profile-btn"));
+
+      // Assert — the prefilled model rides along instead of a "Model is required" refusal.
+      await waitFor(() => expect(mockSaveMutateAsync).toHaveBeenCalled());
+      const savedLlm = mockSaveMutateAsync.mock.calls[0][0].request.llm;
+      expect(savedLlm.model).toBe("openai/gpt-5.6-sol");
+      expect(savedLlm.temperature).toBe(0.3);
     });
   });
 
