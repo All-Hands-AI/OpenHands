@@ -576,5 +576,9 @@ The combined harness suite passes 64 tests; eight bounded Python fixture tests p
 - Harness unit tests: pass. 64/64 pass under Node 24.19.0.
 - Bounded Python fixture tests: pass. 8/8 pass with the installed SDK Python, including shared-storage and trajectory-overlap fixtures.
 - Owned-run teardown: pass. Both task launchers stopped; every owned port closed; private fixtures purged;117 evidence files retained.
+- Final main application build: pass. npm run build passed at 5385a76fcc9d7ded5cc5fbcdc62b7e464a9136c8, whose product tree matches main d9ecec24181a0dd7b83b5d87561916abb2fe0e8c. Node 24.19.0.
+- Final main library build: pass. npm run build:lib passed at the same merged revision.
+- Final theme and scrim regression tests: pass. 27/27 tests pass in color-themes, settings-navigation and context-meter at the final merged product revision. This checks source/build contracts, not fresh visual fix proof.
+- PR scope and ancestry: pass. All differences from final main are under .agents/skills/verify-openhands/. Both main and the maintainer PR merge are ancestors; original October 12 records remain byte-for-byte unchanged.
 
 Every frozen-inventory issue has one supported accounting outcome. Dates and verification limits distinguish historical notes from fresh observations.

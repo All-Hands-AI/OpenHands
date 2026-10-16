@@ -20235,6 +20235,29 @@
       "name": "Owned-run teardown",
       "result": "pass",
       "actual": "Both task launchers stopped; every owned port closed; private fixtures purged;117 evidence files retained."
+    },
+    {
+      "name": "Final main application build",
+      "result": "pass",
+      "actual": "npm run build passed at5385a76fcc9d7ded5cc5fbcdc62b7e464a9136c8, whose product tree matches main d9ecec24181a0dd7b83b5d87561916abb2fe0e8c. Node24.19.0.",
+      "command": "npm run build"
+    },
+    {
+      "name": "Final main library build",
+      "result": "pass",
+      "actual": "npm run build:lib passed at the same merged revision.",
+      "command": "npm run build:lib"
+    },
+    {
+      "name": "Final theme and scrim regression tests",
+      "result": "pass",
+      "actual": "27/27 tests pass in color-themes, settings-navigation and context-meter at the final merged product revision. This checks source/build contracts, not fresh visual fix proof.",
+      "command": "vitest run __tests__/themes/color-themes.test.tsx __tests__/components/features/settings/settings-navigation.test.tsx src/components/features/conversation/usage-panel/context-meter.test.tsx"
+    },
+    {
+      "name": "PR scope and ancestry",
+      "result": "pass",
+      "actual": "All differences from final main are under .agents/skills/verify-openhands/. Both main and the maintainer PR merge are ancestors; original October12 records remain byte-for-byte unchanged."
     }
   ],
   "verification_counts": {
