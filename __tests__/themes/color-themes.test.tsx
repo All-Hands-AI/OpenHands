@@ -134,12 +134,34 @@ describe("color themes", () => {
           `${role} against the context meter raised surface`,
         ).toBeGreaterThanOrEqual(4.5);
       }
-      for (const role of ["--oh-feedback-warning", "--oh-status-error"]) {
+      for (const role of [
+        "--oh-foreground",
+        "--oh-feedback-warning",
+        "--oh-status-error",
+      ]) {
         expect(
           contrast(luminance(resolve(role)), contextMeterTrack),
           `${role} against the context meter track`,
         ).toBeGreaterThanOrEqual(3);
       }
+
+      // The composer popover outlines the full range even when its tertiary
+      // track sits close to the raised background. The button background paints
+      // under its translucent border; compare that composite with the popover.
+      const boundaryWeight =
+        Number.parseFloat(resolve("--oh-context-window-track-weight")) / 100;
+      const trackBackground = channels(resolve("--oh-color-tertiary"));
+      const popoverBoundary = channels(
+        resolve("--oh-context-window-foreground"),
+      ).map(
+        (channel, index) =>
+          channel * boundaryWeight +
+          trackBackground[index] * (1 - boundaryWeight),
+      );
+      expect(
+        contrast(luminance(popoverBoundary), contextMeterSurface),
+        "context range boundary against the composer popover raised surface",
+      ).toBeGreaterThanOrEqual(3);
 
       const warningInk = luminance(resolve("--oh-feedback-warning"));
       const trustBackground = channels(resolve("--oh-background"));
