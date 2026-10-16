@@ -49,6 +49,20 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v7
 
+      - name: Reject temporary artifacts in release PRs
+        if: >-
+          matrix.full_checks &&
+          github.event_name == 'pull_request' &&
+          startsWith(github.head_ref, 'release-please--')
+        run: |
+          set -euo pipefail
+          artifacts="$(git ls-tree -r --name-only HEAD -- .pr)"
+          if [ -n "$artifacts" ]; then
+            echo "::error::Release PR contains temporary .pr artifacts. Merge the cleanup PR and let release-please update this PR before merging."
+            printf '%s\n' "$artifacts"
+            exit 1
+          fi
+
       - name: Set up Node.js with npm cache
         uses: actions/setup-node@v7
         with:
