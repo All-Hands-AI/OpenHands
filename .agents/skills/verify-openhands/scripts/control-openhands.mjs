@@ -755,9 +755,7 @@ async function cmdLaunch({ flags }) {
     // <stateDir>/tmux is never created, so runs would share one server). It
     // lives under /tmp because a socket below the long run path would exceed
     // the 108-byte Unix socket limit.
-    // --unprepared-tmux deliberately leaves this short run-owned path absent
-    // so launcher directory creation can be observed rather than masked.
-    TMUX_TMPDIR: flags["unprepared-tmux"] ? tmuxPathFor(dir) : tmuxDirFor(dir),
+    TMUX_TMPDIR: tmuxDirFor(dir),
   });
   const envWarning = warnings.length ? warnings.join(" ") : undefined;
 
@@ -777,7 +775,6 @@ async function cmdLaunch({ flags }) {
 
   const run = {
     runId,
-    unpreparedTmux: Boolean(flags["unprepared-tmux"]),
     dir,
     repo: repoRoot,
     revision,
@@ -912,10 +909,7 @@ function spawnLauncher(run) {
   const env = launcherEnvFor(saved, process.env, PASS_ENV);
   env.LOCAL_BACKEND_API_KEY = readFileSync(join(priv, "session-key"), "utf8");
   env.OH_SECRET_KEY = readFileSync(join(priv, "encryption-key"), "utf8");
-  if (saved.TMUX_TMPDIR)
-    env.TMUX_TMPDIR = run.unpreparedTmux
-      ? tmuxPathFor(run.dir)
-      : tmuxDirFor(run.dir);
+  if (saved.TMUX_TMPDIR) env.TMUX_TMPDIR = tmuxDirFor(run.dir);
   const logFd = openSync(join(priv, "stack.log"), "a", 0o600);
   const child = spawn(process.execPath, run.launcherArgs, {
     cwd: repoRoot,
@@ -2305,17 +2299,6 @@ createInterface({ input: process.stdin }).on("line", (line) => {
 async function cmdFixture({ positional, flags }) {
   const run = loadRun(flags);
   const [kind] = positional;
-  if (kind === "tmux-directory") {
-    const env = JSON.parse(
-      readFileSync(join(run.dir, "private", "launcher-env.json"), "utf8"),
-    );
-    if (env.TMUX_TMPDIR !== tmuxPathFor(run.dir))
-      throw new CliError("This run has no recognized private tmux directory.", {
-        code: 3,
-      });
-    out({ ok: true, directoryExists: existsSync(env.TMUX_TMPDIR) });
-    return;
-  }
   const workspace = join(run.dir, "workspace");
   const name =
     flags.name && flags.name !== true
@@ -4592,7 +4575,7 @@ Examples:
   control-openhands browser screenshot --feature F14.create --name form
   control-openhands stop
 `,
-  launch: `control-openhands launch [--unprepared-tmux] [--public] [--new] [--print-run] [--port N | --port-from N] [--build auto|always|never] [--min-free-mb 2000]
+  launch: `control-openhands launch [--public] [--new] [--print-run] [--port N | --port-from N] [--build auto|always|never] [--min-free-mb 2000]
                          [--no-browser] [--timeout SEC] [--sdk-path DIR | --sdk-ref REF | --sdk-version V]
                          [--automation-path DIR | --automation-ref REF | --automation-version V] [--run-id ID] [--vscode]
 
@@ -4703,9 +4686,7 @@ Examples:
   control-openhands conversation start --prompt "Create hello.py that prints hi and run it" --wait --timeout 300
   control-openhands conversation events <id> --last 10
 `,
-  fixture: `control-openhands fixture tmux-directory   report whether the run-owned socket directory exists; launch --unprepared-tmux to let the real launcher create it.
-
-control-openhands fixture git-repo [--name qa-repo] [--remote https://github.com/qa-example/qa-repo.git]
+  fixture: `control-openhands fixture git-repo [--name qa-repo] [--remote https://github.com/qa-example/qa-repo.git]
         # git repo in <run>/workspace (README, src/calc.py, test); --remote only sets origin,
         # also on a repo that already exists (the output then carries existed and remoteChanged)
 control-openhands fixture git-remote [--name qa-remote]   # bare repo <run>/workspace/qa-remote.git to push to

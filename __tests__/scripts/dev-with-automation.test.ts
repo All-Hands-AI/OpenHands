@@ -412,7 +412,6 @@ describe("buildConfig", () => {
     expect(ports.size).toBe(4);
   });
 
-  // @spec TMX-001 — Create the local terminal socket directory
   it("creates separate default tmux directories before local backends start", async () => {
     const configs = [];
     for (let n = 0; n < 2; n += 1) {

@@ -524,7 +524,6 @@ async function buildConfig(args, env = process.env) {
 
     // Data directories (same as dev-safe.mjs)
     stateDir,
-    // @spec TMX-001 — Create the local terminal socket directory
     tmuxTmpDir: safeConfig.tmuxTmpDir,
     // Only bake the host-side workspace path when this launcher also starts
     // the agent-server that can read it. In frontend-only mode the backend may
@@ -610,7 +609,6 @@ function ensureDirectories(config) {
 
   if (config.launchAgentServer) {
     dirs.push(
-      // @spec TMX-001 — Create the local terminal socket directory
       config.tmuxTmpDir,
       join(config.stateDir, "dev_conversations"),
       join(config.stateDir, "workspaces"),
