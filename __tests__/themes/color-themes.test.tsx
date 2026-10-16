@@ -74,6 +74,25 @@ describe("color themes", () => {
           ),
           `--oh-link against ${surfaceRole}`,
         ).toBeGreaterThanOrEqual(4.5);
+
+        // Single GitHub alert panels tint each Markdown host surface at 10%.
+        // These are the shipped Tailwind v4 alert colors resolved to sRGB.
+        for (const [alert, color] of [
+          ["Note", "#2b7fff"],
+          ["Tip", "#00bc7d"],
+          ["Important", "#ad46ff"],
+          ["Warning", "#efb100"],
+          ["Caution", "#ff2056"],
+        ]) {
+          const host = channels(resolve(surfaceRole));
+          const alertSurface = channels(color).map(
+            (channel, index) => channel * 0.1 + host[index] * 0.9,
+          );
+          expect(
+            contrast(luminance(resolve("--oh-link")), luminance(alertSurface)),
+            `--oh-link against ${alert} tint over ${surfaceRole}`,
+          ).toBeGreaterThanOrEqual(4.5);
+        }
       }
 
       const statusSurfaces = ["--oh-color-base", "--oh-color-base-secondary"];
