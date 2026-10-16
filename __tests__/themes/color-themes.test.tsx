@@ -18,7 +18,7 @@ describe("color themes", () => {
   // @spec MCP-004 — Form feedback follows readable theme text roles
   // @spec WN-001 — Warning feedback also meets the small-text contrast contract
   it.each(Object.entries(COLOR_THEMES))(
-    "keeps feedback and keyboard focus readable on the %s theme surfaces",
+    "keeps feedback, links, and keyboard focus readable on the %s theme surfaces",
     (_key, theme) => {
       // Resolve the shipped palette, including stylesheet-owned defaults.
       const variables: Record<string, string> = {
@@ -57,6 +57,22 @@ describe("color themes", () => {
         expect(
           contrast(luminance(resolve(role)), modalSurface),
           `${role} against the modal surface`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+
+      // Markdown links appear in chat, user bubbles, and file/plan previews.
+      for (const surfaceRole of [
+        "--oh-color-base",
+        "--oh-color-base-secondary",
+        "--oh-surface-raised",
+        "--oh-color-tertiary",
+      ]) {
+        expect(
+          contrast(
+            luminance(resolve("--oh-link")),
+            luminance(resolve(surfaceRole)),
+          ),
+          `--oh-link against ${surfaceRole}`,
         ).toBeGreaterThanOrEqual(4.5);
       }
 
