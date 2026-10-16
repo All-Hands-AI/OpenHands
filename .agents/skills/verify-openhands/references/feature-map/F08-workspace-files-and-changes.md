@@ -20,7 +20,7 @@ Source: `src/components/features/conversation/conversation-tabs/`, `src/componen
 - `F08.tabs-menu`: the ellipsis menu at the end of the tab bar lists every tab. Choosing a row opens that tab and closes the menu, and so does clicking outside.
 - `F08.tabs-pin`: the pill on each menu row pins or unpins a tab. Unpinning the active tab selects another pinned one, and the choice persists across reloads.
 - `F08.drawer-resize`: dragging the chat/drawer divider resizes both panes (chat 30–80 %, default 50 %, stored in `desktop-layout-panel-width`).
-- `F08.vscode-link`: a `VSCode` button at the right of the tab bar opens the editor in a new window; it is hidden when the runtime has no editor. (#17660 removed it and #18048 restored it.)
+- `F08.vscode-link`: a `VSCode` button at the right of the tab bar opens the editor in a new window; it is hidden when the runtime has no editor.
 - `F08.archived-disabled`: on an archived conversation the toggle is disabled with the tooltip `Unavailable for Archives`.
 - `F08.phone-panel-page`: at 1024 px or narrower the toggle navigates to `/conversations/<id>/panel`, a full-screen page with a Back chevron, the same tab bar and the tab body.
 - `F08.panel-direct-url`: opening `/conversations/<id>/panel` directly renders the panel page at 1024 px or narrower, and Back returns to the chat; wider, the URL is replaced with `/conversations/<id>` and the drawer opens beside the chat.
@@ -29,6 +29,7 @@ Source: `src/components/features/conversation/conversation-tabs/`, `src/componen
 - `F08.files-empty-workspace`: a workspace with no files shows `No files in workspace`.
 - `F08.files-tree-toggle`: the list-tree button hides or shows the tree, and the choice persists per conversation. The tree is 224 px wide by default.
 - `F08.files-tree-resize`: dragging the divider between the tree and the preview resizes the tree (160–480 px, default 224) and the width persists across reloads (`files-tab-tree-width` in localStorage).
+- `F08.files-discovery-settings`: the Files toolbar's `File discovery` button opens a dialog (excluded directory patterns, maximum files, symbolic links) whose Save applies to every conversation on that workspace and backend; an excluded directory leaves the tree, Restore defaults brings the default patterns back, an invalid limit disables Save.
 - `F08.files-open-tabs`: the open-file strip, each tab with a close X. Closing the selected file selects a neighbour. Open files and the selection survive a reload and do not leak into other conversations.
 - `F08.files-no-selection`: with no file selected the pane reads `Select a file to view its contents` and the Rich/Plain toggle is absent.
 - `F08.files-rich-plain`: Rich highlights code, renders Markdown and shows HTML in an iframe sandboxed without scripts. Plain shows highlighted source. The mode persists across reloads.
@@ -54,6 +55,7 @@ Source: `src/components/features/conversation/conversation-tabs/`, `src/componen
 - Drawer tab bar (`tabs-pane-header`): `conversation-tab-files`, `conversation-tab-commits`. The ellipsis (`tabs-pane-header >> testid=ellipsis-button`) opens the menu with `conversation-tabs-menu-open-<tab>` and `conversation-tabs-menu-pin-<tab>`.
 - Direct URL `/conversations/<id>/panel` (the phone panel page at 1024 px or narrower; wider, it redirects to `/conversations/<id>` with the drawer open).
 - Overview (`conversation-overview-toggle`) → Changes row (`conversation-overview-diffs`) → Commits tab with Uncommitted expanded.
+- Files toolbar: `File discovery` (`file-discovery-settings`, left of `files-tab-refresh`) opens the File discovery dialog.
 - Workspace paths in agent messages written as inline code (`markdown-file-path-link`), plus path chips in file-editor tool cards (`file-path-chip`) → Files tab with that file selected.
 - There is no command-menu entry or keyboard shortcut for the drawer or these tabs.
 
@@ -79,6 +81,7 @@ Preconditions:
 - **Tree (`F08.files-tree`).** Run `control-openhands browser click 'testid=files-tab-refresh'` first (see Gotchas: files the agent made with bash are missing until a refresh). Then `control-openhands browser attr 'testid=file-tree-dir-src' aria-expanded` (`false`), `control-openhands browser click 'testid=file-tree-dir-src'` (now `true`) and `control-openhands browser click 'testid=file-tree-file-src/calc.py'`. `control-openhands browser text 'testid=file-content-viewer-highlighted'` shows the 4 lines `def add`…`return a - b`, and `testid=file-quick-row-item-src/calc.py` exists.
 - **Tree toggle (`F08.files-tree-toggle`).** Run `control-openhands browser bbox 'testid=files-tab-tree'` (width `224`). Then `control-openhands browser click 'testid=file-quick-row-tree-toggle'`, `control-openhands browser attr 'testid=file-quick-row-tree-toggle' aria-label` (`Show file tree`) and `control-openhands browser count 'testid=files-tab-tree'` (`0`). Reload and reopen the drawer: the count is still `0`. Click the toggle again to restore (count `1`).
 - **Tree resize (`F08.files-tree-resize`).** Run `control-openhands browser drag 'testid=files-tab-tree-resize-handle >> .cursor-ew-resize' --by 100,0`; `browser bbox 'testid=files-tab-tree'` is `324` wide and `control-openhands browser eval "localStorage.getItem('files-tab-tree-width')"` is `"324"`. `--by 500,0` clamps at `480`, `--by -600,0` at `160`, and the width survives `browser reload` plus the toggle. Restore with `--by 64,0` (`224`).
+- **File discovery (`F08.files-discovery-settings`).** With the drawer open on Files (open it with `right-panel-toggle` and click `testid=conversation-tab-files` only if Files is not already the active tab: clicking the active tab closes the drawer), run `control-openhands browser click 'testid=file-discovery-settings'` and `control-openhands browser snapshot 'role=dialog[name="File discovery"]'`: `Applies to this workspace on this backend, including other conversations using it.`, textbox `Excluded directories` (`.git`, `node_modules`, `.venv`, … `target`), spinbutton `Maximum files (0 for unlimited)` `2000`, checkbox `Include symbolic links to files`, buttons `Restore defaults`, `Cancel`, `Save`. With `D='role=dialog[name="File discovery"]'`: `control-openhands browser fill "$D >> role=spinbutton" '-1'` makes `control-openhands browser enabled "$D >> role=button[name=\"Save\"]"` `false`; `2000` makes it `true`. Run `control-openhands browser fill "$D >> role=textbox" "$(printf '.git\nnode_modules\nsrc')"` and click Save: the dialog closes, `control-openhands api GET /api/settings` holds `workspace_file_discovery` keyed by the workspace path with `excludedPatterns` `.git`, `node_modules`, `src`, and after `control-openhands browser click 'testid=files-tab-refresh'` `control-openhands browser count 'testid=file-tree-dir-src'` is `0`, also after `browser reload` and reopening the drawer (`browser screenshot --feature F08.files-discovery-settings --name dialog` before saving). Restore: reopen the dialog, click `Restore defaults` (the textbox returns to the default list; the dialog stays open), then `Save`; after Refresh the `file-tree-dir-src` count is `1`. `control-openhands browser press Escape` closes the dialog without saving. At phone width the dialog fits the viewport: on the 390 px `/panel` page (`control-openhands browser viewport phone`, `browser goto /conversations/<id>/panel`, `browser click 'testid=conversation-tab-files'`, then `file-discovery-settings`) `control-openhands browser bbox 'testid=file-discovery-settings-modal'` is about 351 px wide at x about 20 with `insideViewport` `true` (520 px at desktop), and `browser screenshot --feature F08.files-discovery-settings --name phone-fits` shows the title, the textbox and `Restore defaults`, `Cancel`, `Save` whole. Measure the `file-discovery-settings-modal` test id: `role=dialog` is the full-screen backdrop. Focus starts in the dialog (the Excluded directories textbox) and Tab cycles its fields and buttons without leaving it.
 - **Rich/Plain (`F08.files-rich-plain`).** Click `testid=file-tree-file-qa-notes.md`; `testid=file-content-viewer-markdown` exists. Click `testid=file-tree-file-qa-page.html`, then run `control-openhands browser attr 'testid=file-content-viewer-iframe' sandbox` (`allow-same-origin`) and `control-openhands browser eval "document.querySelector('[data-testid=file-content-viewer-iframe]').contentDocument.body.innerText"` (`QA page`). Run `control-openhands browser click 'testid=files-tab-content-mode-toggle-option-plain'`; `control-openhands browser text 'testid=files-tab-content >> testid=file-content-viewer-highlighted'` reads `1<h1>QA page</h1>`. After `browser reload` and reopening, `control-openhands browser attr 'testid=files-tab-content-mode-toggle-option-plain' aria-checked` is `true`. Switch back with `testid=files-tab-content-mode-toggle-option-rich`.
 - **Open in new window (`F08.files-open-new-window`).** With `qa-page.html` selected, run `control-openhands browser click 'testid=files-tab-open-in-new-window'` and `control-openhands browser tabs`. Page 1's URL is `/api/conversations/<id>/workspace/qa-page.html?v=<n>`. Run `control-openhands browser tab 1`, `control-openhands browser text 'body'` (`QA page`) and `control-openhands browser close-tab 1`.
 - **Open-file strip (`F08.files-open-tabs`).** With several files opened, run `control-openhands browser attr 'testid=file-quick-row-item-qa-page.html' title` (the path). Select `qa-notes.md` with `control-openhands browser click 'testid=file-quick-row-item-qa-notes.md'`, then close it with `control-openhands browser click 'testid=file-quick-row-close-qa-notes.md'`. `control-openhands browser eval "[...document.querySelectorAll('[data-testid^=file-quick-row-item-]')].filter(e=>e.getAttribute('aria-selected')==='true').map(e=>e.dataset.testid)"` names the neighbour. Run `browser reload`, reopen the drawer and `control-openhands browser text 'testid=file-quick-row'`: the same files remain. Opening a different conversation (see Commits empty state) shows no quick-row items: `browser text 'testid=file-quick-row'` is empty. `browser testids` omits strip tabs scrolled out of view; count them with `browser eval "[...document.querySelectorAll('[data-testid^=file-quick-row-item-]')].length"`.
@@ -99,6 +102,103 @@ Preconditions:
 - **Direct panel URL (`F08.panel-direct-url`).** At desktop run `control-openhands browser goto /conversations/<id>/panel`. The app replaces the URL with `/conversations/<id>` (the `goto` result already shows it; `control-openhands browser url` confirms), `control-openhands browser count 'testid=conversation-mobile-panel-back'` is `0`, `browser visible 'testid=chat-interface'` is `true` and `right-panel-toggle` `aria-pressed` is `true` (the drawer opens beside the chat; `browser screenshot --feature F08.panel-direct-url --name desktop-redirect`). Then run `control-openhands browser viewport phone` and the same `goto`: the URL keeps `/panel`, the `conversation-mobile-panel-back` count is `1` and `chat-interface` is not visible. `control-openhands browser click 'testid=conversation-mobile-panel-back' --expect-url '/conversations/[^/]+$'` returns to the chat. Return with `control-openhands browser viewport desktop`.
 - **Errors.** After each group run `control-openhands browser errors --app-only`. The Monaco disposal error above belongs to this family. 404s on `/api/llm/balance` and `.agents_tmp/` downloads come from the Usage and Planner tabs (F27).
 
+- **Rich fenced code (`F08.files-rich-plain`).** Arrange a Markdown file in the selected workspace containing a heading and a fenced Python `print("qa")` block. Open it from Files in Rich mode and take `browser screenshot --feature F08.files-rich-plain --name fenced-code`. Known failure (reproduced 2026-10-12, [#16802](https://github.com/OpenHands/OpenHands/issues/16802)): the code renders in nested dark/gray containers with repeated padding. This is a layout-only observation; the measured `pre` and prose ancestor had zero border width, so it is not a claim of visible CSS borders.
+- **Git filename with a space (`F08.uncommitted-changes`).** In a disposable workspace Git fixture, create and commit `my notes.md`, then modify it (plain shell Git/file commands are fixture setup, not UI proof). Open its empty Local conversation's Commits tab and read `browser network --filter '/git/'`. Expected: the modified path and other changes stay listed. Known failure (reproduced 2026-10-12, [OpenHands/software-agent-sdk#5642](https://github.com/OpenHands/software-agent-sdk/issues/5642)): the scoped changes call returns 400 and hides the Uncommitted changes. Only the space-name case was tested; the same issue's non-ASCII and rename cases still require their own checks.
+- **File listing above one MiB (`F08.files-tree`).** In a disposable fixture, arrange 1800 tiny files beneath three 220-character directory segments so the sorted relative-path listing exceeds one MiB while remaining below the 2000-file cap. Keep a normal tracked README at the root. Open Files, click `testid=files-tab-refresh`, then count `role=button[name="README.md"][exact]` and inspect the tree. Known failure (reproduced 2026-10-12, [OpenHands/software-agent-sdk#5638](https://github.com/OpenHands/software-agent-sdk/issues/5638)): the README disappears and a spurious partial-path folder appears because the command API returns the tail output chunk only. The greater-than-100-chunk/null-exit case was not driven.
+
+- **Subdirectory Git paths (`F08.uncommitted-changes`, `F08.diff-view-modes`).** Expected: a workspace at `repo/src` lists changes beneath that folder relative to it, and its diffs open. Known failure (reproduced 2026-10-16, SDK 1.55.0, [OpenHands/software-agent-sdk#5843](https://github.com/OpenHands/software-agent-sdk/issues/5843)): tracked paths retain the repository prefix while untracked paths are relative to `src`; opening displayed `src/app.py` requests `repo/src/src/app.py` and returns400. The ordinary repository-root control lists correct paths. The recipe creates only disposable, idle offline conversations.
+  ```sh known-bug F08.diff-view-modes subdirectory-paths
+  control-openhands browser viewport desktop
+  QA_ID="$(python3 - <<'PY'
+  import json, os, pathlib, subprocess, tempfile
+  base = pathlib.Path(os.environ["OH_VERIFY_RUN"]) / "workspace"
+  base.mkdir(exist_ok=True)
+  fixture = pathlib.Path(tempfile.mkdtemp(prefix="qa-surface-", dir=base))
+  llm = {"model":"openai/gpt-4o", "base_url":"http://127.0.0.1:1/v1", "api_key":"qa-not-real", "num_retries":0, "timeout":2}
+  def create(workspace, parent=None, tags=None):
+      payload = {"agent":{"kind":"Agent", "llm":llm, "tools":[]}, "workspace":{"working_dir":str(workspace)}, "autotitle":False}
+      if parent: payload["parent_conversation_id"] = parent
+      if tags: payload["tags"] = tags
+      request = fixture / "request.json"
+      request.write_text(json.dumps(payload))
+      result = subprocess.run(["control-openhands", "api", "POST", "/api/conversations", "--write", "--data", "@"+str(request), "--pick", "id"], check=True, capture_output=True, text=True)
+      return json.loads(result.stdout)["value"]
+  def git(directory, *args):
+      subprocess.run(["git", "-C", str(directory), *args], check=True, capture_output=True)
+  repo = fixture / "repo"
+  (repo / "src").mkdir(parents=True)
+  git(repo, "init", "-q", "-b", "main")
+  (repo / "README.md").write_text("root before\n")
+  (repo / "src/app.py").write_text("x = 1\n")
+  git(repo, "add", ".")
+  git(repo, "-c", "user.name=QA", "-c", "user.email=qa@example.invalid", "commit", "-qm", "Owned fixture")
+  (repo / "README.md").write_text("root after\n")
+  (repo / "src/app.py").write_text("x = 2\n")
+  (repo / "src/new.py").write_text("new\n")
+  print(create(repo / "src"))
+  PY
+  )"
+  control-openhands browser goto "/conversations/$QA_ID"
+  control-openhands browser click 'testid=right-panel-toggle'
+  control-openhands browser click 'testid=conversation-tab-commits'
+  control-openhands browser wait-text Uncommitted --timeout 10000
+  control-openhands browser click 'testid=uncommitted-changes-row-toggle'
+  control-openhands browser network --clear
+  control-openhands browser click 'testid=file-diff-viewer-outer >> has-text=src/app.py >> testid=collapse' --observe 'testid=uncommitted-changes-row-content' --observe-ms 1000
+  control-openhands browser screenshot --feature F08.diff-view-modes --name subdir-mixed-paths
+  control-openhands assert --field recent.0.status --equals 200 --bug-shows 400 -- browser network --filter '/git/diff'  # bug
+  ```
+
+- **Plain parent containing a repository (`F08.uncommitted-changes`).** Expected: a plain workspace holding one dirty repository exposes that repository's changes. Known failure (reproduced 2026-10-16, pinned SDK 1.55.0, [OpenHands/software-agent-sdk#5641](https://github.com/OpenHands/software-agent-sdk/issues/5641)): the changes request returns200 with no changes and Commits reads `No commits yet` although the child repository is dirty. The upstream fix is closed but not included in the current pin. The recipe removes only its own verified empty parent `.git`; never remove a user's repository.
+  ```sh known-bug F08.uncommitted-changes nested-repository
+  control-openhands browser viewport desktop
+  QA_ID="$(python3 - <<'PY'
+  import json, os, pathlib, subprocess, tempfile
+  base = pathlib.Path(os.environ["OH_VERIFY_RUN"]) / "workspace"
+  base.mkdir(exist_ok=True)
+  fixture = pathlib.Path(tempfile.mkdtemp(prefix="qa-surface-", dir=base))
+  llm = {"model":"openai/gpt-4o", "base_url":"http://127.0.0.1:1/v1", "api_key":"qa-not-real", "num_retries":0, "timeout":2}
+  def create(workspace, parent=None, tags=None):
+      payload = {"agent":{"kind":"Agent", "llm":llm, "tools":[]}, "workspace":{"working_dir":str(workspace)}, "autotitle":False}
+      if parent: payload["parent_conversation_id"] = parent
+      if tags: payload["tags"] = tags
+      request = fixture / "request.json"
+      request.write_text(json.dumps(payload))
+      result = subprocess.run(["control-openhands", "api", "POST", "/api/conversations", "--write", "--data", "@"+str(request), "--pick", "id"], check=True, capture_output=True, text=True)
+      return json.loads(result.stdout)["value"]
+  def git(directory, *args):
+      subprocess.run(["git", "-C", str(directory), *args], check=True, capture_output=True)
+  import shutil
+  parent = fixture / "parent"
+  child = parent / "proj"
+  child.mkdir(parents=True)
+  git(child, "init", "-q", "-b", "main")
+  (child / "README.md").write_text("before\n")
+  git(child, "add", ".")
+  git(child, "-c", "user.name=QA", "-c", "user.email=qa@example.invalid", "commit", "-qm", "Owned nested fixture")
+  (child / "README.md").write_text("after\n")
+  (child / "notes.txt").write_text("untracked\n")
+  conversation_id = create(parent)
+  empty_git = parent / ".git"
+  if empty_git.exists():
+      assert empty_git.is_dir() and not empty_git.is_symlink()
+      top = pathlib.Path(subprocess.check_output(["git", "-C", str(parent), "rev-parse", "--show-toplevel"], text=True).strip())
+      assert top.resolve() == parent.resolve()
+      assert not subprocess.check_output(["git", "-C", str(parent), "ls-files"], text=True).strip()
+      shutil.rmtree(empty_git)
+  print(conversation_id)
+  PY
+  )"
+  control-openhands browser goto "/conversations/$QA_ID"
+  control-openhands browser click 'testid=right-panel-toggle'
+  control-openhands browser click 'testid=conversation-tab-commits'
+  control-openhands browser wait '#conversation-tab-panel main'
+  control-openhands browser wait 'testid=commits-tab-status' --state detached --timeout 10000
+  control-openhands assert --field recent.0.status --equals 200 -- browser network --filter '/git/changes'
+  control-openhands browser screenshot --feature F08.uncommitted-changes --name nested-repository
+  control-openhands assert --field count --equals 1 --bug-shows 0 -- browser count 'testid=uncommitted-changes-row'  # bug
+  ```
+
 ## Gotchas
 
 - When the drawer is closed, its tabs stay mounted at width 0. `browser count 'testid=files-tab'` is `1` even then, so assert with `browser visible` or `right-panel-toggle` `aria-pressed`.
@@ -116,3 +216,18 @@ Preconditions:
 - At phone width, chat path links (and the agent's `canvas_ui_control` tab and file requests, through `src/services/canvas-ui.ts`) navigate to `/conversations/<id>/panel` (#18045); at desktop width they open the side drawer and the URL does not change. A `/panel` URL above 1024 px redirects to `/conversations/<id>`, so a bullet that leaves the phone viewport on `/panel` ends on the chat route.
 - If the agent's terminal resets mid-command ("terminal session was reset", for example after a `restart`), the agent reruns the command. Check the workspace with `git status` through a second prompt rather than trusting the first observation. Runs no longer share a tmux server (OpenHands/OpenHands#17946).
 - Known issue: [#17567](https://github.com/OpenHands/OpenHands/issues/17567) (Monaco disposed-model page error on diff unmount; it also fires on collapse and on a diff→old switch).
+- Known issue [#18108](https://github.com/OpenHands/OpenHands/issues/18108) (`F08.files-tree`): Files tab shows "No files in workspace" on cloud when the agent writes outside /workspace/project. Live prerequisite: An authenticated Enterprise Cloud sandbox, no repository selected, with files outside its default working directory.
+- Known issue [#17773](https://github.com/OpenHands/OpenHands/issues/17773) (`F08.files-tree`): Files tab always shows "No files in workspace" on Windows local backend. Live prerequisite: A Windows local Agent Server using cmd.exe; this run is macOS.
+- Known issue [#16949](https://github.com/OpenHands/OpenHands/issues/16949) (`F08.files-refresh`): Keep Files and Changes views source-driven after refresh. Live prerequisite: An authenticated Cloud repository for the refresh-query mismatch, or real file-editor observations causing an in-place M-to-D Git refetch.
+- Known issue [#16716](https://github.com/OpenHands/OpenHands/issues/16716) (`F08.uncommitted-changes`): Diff view is regularly out of sync. Live prerequisite: The original simultaneous-agent/shared-repository state or a deterministic stale-diff trigger; the report only suggests that timing.
+- Known issue [#16689](https://github.com/OpenHands/OpenHands/issues/16689) (`F08.files-load-error`): When `workspace/` paths throw a 401, call the workspace-session endpoint. Live prerequisite: The original fresh-VM URL, auth/cookie state and exact request sequence; the report says the trigger is unclear.
+- Known issue [#16454](https://github.com/OpenHands/OpenHands/issues/16454) (`F08.uncommitted-changes`): Diff list is showing duplicate entries. Live prerequisite: The original Git changes response and update sequence producing duplicate rows; the report provides no trigger.
+- Known issue [#16331](https://github.com/OpenHands/OpenHands/issues/16331) (`F08.files-tree`): file preview panel stops working during streaming. Live prerequisite: A real streaming/tool-running conversation while selecting a second workspace file.
+- Known issue [#15692](https://github.com/OpenHands/OpenHands/issues/15692) (`F08.uncommitted-changes`): Diff still shows after agent has committed and pushed. Live prerequisite: A real agent commit/push terminal observation while the diff remains mounted, plus a disposable Git remote.
+- Known issue [#15567](https://github.com/OpenHands/OpenHands/issues/15567) (`F08.files-load-error`): Workspace file preview returns 401 Unauthorized on non-HTTPS non-loopback hosts. Live prerequisite: A plain-HTTP non-loopback deployment and browser accessing that origin, with workspace-cookie observation.
+- Known issue [#15519](https://github.com/OpenHands/OpenHands/issues/15519) (`F08.files-load-error`): "files" tab in Files side panel throws 401 Unauthorized. Live prerequisite: The reported Linux Docker deployment/auth topology; this isolated run uses the macOS source launcher.
+- Known issue [#15501](https://github.com/OpenHands/OpenHands/issues/15501) (`F08.files-rich-plain`): Generated-page JavaScript was blocked by an iframe sandbox. Files Rich intentionally disables scripts; the report does not identify whether Files or Browser was used. Live prerequisite: The original preview panel and file URL or minimal page identifying the intended surface; Files Rich deliberately blocks scripts, while Browser is separate.
+- Known issue [OpenHands/software-agent-sdk#4562](https://github.com/OpenHands/software-agent-sdk/issues/4562) (`F08.files-load-error`): Plain-HTTP non-loopback workspace previews can return401 after the browser rejects the workspace-session cookie. Live prerequisite: A plain-HTTP non-loopback same-origin browser deployment with real workspace-cookie observation.
+- Known issue [#16871](https://github.com/OpenHands/OpenHands/issues/16871) (`F08.vscode-link`): the shared `transformVSCodeUrl` still accepts arbitrary schemes, and the current Cloud `use-unified-vscode-url.ts` branch passes sandbox `exposed_urls` editor values through it without the Local origin gate. Live prerequisite: an authorized Cloud account/sandbox whose editor `exposed_urls` value can be controlled for safe URL-scheme rejection checks. Local inspection on 2026-10-12 at `fa1f724ab573` found no Download via VS Code action in the real card menu: its only production caller does not supply the required `showOptions` prop. The current drawer opens with `noopener,noreferrer`. Neither the old opener exploit nor the remaining Cloud scheme scenario was reproduced. Evidence: `backfill-18309-surface-rechecks/F04.download/vscode-card-action-absent-16871.png` and its ARIA snapshot. Keep this linked to the live editor-link consumer; do not infer the whole issue resolved from the removed card action.
+- Known issue [OpenHands/software-agent-sdk#5845](https://github.com/OpenHands/software-agent-sdk/issues/5845) (`F08.vscode-link`): reserved characters in the workspace path can split the editor URL's unencoded `folder` parameter and open the wrong folder. Live prerequisite: a supported origin serving a genuinely enabled/running editor and an owned conversation in a path containing `&` or `#`. A direct URL-constructor call does not exercise the link; Cloud `exposed_urls` takes another path.
+- Known issue [OpenHands/software-agent-sdk#5784](https://github.com/OpenHands/software-agent-sdk/issues/5784) (`F08.files-rich-plain`, `F08.files-fallbacks`, `F08.files-open-new-window`): a path-prefixed Agent Server can set a workspace cookie whose Path omits the prefix, leaving HTML/image/file previews unauthorized. Live prerequisite: an authenticated path-prefixed owned Local server with `OH_WEB_URL` and a real cookie-authenticated preview; the ordinary root-path launch cannot exercise that cookie Path.

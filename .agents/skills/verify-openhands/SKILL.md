@@ -26,7 +26,7 @@ together:
    lists every user-facing behavior with stable IDs, user entry points, exact
    `control-openhands` recipes, observable results and gotchas.
 3. **Evidence**: screenshots, ARIA snapshots and a pass/fail/blocked/not-run
-   ledger that survive cleanup.
+   ledger (plus xfail/xpass for known bugs) that survive cleanup.
 
 Neither this skill nor the map authorizes external writes, paid models beyond
 the budget you were given, or product fixes the user did not ask for.
@@ -121,9 +121,22 @@ control-openhands stop                         # stops only this run; evidence s
   `browser reset` (fresh browser profile: first run again), `service stop
   automation|agent-server` (backend-down UI), `restart` (same state after a
   backend restart: persistence and reconnection) and `restart --rotate-key`
-  (stale session key). `restart` keeps the browser on its page. While a service
+  (stale session key). `restart` keeps the browser on its page.
+  `browser network-state offline|online|status` disconnects or reconnects the
+  browser context without changing backend state or intercepting requests;
+  restore `online` before doctor or teardown.
+  `browser events --kinds websocket-created,websocket-open,websocket-close,websocket-error --last 100`
+  observes real subscriptions: redacted socket/page URLs preserve numeric
+  `after_seq`, with event timestamps and frame counts. No frame bodies or
+  headers are recorded. `websocket-created` is an attempt; `websocket-open`
+  marks the first observed frame, which proves communication rather than an
+  exact handshake time. Counts are snapshots at these lifecycle entries.
+  Navigate or reload after the daemon starts to capture fresh subscriptions;
+  healthy lifecycle entries are omitted from `browser errors`. While a service
   is stopped, a reload replaces the page with the backend-unavailable screen, so
-  drive backend-down states on the page that was already loaded. `browser
+  drive backend-down states on the page that was already loaded.
+  `service pause automation` and `service resume automation` queue and release
+  real requests for in-flight race checks. Resume before stopping the run. `browser
   network` (with `--bodies`, what the page sent, credentials redacted),
   `browser toasts` and `browser media` observe requests by origin, toasts and
   sound without changing anything; `click --observe SEL` and `scroll
@@ -186,6 +199,19 @@ prerequisite; never substitute a mock and call it a pass.
   `src/` paths no family owns (a map gap) and non-user-facing paths. Drive every entry point those features list at
   desktop and phone viewports, and report with
   [the report contract](references/report.md).
+- **Verify a fix for a known bug** (an open PR or a merged commit that claims
+  to fix a bug the map records): launch the baseline and the fix as two runs
+  (`launch --new` from each worktree, same backend pins), then run the note's
+  known-bug block twice on each with this checkout's CLI:
+  `control-openhands bug run <ID> --attempts 2 --label baseline --run $BASE_RUN`
+  must report `xfail` both times, and `--label fix --run $FIX_RUN` `xpass` both
+  times. `control-openhands bug proof <ID> --baseline $BASE_RUN --baseline-label
+  baseline --fix $FIX_RUN --fix-label fix` gives the verdict: `verified`,
+  `not-fixed`, or `inconclusive`. A baseline that does not reproduce twice is
+  inconclusive, never "fixed". When the note has no block yet, write one first
+  ([mapping.md](references/mapping.md)) and prove it reproduces on the
+  baseline. Every attempt runs the same recipe, viewport and fixtures, and
+  screenshots or recordings stay part of the proof.
 - **Run the daily pass**: follow [references/daily.md](references/daily.md):
   static checks (`map check`, `map coverage`, `map testids`), the changed
   families since the `Maintenance baseline` line of the map index
@@ -211,7 +237,18 @@ prerequisite; never substitute a mock and call it a pass.
 - **Product bug**: the app is broken. Keep the evidence, search existing issues,
   report it separately (right repository: Canvas UI here, Agent Server/SDK in
   `OpenHands/software-agent-sdk`, scheduling/dispatch in `OpenHands/automation`).
-  Never rewrite an expected result to bless broken behavior.
+  Never rewrite an expected result to bless broken behavior. Then record it
+  in the map, which should know every open bug: a `Known failure (reproduced
+  <date>, #<issue>)` note on the bullet that reproduces it, next to the
+  expected result, or a `Known issue #<issue>` Gotchas entry when no recipe can
+  drive it. Make the note executable with a `known-bug` block where a recipe
+  can drive it, so `control-openhands bug run <ID>` reports an expected failure
+  (`xfail`) and flags it (`xpass`) when the symptom stops reproducing. The
+  [existing-bug backfill](references/backfills/2026-10-12-open-bugs.md) records its
+  frozen inventory; the [main refresh](references/backfills/2026-10-16-main-refresh.md)
+  reconciles later fixes and intake; [bug-backfill.md](references/bug-backfill.md) defines outcomes
+  and label reconciliation. Passes re-drive these notes once the issue closes.
+  `ready-for-dev` prioritizes checks without excluding older actionable reports.
 - **Blocked**: name the missing prerequisite (account, entitlement, OS, binary)
   and the route you attempted. Unreachable is never a pass.
 

@@ -65,6 +65,10 @@ const SOLARIZED_LIGHT_TOKENS: Partial<
   "--oh-color-base-secondary": "#EEE8D5",
   "--oh-color-danger": "#DC322F",
   "--oh-color-success": "#859900",
+  "--oh-feedback-error": "#BB2A26",
+  "--oh-feedback-success": "#5D6A00",
+  // @spec WN-001 — Darker warning text preserves contrast on Solarized surfaces
+  "--oh-feedback-warning": "#735400",
   "--oh-color-basic": "#839496",
   "--oh-color-tertiary": "#E6DFCC",
   "--oh-color-tertiary-light": "#657B83",
@@ -110,7 +114,8 @@ const SOLARIZED_LIGHT_TOKENS: Partial<
   "--oh-border-input": "#C8C1AE",
   "--oh-border-subtle": "#E6DFCC",
   "--oh-separator": "rgba(88, 110, 117, 0.22)",
-  "--oh-focus": "#268BD2",
+  // Focus remains visible on neutral and hovered surfaces.
+  "--oh-focus": "#227FBE",
   "--oh-status-success": "#859900",
   "--oh-status-error": "#DC322F",
   "--oh-link": "#268BD2",

@@ -1,13 +1,198 @@
 import { act, render, screen } from "@testing-library/react";
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it } from "vitest";
 import { AgentServerUIRoot } from "#/components/providers/agent-server-ui-root";
+import { AGENT_SERVER_UI_DEFAULT_CSS_VARIABLES } from "#/styles/agent-server-ui-style-scope";
 import {
   AVAILABLE_COLOR_THEMES,
   COLOR_THEMES,
   applyColorTheme,
 } from "#/themes/color-themes";
 
+const defaultWarningColor = readFileSync(
+  `${process.cwd()}/src/tailwind.css`,
+  "utf-8",
+).match(/^\s*--oh-warning:\s*([^;]+);/m)?.[1];
+
 describe("color themes", () => {
+  // @spec MCP-004 — Form feedback follows readable theme text roles
+  // @spec WN-001 — Warning feedback also meets the small-text contrast contract
+  it.each(Object.entries(COLOR_THEMES))(
+    "keeps feedback and keyboard focus readable on the %s theme surfaces",
+    (_key, theme) => {
+      // Resolve the shipped palette, including stylesheet-owned defaults.
+      const variables: Record<string, string> = {
+        ...AGENT_SERVER_UI_DEFAULT_CSS_VARIABLES,
+        ...theme.scale,
+        ...theme.tokens,
+      };
+      // Brand defaults stay CSS-owned so runtime theme overrides can win.
+      if (defaultWarningColor) {
+        variables["--oh-warning"] ??= defaultWarningColor;
+      }
+      const resolve = (name: string): string => {
+        const value = variables[name];
+        expect(value, `Missing theme token ${name}`).toBeDefined();
+        const reference = /^var\((--[\w-]+)\)$/.exec(value);
+        return reference ? resolve(reference[1]) : value;
+      };
+      const channels = (hex: string): number[] =>
+        [1, 3, 5].map(
+          (offset) => Number.parseInt(hex.slice(offset, offset + 2), 16) / 255,
+        );
+      const luminance = (color: string | number[]): number => {
+        const values = typeof color === "string" ? channels(color) : color;
+        const linear = values.map((channel) =>
+          channel <= 0.04045
+            ? channel / 12.92
+            : ((channel + 0.055) / 1.055) ** 2.4,
+        );
+        return linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
+      };
+      const contrast = (ink: number, surface: number) =>
+        (Math.max(ink, surface) + 0.05) / (Math.min(ink, surface) + 0.05);
+      const modalSurface = luminance(resolve("--oh-color-base-secondary"));
+
+      for (const role of ["--oh-feedback-error", "--oh-feedback-success"]) {
+        expect(
+          contrast(luminance(resolve(role)), modalSurface),
+          `${role} against the modal surface`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+
+      const statusSurfaces = ["--oh-color-base", "--oh-color-base-secondary"];
+      const statusTextRoles = [
+        ["--oh-feedback-success", "--oh-status-success"],
+        ["--oh-feedback-error", "--oh-status-error"],
+      ] as const;
+      for (const surfaceToken of statusSurfaces) {
+        const base = channels(resolve(surfaceToken));
+        for (const [textRole, statusRole] of statusTextRoles) {
+          const tint = channels(resolve(statusRole)).map(
+            (channel, index) => channel * 0.05 + base[index] * 0.95,
+          );
+          expect(
+            contrast(luminance(resolve(textRole)), luminance(tint)),
+            `${textRole} against a 5% ${statusRole} tint over ${surfaceToken}`,
+          ).toBeGreaterThanOrEqual(4.5);
+        }
+      }
+      expect(
+        contrast(
+          luminance(resolve("--oh-contrast")),
+          luminance(resolve("--oh-surface-raised")),
+        ),
+        "--oh-contrast against the configured credential banner surface",
+      ).toBeGreaterThanOrEqual(4.5);
+
+      // Focus contrast includes each neutral control surface.
+      for (const surfaceRole of [
+        "--oh-color-base",
+        "--oh-color-base-secondary",
+        "--oh-surface-raised",
+        "--oh-interactive-hover",
+      ]) {
+        expect(
+          contrast(
+            luminance(resolve("--oh-focus")),
+            luminance(resolve(surfaceRole)),
+          ),
+          `--oh-focus against ${surfaceRole}`,
+        ).toBeGreaterThanOrEqual(3);
+      }
+
+      // @spec FF-001 — Theme-aware validation and load errors
+      // The automation setup draft bar's error pill: Tailwind red-500
+      // (#fb2c36) at 5% over the theme surface.
+      const surface = channels(resolve("--oh-surface"));
+      const errorPillSurface = channels("#fb2c36").map(
+        (channel, index) => channel * 0.05 + surface[index] * 0.95,
+      );
+      expect(
+        contrast(
+          luminance(resolve("--oh-feedback-error")),
+          luminance(errorPillSurface),
+        ),
+        "--oh-feedback-error against the draft bar error pill",
+      ).toBeGreaterThanOrEqual(4.5);
+
+      // @spec HL-001 — Home mode labels stay readable on the hover pill
+      expect(
+        contrast(
+          luminance(resolve("--oh-contrast")),
+          luminance(resolve("--oh-interactive-hover")),
+        ),
+        "--oh-contrast against the Home mode toggle pill",
+      ).toBeGreaterThanOrEqual(4.5);
+
+      // Context meter text and fills preserve contrast in each palette.
+      const contextMeterSurface = luminance(resolve("--oh-surface-raised"));
+      const contextMeterTrack = luminance(resolve("--oh-color-tertiary"));
+      for (const role of ["--oh-feedback-error", "--oh-feedback-warning"]) {
+        expect(
+          contrast(luminance(resolve(role)), contextMeterSurface),
+          `${role} against the context meter raised surface`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+      for (const role of [
+        "--oh-foreground",
+        "--oh-feedback-warning",
+        "--oh-status-error",
+      ]) {
+        expect(
+          contrast(luminance(resolve(role)), contextMeterTrack),
+          `${role} against the context meter track`,
+        ).toBeGreaterThanOrEqual(3);
+      }
+
+      // The composer popover outlines the full range even when its tertiary
+      // track sits close to the raised background. The button background paints
+      // under its translucent border; compare that composite with the popover.
+      const boundaryWeight =
+        Number.parseFloat(resolve("--oh-context-window-track-weight")) / 100;
+      const trackBackground = channels(resolve("--oh-color-tertiary"));
+      const popoverBoundary = channels(
+        resolve("--oh-context-window-foreground"),
+      ).map(
+        (channel, index) =>
+          channel * boundaryWeight +
+          trackBackground[index] * (1 - boundaryWeight),
+      );
+      expect(
+        contrast(luminance(popoverBoundary), contextMeterSurface),
+        "context range boundary against the composer popover raised surface",
+      ).toBeGreaterThanOrEqual(3);
+
+      const warningInk = luminance(resolve("--oh-feedback-warning"));
+      const trustBackground = channels(resolve("--oh-background"));
+      const warningTint = channels(resolve("--oh-warning"));
+      const tintedTrustSurface = warningTint.map(
+        (channel, index) => channel * 0.05 + trustBackground[index] * 0.95,
+      );
+      const warningSurfaces: Array<[string, number]> = [
+        ["ACP credential surface", modalSurface],
+        ["Home raised banner", luminance(resolve("--oh-surface-raised"))],
+        ["Apps trust notice tint", luminance(tintedTrustSurface)],
+      ];
+
+      for (const [surfaceName, surface] of warningSurfaces) {
+        expect(
+          contrast(warningInk, surface),
+          `--oh-feedback-warning against ${surfaceName}`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+
+      // @spec TN-001 — Toast text stays readable on the toast surface
+      expect(
+        contrast(
+          luminance(resolve("--oh-contrast")),
+          luminance(resolve("--oh-color-tertiary")),
+        ),
+        "--oh-contrast against the toast surface",
+      ).toBeGreaterThanOrEqual(4.5);
+    },
+  );
+
   afterEach(() => {
     document
       .querySelectorAll("style[data-theme-test]")
@@ -29,6 +214,31 @@ describe("color themes", () => {
     const style = getComputedStyle(screen.getByTestId("consumer-scope"));
     expect(style.getPropertyValue("--oh-color-primary")).toBe("#123456");
     expect(style.getPropertyValue("--oh-radius")).toBe("12px");
+  });
+  // @spec MCP-004 — Form feedback follows readable theme text roles
+  // @spec WN-001 — Warning feedback can be overridden by an embedding host
+  it("preserves host feedback colors when the selected palette changes", () => {
+    const overrides = {
+      "--oh-feedback-error": "#672727",
+      "--oh-feedback-success": "#24542d",
+      "--oh-feedback-warning": "#755300",
+    } as const;
+    render(
+      <AgentServerUIRoot
+        data-testid="feedback-scope"
+        styleOverrides={overrides}
+      >
+        Canvas
+      </AgentServerUIRoot>,
+    );
+
+    act(() => applyColorTheme("light-plus"));
+
+    const style = getComputedStyle(screen.getByTestId("feedback-scope"));
+    for (const [token, value] of Object.entries(overrides)) {
+      expect(style.getPropertyValue(token)).toBe(value);
+    }
+    document.getElementById("oh-color-theme-override")?.remove();
   });
   it("includes OpenHands-Neo as a neutral-based theme with white button tokens", () => {
     const neo = COLOR_THEMES["openhands-neo"];

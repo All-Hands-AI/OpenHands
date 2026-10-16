@@ -660,8 +660,11 @@ export function SetupDialog({ entry, onClose }: SetupDialogProps) {
               )}
               {canSelectAgentProfile && (
                 <AutomationAgentProfileSelector
+                  // The form stores "no profile" as "", but the selector only
+                  // reads null/undefined as Default; "" would render it blank.
                   value={
-                    typeof values.agent_profile_id === "string"
+                    typeof values.agent_profile_id === "string" &&
+                    values.agent_profile_id !== ""
                       ? values.agent_profile_id
                       : null
                   }
@@ -711,7 +714,7 @@ export function SetupDialog({ entry, onClose }: SetupDialogProps) {
               key={message}
               role="alert"
               data-testid="setup-form-error"
-              className="pt-4 text-sm text-red-400"
+              className="pt-4 text-sm text-feedback-error"
             >
               {message}
             </p>

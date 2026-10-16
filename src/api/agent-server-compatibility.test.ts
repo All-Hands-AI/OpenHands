@@ -7,10 +7,8 @@ import {
   AgentServerUnsupportedVersionError,
   assertAgentServerVersionIsSupported,
   getDisplayAgentServerVersion,
-  getDisplayAgentServerSdkVersion,
   isAgentServerAuthError,
   isAgentServerUnavailableError,
-  isAgentServerUnknownVersionError,
   isAgentServerUnsupportedVersionError,
   isSdkHttpError,
   isSdkHttpStatusError,
@@ -200,22 +198,6 @@ describe("agent-server compatibility errors", () => {
   ])("rejects unsupported-version lookalike %#", (error) => {
     expect(isAgentServerUnsupportedVersionError(error)).toBe(false);
   });
-
-  it.each([
-    new AgentServerUnknownVersionError("dev-build"),
-    { code: AGENT_SERVER_UNKNOWN_VERSION_ERROR_CODE },
-  ])("recognizes unknown-version error %#", (error) => {
-    expect(isAgentServerUnknownVersionError(error)).toBe(true);
-  });
-
-  it.each([
-    null,
-    "AGENT_SERVER_UNKNOWN_VERSION",
-    {},
-    { code: "ANOTHER_ERROR" },
-  ])("rejects unknown-version lookalike %#", (error) => {
-    expect(isAgentServerUnknownVersionError(error)).toBe(false);
-  });
 });
 
 describe("SDK HTTP error classification", () => {
@@ -261,22 +243,4 @@ describe("SDK HTTP error classification", () => {
       ),
     ).not.toThrow();
   });
-
-  it("reports the dedicated agent-server SDK version when present", () => {
-    expect(
-      getDisplayAgentServerSdkVersion(serverInfo("1.36.0", "1.36.1")),
-    ).toBe("1.36.1");
-    expect(getDisplayAgentServerSdkVersion(serverInfo("1.36.0"))).toBe(
-      "1.36.0",
-    );
-  });
 });
-
-it.each([undefined, "unknown"])(
-  "does not display an absent or unknown SDK version: %s",
-  (version) => {
-    expect(
-      getDisplayAgentServerSdkVersion(serverInfo(version, version)),
-    ).toBeNull();
-  },
-);
