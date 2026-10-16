@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, test, vi } from "vitest";
 import {
   fireEvent,
+  cleanup,
   render,
   screen,
   waitFor,
@@ -788,6 +789,7 @@ describe("ChatInterface - Pending message queue", () => {
 
 describe("ChatInterface - Saved draft after submit", () => {
   const CONVERSATION_ID = "test-conversation-id";
+  let listProfilesSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     // jsdom has no innerText, which the composer reads its text from.
@@ -807,15 +809,19 @@ describe("ChatInterface - Saved draft after submit", () => {
     (
       useUnifiedUploadFiles as unknown as ReturnType<typeof vi.fn>
     ).mockReturnValue({ mutateAsync: vi.fn(), isLoading: false });
-    vi.spyOn(ProfilesService, "listProfiles").mockResolvedValue({
-      profiles: [],
-      active_profile: null,
-    } as Awaited<ReturnType<typeof ProfilesService.listProfiles>>);
+    listProfilesSpy = vi
+      .spyOn(ProfilesService, "listProfiles")
+      .mockResolvedValue({
+        profiles: [],
+        active_profile: null,
+      } as Awaited<ReturnType<typeof ProfilesService.listProfiles>>);
   });
 
   afterEach(() => {
+    // Unmount before restoring mocks, so no late re-render reads a restored mock.
+    cleanup();
     Reflect.deleteProperty(HTMLElement.prototype, "innerText");
-    vi.restoreAllMocks();
+    listProfilesSpy.mockRestore();
     useOptimisticUserMessageStore.getState().clearPendingMessages();
   });
 
