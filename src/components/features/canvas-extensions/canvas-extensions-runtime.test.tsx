@@ -141,11 +141,8 @@ describe("CanvasExtensionsRuntimeProvider", () => {
   });
 
   it.each([
-    ["/extensions/demo-extension/dashboard", "Dashboard - OpenHands App"],
-    [
-      "/extensions/demo-extension/dashboard/nested",
-      "Dashboard - OpenHands App",
-    ],
+    ["/extensions/demo-extension/dashboard", "Dashboard | OpenHands"],
+    ["/extensions/demo-extension/dashboard/nested", "Dashboard | OpenHands"],
     ["/extensions/demo-extension/dashboard-other", "OpenHands"],
     ["/extensions/other/dashboard", "OpenHands"],
     ["/", "OpenHands"],

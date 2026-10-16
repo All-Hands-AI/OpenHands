@@ -27,9 +27,7 @@ export const useAppTitle = () => {
       : APP_TITLE;
 
   if (!conversationId) {
-    return appPage
-      ? `${appPage.contribution.title} - ${APP_TITLE} App`
-      : baseTitle;
+    return appPage ? `${appPage.contribution.title} | ${APP_TITLE}` : baseTitle;
   }
 
   const executionStatus =
