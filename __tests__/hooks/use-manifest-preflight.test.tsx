@@ -21,6 +21,7 @@ const activeBackendState = vi.hoisted((): { value: ResolvedActiveBackend } => ({
 }));
 const nativeIntegrationState = vi.hoisted(() => ({
   connectedIntegrationIds: new Set<string>(),
+  isLoading: false,
 }));
 
 vi.mock("#/api/automation-service/automation-service.api", () => ({
@@ -42,7 +43,7 @@ vi.mock("#/hooks/query/use-native-git-integrations", () => ({
         : null,
     isJiraEnabled: false,
     isLinearEnabled: false,
-    isLoading: false,
+    isLoading: nativeIntegrationState.isLoading,
   }),
 }));
 
@@ -132,6 +133,7 @@ beforeEach(() => {
     orgId: null,
   };
   nativeIntegrationState.connectedIntegrationIds.clear();
+  nativeIntegrationState.isLoading = false;
   warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 });
 
@@ -202,6 +204,46 @@ describe("useSetupPreflight", () => {
         requirements: { integrations: [] },
       }),
     );
+  });
+
+  it("does not validate against MCP while native Cloud status is loading", async () => {
+    activeBackendState.value = {
+      backend: {
+        id: "cloud-test",
+        name: "Cloud test",
+        host: "https://app.example.test",
+        apiKey: "cloud-key",
+        kind: "cloud",
+        connectionRevision: 0,
+      },
+      orgId: "org-2",
+    };
+    nativeIntegrationState.isLoading = true;
+    const entry = createSetupEntry({
+      requires: {
+        integrations: { github: { message: "Reads repositories." } },
+      },
+    });
+    const { result, rerender } = renderHook(() => useSetupPreflight(entry));
+
+    await expect(result.current.runPreflight(VALUES)).resolves.toEqual({
+      status: "unavailable",
+    });
+    expect(AutomationService.validateDraft).not.toHaveBeenCalled();
+
+    nativeIntegrationState.isLoading = false;
+    nativeIntegrationState.connectedIntegrationIds.add("github");
+    vi.mocked(AutomationService.validateDraft).mockResolvedValue({
+      valid: true,
+      errors: [],
+    });
+    rerender();
+
+    await expect(result.current.runPreflight(VALUES)).resolves.toEqual({
+      status: "partial",
+      integrationIds: ["github"],
+    });
+    expect(AutomationService.validateDraft).toHaveBeenCalledOnce();
   });
 
   it("discards a pending result when native integration status changes", async () => {

@@ -123,7 +123,8 @@ async function validateDraftWithCompatibility(
 
 export function useSetupPreflight(entry: SetupEntry) {
   const { backend, orgId } = useActiveBackend();
-  const { getNativeIntegration } = useNativeGitIntegrations();
+  const { getNativeIntegration, isLoading: isNativeIntegrationsLoading } =
+    useNativeGitIntegrations();
   const nativeConnectedIntegrationIds = useMemo(
     () =>
       new Set(
@@ -133,9 +134,10 @@ export function useSetupPreflight(entry: SetupEntry) {
       ),
     [entry.requires.integrations, getNativeIntegration],
   );
-  const nativeIntegrationKey = JSON.stringify(
-    Array.from(nativeConnectedIntegrationIds).sort(),
-  );
+  const nativeIntegrationKey = JSON.stringify([
+    isNativeIntegrationsLoading,
+    ...Array.from(nativeConnectedIntegrationIds).sort(),
+  ]);
   const currentNativeIntegrationKeyRef = useRef(nativeIntegrationKey);
   currentNativeIntegrationKeyRef.current = nativeIntegrationKey;
   const latestRequestRef = useRef(0);
@@ -180,6 +182,11 @@ export function useSetupPreflight(entry: SetupEntry) {
         requestEntryKey !== currentEntryKeyRef.current ||
         requestTargetKey !== currentTargetKeyRef.current ||
         requestNativeIntegrationKey !== currentNativeIntegrationKeyRef.current;
+
+      // The native status hook returns null while its Cloud config/settings
+      // are unresolved. Do not mistake that unknown state for an MCP-only
+      // requirement and report a false missing-integration error.
+      if (isNativeIntegrationsLoading) return { status: "unavailable" };
 
       try {
         // Older interface manifests may not declare the selected endpoint.
@@ -241,6 +248,7 @@ export function useSetupPreflight(entry: SetupEntry) {
       entry,
       entryKey,
       nativeConnectedIntegrationIds,
+      isNativeIntegrationsLoading,
       nativeIntegrationKey,
       targetKey,
     ],
