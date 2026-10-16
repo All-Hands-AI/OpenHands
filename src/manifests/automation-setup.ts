@@ -214,10 +214,13 @@ function requiredSecretFields(
  */
 export function buildPreflightRequirements(
   entry: SetupEntry,
+  nativeConnectedIntegrationIds: ReadonlySet<string> = new Set(),
 ): SetupPreflightRequirements {
   const integrations = Object.entries(entry.requires.integrations)
     .filter(([, requirement]) => requirement.required !== false)
     .flatMap(([id]) => {
+      if (nativeConnectedIntegrationIds.has(id)) return [];
+
       const catalogEntry = getIntegrationCatalogEntry(id);
       const options = catalogEntry ? getMcpConnectionOptions(catalogEntry) : [];
       // The validator understands MCP alternatives only. Sending a subset of
@@ -704,6 +707,7 @@ export function buildPreflightBody(
   values: SetupFormValues,
   selectedTrigger?: string | null,
   selectedAction?: string | null,
+  nativeConnectedIntegrationIds: ReadonlySet<string> = new Set(),
 ): {
   automationId: string;
   endpoint: string;
@@ -723,7 +727,10 @@ export function buildPreflightBody(
     automationId: entry.id,
     endpoint: automationCreateEndpoint(entry, selectedAction),
     draft,
-    requirements: buildPreflightRequirements(entry),
+    requirements: buildPreflightRequirements(
+      entry,
+      nativeConnectedIntegrationIds,
+    ),
   };
 }
 

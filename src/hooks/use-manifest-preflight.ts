@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import axios from "axios";
 import AutomationService from "#/api/automation-service/automation-service.api";
 import { isSdkHttpStatusError } from "#/api/agent-server-compatibility";
 import { useActiveBackend } from "#/contexts/active-backend-context";
+import { useNativeGitIntegrations } from "#/hooks/query/use-native-git-integrations";
 import {
   hasMappedErrors,
   isRecord,
@@ -122,6 +123,21 @@ async function validateDraftWithCompatibility(
 
 export function useSetupPreflight(entry: SetupEntry) {
   const { backend, orgId } = useActiveBackend();
+  const { getNativeIntegration } = useNativeGitIntegrations();
+  const nativeConnectedIntegrationIds = useMemo(
+    () =>
+      new Set(
+        Object.keys(entry.requires.integrations).filter(
+          (id) => getNativeIntegration(id)?.isConnected === true,
+        ),
+      ),
+    [entry.requires.integrations, getNativeIntegration],
+  );
+  const nativeIntegrationKey = JSON.stringify(
+    Array.from(nativeConnectedIntegrationIds).sort(),
+  );
+  const currentNativeIntegrationKeyRef = useRef(nativeIntegrationKey);
+  currentNativeIntegrationKeyRef.current = nativeIntegrationKey;
   const latestRequestRef = useRef(0);
   useEffect(
     () => () => {
@@ -158,10 +174,12 @@ export function useSetupPreflight(entry: SetupEntry) {
       const requestId = latestRequestRef.current;
       const requestEntryKey = entryKey;
       const requestTargetKey = targetKey;
+      const requestNativeIntegrationKey = nativeIntegrationKey;
       const isStale = () =>
         requestId !== latestRequestRef.current ||
         requestEntryKey !== currentEntryKeyRef.current ||
-        requestTargetKey !== currentTargetKeyRef.current;
+        requestTargetKey !== currentTargetKeyRef.current ||
+        requestNativeIntegrationKey !== currentNativeIntegrationKeyRef.current;
 
       try {
         // Older interface manifests may not declare the selected endpoint.
@@ -171,6 +189,7 @@ export function useSetupPreflight(entry: SetupEntry) {
           formValues,
           selectedTrigger,
           selectedAction,
+          nativeConnectedIntegrationIds,
         );
         if (!body) return null;
 
@@ -218,7 +237,13 @@ export function useSetupPreflight(entry: SetupEntry) {
           : { status: "unavailable" };
       }
     },
-    [entry, entryKey, targetKey],
+    [
+      entry,
+      entryKey,
+      nativeConnectedIntegrationIds,
+      nativeIntegrationKey,
+      targetKey,
+    ],
   );
 
   const invalidatePreflight = useCallback(() => {

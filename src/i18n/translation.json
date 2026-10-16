@@ -42854,7 +42854,8 @@
     "tr": "Ön kontroller başarıyla tamamlandı.",
     "de": "Die Vorabprüfungen waren erfolgreich.",
     "uk": "Попередні перевірки пройдено.",
-    "ca": "Les comprovacions prèvies s'han superat."
+    "ca": "Les comprovacions prèvies s'han superat.",
+    "id": "Pemeriksaan awal berhasil."
   },
   "SETUP$PREFLIGHT_UNSUPPORTED": {
     "en": "This deployment does not support preflight checks. Review carefully before creating.",
@@ -42871,7 +42872,8 @@
     "tr": "Bu dağıtım ön kontrolleri desteklemiyor. Oluşturmadan önce dikkatlice gözden geçirin.",
     "de": "Diese Installation unterstützt keine Vorabprüfungen. Prüfen Sie alles sorgfältig, bevor Sie erstellen.",
     "uk": "Це середовище не підтримує попередні перевірки. Уважно перегляньте дані перед створенням.",
-    "ca": "Aquest desplegament no admet comprovacions prèvies. Revisa-ho amb cura abans de crear."
+    "ca": "Aquest desplegament no admet comprovacions prèvies. Revisa-ho amb cura abans de crear.",
+    "id": "Penerapan ini tidak mendukung pemeriksaan awal. Tinjau dengan saksama sebelum membuat."
   },
   "SETUP$PREFLIGHT_PARTIAL": {
     "en": "Some required integration connections could not be checked. Verify those connections before creating this automation.",
@@ -42888,7 +42890,8 @@
     "tr": "Bazı gerekli entegrasyon bağlantıları kontrol edilemedi. Bu otomasyonu oluşturmadan önce bu bağlantıları doğrulayın.",
     "de": "Einige erforderliche Integrationsverbindungen konnten nicht geprüft werden. Überprüfen Sie diese Verbindungen, bevor Sie diese Automatisierung erstellen.",
     "uk": "Не вдалося перевірити деякі обов'язкові з'єднання інтеграцій. Перевірте ці з'єднання перед створенням цієї автоматизації.",
-    "ca": "No s'han pogut comprovar algunes connexions d'integracions necessàries. Verifica aquestes connexions abans de crear aquesta automatització."
+    "ca": "No s'han pogut comprovar algunes connexions d'integracions necessàries. Verifica aquestes connexions abans de crear aquesta automatització.",
+    "id": "Beberapa koneksi integrasi yang diperlukan tidak dapat diperiksa. Verifikasi koneksi tersebut sebelum membuat otomatisasi ini."
   },
   "SETUP$PREFLIGHT_UNAVAILABLE": {
     "en": "Preflight checks are temporarily unavailable. Try again before creating this automation.",
@@ -42905,7 +42908,8 @@
     "tr": "Ön kontroller geçici olarak kullanılamıyor. Bu otomasyonu oluşturmadan önce tekrar deneyin.",
     "de": "Die Vorabprüfungen sind vorübergehend nicht verfügbar. Versuchen Sie es erneut, bevor Sie diese Automatisierung erstellen.",
     "uk": "Попередні перевірки тимчасово недоступні. Спробуйте ще раз перед створенням цієї автоматизації.",
-    "ca": "Les comprovacions prèvies no estan disponibles temporalment. Torna-ho a provar abans de crear aquesta automatització."
+    "ca": "Les comprovacions prèvies no estan disponibles temporalment. Torna-ho a provar abans de crear aquesta automatització.",
+    "id": "Pemeriksaan awal sementara tidak tersedia. Coba lagi sebelum membuat otomatisasi ini."
   },
   "SETUP$REVIEW_TITLE": {
     "en": "Review",

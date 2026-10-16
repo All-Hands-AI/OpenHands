@@ -19,6 +19,9 @@ const activeBackendState = vi.hoisted((): { value: ResolvedActiveBackend } => ({
     orgId: null,
   },
 }));
+const nativeIntegrationState = vi.hoisted(() => ({
+  connectedIntegrationIds: new Set<string>(),
+}));
 
 vi.mock("#/api/automation-service/automation-service.api", () => ({
   default: { validateDraft: vi.fn() },
@@ -26,6 +29,21 @@ vi.mock("#/api/automation-service/automation-service.api", () => ({
 
 vi.mock("#/contexts/active-backend-context", () => ({
   useActiveBackend: () => activeBackendState.value,
+}));
+
+vi.mock("#/hooks/query/use-native-git-integrations", () => ({
+  useNativeGitIntegrations: () => ({
+    getNativeIntegration: (entryId: string) =>
+      nativeIntegrationState.connectedIntegrationIds.has(entryId)
+        ? {
+            provider: entryId as "github" | "gitlab" | "bitbucket",
+            isConnected: true,
+          }
+        : null,
+    isJiraEnabled: false,
+    isLinearEnabled: false,
+    isLoading: false,
+  }),
 }));
 
 vi.mock("#/manifests/automation-interface", async (importOriginal) => ({
@@ -113,6 +131,7 @@ beforeEach(() => {
     },
     orgId: null,
   };
+  nativeIntegrationState.connectedIntegrationIds.clear();
   warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 });
 
@@ -149,6 +168,63 @@ describe("useSetupPreflight", () => {
         }),
       }),
     );
+  });
+
+  it("reports a connected native Cloud integration as unchecked, not missing", async () => {
+    activeBackendState.value = {
+      backend: {
+        id: "cloud-test",
+        name: "Cloud test",
+        host: "https://app.example.test",
+        apiKey: "cloud-key",
+        kind: "cloud",
+        connectionRevision: 0,
+      },
+      orgId: "org-2",
+    };
+    nativeIntegrationState.connectedIntegrationIds.add("github");
+    const entry = createSetupEntry({
+      requires: {
+        integrations: { github: { message: "Reads repositories." } },
+      },
+    });
+    vi.mocked(AutomationService.validateDraft).mockResolvedValue({
+      valid: true,
+      errors: [],
+    });
+    const { result } = renderHook(() => useSetupPreflight(entry));
+
+    const outcome = await result.current.runPreflight(VALUES);
+
+    expect(outcome).toEqual({ status: "partial", integrationIds: ["github"] });
+    expect(AutomationService.validateDraft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requirements: { integrations: [] },
+      }),
+    );
+  });
+
+  it("discards a pending result when native integration status changes", async () => {
+    let resolve!: (value: { valid: true; errors: never[] }) => void;
+    vi.mocked(AutomationService.validateDraft).mockImplementation(
+      () =>
+        new Promise((done) => {
+          resolve = done;
+        }),
+    );
+    const entry = createSetupEntry({
+      requires: {
+        integrations: { github: { message: "Reads repositories." } },
+      },
+    });
+    const { result, rerender } = renderHook(() => useSetupPreflight(entry));
+    const pending = result.current.runPreflight(VALUES);
+
+    nativeIntegrationState.connectedIntegrationIds.add("github");
+    rerender();
+    resolve({ valid: true, errors: [] });
+
+    await expect(pending).resolves.toEqual({ status: "stale" });
   });
 
   it("keeps an HTTP integration's partial coverage blocking on service failure", async () => {

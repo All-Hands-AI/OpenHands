@@ -13,6 +13,7 @@ import AutomationService from "#/api/automation-service/automation-service.api";
 import { SetupDialog } from "#/components/features/manifest/manifest-setup-dialog";
 import { SUPER_ADMIN_SETUP_STEP_EVENT } from "#/components/features/setup-guide/super-admin-setup-step-event";
 import { I18nKey } from "#/i18n/declaration";
+import type { ResolvedActiveBackend } from "#/api/backend-registry/types";
 import type { SetupPrerequisitesResult } from "#/hooks/query/use-manifest-prerequisites";
 import type { DeploymentCapabilities, SetupEntry } from "#/manifests/types";
 import {
@@ -32,6 +33,8 @@ const mocks = vi.hoisted(() => ({
   prerequisites: vi.fn(),
   capabilities: vi.fn(),
   llmProfiles: vi.fn(),
+  activeBackend: null as unknown as ResolvedActiveBackend,
+  nativeConnectedIntegrationIds: new Set<string>(),
   missingCreateEndpoints: vi.fn<(entry: SetupEntry) => string[]>(() => []),
   tracking: {
     trackAutomationSetupOpened: vi.fn(),
@@ -49,10 +52,7 @@ vi.mock("react-router", async (importOriginal) => ({
 // A local backend, where the repository field is a plain input rather than the
 // picker only a cloud backend can populate.
 vi.mock("#/contexts/active-backend-context", () => ({
-  useActiveBackend: () => ({
-    backend: { id: "local-1", kind: "local" },
-    orgId: null,
-  }),
+  useActiveBackend: () => mocks.activeBackend,
 }));
 
 vi.mock("#/hooks/query/use-manifest-capabilities", () => ({
@@ -61,6 +61,22 @@ vi.mock("#/hooks/query/use-manifest-capabilities", () => ({
 
 vi.mock("#/hooks/query/use-manifest-prerequisites", () => ({
   useSetupPrerequisites: () => mocks.prerequisites(),
+}));
+
+vi.mock("#/hooks/query/use-native-git-integrations", () => ({
+  useNativeGitIntegrations: () => ({
+    getNativeIntegration: (entryId: string) =>
+      mocks.activeBackend.backend.kind === "cloud" &&
+      mocks.nativeConnectedIntegrationIds.has(entryId)
+        ? {
+            provider: entryId as "github" | "gitlab" | "bitbucket",
+            isConnected: true,
+          }
+        : null,
+    isJiraEnabled: false,
+    isLinearEnabled: false,
+    isLoading: false,
+  }),
 }));
 
 vi.mock("#/hooks/query/use-agent-profiles", () => ({
@@ -109,6 +125,11 @@ const HTTP_INTEGRATION_ENTRY: SetupEntry = createSetupEntry({
     integrations: { jira: { message: "Reads Jira issues." } },
   },
 });
+const NATIVE_GITHUB_ENTRY: SetupEntry = createSetupEntry({
+  requires: {
+    integrations: { github: { message: "Reads repositories." } },
+  },
+});
 const CUSTOM_AUTOMATION_ENTRY = AUTOMATION_CATALOG.find(
   (entry) => entry.id === "custom-automation",
 ) as SetupEntry;
@@ -140,16 +161,18 @@ function httpFailure(status: number) {
 
 function renderDialog(entry: SetupEntry = ENTRY) {
   const user = userEvent.setup();
-  render(
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  const makeUi = () => (
     <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
+      client={queryClient}
     >
       <SetupDialog entry={entry} onClose={vi.fn()} />
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
-  return { user };
+  const rendered = render(makeUi());
+  return { user, rerender: () => rendered.rerender(makeUi()) };
 }
 
 /** Answer the two required fields the entry ships without a default. */
@@ -167,6 +190,18 @@ beforeEach(() => {
   // clearAllMocks resets calls, not implementations, so the one case that
   // stubs a manifest without the bundle endpoints would leak into the rest.
   mocks.missingCreateEndpoints.mockReturnValue([]);
+  mocks.activeBackend = {
+    backend: {
+      id: "local-1",
+      name: "Local",
+      host: "http://localhost:3000",
+      apiKey: "session-key",
+      kind: "local",
+      connectionRevision: 0,
+    },
+    orgId: null,
+  };
+  mocks.nativeConnectedIntegrationIds.clear();
 
   mocks.prerequisites.mockReturnValue(NOTHING_TO_CONNECT);
   mocks.capabilities.mockReturnValue({
@@ -788,6 +823,45 @@ describe("SetupDialog", () => {
     await user.click(screen.getByTestId("setup-continue-button"));
     await waitFor(() => expect(mocks.runAction).toHaveBeenCalledTimes(1));
     expect(AutomationService.validateDraft).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows a newly partial confirm-time warning before creating", async () => {
+    mocks.activeBackend = {
+      backend: {
+        id: "cloud-1",
+        name: "Cloud",
+        host: "https://app.example.test",
+        apiKey: "cloud-key",
+        kind: "cloud",
+        connectionRevision: 0,
+      },
+      orgId: "org-1",
+    };
+    mocks.runAction.mockResolvedValue({ response: { id: "automation-1" } });
+    const { user, rerender } = renderDialog(NATIVE_GITHUB_ENTRY);
+    await fillForm(user);
+
+    await user.click(screen.getByTestId("setup-continue-button"));
+    expect(await screen.findByTestId("setup-preflight-passed")).toBeVisible();
+    expect(mocks.runAction).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(screen.getByTestId("setup-continue-button")).not.toBeDisabled(),
+    );
+
+    mocks.nativeConnectedIntegrationIds.add("github");
+    rerender();
+
+    await user.click(screen.getByTestId("setup-continue-button"));
+    expect(
+      await screen.findByTestId("setup-preflight-partial-integrations"),
+    ).toHaveTextContent("GitHub");
+    expect(mocks.runAction).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(screen.getByTestId("setup-continue-button")).not.toBeDisabled(),
+    );
+
+    await user.click(screen.getByTestId("setup-continue-button"));
+    await waitFor(() => expect(mocks.runAction).toHaveBeenCalledTimes(1));
   });
 
   it("does not create after a partial verdict if confirm-time preflight fails", async () => {

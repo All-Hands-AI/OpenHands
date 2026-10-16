@@ -504,7 +504,17 @@ export function SetupDialog({ entry, onClose }: SetupDialogProps) {
         selectedTrigger,
         selectedAction,
       );
+      const hasNewAdvisory =
+        outcome?.status === "partial"
+          ? preflightOutcome?.status !== "partial" ||
+            outcome.integrationIds.join("\0") !==
+              preflightOutcome.integrationIds.join("\0")
+          : outcome?.status === "unsupported" &&
+            preflightOutcome?.status !== "unsupported";
       if (!applyPreflightOutcome(outcome, true)) return;
+      // A recheck can discover a new unchecked path after the review screen
+      // was shown. Let React render that warning before accepting confirmation.
+      if (hasNewAdvisory) return;
       await submitAction(payload, entry.setup.mode);
     } finally {
       setIsPreflighting(false);
