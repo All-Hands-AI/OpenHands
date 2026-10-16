@@ -149,8 +149,8 @@ Preconditions:
   control-openhands assert --field recent.0.status --equals 200 --bug-shows 400 -- browser network --filter '/git/diff'  # bug
   ```
 
-- **Plain parent containing a repository (`F08.uncommitted-changes`).** Expected: a plain workspace holding one dirty repository exposes that repository's changes. Known failure (reproduced 2026-10-16, pinned SDK 1.55.0, [OpenHands/software-agent-sdk#5641](https://github.com/OpenHands/software-agent-sdk/issues/5641)): the changes request returns 200 with no changes and Commits reads `No commits yet` although the child repository is dirty. The upstream fix is closed but not included in the current pin. The recipe removes only its own verified empty parent `.git`; never remove a user's repository.
-  ```sh known-bug F08.uncommitted-changes nested-repository
+- **Plain parent containing a repository (`F08.uncommitted-changes`).** Expected: a plain workspace holding one dirty repository exposes that repository's changes. Commits shows one Uncommitted row listing the child repository's paths (`proj/README.md`, `proj/notes.txt`), and their diffs open. The recipe removes only its own verified empty parent `.git`; never remove a user's repository.
+  ```sh
   control-openhands browser viewport desktop
   QA_ID="$(python3 - <<'PY'
   import json, os, pathlib, subprocess, tempfile
@@ -196,7 +196,7 @@ Preconditions:
   control-openhands browser wait 'testid=commits-tab-status' --state detached --timeout 10000
   control-openhands assert --field recent.0.status --equals 200 -- browser network --filter '/git/changes'
   control-openhands browser screenshot --feature F08.uncommitted-changes --name nested-repository
-  control-openhands assert --field count --equals 1 --bug-shows 0 -- browser count 'testid=uncommitted-changes-row'  # bug
+  control-openhands assert --field count --equals 1 -- browser count 'testid=uncommitted-changes-row'
   ```
 
 ## Gotchas
