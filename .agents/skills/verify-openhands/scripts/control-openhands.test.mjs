@@ -3,15 +3,18 @@
 //   npx vitest run .agents/skills/verify-openhands
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
+import { EventEmitter } from "node:events";
 import {
   existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
+  rmSync,
   writeFileSync,
 } from "node:fs";
 import { createServer } from "node:net";
+import { createServer as createHttpServer } from "node:http";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -52,6 +55,11 @@ import {
 } from "./lib/recording.mjs";
 import { MAX_PAGES, collectEvents, countImages } from "./lib/events-paging.mjs";
 import { redactBody, redactUrl } from "./lib/network-bodies.mjs";
+import {
+  observeWebSocket,
+  webSocketMetadata,
+  isWebSocketObservation,
+} from "./lib/websocket-events.mjs";
 import { buildLocator, parseRole, toCss } from "./lib/selectors.mjs";
 import {
   classifyAttempt,
@@ -1851,6 +1859,226 @@ test.skipIf(process.platform === "win32")(
     }
   },
 );
+
+test("browser network-state restores connectivity and rejects invalid modes before dispatch", async () => {
+  // Arrange a browser service. The CLI must route state changes without
+  // confusing the observation-only network log with network availability.
+  const runDir = mkdtempSync(join(tmpdir(), "cov-network-state-"));
+  mkdirSync(join(runDir, "private"));
+  writeFileSync(join(runDir, "run.json"), "{}\n");
+  let offline = false;
+  let requests = 0;
+  const server = createHttpServer(async (req, res) => {
+    requests += 1;
+    let body = "";
+    for await (const chunk of req) body += chunk;
+    const { cmd, args } = JSON.parse(body);
+    assert.equal(cmd, "network-state");
+    if (args.state !== "status") offline = args.state === "offline";
+    res.setHeader("content-type", "application/json");
+    res.end(JSON.stringify({ ok: true, offline }));
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  writeFileSync(
+    join(runDir, "private", "browser.json"),
+    JSON.stringify({
+      pid: process.pid,
+      port: server.address().port,
+      token: "dummy-control-token",
+    }),
+  );
+  const invoke = (state) =>
+    new Promise((resolve, reject) => {
+      const child = spawn(process.execPath, [
+        cli,
+        "browser",
+        "network-state",
+        ...state,
+        "--run",
+        runDir,
+      ]);
+      let output = "";
+      child.stdout.on("data", (chunk) => {
+        output += chunk;
+      });
+      child.on("error", reject);
+      child.on("close", (code) => resolve({ code, ...JSON.parse(output) }));
+    });
+  try {
+    // Act / Assert: status is read-only, and online restores the prior
+    // offline browser. Bad input must not reach or mutate the service.
+    assert.equal((await invoke(["offline"])).offline, true);
+    assert.equal((await invoke(["status"])).offline, true);
+    assert.equal((await invoke(["online"])).offline, false);
+    const before = requests;
+    for (const args of [[], ["sometimes"], ["offline", "extra"]]) {
+      assert.equal((await invoke(args)).code, 2);
+    }
+    assert.equal(requests, before);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    rmSync(runDir, { recursive: true, force: true });
+  }
+});
+
+test("WebSocket subscription events preserve cursors and counts without secrets or frame content", () => {
+  // Arrange the underlying Playwright socket event source; the real observer
+  // must expose only metadata to browser-events.jsonl and browser events.
+  const socket = new EventEmitter();
+  socket.url = () =>
+    "ws://user:SOCKET_PASSWORD@localhost:18800/sockets/events/qa?after_seq=7&session_api_key=SESSION_SECRET&unknown=OPAQUE_SECRET";
+  const events = [];
+  observeWebSocket(socket, (kind, detail) => events.push({ kind, ...detail }), {
+    connectionId: "qa-connection",
+    pageUrl: () =>
+      "http://user:PAGE_PASSWORD@localhost:18800/conversations/qa?api_key=PAGE_SECRET#TOKEN_SECRET",
+  });
+  // Act: even authentication frames and error text must never be retained.
+  socket.emit("framereceived", {
+    payload: "RECEIVED_SECRET",
+    headers: { authorization: "HEADER_SECRET" },
+  });
+  socket.emit("framesent", { payload: Buffer.from("SENT_SECRET") });
+  socket.emit("socketerror", "ERROR_SECRET");
+  socket.emit("close");
+  // Assert the consumer contract, including healthy/error classification.
+  assert.equal(events[0].afterSeq, "7");
+  assert.equal(new URL(events[0].url).searchParams.get("after_seq"), "7");
+  const opened = events.find((e) => e.kind === "websocket-open");
+  assert.equal(opened.observed, "first-frame");
+  assert.equal(opened.receivedFrames, 1);
+  const closed = events.at(-1);
+  assert.equal(closed.receivedFrames, 1);
+  assert.equal(closed.sentFrames, 1);
+  assert.equal(closed.connectionId, events[0].connectionId);
+  assert.deepEqual(
+    events.filter((e) => !isWebSocketObservation(e.kind)).map((e) => e.kind),
+    ["websocket-error"],
+  );
+  const shown = JSON.stringify(events);
+  for (const secret of [
+    "SOCKET_PASSWORD",
+    "SESSION_SECRET",
+    "OPAQUE_SECRET",
+    "PAGE_PASSWORD",
+    "PAGE_SECRET",
+    "TOKEN_SECRET",
+    "RECEIVED_SECRET",
+    "HEADER_SECRET",
+    "SENT_SECRET",
+    "ERROR_SECRET",
+  ])
+    assert.ok(!shown.includes(secret));
+  assert.equal(
+    webSocketMetadata("ws://localhost/x?after_seq=NOT_A_CURSOR_SECRET")
+      .afterSeq,
+    undefined,
+  );
+  assert.ok(
+    !JSON.stringify(
+      webSocketMetadata("ws://localhost/x?after_seq=NOT_A_CURSOR_SECRET"),
+    ).includes("NOT_A_CURSOR_SECRET"),
+  );
+  assert.ok(
+    !JSON.stringify(
+      webSocketMetadata(
+        "ws://localhost/x?after_seq=7&after_seq=DUPLICATE_SECRET",
+      ),
+    ).includes("DUPLICATE_SECRET"),
+  );
+  assert.equal(
+    webSocketMetadata("ws://localhost/x?after_seq=7&after_seq=8").afterSeq,
+    undefined,
+  );
+  assert.ok(
+    !JSON.stringify(
+      webSocketMetadata("ws://localhost/x?SECRET_NAME=ignored"),
+    ).includes("SECRET_NAME"),
+  );
+  assert.deepEqual(webSocketMetadata("invalid SECRET"), {
+    url: "<unavailable>",
+  });
+});
+
+test("browser events delivers filtered WebSocket metadata to the CLI consumer", async () => {
+  const runDir = mkdtempSync(join(tmpdir(), "cov-websocket-events-"));
+  mkdirSync(join(runDir, "private"));
+  writeFileSync(join(runDir, "run.json"), "{}\n");
+  const socket = new EventEmitter();
+  socket.url = () =>
+    "ws://localhost:18800/sockets/events/qa?after_seq=42&session_api_key=PRIVATE_SECRET";
+  const events = [];
+  observeWebSocket(
+    socket,
+    (kind, detail) =>
+      events.push({ ts: new Date().toISOString(), kind, ...detail }),
+    {
+      connectionId: "qa-reconnect",
+      pageUrl: () => "http://localhost:18800/conversations/qa",
+    },
+  );
+  socket.emit("framesent", { payload: "AUTH_SECRET" });
+  socket.emit("close");
+  const server = createHttpServer(async (req, res) => {
+    let body = "";
+    for await (const chunk of req) body += chunk;
+    const { cmd, args } = JSON.parse(body);
+    assert.equal(cmd, "events");
+    assert.equal(args.kinds, "websocket-open,websocket-close");
+    assert.equal(args.last, "2");
+    const wanted = args.kinds.split(",");
+    res.setHeader("content-type", "application/json");
+    res.end(
+      JSON.stringify({
+        ok: true,
+        events: events
+          .filter((e) => wanted.includes(e.kind))
+          .slice(-Number(args.last)),
+      }),
+    );
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  writeFileSync(
+    join(runDir, "private", "browser.json"),
+    JSON.stringify({
+      pid: process.pid,
+      port: server.address().port,
+      token: "dummy-control-token",
+    }),
+  );
+  try {
+    const output = await new Promise((resolve, reject) => {
+      const child = spawn(process.execPath, [
+        cli,
+        "browser",
+        "events",
+        "--kinds",
+        "websocket-open,websocket-close",
+        "--last",
+        "2",
+        "--run",
+        runDir,
+      ]);
+      let stdout = "";
+      child.stdout.on("data", (chunk) => {
+        stdout += chunk;
+      });
+      child.on("error", reject);
+      child.on("close", (code) => resolve({ code, stdout }));
+    });
+    assert.equal(output.code, 0);
+    const result = JSON.parse(output.stdout);
+    assert.equal(result.events.length, 2);
+    assert.equal(result.events[0].afterSeq, "42");
+    assert.equal(result.events[1].sentFrames, 1);
+    assert.ok(result.events.every((e) => Number.isFinite(Date.parse(e.ts))));
+    assert.ok(!output.stdout.includes("PRIVATE_SECRET"));
+    assert.ok(!output.stdout.includes("AUTH_SECRET"));
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    rmSync(runDir, { recursive: true, force: true });
+  }
+});
 
 // A run directory with no stack behind it: enough for evidence and bug runs
 // whose recipes only call offline commands.
