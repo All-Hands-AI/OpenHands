@@ -63,7 +63,6 @@ function useHydratedFreeModelState() {
   };
 }
 
-// @spec RGP-001 — Quiet model and version probes
 describe("useHydrateFreeModels", () => {
   beforeEach(() => {
     window.localStorage.clear();
