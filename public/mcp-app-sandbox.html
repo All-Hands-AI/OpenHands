@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="referrer" content="no-referrer" />
+    <title>MCP App sandbox</title>
+    <style>
+      html,
+      body,
+      iframe {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+      }
+      body {
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      // @spec MCA-003 — No untrusted App shares the Canvas or proxy origin.
+      (() => {
+        const parentOrigin = new URL(location.href).searchParams.get(
+          "parentOrigin",
+        );
+        try {
+          const parsed = new URL(parentOrigin);
+          if (
+            !["http:", "https:"].includes(parsed.protocol) ||
+            parsed.origin !== parentOrigin
+          )
+            return;
+        } catch {
+          return;
+        }
+        if (window.parent === window) return;
+
+        const innerPolicy =
+          "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; media-src data: blob:; connect-src 'none'; worker-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'";
+        let frame = null;
+        const isMessage = (data) =>
+          data && typeof data === "object" && data.jsonrpc === "2.0";
+        addEventListener("message", (event) => {
+          if (!isMessage(event.data)) return;
+          if (event.source === parent && event.origin === parentOrigin) {
+            if (
+              event.data.method === "ui/notifications/sandbox-resource-ready"
+            ) {
+              if (frame || typeof event.data.params?.html !== "string") return;
+              const next = document.createElement("iframe");
+              next.setAttribute("sandbox", "allow-scripts");
+              next.setAttribute("referrerpolicy", "no-referrer");
+              next.title = "MCP App";
+              // Parse without inserting any untrusted element into the proxy DOM.
+              const app = new DOMParser().parseFromString(
+                event.data.params.html,
+                "text/html",
+              );
+              const policy = app.createElement("meta");
+              policy.httpEquiv = "Content-Security-Policy";
+              policy.content = innerPolicy;
+              app.head.prepend(policy);
+              next.srcdoc = "<!doctype html>" + app.documentElement.outerHTML;
+              frame = next;
+              document.body.append(next);
+            } else if (frame?.contentWindow) {
+              // The inner document has an opaque origin, so '*' is necessary here.
+              frame.contentWindow.postMessage(event.data, "*");
+            }
+          } else if (
+            frame &&
+            event.source === frame.contentWindow &&
+            event.origin === "null"
+          ) {
+            parent.postMessage(event.data, parentOrigin);
+          }
+        });
+        parent.postMessage(
+          {
+            jsonrpc: "2.0",
+            method: "ui/notifications/sandbox-proxy-ready",
+            params: {},
+          },
+          parentOrigin,
+        );
+      })();
+    </script>
+  </body>
+</html>

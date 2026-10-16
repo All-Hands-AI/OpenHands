@@ -7,6 +7,8 @@ import {
 } from "#/types/agent-server/type-guards";
 import { isMarkdownFileEditorEvent } from "#/components/features/chat/tool-visualizers/primitives/markdown-file-preview";
 import { getThoughtSourceAction } from "./event-thought-helpers";
+import { getMCPAppDescriptor } from "#/utils/mcp-app-descriptor";
+import type { MCPAppArtifacts, MCPAppIntegrationData } from "#/types/mcp-app";
 
 /** Minimum run-length before consecutive actions get folded into a single
  *  collapsible group. Even pairs are folded so the chat scroll stays compact
@@ -24,6 +26,7 @@ export const EVENT_GROUP_MIN_SIZE = 2;
 export const isGroupableEvent = (
   event: OpenHandsEvent,
   correspondingAction?: ActionEvent,
+  mcpAppData?: MCPAppIntegrationData,
 ): boolean => {
   if (isActionEvent(event)) {
     const { kind } = event.action;
@@ -39,6 +42,10 @@ export const isGroupableEvent = (
   }
 
   if (isObservationEvent(event)) {
+    // @spec MCA-002 — App artifacts remain visible outside collapsed tool groups.
+    if (getMCPAppDescriptor(event, mcpAppData)) {
+      return false;
+    }
     if (isPlanningFileEditorObservationEvent(event)) {
       return false;
     }
@@ -85,6 +92,7 @@ export const groupEvents = (
   events: OpenHandsEvent[],
   minSize: number = EVENT_GROUP_MIN_SIZE,
   allEvents: OpenHandsEvent[] = events,
+  mcpAppArtifacts?: MCPAppArtifacts,
 ): RenderedItem[] => {
   if (minSize < 1) {
     throw new Error("minSize must be at least 1");
@@ -118,13 +126,19 @@ export const groupEvents = (
               isActionEvent(candidate) && candidate.id === event.action_id,
           )
         : undefined;
-    if (isGroupableEvent(event, correspondingAction)) {
-      const thoughtAction = getThoughtSourceAction(event, allEvents);
-      if (thoughtAction && !emittedThoughtActionIds.has(thoughtAction.id)) {
-        flushRun();
-        emittedThoughtActionIds.add(thoughtAction.id);
-        items.push({ kind: "thought", action: thoughtAction, index });
-      }
+    const thoughtAction = getThoughtSourceAction(event, allEvents);
+    if (thoughtAction && !emittedThoughtActionIds.has(thoughtAction.id)) {
+      flushRun();
+      emittedThoughtActionIds.add(thoughtAction.id);
+      items.push({ kind: "thought", action: thoughtAction, index });
+    }
+    if (
+      isGroupableEvent(
+        event,
+        correspondingAction,
+        event.id ? mcpAppArtifacts?.get(event.id) : undefined,
+      )
+    ) {
       if (!run) run = { events: [], startIndex: index };
       run.events.push(event);
     } else {

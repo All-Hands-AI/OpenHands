@@ -13,6 +13,7 @@ import {
   UserRejectObservation,
 } from "#/types/agent-server/core";
 import { TextContent } from "#/types/agent-server/core/base/common";
+import type { MCPAppArtifacts, MCPAppIntegrationData } from "#/types/mcp-app";
 import {
   ExecuteBashAction,
   FileEditorAction,
@@ -22,6 +23,7 @@ import {
 import {
   ExecuteBashObservation,
   FileEditorObservation,
+  MCPToolObservation,
   PlanningFileEditorObservation,
   TaskTrackerObservation,
 } from "#/types/agent-server/core/base/observation";
@@ -158,6 +160,23 @@ const makeTaskTrackerObservation = (
   },
 });
 
+const makeMCPObservation = (): ObservationEvent<MCPToolObservation> => ({
+  ...makeBashObservation("mcp-observation", "mcp-action"),
+  tool_name: "show_chart",
+  observation: {
+    kind: "MCPToolObservation",
+    tool_name: "show_chart",
+    content: [{ type: "text", text: "Chart data ready." }],
+    is_error: false,
+  },
+});
+
+const makeMCPData = (resourceUri: string): MCPAppIntegrationData => ({
+  tool: { name: "show_chart", _meta: { ui: { resourceUri } } },
+  toolInput: {},
+  toolResult: { content: [] },
+});
+
 const makeAgentErrorEvent = (id: string): AgentErrorEvent => ({
   id,
   timestamp: new Date().toISOString(),
@@ -273,6 +292,55 @@ describe("isGroupableEvent", () => {
 });
 
 describe("groupEvents", () => {
+  // @spec MCA-002 — MCP App artifacts interrupt collapsed tool groups.
+  it("keeps an MCP app inline between consecutive tool groups", () => {
+    const app = makeMCPObservation();
+    const artifacts: MCPAppArtifacts = new Map([
+      [app.id, makeMCPData("ui://chart/view")],
+    ]);
+    const items = groupEvents(
+      [
+        makeBashObservation("before-1", "action-1"),
+        makeBashObservation("before-2", "action-2"),
+        app,
+        makeBashObservation("after-1", "action-3"),
+        makeBashObservation("after-2", "action-4"),
+      ],
+      undefined,
+      undefined,
+      artifacts,
+    );
+
+    expect(items.map((item) => item.kind)).toEqual([
+      "group",
+      "single",
+      "group",
+    ]);
+    expect(items[1]).toEqual({ kind: "single", event: app, index: 2 });
+    expect(isGroupableEvent(makeMCPObservation())).toBe(true);
+    expect(
+      isGroupableEvent(app, undefined, makeMCPData("https://example.com")),
+    ).toBe(true);
+  });
+
+  it("keeps the source action thought visible for an MCP app result", () => {
+    const action = makeBashAction("mcp-action", [
+      { type: "text", text: "Inspect the chart first." },
+    ]);
+    const app = makeMCPObservation();
+
+    const items = groupEvents(
+      [app],
+      undefined,
+      [action, app],
+      new Map([[app.id, makeMCPData("ui://chart/view")]]),
+    );
+
+    expect(items.map((item) => item.kind)).toEqual(["thought", "single"]);
+    expect(items[0]).toMatchObject({ kind: "thought", action });
+    expect(items[1]).toEqual({ kind: "single", event: app, index: 0 });
+  });
+
   it("returns an empty list for no events", () => {
     expect(groupEvents([])).toEqual([]);
   });

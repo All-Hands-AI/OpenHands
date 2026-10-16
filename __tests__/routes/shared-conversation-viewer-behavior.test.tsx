@@ -7,6 +7,11 @@ import type { SharedConversation as SharedConversationData } from "@openhands/ty
 import SharedConversation from "#/routes/shared-conversation";
 import { I18nKey } from "#/i18n/declaration";
 import {
+  MCPAppHostProvider,
+  useMCPAppHost,
+} from "#/components/features/mcp-apps/mcp-app-host-context";
+import type { MCPAppArtifacts, MCPAppHost, MCPAppScope } from "#/types/mcp-app";
+import {
   SecurityRisk,
   type ActionEvent,
   type MessageEvent,
@@ -53,13 +58,19 @@ vi.mock("#/components/conversation-events/chat/messages", () => ({
   }: {
     messages: OpenHandsEvent[];
     allEvents: OpenHandsEvent[];
-  }) => (
-    <section
-      data-testid="shared-messages"
-      data-renderable-event-ids={messages.map((event) => event.id).join(",")}
-      data-all-event-ids={allEvents.map((event) => event.id).join(",")}
-    />
-  ),
+  }) => {
+    const { host, scope, artifacts } = useMCPAppHost();
+    return (
+      <section
+        data-testid="shared-messages"
+        data-renderable-event-ids={messages.map((event) => event.id).join(",")}
+        data-all-event-ids={allEvents.map((event) => event.id).join(",")}
+        data-live-mcp-host={host ? "available" : "unavailable"}
+        data-mcp-conversation={scope?.conversationId ?? ""}
+        data-mcp-artifact-count={artifacts.size}
+      />
+    );
+  },
 }));
 
 vi.mock("#/components/shared/loading-spinner", () => ({
@@ -215,11 +226,17 @@ const createEventsHookState = (
 interface RenderViewerOptions {
   conversationState?: Partial<ConversationHookState>;
   eventsState?: Partial<EventsHookState>;
+  host?: MCPAppHost | null;
+  scope?: MCPAppScope | null;
+  artifacts?: MCPAppArtifacts;
 }
 
 const renderViewer = ({
   conversationState: conversationOverrides = {},
   eventsState: eventsOverrides = {},
+  host = null,
+  scope = null,
+  artifacts,
 }: RenderViewerOptions = {}) => {
   const conversationState = createConversationHookState(conversationOverrides);
   const eventsState = createEventsHookState(eventsOverrides);
@@ -230,16 +247,18 @@ const renderViewer = ({
   mocks.useInfiniteScroll.mockReturnValue(scrollContainerRef);
 
   const viewer = () => (
-    <MemoryRouter
-      initialEntries={[`/shared/conversations/${SHARED_CONVERSATION_ID}`]}
-    >
-      <Routes>
-        <Route
-          path="/shared/conversations/:conversationId"
-          element={<SharedConversation />}
-        />
-      </Routes>
-    </MemoryRouter>
+    <MCPAppHostProvider host={host} scope={scope} artifacts={artifacts}>
+      <MemoryRouter
+        initialEntries={[`/shared/conversations/${SHARED_CONVERSATION_ID}`]}
+      >
+        <Routes>
+          <Route
+            path="/shared/conversations/:conversationId"
+            element={<SharedConversation />}
+          />
+        </Routes>
+      </MemoryRouter>
+    </MCPAppHostProvider>
   );
   const rendered = render(viewer());
 
@@ -257,6 +276,52 @@ afterEach(() => {
 });
 
 describe("shared conversation viewer", () => {
+  // @spec MCA-004 — Shared history blocks an embedding application's live host.
+  it("does not inherit live MCP host access or private presentation data from an outer conversation", () => {
+    renderViewer({
+      host: {
+        sandboxUrl: "https://apps.example.com/sandbox.html",
+        open: vi.fn(),
+      },
+      scope: {
+        backendId: "local-backend",
+        orgId: null,
+        connectionRevision: 1,
+        conversationId: "outer-live-conversation",
+        writableConversationId: "outer-live-conversation",
+        readOnly: false,
+      },
+      artifacts: new Map([
+        [
+          "shared-message",
+          {
+            tool: {
+              name: "chart",
+              _meta: { ui: { resourceUri: "ui://private" } },
+            },
+            toolInput: {},
+            toolResult: { content: [], _meta: { privateSelection: "private" } },
+          },
+        ],
+      ]),
+      eventsState: {
+        data: {
+          pages: [
+            {
+              items: [createMessageEvent("shared-message", "History")],
+              next_page_id: null,
+            },
+          ],
+        },
+      },
+    });
+
+    const messages = screen.getByTestId("shared-messages");
+    expect(messages).toHaveAttribute("data-live-mcp-host", "unavailable");
+    expect(messages).toHaveAttribute("data-mcp-conversation", "");
+    expect(messages).toHaveAttribute("data-mcp-artifact-count", "0");
+  });
+
   it.each([
     {
       source: "conversation",

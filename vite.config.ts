@@ -289,6 +289,8 @@ export default defineConfig(({ mode }) => {
         "@heroui/react",
         "lucide-react",
         "@microlink/react-json-view",
+        // MCP App views load this bridge lazily after a tool result arrives.
+        "@modelcontextprotocol/ext-apps/app-bridge",
         // These are discovered when launching conversations:
         "react-icons/vsc",
         "react-icons/lu",

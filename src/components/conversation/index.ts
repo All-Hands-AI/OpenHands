@@ -6,3 +6,17 @@ export { ChatInterfaceWrapper } from "../features/conversation/conversation-main
 export { ConversationName } from "../features/conversation/conversation-name";
 export { ConversationNameWithStatus } from "../features/conversation/conversation-name-with-status";
 export { ConversationTabs } from "../features/conversation/conversation-tabs/conversation-tabs";
+export {
+  MCPAppHostProvider,
+  type MCPAppHostProviderProps,
+} from "../features/mcp-apps/mcp-app-host-context";
+export type {
+  MCPAppArtifacts,
+  MCPAppBinding,
+  MCPAppDescriptor,
+  MCPAppHost,
+  MCPAppIntegrationData,
+  MCPAppRequestOptions,
+  MCPAppScope,
+  MCPAppSession,
+} from "../../types/mcp-app";

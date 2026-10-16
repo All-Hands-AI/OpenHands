@@ -1,0 +1,214 @@
+{
+  "languages": 16,
+  "measurements": [
+    {
+      "locale": "en",
+      "viewport": 306,
+      "width": 306,
+      "axisDirection": "ltr",
+      "svgDirection": "ltr",
+      "dir": "ltr",
+      "price": "129.05",
+      "outer": {
+        "viewport": 390,
+        "width": 390
+      }
+    },
+    {
+      "locale": "ja",
+      "viewport": 306,
+      "width": 306,
+      "axisDirection": "ltr",
+      "svgDirection": "ltr",
+      "dir": "ltr",
+      "price": "129.05",
+      "outer": {
+        "viewport": 390,
+        "width": 390
+      }
+    },
+    {
+      "locale": "zh-CN",
+      "viewport": 306,
+      "width": 306,
+      "axisDirection": "ltr",
+      "svgDirection": "ltr",
+      "dir": "ltr",
+      "price": "129.05",
+      "outer": {
+        "viewport": 390,
+        "width": 390
+      }
+    },
+    {
+      "locale": "zh-TW",
+      "viewport": 306,
+      "width": 306,
+      "axisDirection": "ltr",
+      "svgDirection": "ltr",
+      "dir": "ltr",
+      "price": "129.05",
+      "outer": {
+        "viewport": 390,
+        "width": 390
+      }
+    },
+    {
+      "locale": "ko-KR",
+      "viewport": 306,
+      "width": 306,
+      "axisDirection": "ltr",
+      "svgDirection": "ltr",
+      "dir": "ltr",
+      "price": "129.05",
+      "outer": {
+        "viewport": 390,
+        "width": 390
+      }
+    },
+    {
+      "locale": "no",
+      "viewport": 306,
+      "width": 306,
+      "axisDirection": "ltr",
+      "svgDirection": "ltr",
+      "dir": "ltr",
+      "price": "129.05",
+      "outer": {
+        "viewport": 390,
+        "width": 390
+      }
+    },
+    {
+      "locale": "ar",
+      "viewport": 306,
+      "width": 306,
+      "axisDirection": "ltr",
+      "svgDirection": "ltr",
+      "dir": "rtl",
+      "price": "129.05",
+      "outer": {
+        "viewport": 390,
+        "width": 390
+      }
+    },
+    {
+      "locale": "de",
+      "viewport": 306,
+      "width": 306,
+      "axisDirection": "ltr",
+      "svgDirection": "ltr",
+      "dir": "ltr",
+      "price": "129.05",
+      "outer": {
+        "viewport": 390,
+        "width": 390
+      }
+    },
+    {
+      "locale": "fr",
+      "viewport": 306,
+      "width": 306,
+      "axisDirection": "ltr",
+      "svgDirection": "ltr",
+      "dir": "ltr",
+      "price": "129.05",
+      "outer": {
+        "viewport": 390,
+        "width": 390
+      }
+    },
+    {
+      "locale": "it",
+      "viewport": 306,
+      "width": 306,
+      "axisDirection": "ltr",
+      "svgDirection": "ltr",
+      "dir": "ltr",
+      "price": "129.05",
+      "outer": {
+        "viewport": 390,
+        "width": 390
+      }
+    },
+    {
+      "locale": "pt",
+      "viewport": 306,
+      "width": 306,
+      "axisDirection": "ltr",
+      "svgDirection": "ltr",
+      "dir": "ltr",
+      "price": "129.05",
+      "outer": {
+        "viewport": 390,
+        "width": 390
+      }
+    },
+    {
+      "locale": "es",
+      "viewport": 306,
+      "width": 306,
+      "axisDirection": "ltr",
+      "svgDirection": "ltr",
+      "dir": "ltr",
+      "price": "129.05",
+      "outer": {
+        "viewport": 390,
+        "width": 390
+      }
+    },
+    {
+      "locale": "ca",
+      "viewport": 306,
+      "width": 306,
+      "axisDirection": "ltr",
+      "svgDirection": "ltr",
+      "dir": "ltr",
+      "price": "129.05",
+      "outer": {
+        "viewport": 390,
+        "width": 390
+      }
+    },
+    {
+      "locale": "tr",
+      "viewport": 306,
+      "width": 306,
+      "axisDirection": "ltr",
+      "svgDirection": "ltr",
+      "dir": "ltr",
+      "price": "129.05",
+      "outer": {
+        "viewport": 390,
+        "width": 390
+      }
+    },
+    {
+      "locale": "uk",
+      "viewport": 306,
+      "width": 306,
+      "axisDirection": "ltr",
+      "svgDirection": "ltr",
+      "dir": "ltr",
+      "price": "129.05",
+      "outer": {
+        "viewport": 390,
+        "width": 390
+      }
+    },
+    {
+      "locale": "id",
+      "viewport": 306,
+      "width": 306,
+      "axisDirection": "ltr",
+      "svgDirection": "ltr",
+      "dir": "ltr",
+      "price": "129.05",
+      "outer": {
+        "viewport": 390,
+        "width": 390
+      }
+    }
+  ],
+  "errors": []
+}
