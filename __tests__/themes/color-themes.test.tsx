@@ -18,7 +18,7 @@ describe("color themes", () => {
   // @spec MCP-004 — Form feedback follows readable theme text roles
   // @spec WN-001 — Warning feedback also meets the small-text contrast contract
   it.each(Object.entries(COLOR_THEMES))(
-    "keeps small text readable on the %s theme surfaces",
+    "keeps feedback and keyboard focus readable on the %s theme surfaces",
     (_key, theme) => {
       // Resolve the shipped palette, including stylesheet-owned defaults.
       const variables: Record<string, string> = {
@@ -60,6 +60,22 @@ describe("color themes", () => {
         ).toBeGreaterThanOrEqual(4.5);
       }
 
+      // Focus contrast includes each neutral control surface.
+      for (const surfaceRole of [
+        "--oh-color-base",
+        "--oh-color-base-secondary",
+        "--oh-surface-raised",
+        "--oh-interactive-hover",
+      ]) {
+        expect(
+          contrast(
+            luminance(resolve("--oh-focus")),
+            luminance(resolve(surfaceRole)),
+          ),
+          `--oh-focus against ${surfaceRole}`,
+        ).toBeGreaterThanOrEqual(3);
+      }
+
       // @spec FF-001 — Theme-aware validation and load errors
       // The automation setup draft bar's error pill: Tailwind red-500
       // (#fb2c36) at 5% over the theme surface.
@@ -84,7 +100,7 @@ describe("color themes", () => {
         "--oh-contrast against the Home mode toggle pill",
       ).toBeGreaterThanOrEqual(4.5);
 
-      // @spec WN-001 — Context meter text and fills preserve contrast in each palette.
+      // Context meter text and fills preserve contrast in each palette.
       const contextMeterSurface = luminance(resolve("--oh-surface-raised"));
       const contextMeterTrack = luminance(resolve("--oh-color-tertiary"));
       for (const role of ["--oh-feedback-error", "--oh-feedback-warning"]) {
