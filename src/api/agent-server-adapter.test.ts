@@ -751,6 +751,30 @@ describe("buildStartConversationRequest — agentProfileId path", () => {
     ]);
   });
 
+  it("carries a per-launch LLM override only on a profile launch", () => {
+    const settings = makeSettings({
+      agent_kind: "openhands",
+      llm: { model: "litellm_proxy/openai/gpt-5.5", api_key: "sk-test" },
+    });
+
+    const profileLaunch = buildStartConversationRequest({
+      settings,
+      agentProfileId: "profile-xyz",
+      agentProfileKind: "openhands",
+      llmProfileOverride: "fast",
+    });
+    expect(profileLaunch.agent_launch_additions).toEqual({
+      llm_profile_ref: "fast",
+    });
+
+    const settingsLaunch = buildStartConversationRequest({
+      settings,
+      llmProfileOverride: "fast",
+    });
+    expect(settingsLaunch.agent_launch_additions).toBeUndefined();
+    expect(settingsLaunch.agent_settings).toBeDefined();
+  });
+
   it("suppresses the ACP server tag when launching from a profile", () => {
     const agentSettings = {
       agent_kind: "acp",
