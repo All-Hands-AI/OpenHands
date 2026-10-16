@@ -60,7 +60,6 @@ describe("color themes", () => {
         ).toBeGreaterThanOrEqual(4.5);
       }
 
-      // @spec FF-002 — Theme-aware connection status banners
       const statusSurfaces = ["--oh-color-base", "--oh-color-base-secondary"];
       const statusTextRoles = [
         ["--oh-feedback-success", "--oh-status-success"],

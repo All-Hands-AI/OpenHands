@@ -54,7 +54,6 @@ export function AcpAuthStatusBanner({
     credentialsConfigured,
   });
 
-  // @spec FF-002 — Theme-aware connection status banners
   if (display === "signed-in") {
     return (
       <div

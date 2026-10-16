@@ -38,7 +38,6 @@ interface CheckBackendStepProps {
   onClose?: () => void;
 }
 
-// @spec FF-002 — Theme-aware connection status banners
 function ConnectionBanner({
   backend,
   isConnected,
