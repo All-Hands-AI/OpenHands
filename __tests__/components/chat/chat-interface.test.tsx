@@ -1261,6 +1261,29 @@ describe("ChatInterface - Build plan keyboard shortcut", () => {
     });
   });
 
+  it("leaves Ctrl+Enter to a pending confirmation", () => {
+    vi.mocked(useAgentState).mockReturnValue({
+      curAgentState: AgentState.AWAITING_USER_CONFIRMATION,
+    });
+    act(() => {
+      useConversationStore.setState({
+        conversationMode: "plan",
+        planContent: "# Plan\n\n- step one",
+      });
+    });
+
+    try {
+      renderInterface();
+      pressBuildShortcut();
+
+      expect(sentBuildPrompt()).toBe(false);
+    } finally {
+      vi.mocked(useAgentState).mockReturnValue({
+        curAgentState: AgentState.AWAITING_USER_INPUT,
+      });
+    }
+  });
+
   it("leaves Ctrl+Enter to the composer when it has text", () => {
     act(() => {
       useConversationStore.setState({

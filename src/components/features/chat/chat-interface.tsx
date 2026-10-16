@@ -180,9 +180,15 @@ export function ChatInterface({
   // when multiple PlanPreview components exist in the chat.
   // Gated on the same conditions as the Build button
   // (ConversationPlannerBuildBar's `isBuildDisabled`) so it cannot fire
-  // outside the plan flow.
+  // outside the plan flow. While an action awaits confirmation the same keys
+  // confirm it, so the build shortcut stands aside.
   React.useEffect(() => {
-    if (isAgentRunning || conversationMode !== "plan" || !planContent) {
+    if (
+      isAgentRunning ||
+      curAgentState === AgentState.AWAITING_USER_CONFIRMATION ||
+      conversationMode !== "plan" ||
+      !planContent
+    ) {
       return undefined;
     }
 
@@ -211,6 +217,7 @@ export function ChatInterface({
     };
   }, [
     isAgentRunning,
+    curAgentState,
     conversationMode,
     planContent,
     handleBuildPlanClick,
