@@ -1,6 +1,9 @@
 import { QueryClient } from "@tanstack/react-query";
 import { ConversationClient } from "@openhands/typescript-client/clients";
-import type { StartGoalRequest } from "@openhands/typescript-client";
+import type {
+  StartGoalRequest,
+  StaticSecret,
+} from "@openhands/typescript-client";
 import { getActiveBackend } from "#/api/backend-registry/active-store";
 import {
   pauseCloudSandbox,
@@ -9,7 +12,7 @@ import {
 import { getAgentServerClientOptions } from "#/api/agent-server-client-options";
 import {
   buildCustomSecrets,
-  type CustomSecretInput,
+  type SavedSecretInput,
 } from "#/api/agent-server-adapter";
 import AgentServerConversationService from "#/api/conversation-service/agent-server-conversation-service.api";
 import { AppConversation } from "#/api/conversation-service/agent-server-conversation-service.types";
@@ -121,18 +124,38 @@ export const resumeGoal = async (conversationId: string): Promise<void> => {
   ).resumeGoal(conversationId);
 };
 
+function buildCloudStaticSecrets(
+  customSecrets: SavedSecretInput[],
+): Record<string, StaticSecret> | undefined {
+  if (!customSecrets.length) return undefined;
+  return Object.fromEntries(
+    customSecrets.map(({ name, description, value }) => {
+      if (!value) {
+        throw new Error(
+          `Secret "${name}" can only be added to a running cloud conversation when it is entered here.`,
+        );
+      }
+      return [name, { kind: "StaticSecret", value, description }];
+    }),
+  );
+}
+
 /**
  * Hand saved secrets to a running conversation. Conversations receive their
  * secrets once at start, so a secret saved mid-conversation is otherwise
- * invisible to the agent. Secrets ride as LookupSecrets, never as values.
- * Cloud resolves secrets server-side, so this is local-only.
+ * invisible to the agent. Locally, secrets ride as LookupSecrets, never as
+ * values. Cloud has no sandbox-facing lookup for custom secrets (it hands them
+ * over as values at start), so there the value the user just entered is sent
+ * as a StaticSecret, and a secret without one cannot be attached.
  */
 export const updateConversationSecrets = async (
   conversationId: string,
-  customSecrets: CustomSecretInput[],
+  customSecrets: SavedSecretInput[],
 ): Promise<void> => {
-  if (getActiveBackend().backend.kind === "cloud") return;
-  const secrets = buildCustomSecrets(customSecrets);
+  const secrets =
+    getActiveBackend().backend.kind === "cloud"
+      ? buildCloudStaticSecrets(customSecrets)
+      : buildCustomSecrets(customSecrets);
   if (!secrets) return;
 
   const { conversationUrl, sessionApiKey } =

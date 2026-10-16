@@ -13,13 +13,13 @@ import {
 import { BrandButton } from "../brand-button";
 import { useSearchSecrets } from "#/hooks/query/use-get-secrets";
 import { OptionalTag } from "../optional-tag";
-import type { CustomSecretInput } from "#/api/agent-server-adapter";
+import type { SavedSecretInput } from "#/api/agent-server-adapter";
 
 interface SecretFormProps {
   mode: "add" | "edit";
   selectedSecret: string | null;
   onCancel: () => void;
-  onSaved?: (secret: CustomSecretInput) => void;
+  onSaved?: (secret: SavedSecretInput) => void;
   /** Name to prefill in add mode. */
   defaultName?: string;
   /** Keep the form open after a failed save so the user can retry. */
@@ -89,7 +89,7 @@ export function SecretForm({
         onSettled: closeUnlessKeptOpen,
         onSuccess: () => {
           invalidateSecrets();
-          onSaved?.({ name, description });
+          onSaved?.({ name, description, value });
         },
       },
     );
@@ -107,7 +107,7 @@ export function SecretForm({
         onSettled: closeUnlessKeptOpen,
         onSuccess: () => {
           invalidateSecrets();
-          onSaved?.({ name, description });
+          onSaved?.({ name, description, value });
         },
       },
     );

@@ -81,6 +81,7 @@ describe("SecretRequestModal", () => {
     expect(mockCompleteSecretRequest).toHaveBeenNthCalledWith(1, request, {
       name: "GITHUB_TOKEN",
       description: undefined,
+      value: "ghp_example",
     });
     expect(createSecret).toHaveBeenCalledWith(
       "GITHUB_TOKEN",

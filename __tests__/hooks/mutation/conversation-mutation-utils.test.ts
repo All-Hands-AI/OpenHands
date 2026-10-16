@@ -327,14 +327,40 @@ describe("conversation runtime commands", () => {
     });
   });
 
-  it("leaves cloud conversations to resolve secrets server-side", async () => {
+  it("hands a just-entered secret to a running cloud conversation as its value", async () => {
+    const conversation = prepareRuntimeConversation();
+    mocks.getActiveBackend.mockReturnValueOnce({ backend: { kind: "cloud" } });
+    mocks.updateSecrets.mockResolvedValueOnce({ success: true });
+
+    await expect(
+      updateConversationSecrets(CONV_ID, [
+        {
+          name: "GITHUB_TOKEN",
+          description: "Factory repo access",
+          value: "ghp_example",
+        },
+      ]),
+    ).resolves.toBeUndefined();
+
+    expectRuntimeClient(CONV_ID, conversation);
+    expect(mocks.updateSecrets).toHaveBeenCalledWith(CONV_ID, {
+      secrets: {
+        GITHUB_TOKEN: {
+          kind: "StaticSecret",
+          value: "ghp_example",
+          description: "Factory repo access",
+        },
+      },
+    });
+  });
+
+  it("cannot attach a cloud secret whose value was not entered here", async () => {
     mocks.getActiveBackend.mockReturnValueOnce({ backend: { kind: "cloud" } });
 
     await expect(
       updateConversationSecrets(CONV_ID, [{ name: "GITHUB_TOKEN" }]),
-    ).resolves.toBeUndefined();
+    ).rejects.toThrow('Secret "GITHUB_TOKEN"');
 
-    expect(mocks.batchGetAppConversations).not.toHaveBeenCalled();
     expect(mocks.updateSecrets).not.toHaveBeenCalled();
   });
 });
