@@ -245,7 +245,8 @@ prerequisite; never substitute a mock and call it a pass.
   can drive it, so `control-openhands bug run <ID>` reports an expected failure
   (`xfail`) and flags it (`xpass`) when the symptom stops reproducing. The
   [existing-bug backfill](references/backfills/2026-10-12-open-bugs.md) records its
-  frozen inventory; [bug-backfill.md](references/bug-backfill.md) defines outcomes
+  frozen inventory; the [main refresh](references/backfills/2026-10-16-main-refresh.md)
+  reconciles later fixes and intake; [bug-backfill.md](references/bug-backfill.md) defines outcomes
   and label reconciliation. Passes re-drive these notes once the issue closes.
   `ready-for-dev` prioritizes checks without excluding older actionable reports.
 - **Blocked**: name the missing prerequisite (account, entitlement, OS, binary)

@@ -132,7 +132,8 @@ sections, in this order:
    (reproduced <date>, #<issue>): <what happens>`; list it here as
    `Known issue #<issue>: ...` only when no recipe can drive it. The completed
    [existing-bug backfill](backfills/2026-10-12-open-bugs.md) accounts for its frozen
-   inventory; [bug-backfill.md](bug-backfill.md) defines ongoing intake and outcome
+   inventory; the [main refresh](backfills/2026-10-16-main-refresh.md) records later
+   reconciliation. [bug-backfill.md](bug-backfill.md) defines ongoing intake and outcome
    labels. Absence of `ready-for-dev` is not an exclusion.
    Use full repository-qualified links for SDK and automation issues, so their
    numbers cannot be mistaken for Canvas issue numbers.

@@ -33,8 +33,12 @@ label as a side effect of map bookkeeping.
 These are accounting outcomes. A mapped issue is not necessarily reproduced;
 its note distinguishes a reproduced failure from a reported failure blocked by
 a prerequisite. Not reproduced does not mean fixed, and out of scope does not
-dismiss the bug. Text carries this meaning even when label colors cannot be
-seen. Each processed issue has exactly one outcome label in repositories where
+dismiss the bug. Record verification separately: a `Known issue` with an
+unavailable prerequisite is **BLOCKED**, with that prerequisite named; it is not
+a `Known failure`. Reserve `Known failure` for an observed live reproduction
+and preserve its date. An available scenario awaiting a run is `not-run`, not
+blocked merely because it has not been attempted. Text carries this meaning
+even when label colors cannot be seen. Each processed issue has exactly one outcome label in repositories where
 these labels have been authorized. An unprocessed issue has none; keep it in
 the pending section of the ledger instead of guessing a completed outcome.
 
@@ -52,7 +56,11 @@ its read-only result as the recipe requires. If the reproduction can be driven,
 run it; do not turn a time limit into a missing-prerequisite claim. When no
 recipe can drive a reported scenario, record the exact missing account, model,
 OS, old persisted data or reproduction detail in the Gotchas note. Preserve
-historical reproduction dates for notes already in the map.
+reproduction dates for unresolved notes already in the map. The map describes
+current application behavior: once a fix applies at the current Canvas and
+pinned backend versions, remove the resolved failure note and obsolete
+reproduction recipe. Keep earlier observations in the dated backfill ledger,
+not in historical sections of the feature map.
 
 For a not-reproduced comment, introduce the agent and requester as instructed,
 then include the frozen revision, actual backend versions, run ID, user entry
@@ -62,7 +70,8 @@ Do not publish keys, live session URLs, raw traces or unreviewed screenshots.
 ## Pass ledger
 
 Keep one row per `(repository, issue number)` with outcome, owning family and
-feature IDs, note or comment link, reason/prerequisite, and run/evidence details
+feature IDs, note or comment link, verification status, exact missing
+prerequisite when blocked, and run/evidence details
 when exercised. Report counts per repository and distinguish existing notes,
 new reproductions and blocked known issues within the mapped outcome. Include
 all pending rows, even if another shard owns them. The pass is complete only
@@ -80,10 +89,37 @@ completeness filter.
 Re-check a not-reproduced result when its scenario, relevant source or backend
 changes; a result applies to its recorded revision and configuration. Re-check
 out-of-scope classification if the feature becomes supported. After a mapped
-issue closes, the daily/weekly pass re-drives its note and removes or updates
-it only with fresh evidence. Keep label reconciliation in that same pass.
+issue closes, confirm the fix applies at the current Canvas and pinned backend
+versions and re-drive its scenario where possible. Remove resolved bug notes
+and obsolete recipes from the map; retain the current expected behavior.
+Record verification limits and earlier observations in the dated ledger. Keep
+label reconciliation in that same pass.
 
 The completed [2026-10-12 backfill](backfills/2026-10-12-open-bugs.md) records
-the frozen inventory, per-issue outcomes, published comments and retained run
-evidence. Fixture tests use the installed SDK Python, which supplies `httpx`:
+its frozen inventory, per-issue outcomes, published comments and retained run
+evidence. The [2026-10-16 main refresh](backfills/2026-10-16-main-refresh.md)
+records the later inventory and reconciles closed reports with current source,
+pinned backend versions and fresh observations. Read the latest reconciliation
+before treating a historical result as current. Fixture tests use the installed SDK Python, which supplies `httpx`:
 `python -m unittest discover -s .agents/skills/verify-openhands/scripts/fixtures -p 'test_*.py'`.
+
+## Refresh after main changes
+
+Keep the original snapshot and its evidence dated. Freeze the new main target
+and issue inventory separately, inherit main's accepted maintenance baseline,
+and add a reconciliation ledger. Re-read every affected family, including
+notes imported by main and closed issues absent from the original snapshot.
+A merged SDK fix may be newer than Canvas's released pin: a closed issue is
+not enough to retire a supported-version failure. Conversely, when main has
+fixed or replaced a flow, describe the current behavior and remove obsolete
+failure notes and reproduction steps. Keep superseded observations only in
+the dated backfill ledger, outside the current feature map.
+
+For each closed report distinguish current live observation, accepted source
+change awaiting the original scenario, and a fix unavailable at the tested
+pin. A source review, closure or passing unit test is not a verified runtime
+fix. Retain the concrete account, model, platform or fixture prerequisite for
+scenarios that cannot be driven. Refresh changed not-reproduced scenarios and
+append the new revision, pins and steps to their existing issue comments; keep
+the earlier result intact. Reconcile only the three outcome labels after the
+current supporting record exists, leaving unrelated labels unchanged.

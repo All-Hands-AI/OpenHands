@@ -20,7 +20,7 @@ Source: `src/components/features/conversation/conversation-tabs/`, `src/componen
 - `F08.tabs-menu`: the ellipsis menu at the end of the tab bar lists every tab. Choosing a row opens that tab and closes the menu, and so does clicking outside.
 - `F08.tabs-pin`: the pill on each menu row pins or unpins a tab. Unpinning the active tab selects another pinned one, and the choice persists across reloads.
 - `F08.drawer-resize`: dragging the chat/drawer divider resizes both panes (chat 30–80 %, default 50 %, stored in `desktop-layout-panel-width`).
-- `F08.vscode-link`: a `VSCode` button at the right of the tab bar opens the editor in a new window; it is hidden when the runtime has no editor. (#17660 removed it and #18048 restored it.)
+- `F08.vscode-link`: a `VSCode` button at the right of the tab bar opens the editor in a new window; it is hidden when the runtime has no editor.
 - `F08.archived-disabled`: on an archived conversation the toggle is disabled with the tooltip `Unavailable for Archives`.
 - `F08.phone-panel-page`: at 1024 px or narrower the toggle navigates to `/conversations/<id>/panel`, a full-screen page with a Back chevron, the same tab bar and the tab body.
 - `F08.panel-direct-url`: opening `/conversations/<id>/panel` directly renders the panel page at 1024 px or narrower, and Back returns to the chat; wider, the URL is replaced with `/conversations/<id>` and the drawer opens beside the chat.
@@ -104,8 +104,100 @@ Preconditions:
 
 - **Rich fenced code (`F08.files-rich-plain`).** Arrange a Markdown file in the selected workspace containing a heading and a fenced Python `print("qa")` block. Open it from Files in Rich mode and take `browser screenshot --feature F08.files-rich-plain --name fenced-code`. Known failure (reproduced 2026-10-12, [#16802](https://github.com/OpenHands/OpenHands/issues/16802)): the code renders in nested dark/gray containers with repeated padding. This is a layout-only observation; the measured `pre` and prose ancestor had zero border width, so it is not a claim of visible CSS borders.
 - **Git filename with a space (`F08.uncommitted-changes`).** In a disposable workspace Git fixture, create and commit `my notes.md`, then modify it (plain shell Git/file commands are fixture setup, not UI proof). Open its empty Local conversation's Commits tab and read `browser network --filter '/git/'`. Expected: the modified path and other changes stay listed. Known failure (reproduced 2026-10-12, [OpenHands/software-agent-sdk#5642](https://github.com/OpenHands/software-agent-sdk/issues/5642)): the scoped changes call returns 400 and hides the Uncommitted changes. Only the space-name case was tested; the same issue's non-ASCII and rename cases still require their own checks.
-- **Plain parent containing a repository (`F08.uncommitted-changes`).** Arrange a disposable `qa-nested/proj` Git repository with a modified tracked README and an untracked notes file, and select `qa-nested` as the conversation workspace. Creation initializes an empty `qa-nested/.git`: remove only that run-owned empty repository to restore the reported plain-parent layout. Reload, reopen Commits and read `browser network --filter '/git/'`. Known failure (reproduced 2026-10-12, [OpenHands/software-agent-sdk#5641](https://github.com/OpenHands/software-agent-sdk/issues/5641)): the changes call returns 200 with no changes and the panel reads No commits yet although the child repository is dirty. Never remove a user's repository to arrange this check.
 - **File listing above one MiB (`F08.files-tree`).** In a disposable fixture, arrange 1800 tiny files beneath three 220-character directory segments so the sorted relative-path listing exceeds one MiB while remaining below the 2000-file cap. Keep a normal tracked README at the root. Open Files, click `testid=files-tab-refresh`, then count `role=button[name="README.md"][exact]` and inspect the tree. Known failure (reproduced 2026-10-12, [OpenHands/software-agent-sdk#5638](https://github.com/OpenHands/software-agent-sdk/issues/5638)): the README disappears and a spurious partial-path folder appears because the command API returns the tail output chunk only. The greater-than-100-chunk/null-exit case was not driven.
+
+- **Subdirectory Git paths (`F08.uncommitted-changes`, `F08.diff-view-modes`).** Expected: a workspace at `repo/src` lists changes beneath that folder relative to it, and its diffs open. Known failure (reproduced 2026-10-16, SDK 1.55.0, [OpenHands/software-agent-sdk#5843](https://github.com/OpenHands/software-agent-sdk/issues/5843)): tracked paths retain the repository prefix while untracked paths are relative to `src`; opening displayed `src/app.py` requests `repo/src/src/app.py` and returns400. The ordinary repository-root control lists correct paths. The recipe creates only disposable, idle offline conversations.
+  ```sh known-bug F08.diff-view-modes subdirectory-paths
+  control-openhands browser viewport desktop
+  QA_ID="$(python3 - <<'PY'
+  import json, os, pathlib, subprocess, tempfile
+  base = pathlib.Path(os.environ["OH_VERIFY_RUN"]) / "workspace"
+  base.mkdir(exist_ok=True)
+  fixture = pathlib.Path(tempfile.mkdtemp(prefix="qa-surface-", dir=base))
+  llm = {"model":"openai/gpt-4o", "base_url":"http://127.0.0.1:1/v1", "api_key":"qa-not-real", "num_retries":0, "timeout":2}
+  def create(workspace, parent=None, tags=None):
+      payload = {"agent":{"kind":"Agent", "llm":llm, "tools":[]}, "workspace":{"working_dir":str(workspace)}, "autotitle":False}
+      if parent: payload["parent_conversation_id"] = parent
+      if tags: payload["tags"] = tags
+      request = fixture / "request.json"
+      request.write_text(json.dumps(payload))
+      result = subprocess.run(["control-openhands", "api", "POST", "/api/conversations", "--write", "--data", "@"+str(request), "--pick", "id"], check=True, capture_output=True, text=True)
+      return json.loads(result.stdout)["value"]
+  def git(directory, *args):
+      subprocess.run(["git", "-C", str(directory), *args], check=True, capture_output=True)
+  repo = fixture / "repo"
+  (repo / "src").mkdir(parents=True)
+  git(repo, "init", "-q", "-b", "main")
+  (repo / "README.md").write_text("root before\n")
+  (repo / "src/app.py").write_text("x = 1\n")
+  git(repo, "add", ".")
+  git(repo, "-c", "user.name=QA", "-c", "user.email=qa@example.invalid", "commit", "-qm", "Owned fixture")
+  (repo / "README.md").write_text("root after\n")
+  (repo / "src/app.py").write_text("x = 2\n")
+  (repo / "src/new.py").write_text("new\n")
+  print(create(repo / "src"))
+  PY
+  )"
+  control-openhands browser goto "/conversations/$QA_ID"
+  control-openhands browser click 'testid=right-panel-toggle'
+  control-openhands browser click 'testid=conversation-tab-commits'
+  control-openhands browser wait-text Uncommitted --timeout 10000
+  control-openhands browser click 'testid=uncommitted-changes-row-toggle'
+  control-openhands browser network --clear
+  control-openhands browser click 'testid=file-diff-viewer-outer >> has-text=src/app.py >> testid=collapse' --observe 'testid=uncommitted-changes-row-content' --observe-ms 1000
+  control-openhands browser screenshot --feature F08.diff-view-modes --name subdir-mixed-paths
+  control-openhands assert --field recent.0.status --equals 200 --bug-shows 400 -- browser network --filter '/git/diff'  # bug
+  ```
+
+- **Plain parent containing a repository (`F08.uncommitted-changes`).** Expected: a plain workspace holding one dirty repository exposes that repository's changes. Known failure (reproduced 2026-10-16, pinned SDK 1.55.0, [OpenHands/software-agent-sdk#5641](https://github.com/OpenHands/software-agent-sdk/issues/5641)): the changes request returns200 with no changes and Commits reads `No commits yet` although the child repository is dirty. The upstream fix is closed but not included in the current pin. The recipe removes only its own verified empty parent `.git`; never remove a user's repository.
+  ```sh known-bug F08.uncommitted-changes nested-repository
+  control-openhands browser viewport desktop
+  QA_ID="$(python3 - <<'PY'
+  import json, os, pathlib, subprocess, tempfile
+  base = pathlib.Path(os.environ["OH_VERIFY_RUN"]) / "workspace"
+  base.mkdir(exist_ok=True)
+  fixture = pathlib.Path(tempfile.mkdtemp(prefix="qa-surface-", dir=base))
+  llm = {"model":"openai/gpt-4o", "base_url":"http://127.0.0.1:1/v1", "api_key":"qa-not-real", "num_retries":0, "timeout":2}
+  def create(workspace, parent=None, tags=None):
+      payload = {"agent":{"kind":"Agent", "llm":llm, "tools":[]}, "workspace":{"working_dir":str(workspace)}, "autotitle":False}
+      if parent: payload["parent_conversation_id"] = parent
+      if tags: payload["tags"] = tags
+      request = fixture / "request.json"
+      request.write_text(json.dumps(payload))
+      result = subprocess.run(["control-openhands", "api", "POST", "/api/conversations", "--write", "--data", "@"+str(request), "--pick", "id"], check=True, capture_output=True, text=True)
+      return json.loads(result.stdout)["value"]
+  def git(directory, *args):
+      subprocess.run(["git", "-C", str(directory), *args], check=True, capture_output=True)
+  import shutil
+  parent = fixture / "parent"
+  child = parent / "proj"
+  child.mkdir(parents=True)
+  git(child, "init", "-q", "-b", "main")
+  (child / "README.md").write_text("before\n")
+  git(child, "add", ".")
+  git(child, "-c", "user.name=QA", "-c", "user.email=qa@example.invalid", "commit", "-qm", "Owned nested fixture")
+  (child / "README.md").write_text("after\n")
+  (child / "notes.txt").write_text("untracked\n")
+  conversation_id = create(parent)
+  empty_git = parent / ".git"
+  if empty_git.exists():
+      assert empty_git.is_dir() and not empty_git.is_symlink()
+      top = pathlib.Path(subprocess.check_output(["git", "-C", str(parent), "rev-parse", "--show-toplevel"], text=True).strip())
+      assert top.resolve() == parent.resolve()
+      assert not subprocess.check_output(["git", "-C", str(parent), "ls-files"], text=True).strip()
+      shutil.rmtree(empty_git)
+  print(conversation_id)
+  PY
+  )"
+  control-openhands browser goto "/conversations/$QA_ID"
+  control-openhands browser click 'testid=right-panel-toggle'
+  control-openhands browser click 'testid=conversation-tab-commits'
+  control-openhands browser wait '#conversation-tab-panel main'
+  control-openhands browser wait 'testid=commits-tab-status' --state detached --timeout 10000
+  control-openhands assert --field recent.0.status --equals 200 -- browser network --filter '/git/changes'
+  control-openhands browser screenshot --feature F08.uncommitted-changes --name nested-repository
+  control-openhands assert --field count --equals 1 --bug-shows 0 -- browser count 'testid=uncommitted-changes-row'  # bug
+  ```
 
 ## Gotchas
 
@@ -137,3 +229,5 @@ Preconditions:
 - Known issue [#15501](https://github.com/OpenHands/OpenHands/issues/15501) (`F08.files-rich-plain`): Generated-page JavaScript was blocked by an iframe sandbox. Files Rich intentionally disables scripts; the report does not identify whether Files or Browser was used. Live prerequisite: The original preview panel and file URL or minimal page identifying the intended surface; Files Rich deliberately blocks scripts, while Browser is separate.
 - Known issue [OpenHands/software-agent-sdk#4562](https://github.com/OpenHands/software-agent-sdk/issues/4562) (`F08.files-load-error`): Plain-HTTP non-loopback workspace previews can return401 after the browser rejects the workspace-session cookie. Live prerequisite: A plain-HTTP non-loopback same-origin browser deployment with real workspace-cookie observation.
 - Known issue [#16871](https://github.com/OpenHands/OpenHands/issues/16871) (`F08.vscode-link`): the shared `transformVSCodeUrl` still accepts arbitrary schemes, and the current Cloud `use-unified-vscode-url.ts` branch passes sandbox `exposed_urls` editor values through it without the Local origin gate. Live prerequisite: an authorized Cloud account/sandbox whose editor `exposed_urls` value can be controlled for safe URL-scheme rejection checks. Local inspection on 2026-10-12 at `fa1f724ab573` found no Download via VS Code action in the real card menu: its only production caller does not supply the required `showOptions` prop. The current drawer opens with `noopener,noreferrer`. Neither the old opener exploit nor the remaining Cloud scheme scenario was reproduced. Evidence: `backfill-18309-surface-rechecks/F04.download/vscode-card-action-absent-16871.png` and its ARIA snapshot. Keep this linked to the live editor-link consumer; do not infer the whole issue resolved from the removed card action.
+- Known issue [OpenHands/software-agent-sdk#5845](https://github.com/OpenHands/software-agent-sdk/issues/5845) (`F08.vscode-link`): reserved characters in the workspace path can split the editor URL's unencoded `folder` parameter and open the wrong folder. Live prerequisite: a supported origin serving a genuinely enabled/running editor and an owned conversation in a path containing `&` or `#`. A direct URL-constructor call does not exercise the link; Cloud `exposed_urls` takes another path.
+- Known issue [OpenHands/software-agent-sdk#5784](https://github.com/OpenHands/software-agent-sdk/issues/5784) (`F08.files-rich-plain`, `F08.files-fallbacks`, `F08.files-open-new-window`): a path-prefixed Agent Server can set a workspace cookie whose Path omits the prefix, leaving HTML/image/file previews unauthorized. Live prerequisite: an authenticated path-prefixed owned Local server with `OH_WEB_URL` and a real cookie-authenticated preview; the ordinary root-path launch cannot exercise that cookie Path.

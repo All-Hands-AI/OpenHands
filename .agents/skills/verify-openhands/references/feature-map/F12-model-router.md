@@ -82,6 +82,40 @@ Preconditions:
 - **Restart persistence (`F12.list`).** Run `control-openhands restart`, `control-openhands doctor`, `control-openhands browser goto /settings/meta-llm` and `control-openhands browser count 'testid=meta-profile-row-QA_router_phone >> testid=meta-profile-active-badge'`; it is `1`.
 - **Cleanup.** Switch **Run on first message** off through its label first (it disables once no router is left), then delete each `QA_*` router through the row menu. Remove the arranged LLM profile and connection with `control-openhands api DELETE /api/profiles/deepseek-chat --write` and `control-openhands api DELETE /api/llm/provider-connections/<connection id> --write` (`<connection id>` from `control-openhands api GET /api/llm/provider-connections`), or through Settings → LLM (F10).
 
+- **Router activation is honest on ACP (`F12.activate`).** ACP cannot attach the router; activation must report that refusal rather than plain success. Known failure (reproduced twice 2026-10-16, [OpenHands/software-agent-sdk#5879](https://github.com/OpenHands/software-agent-sdk/issues/5879)): actual global ACP settings produced an activated toast while both stored pointers stayed null. An active ACP profile pointer alone does not create this condition. The block restores the original owned settings bytes; its assertion rejects the misleading success toast.
+
+  ```sh known-bug F12.activate acp-settings
+  QA_ACP_SETTINGS="$OH_VERIFY_RUN/private/qa-known-acp-settings.json"
+  cp "$OH_VERIFY_RUN/private/settings.json" "$QA_ACP_SETTINGS"
+  trap 'cp "$QA_ACP_SETTINGS" "$OH_VERIFY_RUN/private/settings.json"; rm -f "$QA_ACP_SETTINGS"; control-openhands api DELETE /api/meta-profiles/QA_KNOWN_ACP_ROUTER --write >/dev/null; control-openhands browser reload >/dev/null' EXIT
+  control-openhands api POST /api/meta-profiles/QA_KNOWN_ACP_ROUTER --data '{"classifier_model":"QA_KNOWN_CLASSIFIER","prompt_template":"Pick {{ instance_text }}"}' --write
+  control-openhands api PATCH /api/settings --data '{"agent_settings_diff":{"agent_kind":"acp"}}' --write --pick agent_settings.agent_kind
+  control-openhands assert --field value --equals acp -- api GET /api/settings --pick agent_settings.agent_kind
+  control-openhands browser viewport desktop
+  control-openhands browser goto /settings/meta-llm
+  control-openhands browser wait 'testid=meta-profile-row-QA_KNOWN_ACP_ROUTER'
+  control-openhands browser click 'testid=meta-profile-menu-trigger-QA_KNOWN_ACP_ROUTER'
+  control-openhands browser click 'testid=meta-profile-set-active' --observe 'role=status' --observe-ms 1000
+  control-openhands assert --field value --equals false --bug-shows true -- browser eval 'document.body.innerText.includes("Meta-profile \"QA_KNOWN_ACP_ROUTER\" activated")'  # bug
+  ```
+
+- **Unreadable settings refuse router activation (`F12.activate`).** Expected: a handled409 without a filesystem path and no store overwrite. Known failure (reproduced twice 2026-10-16, [OpenHands/software-agent-sdk#5922](https://github.com/OpenHands/software-agent-sdk/issues/5922)): the real Set active path showed the generic500 and the settings path. The corrupt bytes survived. Back up only this run's settings, and restore them in `EXIT` before the runner's health check.
+
+  ```sh known-bug F12.activate corrupt-settings
+  QA_ROUTER_SETTINGS="$OH_VERIFY_RUN/private/qa-known-router-settings.json"
+  cp "$OH_VERIFY_RUN/private/settings.json" "$QA_ROUTER_SETTINGS"
+  trap 'cp "$QA_ROUTER_SETTINGS" "$OH_VERIFY_RUN/private/settings.json"; rm -f "$QA_ROUTER_SETTINGS"; control-openhands api DELETE /api/meta-profiles/QA_KNOWN_CORRUPT_ROUTER --write >/dev/null; control-openhands browser reload >/dev/null' EXIT
+  control-openhands api POST /api/meta-profiles/QA_KNOWN_CORRUPT_ROUTER --data '{"classifier_model":"QA_KNOWN_CLASSIFIER","prompt_template":"Pick {{ instance_text }}"}' --write
+  control-openhands browser viewport desktop
+  control-openhands browser goto /settings/meta-llm
+  control-openhands browser wait 'testid=meta-profile-row-QA_KNOWN_CORRUPT_ROUTER'
+  printf '{"agent_settings": ' > "$OH_VERIFY_RUN/private/settings.json"
+  control-openhands browser click 'testid=meta-profile-menu-trigger-QA_KNOWN_CORRUPT_ROUTER'
+  control-openhands browser network --clear
+  control-openhands browser click 'testid=meta-profile-set-active' --observe 'role=status' --observe-ms 1000
+  control-openhands assert --field recent.0.status --equals 409 --bug 'recent.0.status eq 500 && recent.0.path eq "/api/meta-profiles/QA_KNOWN_CORRUPT_ROUTER/activate"' -- browser network --filter '/api/meta-profiles/QA_KNOWN_CORRUPT_ROUTER/activate'  # bug
+  ```
+
 ## Gotchas
 
 - Settings nav test ids embed the route: quote `'testid=sidebar-settings-/settings/meta-llm'` as written.
@@ -96,4 +130,5 @@ Preconditions:
 - `service stop agent-server` does not show this page's error state: the whole app switches to the Manage backends card (F02). Run `control-openhands restart` afterwards.
 - The selection in the classifier and connection pickers is a combobox: open it with a click on the input, then click `role=option[name="..."]`; `browser fill` on the classifier sets a free-text value (allowed) instead of picking a profile.
 - At 390 px the row truncates the name (`QA_route…`) and summary; read names with `browser text`, not the screenshot.
-- The Model table placeholder showed a literal `\n` on one line until #18035 (closed #17939); a checkout without that fix still does (`F12.template-custom`).
+- The Model table placeholder displays separate lines (`F12.template-custom`).
+- Known issue [OpenHands/software-agent-sdk#5878](https://github.com/OpenHands/software-agent-sdk/issues/5878): Router files can be written under a literal `~` directory when Agent Server was configured with leading-tilde `OH_PERSISTENCE_DIR`. Blocked on the normal absolute-path launcher fixture: needs a disposable server with private HOME/cwd and literal `~/...` or relative persistence configuration, then a router save and filesystem readback. Never point it at user state. (`F12.create-first`, `F12.list`).
