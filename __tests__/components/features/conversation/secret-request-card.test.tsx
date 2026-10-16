@@ -2,7 +2,7 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SecretsService } from "#/api/secrets-service";
-import { SecretRequestModal } from "#/components/features/conversation/secret-request-modal";
+import { SecretRequestCards } from "#/components/features/conversation/secret-request-card";
 import {
   type SecretRequest,
   useSecretRequestStore,
@@ -25,15 +25,15 @@ const request: SecretRequest = {
   reason: "Push the factory branch; needs repo scope.",
 };
 
-const renderModal = async (requests: SecretRequest[] = [request]) => {
+const renderCards = async (requests: SecretRequest[] = [request]) => {
   useSecretRequestStore.setState({ requests });
-  renderWithProviders(<SecretRequestModal />);
+  renderWithProviders(<SecretRequestCards />);
   if (requests.some((r) => r.conversationId === request.conversationId)) {
-    await screen.findByTestId("secret-request-modal");
+    await screen.findAllByTestId("secret-request-card");
   }
 };
 
-describe("SecretRequestModal", () => {
+describe("SecretRequestCards", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     // Like the real service, completing a request removes it from the queue.
@@ -46,19 +46,29 @@ describe("SecretRequestModal", () => {
   });
 
   it("asks for the requested secret with the agent's reason", async () => {
-    await renderModal();
+    await renderCards();
 
     expect(screen.getByText(request.reason!)).toBeInTheDocument();
     expect(screen.getByTestId("name-input")).toHaveValue("GITHUB_TOKEN");
     expect(screen.getByTestId("value-input")).toHaveValue("");
   });
 
-  it("ignores requests from other conversations", async () => {
-    await renderModal([{ ...request, conversationId: "other-conversation" }]);
+  it("shows one card per pending request", async () => {
+    await renderCards([
+      request,
+      { ...request, toolCallId: "tool-call-2", name: "NPM_TOKEN" },
+    ]);
 
-    expect(
-      screen.queryByTestId("secret-request-modal"),
-    ).not.toBeInTheDocument();
+    const names = screen
+      .getAllByTestId("name-input")
+      .map((input) => (input as HTMLInputElement).value);
+    expect(names).toEqual(["GITHUB_TOKEN", "NPM_TOKEN"]);
+  });
+
+  it("ignores requests from other conversations", async () => {
+    await renderCards([{ ...request, conversationId: "other-conversation" }]);
+
+    expect(screen.queryByTestId("secret-request-card")).not.toBeInTheDocument();
   });
 
   it("saves the value to the secrets store and completes with the secret's identity", async () => {
@@ -66,14 +76,14 @@ describe("SecretRequestModal", () => {
     const createSecret = vi
       .spyOn(SecretsService, "createSecret")
       .mockResolvedValue(undefined);
-    await renderModal();
+    await renderCards();
 
     await user.type(screen.getByTestId("value-input"), "ghp_example");
     await user.click(screen.getByTestId("submit-button"));
 
     await waitFor(() =>
       expect(
-        screen.queryByTestId("secret-request-modal"),
+        screen.queryByTestId("secret-request-card"),
       ).not.toBeInTheDocument(),
     );
     // The form's later onCancel is a no-op for the real, already-completed
@@ -89,12 +99,12 @@ describe("SecretRequestModal", () => {
     );
   });
 
-  it("stays open after a failed save so the user can retry or cancel", async () => {
+  it("stays after a failed save so the user can retry or cancel", async () => {
     const user = userEvent.setup();
     vi.spyOn(SecretsService, "createSecret").mockRejectedValue(
       new Error("Save failed"),
     );
-    await renderModal();
+    await renderCards();
 
     await user.type(screen.getByTestId("value-input"), "ghp_example");
     await user.click(screen.getByTestId("submit-button"));
@@ -102,7 +112,7 @@ describe("SecretRequestModal", () => {
     await waitFor(() =>
       expect(screen.getByTestId("cancel-button")).toBeEnabled(),
     );
-    expect(screen.getByTestId("secret-request-modal")).toBeInTheDocument();
+    expect(screen.getByTestId("secret-request-card")).toBeInTheDocument();
     expect(mockCompleteSecretRequest).not.toHaveBeenCalled();
 
     await user.click(screen.getByTestId("cancel-button"));
