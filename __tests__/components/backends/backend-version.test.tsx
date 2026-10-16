@@ -17,7 +17,6 @@ vi.mock("react-i18next", () => ({
 
 afterEach(() => vi.restoreAllMocks());
 
-// @spec RGP-001 — Quiet model and version probes
 it("keeps failed version probes quiet and shows the version after recovery", async () => {
   const backend: Backend = {
     id: "local-version-test",
