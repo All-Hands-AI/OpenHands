@@ -29,7 +29,7 @@
   },
   "process_groups": {
     "method": "Real owned run stop, closed-port gating and private purge; zombies treated stopped only with conservative /proc handling",
-    "final_cli_runs_stopped": 22,
+    "final_cli_runs_stopped": 23,
     "owned_runtime_processes": 0
   },
   "network_projection": {

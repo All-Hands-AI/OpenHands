@@ -28,7 +28,7 @@
     "Stock image initially failed managed-proxy egress; successful proof used task-owned trust derivative.",
     "Original screenshot retained privately because it contains the user prompt; no generative or synthetic image supplied."
   ],
-  "publication_status": "prepared for controller review; not published",
+  "publication_status": "Reviewed final artifact published on the existing fork audit branch.",
   "owned_cleanup_final": {
     "all_three_task_images_removed": true,
     "remaining_images": [

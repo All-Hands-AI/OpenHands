@@ -1,7 +1,7 @@
 {
   "attribution": "I am an AI agent helping Engel Nyst (@enyst) with project work.",
   "provisional": false,
-  "aggregate_utc": "2026-10-17T22:05:49.152816+00:00",
+  "aggregate_utc": "2026-10-17T22:18:33.083173+00:00",
   "baseline": "d3a58cd1cc045bbb1b24f2c8c0d79a8404ef239b",
   "target": "61a3bd93e642a0ff4def73b29496a73245628209",
   "denominator": 779,
@@ -11,10 +11,10 @@
   "reviewed_id_categories": {
     "observed_pass_only": 633,
     "observed_existing_known_failure": 88,
+    "blocked_only": 46,
+    "observed_fix_assertion": 8,
     "observed_newly_filed_failure": 4,
     "observed_unresolved_failure": 0,
-    "observed_fix_assertion": 8,
-    "blocked_only": 46,
     "not_run_only": 0,
     "unreconciled": 0
   },
@@ -26,7 +26,7 @@
     "observed_known_fail": 4
   },
   "latest_recorded_check_results": {
-    "pass": 1150,
+    "pass": 1157,
     "xpass": 13,
     "fail": 146,
     "xfail": 14,
@@ -429,12 +429,12 @@
       }
     }
   ],
-  "publication_status": "prepared for controller review; not published",
+  "publication_status": "Reviewed final artifact published on the existing fork audit branch.",
   "semantic_latest_not_run_checks": {
     "denominator": 126,
     "historical_generic_placeholders_replaced": 105,
     "scope_matched_replacements": 21,
     "genuinely_unfinished_constructible": 0,
-    "note": "Original126 not-run outcomes retained. Exact historical17436 and non-object Finish producer branches have current blocked entries; no all-branches pass implied."
+    "note": "Original labels unchanged; exact unavailable historical comparison/nonobject producer now current blocked."
   }
 }

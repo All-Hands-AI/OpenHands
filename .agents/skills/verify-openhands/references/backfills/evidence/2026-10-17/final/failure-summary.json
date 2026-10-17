@@ -1,5 +1,5 @@
 {
-  "aggregate_utc": "2026-10-17T22:05:49.152816+00:00",
+  "aggregate_utc": "2026-10-17T22:18:33.083173+00:00",
   "provisional": false,
   "fail_check_denominator": 146,
   "fail_stable_ids": 88,
@@ -27,5 +27,5 @@
     "Two initial hook-contrast measurements invalid; corrected genuine measurements reproduce the existing issue.",
     "Taxonomy includes actual fail and xfail; report result labels remain separate."
   ],
-  "publication_status": "prepared for controller review; not published"
+  "publication_status": "Reviewed final artifact published on the existing fork audit branch."
 }

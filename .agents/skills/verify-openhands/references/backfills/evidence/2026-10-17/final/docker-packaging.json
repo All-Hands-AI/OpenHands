@@ -40,7 +40,7 @@
   "full_image_browser_auth_persistence_checks": "blocked; not executed",
   "separate_minimal_docker_conversation": "passed; see docker-runtime-proof.json",
   "historical_original_cancel": "Separate earlier attempt at about3.9GBfree. Its cancellation is not attributed as the cause of the subsequent shared execution outage.",
-  "publication_status": "prepared for controller review; not published",
+  "publication_status": "Reviewed final artifact published on the existing fork audit branch.",
   "owned_cleanup_final": {
     "all_three_task_images_removed": true,
     "remaining_images": [

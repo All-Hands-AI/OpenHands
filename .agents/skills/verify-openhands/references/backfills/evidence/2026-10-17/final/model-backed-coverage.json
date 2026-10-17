@@ -63,5 +63,5 @@
     "Minimal Docker image does not prove browser/ACP or full all-in-one packaging."
   ],
   "billing": "No aggregate provider billing total or invented numeric spend cap.",
-  "publication_status": "prepared for controller review; not published"
+  "publication_status": "Reviewed final artifact published on the existing fork audit branch."
 }
