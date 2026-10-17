@@ -95,7 +95,8 @@
     ]
   },
   "unique_port_count": 27,
-  "evidence_files": 111,
+  "evidence_files": 103,
   "scope": "Only this four-fix task resources were stopped; shared images/dependencies and original weekly evidence were preserved.",
-  "all_owned_ports_closed": true
+  "all_owned_ports_closed": true,
+  "count_definition": "Unique regular files beneath the six owned run evidence directories; current symlink aliases are excluded."
 }
