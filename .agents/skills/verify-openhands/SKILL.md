@@ -125,6 +125,10 @@ control-openhands stop                         # stops only this run; evidence s
   `browser network-state offline|online|status` disconnects or reconnects the
   browser context without changing backend state or intercepting requests;
   restore `online` before doctor or teardown.
+  `browser media --reduced-motion reduce|no-preference` uses Playwright media
+  emulation on the active page and returns its real `matchMedia` preference,
+  alongside the existing playback observations. Use `no-preference` for normal
+  streaming-motion checks; restore the prior preference afterwards.
   `browser events --kinds websocket-created,websocket-open,websocket-close,websocket-error --last 100`
   observes real subscriptions: redacted socket/page URLs preserve numeric
   `after_seq`, with event timestamps and frame counts. No frame bodies or
@@ -137,7 +141,14 @@ control-openhands stop                         # stops only this run; evidence s
   drive backend-down states on the page that was already loaded.
   `service pause automation` and `service resume automation` queue and release
   real requests for in-flight race checks. Resume before stopping the run. `browser
-  network` (with `--bodies`, what the page sent, credentials redacted),
+  network` (with `--bodies`, what the page sent, credentials redacted;
+  the display `body` is capped at 2000 characters. `bodyFields.plugins` retains
+  only the request's top-level `plugins` before that cap, using the same
+  recursive credential/env/header and URL redaction. Its complete JSON
+  projection is bounded to 16384 UTF-8 bytes; an oversized projection is omitted
+  with `bodyFieldsOmitted.plugins` explaining why. No projection of other
+  top-level fields is made, and neither body fields nor omission metadata appear
+  without `--bodies`),
   `browser toasts` and `browser media` observe requests by origin, toasts and
   sound without changing anything; `click --observe SEL` and `scroll
   --observe SEL` record the transient states SEL shows while the action's
@@ -163,7 +174,9 @@ control-openhands stop                         # stops only this run; evidence s
   still a leak.
 - **Cleanup** with `control-openhands stop` (add `--purge-private` to delete keys
   and state once you have checked the evidence). It only signals the process
-  group it launched and verifies the ports closed. Delete run-owned fixtures
+  group it launched and verifies the ports closed. On Linux, zombie-only process
+  groups count as stopped; private state and port claims are released only after
+  every run port is closed. Delete run-owned fixtures
   through the UI when deletion is the path under test.
 
 ## LLM budget

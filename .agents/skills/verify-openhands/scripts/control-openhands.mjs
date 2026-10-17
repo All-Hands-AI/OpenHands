@@ -26,6 +26,7 @@ import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { deflateSync, gunzipSync } from "node:zlib";
 import { buildIdentity } from "./lib/build-id.mjs";
+import { groupAlive, privatePurgeAllowed } from "./lib/process-groups.mjs";
 import {
   editorOffset,
   launcherEnvFor,
@@ -218,16 +219,6 @@ function processAlive(pid) {
   if (!pid) return false;
   try {
     process.kill(pid, 0);
-    return true;
-  } catch (error) {
-    return error.code === "EPERM";
-  }
-}
-
-function groupAlive(pgid) {
-  if (!pgid) return false;
-  try {
-    process.kill(-pgid, 0);
     return true;
   } catch (error) {
     return error.code === "EPERM";
@@ -1301,7 +1292,7 @@ async function cmdStop({ flags }) {
   for (const [name, port] of Object.entries(run.ports))
     ports[name] = (await portOpen(port)) ? "still open" : "closed";
   result.launcherStopped = !groupAlive(pgid);
-  if (result.launcherStopped) {
+  if (privatePurgeAllowed(result.launcherStopped, ports)) {
     releaseClaim(run);
     rmSync(tmuxPathFor(run.dir), { recursive: true, force: true });
   }
@@ -1311,9 +1302,9 @@ async function cmdStop({ flags }) {
   const evidence = listFiles(join(run.dir, "evidence"));
   result.evidenceFiles = evidence.length;
   if (flags["purge-private"]) {
-    if (!result.launcherStopped)
+    if (!privatePurgeAllowed(result.launcherStopped, ports))
       throw new CliError(
-        "Refusing to purge private state while processes are alive.",
+        "Refusing to purge private state while processes or ports are alive.",
         { code: 3 },
       );
     const privateDir = join(run.dir, "private");
@@ -2729,9 +2720,23 @@ async function cmdBrowser({ positional, flags }) {
       );
       result = await browserCall(run, "tooltip", { selector: sel, timeout });
       break;
-    case "media":
-      result = await browserCall(run, "media", { clear: Boolean(flags.clear) });
+    case "media": {
+      const reducedMotion = flags["reduced-motion"];
+      if (
+        rest.length ||
+        (reducedMotion !== undefined &&
+          !["reduce", "no-preference"].includes(reducedMotion))
+      )
+        usage(
+          "browser media --reduced-motion needs reduce | no-preference",
+          "control-openhands browser media --reduced-motion no-preference",
+        );
+      result = await browserCall(run, "media", {
+        clear: Boolean(flags.clear),
+        reducedMotion,
+      });
       break;
+    }
     case "toasts":
       result = await browserCall(run, "toasts", {
         history: Boolean(flags.history),
@@ -4620,7 +4625,9 @@ Exit 3 when any check fails.
 
 Stops the browser daemon and SIGTERMs the launcher's process group (SIGKILL
 after 30 s), verifies every run port closed and counts evidence files.
---purge-private then deletes private/ (keys, state, logs) and recounts evidence.
+On Linux, a group containing only defunct processes counts as stopped.
+--purge-private requires the group stopped and every run port closed, then
+deletes private/ (keys, state, logs) and recounts evidence.
 `,
   api: `control-openhands api <METHOD> </path> [--data JSON|@file | --data-file F --content-type T] [--write] [--pick a.b.c] [--max-bytes N]
 
@@ -4777,13 +4784,17 @@ Verbs
   downloads [--last N] [--inspect] [--contains TEXT]   saved files; --inspect adds a text head or zip entry names
   storage [--session] [--values]         localStorage (or sessionStorage) keys; values only on request
                                          (keys, tokens and secrets inside values are redacted)
-  media [--clear]                        media playback recorded since load (sound features)
+  media [--clear] [--reduced-motion reduce|no-preference]
+                                         observe playback; optionally emulate active-page motion preference
   network-state offline|online|status     interrupt or restore this browser context's real network; status is read-only
                                          (all its tabs; restore online before doctor/cleanup; no request interception)
   network [--external] [--filter REGEX] [--clear] [--last N] [--bodies]   requests with status and redacted query (rows under "recent")
         (--bodies adds each app-origin write's body, JSON with credential values and env/header maps
          replaced by their length, URL userinfo and secret-named query values redacted in any string;
-         the settings API's ********** placeholder is kept as is)
+         the settings API's ********** placeholder is kept as is; body is capped at 2000 chars.
+         bodyFields.plugins projects only top-level plugins before that cap, recursively redacted,
+         at most 16384 UTF-8 bytes; oversized values are omitted with bodyFieldsOmitted.plugins.
+         Body fields and omission metadata are absent without --bodies)
                                          (privacy/telemetry checks; --clear as for errors)
   toasts [--history [--clear]]          toasts on screen now (with links); --history adds every
                                          status/alert text seen since this page loaded
