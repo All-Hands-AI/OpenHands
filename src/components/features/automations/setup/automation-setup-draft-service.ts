@@ -301,6 +301,11 @@ export function getDraftExecutionStatusText(
   runs: AutomationRun[],
   t: (key: I18nKey) => string,
 ): string {
+  // A later edit can invalidate a draft that already has test runs. The bar
+  // describes the saved draft, so a current validation error outranks history.
+  const validationMessage = draft.validationErrors?.[0]?.message?.trim();
+  if (validationMessage) return validationMessage;
+
   const latestRun = runs[0];
   if (latestRun) {
     if (draftRunFinishedSuccessfully(latestRun)) {
@@ -311,10 +316,7 @@ export function getDraftExecutionStatusText(
     }
     return t(I18nKey.AUTOMATION_SETUP$LATEST_TEST_RUNNING);
   }
-  return (
-    draft.validationErrors?.[0]?.message ??
-    t(I18nKey.AUTOMATION_SETUP$READY_TO_TEST)
-  );
+  return t(I18nKey.AUTOMATION_SETUP$READY_TO_TEST);
 }
 
 export function draftRunPageErrors(

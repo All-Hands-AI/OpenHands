@@ -3,10 +3,13 @@ import { HttpError } from "@openhands/typescript-client";
 import {
   extractDraftDispatchErrors,
   formFromServerDraft,
+  getDraftExecutionStatusText,
   setupDraftFromServerDraft,
 } from "#/components/features/automations/setup/automation-setup-draft-service";
 import type { AutomationSetupFormValues } from "#/api/automation-setup-types";
+import { I18nKey } from "#/i18n/declaration";
 import type { AutomationDraftApiResponse } from "#/manifests/types";
+import { AutomationRunStatus, type AutomationRun } from "#/types/automation";
 
 const detailEnvelope = {
   detail: {
@@ -126,5 +129,108 @@ describe("setupDraftFromServerDraft", () => {
 
     expect(form.repository).toBe("acme/one, acme/two");
     expect(form.eventKey).toBe("push,release.published");
+  });
+});
+
+const t = (key: I18nKey) => key;
+
+const cronValidationError = "Value error, Invalid cron expression: every day";
+
+function draftRun(status: AutomationRunStatus, id = "run-1"): AutomationRun {
+  return {
+    id,
+    status,
+    conversation_id: null,
+    bash_command_id: null,
+    error_detail: null,
+    started_at: "2026-01-01T00:00:00.000Z",
+    completed_at:
+      status === AutomationRunStatus.COMPLETED
+        ? "2026-01-01T00:01:00.000Z"
+        : null,
+  };
+}
+
+function invalidCronDraft(): AutomationDraftApiResponse {
+  return {
+    ...baseSavedDraft,
+    dispatchable: false,
+    validationErrors: [
+      {
+        field: "trigger.schedule",
+        code: "value_error",
+        message: cronValidationError,
+      },
+    ],
+  };
+}
+
+describe("getDraftExecutionStatusText", () => {
+  it("prefers the current validation error over a successful historical test", () => {
+    expect(
+      getDraftExecutionStatusText(
+        invalidCronDraft(),
+        [draftRun(AutomationRunStatus.COMPLETED)],
+        t,
+      ),
+    ).toBe(cronValidationError);
+  });
+
+  it("shows the validation error when the invalid draft has no runs", () => {
+    expect(getDraftExecutionStatusText(invalidCronDraft(), [], t)).toBe(
+      cronValidationError,
+    );
+  });
+
+  it("keeps the latest run status when the saved draft is valid", () => {
+    expect(
+      getDraftExecutionStatusText(
+        baseSavedDraft,
+        [draftRun(AutomationRunStatus.COMPLETED)],
+        t,
+      ),
+    ).toBe(I18nKey.AUTOMATION_SETUP$LATEST_TEST_PASSED);
+    expect(
+      getDraftExecutionStatusText(
+        baseSavedDraft,
+        [draftRun(AutomationRunStatus.FAILED)],
+        t,
+      ),
+    ).toBe(I18nKey.AUTOMATION_SETUP$LATEST_TEST_FAILED);
+    expect(
+      getDraftExecutionStatusText(
+        baseSavedDraft,
+        [draftRun(AutomationRunStatus.RUNNING)],
+        t,
+      ),
+    ).toBe(I18nKey.AUTOMATION_SETUP$LATEST_TEST_RUNNING);
+    expect(
+      getDraftExecutionStatusText(
+        baseSavedDraft,
+        [draftRun(AutomationRunStatus.PENDING)],
+        t,
+      ),
+    ).toBe(I18nKey.AUTOMATION_SETUP$LATEST_TEST_RUNNING);
+  });
+
+  it("says the draft is ready to test when it is valid and has no runs", () => {
+    expect(getDraftExecutionStatusText(baseSavedDraft, [], t)).toBe(
+      I18nKey.AUTOMATION_SETUP$READY_TO_TEST,
+    );
+  });
+
+  it("ignores a blank validation message and uses the latest run", () => {
+    const draft: AutomationDraftApiResponse = {
+      ...baseSavedDraft,
+      validationErrors: [{ field: null, code: "value_error", message: "   " }],
+    };
+
+    expect(
+      getDraftExecutionStatusText(
+        draft,
+        [draftRun(AutomationRunStatus.COMPLETED)],
+        t,
+      ),
+    ).toBe(I18nKey.AUTOMATION_SETUP$LATEST_TEST_PASSED);
   });
 });

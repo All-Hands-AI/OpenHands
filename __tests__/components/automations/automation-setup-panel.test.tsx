@@ -1679,6 +1679,66 @@ describe("AutomationSetupPanel", () => {
       expect(AutomationService.dispatchServerDraft).not.toHaveBeenCalled();
     });
 
+    it("replaces a historical successful test with the current validation error", async () => {
+      const cronError = "Value error, Invalid cron expression: every day";
+      const testedDraft: AutomationDraftApiResponse = {
+        ...dispatchableDraft,
+        materializedAutomationId: "auto-1",
+      };
+      vi.mocked(AutomationService.createServerDraft).mockResolvedValue(
+        testedDraft,
+      );
+      vi.mocked(AutomationService.listAutomationRuns).mockResolvedValueOnce({
+        runs: [
+          {
+            id: "run-1",
+            status: "COMPLETED" as never,
+            conversation_id: null,
+            bash_command_id: null,
+            error_detail: null,
+            started_at: "2026-01-01T00:00:00.000Z",
+            completed_at: "2026-01-01T00:01:00.000Z",
+          },
+        ],
+        total: 1,
+      });
+      vi.mocked(AutomationService.updateServerDraft).mockResolvedValue({
+        ...testedDraft,
+        dispatchable: false,
+        validationErrors: [
+          {
+            field: "trigger.schedule",
+            code: "value_error",
+            message: cronError,
+          },
+        ],
+      });
+
+      const user = userEvent.setup();
+      renderPanel();
+      await saveDraftAndWaitForTest(user);
+
+      await waitFor(() =>
+        expect(
+          screen.getByTestId("automation-setup-draft-validity"),
+        ).toHaveTextContent("AUTOMATION_SETUP$LATEST_TEST_PASSED"),
+      );
+
+      await user.click(screen.getByTestId("automation-setup-save-draft"));
+
+      await waitFor(() =>
+        expect(
+          screen.getByTestId("automation-setup-draft-validity"),
+        ).toHaveTextContent(cronError),
+      );
+      expect(screen.getByTestId("automation-setup-draft-validity")).toHaveClass(
+        "text-feedback-error",
+      );
+      expect(
+        screen.getByTestId("automation-setup-draft-validity"),
+      ).not.toHaveTextContent("AUTOMATION_SETUP$LATEST_TEST_PASSED");
+    });
+
     it("shows a public URL notice and collapses the test payload for event triggers", async () => {
       const user = userEvent.setup();
       renderPanel();
