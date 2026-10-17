@@ -35,16 +35,25 @@ for (const language of ["English", "Arabic"]) {
     expect(created.ok()).toBe(true);
     const automation = await created.json();
     try {
-      await page.goto("/settings/app");
-      await page.getByTestId("language-input").click();
-      await page.getByRole("option", { name: language, exact: true }).click();
-      await page.getByTestId("submit-button").click();
+      const settings = await request.patch(`${BACKEND_URL}/api/settings`, {
+        headers,
+        data: {
+          misc_settings_diff: {
+            app_preferences: { language: language === "Arabic" ? "ar" : "en" },
+          },
+        },
+      });
+      expect(settings.ok()).toBe(true);
       await page.goto(`/automations/${automation.id}`);
       const heading = page.getByRole("heading", {
         name: "QA_Inert_Event_Detail",
         exact: true,
       });
       await expect(heading).toBeVisible();
+      await expect(page.locator("html")).toHaveAttribute(
+        "dir",
+        language === "Arabic" ? "rtl" : "ltr",
+      );
       for (const width of [390, 1440]) {
         await page.setViewportSize({ width, height: 1000 });
         const toggle = page.getByRole("switch");
