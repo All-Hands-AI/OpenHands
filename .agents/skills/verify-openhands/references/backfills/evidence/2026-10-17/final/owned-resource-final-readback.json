@@ -1,0 +1,6 @@
+{
+  "timestamp": "2026-10-17T22:09:09.089429+00:00",
+  "owned_runtime_processes": [],
+  "free_disk_bytes": 16437444608,
+  "method": "Executable/argument token classification; multiline shell wrappers excluded; selected environment ownership compared without exporting values."
+}
