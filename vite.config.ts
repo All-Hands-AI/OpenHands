@@ -22,6 +22,8 @@ const LIB_EXTERNALS = [
   "react/jsx-runtime",
   "react/jsx-dev-runtime",
   "react-router",
+  // Preserve Motion's guarded optional-peer require at runtime.
+  "framer-motion",
 ];
 const APP_CHUNK_MAX_BYTES = 450 * 1024;
 
@@ -192,7 +194,7 @@ export default defineConfig(({ mode }) => {
           });
         },
       },
-      // Let this plugin own peer externalization so CJS requires become ESM
+      // Let this plugin own externalization so CJS requires become ESM
       // imports. Top-level external entries bypass its resolve hook.
       isLibraryBuild && esmExternalRequirePlugin({ external: LIB_EXTERNALS }),
       !process.env.VITEST && !isLibraryBuild && reactRouter(),

@@ -166,7 +166,7 @@ it("emits browser-compatible ESM when a bundled CommonJS dependency requires a R
     );
     await writeFile(
       join(directory, "entry.js"),
-      'export { useSyncExternalStore } from "use-sync-external-store/shim";',
+      'export { useSyncExternalStore } from "use-sync-external-store/shim"; export { motion } from "framer-motion";',
     );
     const config = await viteConfig({ mode: "production", command: "build" });
     const built = await build({
@@ -191,7 +191,7 @@ it("emits browser-compatible ESM when a bundled CommonJS dependency requires a R
     if (!entry) throw new Error("Library entry was not emitted");
     await writeFile(
       join(directory, "consumer.mjs"),
-      `import React from "react"; import { useSyncExternalStore } from ${JSON.stringify("./dist/" + entry.fileName)}; if (useSyncExternalStore !== React.useSyncExternalStore) throw new Error("React peer hook was not preserved");`,
+      `import React from "react"; import { motion as hostMotion } from "framer-motion"; import { useSyncExternalStore, motion } from ${JSON.stringify("./dist/" + entry.fileName)}; if (useSyncExternalStore !== React.useSyncExternalStore) throw new Error("React peer hook was not preserved"); if (motion !== hostMotion) throw new Error("Motion dependency was not preserved");`,
     );
 
     // A native ESM consumer has no CommonJS require shim, like a browser host.
@@ -206,7 +206,7 @@ it("emits browser-compatible ESM when a bundled CommonJS dependency requires a R
     if (!commonEntry) throw new Error("CommonJS entry was not emitted");
     await writeFile(
       join(directory, "consumer.cjs"),
-      `const React = require("react"); const { useSyncExternalStore } = require(${JSON.stringify("./dist/" + commonEntry.fileName)}); if (useSyncExternalStore !== React.useSyncExternalStore) throw new Error("CommonJS React peer hook was not preserved");`,
+      `const React = require("react"); const { motion: hostMotion } = require("framer-motion"); const { useSyncExternalStore, motion } = require(${JSON.stringify("./dist/" + commonEntry.fileName)}); if (useSyncExternalStore !== React.useSyncExternalStore) throw new Error("CommonJS React peer hook was not preserved"); if (motion !== hostMotion) throw new Error("CommonJS Motion dependency was not preserved");`,
     );
     execFileSync(process.execPath, [join(directory, "consumer.cjs")], {
       stdio: "pipe",
