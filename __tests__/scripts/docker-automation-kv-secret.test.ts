@@ -315,6 +315,16 @@ describe("Docker automation KV secret", () => {
         expectRefused(dir, /not a regular file/);
       });
 
+      it.runIf(isPosix)("refuses a pin that is a FIFO without blocking", () => {
+        const dir = freshStateDir();
+        const made = spawnSync("mkfifo", [
+          path.join(dir, "automation-kv-secret.txt"),
+        ]);
+        expect(made.status).toBe(0);
+
+        expectRefused(dir, /not a regular file/);
+      });
+
       it("refuses a state dir that cannot be created", () => {
         const dir = freshStateDir();
         writeFileSync(path.join(dir, "not-a-dir"), "");

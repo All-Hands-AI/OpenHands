@@ -983,11 +983,19 @@ function readPinnedKvSecret(filePath) {
   if (stat.isSymbolicLink()) {
     throw new Error(`${filePath} is a symbolic link; refusing to use it`);
   }
-  // O_NOFOLLOW closes the gap between the lstat above and the open, where the
-  // platform has it (not on Windows).
+  // Opening a FIFO would block until something writes to it, so reject
+  // anything that is not a regular file before opening it.
+  if (!stat.isFile()) {
+    throw new Error(`${filePath} is not a regular file`);
+  }
+  // O_NOFOLLOW and O_NONBLOCK close the gap between the lstat above and the
+  // open, where the platform has them (not on Windows): a path swapped for a
+  // symbolic link fails to open, and one swapped for a FIFO does not block.
   const fd = openSync(
     filePath,
-    fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0),
+    fsConstants.O_RDONLY |
+      (fsConstants.O_NOFOLLOW ?? 0) |
+      (fsConstants.O_NONBLOCK ?? 0),
   );
   try {
     const opened = fstatSync(fd);
