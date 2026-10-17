@@ -143,6 +143,18 @@ beforeEach(() => {
 });
 
 describe("buildStartConversationRequest", () => {
+  it.each([{ city: "Tokyo" }, { metric: false }, { days: 0 }])(
+    "rejects unsupported plugin parameters instead of silently stripping %o",
+    (parameters) => {
+      expect(() =>
+        buildStartConversationRequest({
+          settings: DEFAULT_SETTINGS,
+          plugins: [{ source: "local-plugin", parameters }],
+        }),
+      ).toThrow();
+    },
+  );
+
   it("includes the resolved title LLM profile when configured", () => {
     const payload = buildStartConversationRequest({
       settings: DEFAULT_SETTINGS,
