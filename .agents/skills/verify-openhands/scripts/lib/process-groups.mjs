@@ -21,40 +21,53 @@ export function groupAlive(
   }
   if (platform !== "linux") return true;
   try {
-    let matched = false;
-    const entries = readDirectory(procRoot).filter((name) =>
-      /^\d+$/.test(name),
-    );
-    for (const name of entries) {
-      const stat = readStat(join(procRoot, name, "stat"));
-      const close = stat.lastIndexOf(")");
-      const fields = stat
-        .slice(close + 2)
-        .trim()
-        .split(/\s+/);
-      if (
-        close < 0 ||
-        !stat.startsWith(`${name} (`) ||
-        !/^[RSDZTtWXxIPK]$/.test(fields[0]) ||
-        !/^\d+$/.test(fields[2])
-      ) {
-        return true;
+    let previous;
+    for (let scan = 0; scan < 2; scan++) {
+      const members = new Set();
+      const entries = readDirectory(procRoot).filter((name) =>
+        /^\d+$/.test(name),
+      );
+      for (const name of entries) {
+        let stat;
+        try {
+          stat = readStat(join(procRoot, name, "stat"));
+        } catch (error) {
+          // A process may exit between enumeration and reading its stat. It
+          // cannot keep this group alive; other read failures remain uncertain.
+          if (error.code === "ENOENT" || error.code === "ESRCH") continue;
+          throw error;
+        }
+        const close = stat.lastIndexOf(")");
+        const fields = stat
+          .slice(close + 2)
+          .trim()
+          .split(/\s+/);
+        if (
+          close < 0 ||
+          !stat.startsWith(`${name} (`) ||
+          !/^[RSDZTtWXxIPK]$/.test(fields[0]) ||
+          !/^\d+$/.test(fields[2])
+        ) {
+          return true;
+        }
+        if (Number(fields[2]) !== pgid) continue;
+        members.add(name);
+        if (fields[0] !== "Z" && fields[0] !== "X" && fields[0] !== "x")
+          return true;
       }
-      if (Number(fields[2]) !== pgid) continue;
-      matched = true;
-      if (fields[0] !== "Z" && fields[0] !== "X" && fields[0] !== "x")
+      // Require a stable, nonempty dead group in both scans. Ambient /proc
+      // churn is irrelevant, but changing target membership or an unseen
+      // group after kill(0) is not permission to purge.
+      if (
+        members.size === 0 ||
+        (previous &&
+          (members.size !== previous.size ||
+            [...members].some((name) => !previous.has(name))))
+      )
         return true;
+      previous = members;
     }
-    // A disappearing/unreadable entry or a group unseen after kill(0) is an
-    // incomplete observation, not permission to purge. New processes appearing
-    // during the scan also prevent a negative liveness conclusion.
-    const after = readDirectory(procRoot).filter((name) => /^\d+$/.test(name));
-    if (
-      entries.length !== after.length ||
-      entries.some((name) => !after.includes(name))
-    )
-      return true;
-    return !matched;
+    return false;
   } catch {
     return true;
   }

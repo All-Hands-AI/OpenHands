@@ -1,5 +1,12 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import {
+  mkdtempSync,
+  mkdirSync,
+  writeFileSync,
+  rmSync,
+  readdirSync,
+  readFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "vitest";
@@ -38,7 +45,7 @@ test("all zombie/dead group is stopped, but mixed live members keep it alive", (
   }
 });
 
-test("permission, unreadable, disappearing and unobserved groups fail closed", () => {
+test("permission, unreadable and unobserved groups fail closed", () => {
   const f = fixture([[101, 77, "Z"]]);
   try {
     assert.equal(
@@ -69,11 +76,112 @@ test("permission, unreadable, disappearing and unobserved groups fail closed", (
       true,
     );
     assert.equal(groupAlive(99, f.options), true);
+  } finally {
+    f.clean();
+  }
+});
+
+test.each(["appearing", "exiting"])(
+  "unrelated %s processes do not keep a zombie-only group alive",
+  (churn) => {
+    const f = fixture([
+      [101, 77, "Z"],
+      [201, 88, "S"],
+    ]);
     let scans = 0;
+    try {
+      assert.equal(
+        groupAlive(77, {
+          ...f.options,
+          readDirectory: (root) => {
+            scans++;
+            if (churn === "appearing") {
+              const pid = 201 + scans;
+              mkdirSync(join(root, String(pid)));
+              writeFileSync(
+                join(root, String(pid), "stat"),
+                `${pid} (other) S 1 88 0`,
+              );
+            }
+            return readdirSync(root);
+          },
+          readStat: (path) => {
+            // The PID exited after enumeration, before its stat could be read.
+            if (churn === "exiting" && path === join(f.root, "201", "stat")) {
+              rmSync(join(f.root, "201"), { recursive: true });
+            }
+            return readFileSync(path, "utf8");
+          },
+        }),
+        false,
+      );
+    } finally {
+      f.clean();
+    }
+  },
+);
+
+test.each([
+  ["ENOENT", false],
+  ["ESRCH", false],
+  ["EACCES", true],
+  ["EPERM", true],
+  ["EIO", true],
+])(
+  "a stat read failing with %s preserves the cleanup boundary",
+  (code, alive) => {
+    const f = fixture([
+      [101, 77, "Z"],
+      [201, 88, "S"],
+    ]);
+    try {
+      assert.equal(
+        groupAlive(77, {
+          ...f.options,
+          readStat: (path) => {
+            if (path === join(f.root, "201", "stat")) {
+              throw Object.assign(new Error("stat unavailable"), { code });
+            }
+            return readFileSync(path, "utf8");
+          },
+        }),
+        alive,
+      );
+    } finally {
+      f.clean();
+    }
+  },
+);
+
+test.each([
+  "joining live",
+  "joining zombie",
+  "exiting",
+  "reused for a live process",
+])("a target group member %s prevents cleanup", (change) => {
+  const f = fixture([[101, 77, "Z"]]);
+  let scans = 0;
+  try {
     assert.equal(
       groupAlive(77, {
         ...f.options,
-        readDirectory: () => (++scans === 1 ? ["101"] : ["101", "202"]),
+        readDirectory: (root) => {
+          if (++scans === 2) {
+            if (change.startsWith("joining")) {
+              mkdirSync(join(root, "102"));
+              const state = change === "joining live" ? "S" : "Z";
+              writeFileSync(
+                join(root, "102", "stat"),
+                `102 (child) ${state} 1 77 0`,
+              );
+            } else if (change === "exiting") {
+              rmSync(join(root, "101"), { recursive: true });
+            } else {
+              writeFileSync(join(root, "101", "stat"), "101 (worker) S 1 77 0");
+            }
+          }
+          return readdirSync(root);
+        },
       }),
       true,
     );
