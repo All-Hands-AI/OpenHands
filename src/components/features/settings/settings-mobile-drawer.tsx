@@ -33,7 +33,7 @@ export function SettingsMobileDrawer({
     <>
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 md:hidden"
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
           onClick={onCloseMobileMenu}
         />
       )}
@@ -41,7 +41,7 @@ export function SettingsMobileDrawer({
         data-testid="settings-navbar"
         className={cn(
           "flex flex-col gap-6 transition-transform duration-300 ease-in-out",
-          "fixed inset-0 z-50 w-full bg-[var(--oh-surface-deep)] p-4 transform md:hidden",
+          "fixed inset-0 z-50 w-full bg-surface-deep p-4 transform md:hidden",
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
@@ -68,7 +68,7 @@ export function SettingsMobileDrawer({
             if (renderedItem.type === "header") {
               return (
                 <div key={`header-${renderedItem.text}`} className="px-3.5">
-                  <Typography.Text className="text-[11px] font-medium text-[var(--oh-text-dim)] uppercase tracking-wide leading-5">
+                  <Typography.Text className="text-[11px] font-medium text-text-dim uppercase tracking-wide leading-5">
                     {t(renderedItem.text)}
                   </Typography.Text>
                 </div>
@@ -79,7 +79,7 @@ export function SettingsMobileDrawer({
               return (
                 <div
                   key={`divider-${index}`}
-                  className="border-t border-[var(--oh-border-subtle)] w-full"
+                  className="border-t border-border-subtle w-full"
                 />
               );
             }
