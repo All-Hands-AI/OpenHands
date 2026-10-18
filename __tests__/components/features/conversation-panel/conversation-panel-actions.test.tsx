@@ -173,14 +173,12 @@ describe("ConversationPanel conversation actions", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("hides a missing-runtime conversation from the default list, reveals it with the Archived chip, and offers neither menu direction", async () => {
+  it("hides a missing-runtime conversation from the default list, reveals it with the Archived chip, and offers Unarchive", async () => {
     // A conversation whose runtime is gone (adapter maps a local
     // `runtime_info.runtime_status: "missing"` + `can_resume: false` to
     // `sandbox_status: "MISSING"`) must be treated as archived everywhere:
-    // hidden by default and chipped when "Show archived" is on. Its archive
-    // state comes from the runtime, which no client action can change, so its
-    // menu must not offer a no-op "Unarchive" (nor an "Archive" that would
-    // leave the row archived anyway).
+    // hidden by default and chipped when "Show archived" is on. Its ⋮ menu
+    // offers exactly one direction, "Unarchive", never "Archive".
     vi.spyOn(
       AgentServerConversationService,
       "searchConversations",
@@ -219,23 +217,62 @@ describe("ConversationPanel conversation actions", () => {
       within(goneCard).getByTestId("conversation-card-archived-chip"),
     ).toBeInTheDocument();
 
-    // No archive-related direction is offered: removing an explicit id cannot
-    // restore a runtime-derived archive, so "Unarchive" would be a no-op, and
-    // "Archive" would leave the row archived. Assert the no-op is gone.
+    // Exactly one direction: "Unarchive" is offered, "Archive" is not.
     await userEvent
       .setup()
       .click(within(goneCard).getByTestId("ellipsis-button"));
-    expect(screen.queryByTestId("unarchive-button")).not.toBeInTheDocument();
+    expect(screen.getByTestId("unarchive-button")).toBeInTheDocument();
     expect(screen.queryByTestId("archive-button")).not.toBeInTheDocument();
+  });
 
-    // The row stays archived: turning "Show archived" off hides it again with
-    // no stored archive id, confirming the runtime-derived state and list
-    // visibility agree (the no-op "Unarchive" could not have changed either).
+  it("keeps a missing-runtime row presented as archived after Unarchive", async () => {
+    // Invoking "Unarchive" clears the user's explicit archive intent but does
+    // not attempt to resume the missing runtime, so the row stays archived and
+    // the indicator, list visibility, and chip stay in agreement.
+    vi.spyOn(
+      AgentServerConversationService,
+      "searchConversations",
+    ).mockResolvedValue({
+      items: [
+        createMockConversation({
+          id: "gone",
+          title: "Gone Conversation",
+          sandbox_status: "MISSING",
+        }),
+      ],
+      next_page_id: null,
+    });
+    useArchivedConversationsStore
+      .getState()
+      .archiveConversation("default-local", "gone");
+    useConversationPanelPreferencesStore.setState({
+      showArchivedConversations: true,
+    });
+
+    renderConversationPanel();
+
+    const goneCard = (await screen.findByText("Gone Conversation")).closest(
+      "[data-testid='conversation-card']",
+    )!;
+    await userEvent
+      .setup()
+      .click(within(goneCard as HTMLElement).getByTestId("ellipsis-button"));
+    await userEvent.setup().click(screen.getByTestId("unarchive-button"));
+
+    // The stored id is cleared, but the missing runtime keeps the row archived.
+    await waitFor(() => {
+      expect(
+        useArchivedConversationsStore
+          .getState()
+          .isArchived("default-local", "gone"),
+      ).toBe(false);
+    });
+    expect(await screen.findByText("Gone Conversation")).toBeInTheDocument();
     expect(
-      useArchivedConversationsStore
-        .getState()
-        .isArchived("default-local", "gone"),
-    ).toBe(false);
+      screen.getByTestId("conversation-card-archived-chip"),
+    ).toBeInTheDocument();
+
+    // Still hidden from the default list.
     act(() => {
       useConversationPanelPreferencesStore.setState({
         showArchivedConversations: false,
@@ -268,11 +305,10 @@ describe("ConversationPanel conversation actions", () => {
     expect(screen.queryByTestId("archive-button")).not.toBeInTheDocument();
   });
 
-  it("offers no direction on a row that is both explicitly archived and missing its runtime", async () => {
-    // A stored archive id on a missing-runtime row cannot be undone: removing
-    // the id clears explicit intent but the missing runtime keeps the row
-    // archived, so "Unarchive" would silently do nothing. Offer neither
-    // direction.
+  it("offers Unarchive on a row that is both explicitly archived and missing its runtime", async () => {
+    // A stored archive id on a missing-runtime row: the menu still offers
+    // exactly one direction, "Unarchive". Clearing the id clears the user's
+    // explicit intent, but the missing runtime keeps the row archived.
     vi.spyOn(
       AgentServerConversationService,
       "searchConversations",
@@ -300,7 +336,7 @@ describe("ConversationPanel conversation actions", () => {
     await userEvent
       .setup()
       .click(within(card as HTMLElement).getByTestId("ellipsis-button"));
-    expect(screen.queryByTestId("unarchive-button")).not.toBeInTheDocument();
+    expect(screen.getByTestId("unarchive-button")).toBeInTheDocument();
     expect(screen.queryByTestId("archive-button")).not.toBeInTheDocument();
   });
 
