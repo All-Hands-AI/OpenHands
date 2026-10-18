@@ -118,7 +118,12 @@ describe("CanvasExtensionsScreen", () => {
     appSwitch.focus();
     await user.keyboard(" ");
     await waitFor(() =>
-      expect(setEnabledSpy).toHaveBeenCalledWith("demo-page", false),
+      expect(setEnabledSpy).toHaveBeenCalledWith(
+        "demo-page",
+        false,
+        undefined,
+        localBackend,
+      ),
     );
   });
 

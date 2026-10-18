@@ -104,7 +104,7 @@ Preconditions:
 - Known issue [OpenHands/software-agent-sdk#5914](https://github.com/OpenHands/software-agent-sdk/issues/5914) (`F20.app-backend-view`): app-backend HTTP responses can carry both the backend's and the Agent Server's `Date` and `Server` headers, producing an invalid joined date and disclosing the backend stack. Recheck a reviewed HTTP app backend on a supported Linux Agent Server that sends these headers through a real admitted app-backend session. A default demo page without the bridge capability or a direct backend request cannot establish the proxied response.
 
 
-## Managed App enable consent
+### Managed App enable consent
 
 Enable uses the agent-profile `ProfileScopeList` secret picker in the trust modal.
 Select all declared store secret names and confirm Enable trusted app. The server
