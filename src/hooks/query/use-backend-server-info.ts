@@ -25,7 +25,7 @@ export function backendVersionQueryKey(backend: Backend) {
  * disabled). Returns the raw server info so callers can derive both the version
  * and the execution mode from a single cached response.
  *
- * @spec BM-004 — Display the active backend's execution mode
+ * @spec BM-005 — Display the active backend's execution mode
  */
 export function useBackendServerInfo(
   backend: Backend,
@@ -46,13 +46,16 @@ export function useBackendServerInfo(
     retry: false,
     staleTime: 60_000,
     enabled: (options?.enabled ?? true) && backend.kind === "local",
+    // A probe failure is surfaced by the row's own status text; it must not
+    // raise the global error toast.
+    meta: { disableToast: true },
   });
 }
 
 /**
  * The backend's displayed agent-server version, or `null` when unavailable.
  *
- * @spec BM-004 — Display the active backend's execution mode
+ * @spec BM-005 — Display the active backend's execution mode
  */
 export function useBackendVersion(
   backend: Backend,

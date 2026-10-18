@@ -29,7 +29,19 @@ import { getLockedCloudHost } from "#/api/agent-server-config";
 
 const AUTOMATIC_TITLE_LLM_PROFILE_KEY = "__automatic__";
 
+/**
+ * The form's inputs are uncontrolled and seeded from the loaded settings, so a
+ * switch to a backend whose settings are already cached would keep the
+ * previous backend's values (and Save would write them to the new backend).
+ * Keying by the settings query's backend identity remounts the form with the
+ * active backend's values and drops unsaved edits made on the previous one.
+ */
 export function AppSettingsScreen() {
+  const { backend, orgId } = useActiveBackend();
+  return <AppSettingsForm key={`${backend.id}:${orgId ?? ""}`} />;
+}
+
+function AppSettingsForm() {
   const { t } = useTranslation("openhands");
 
   const { mutate: saveSettings, isPending } = useSaveSettings();
@@ -88,6 +100,7 @@ export function AppSettingsScreen() {
     [llmProfiles?.profiles, freeModels, t],
   );
 
+  // @spec APS-001 — Clear the application draft only after a successful save.
   const formAction = (formData: FormData) => {
     const languageLabel = formData.get("language-input")?.toString();
     const languageValue = AvailableLanguages.find(
@@ -121,18 +134,16 @@ export function AppSettingsScreen() {
         onSuccess: () => {
           void setTelemetryConsent(enableAnalytics ? "granted" : "denied");
           displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
-        },
-        onError: (error) => {
-          const errorMessage = retrieveAxiosErrorMessage(error);
-          displayErrorToast(errorMessage || t(I18nKey.ERROR$GENERIC));
-        },
-        onSettled: () => {
           setLanguageInputHasChanged(false);
           setAnalyticsSwitchHasChanged(false);
           setSoundNotificationsSwitchHasChanged(false);
           setGitUserNameHasChanged(false);
           setGitUserEmailHasChanged(false);
           setTitleLlmProfileInput(undefined);
+        },
+        onError: (error) => {
+          const errorMessage = retrieveAxiosErrorMessage(error);
+          displayErrorToast(errorMessage || t(I18nKey.ERROR$GENERIC));
         },
       },
     );
@@ -180,18 +191,20 @@ export function AppSettingsScreen() {
     !gitUserNameHasChanged &&
     !gitUserEmailHasChanged;
 
-  const shouldBeLoading =
-    !settings || isLoading || areLlmProfilesLoading || isPending;
+  const shouldBeLoading = !settings || isLoading || areLlmProfilesLoading;
 
   return (
     <form
       data-testid="app-settings-screen"
-      action={formAction}
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (!isPending) formAction(new FormData(event.currentTarget));
+      }}
       className="flex flex-col gap-6"
     >
       {shouldBeLoading && <AppSettingsInputsSkeleton />}
       {!shouldBeLoading && (
-        <div className="flex flex-col gap-6">
+        <fieldset disabled={isPending} className="flex min-w-0 flex-col gap-6">
           <LanguageInput
             name="language-input"
             defaultKey={settings.language}
@@ -306,7 +319,7 @@ export function AppSettingsScreen() {
               </BrandButton>
             </div>
           </div>
-        </div>
+        </fieldset>
       )}
     </form>
   );

@@ -206,17 +206,19 @@ describe("conversation runtime boundaries", () => {
     });
   });
 
-  it("reports docker from the shipped conversation_runtime to conversation creation", async () => {
-    // The badge and the conversation builders must read one field, so a server
-    // that only reports `conversation_runtime: "docker"` yields a Docker
-    // workspace request instead of a contradictory local one.
-    expect(await fetchBackendExecutionRuntime()).toBe("docker");
+  it("keeps the create path on LocalWorkspace when only the shipped conversation_runtime reports docker", async () => {
+    // The badge reads `conversation_runtime` to display the boundary, but the
+    // create path must NOT let it select a `DockerExecutionWorkspace`: the
+    // shipped Docker router rejects any other kind with 422. It keeps
+    // requesting `LocalWorkspace`, which the server normalizes to the isolated
+    // workspace it owns.
+    expect(await fetchBackendExecutionRuntime()).toBeUndefined();
   });
 
   it("reads execution_runtime when the server provides both fields", async () => {
     // Conflicting values: `execution_runtime: "local"` must win over
-    // `conversation_runtime: "docker"`, so both the badge/adapter and the
-    // workspace resolver agree on local.
+    // `conversation_runtime: "docker"`, so the request path agrees with the
+    // display and stays local.
     conflictRuntimeFields = true;
     expect(await fetchBackendExecutionRuntime()).toBe("local");
     clearCachedAgentServerInfo();
@@ -226,6 +228,18 @@ describe("conversation runtime boundaries", () => {
       workingDir: expect.any(String),
       hooksProjectDir: expect.any(String),
       isolated: false,
+    });
+  });
+
+  it("still isolates the workspace UX from the shipped conversation_runtime", async () => {
+    // Display/isolation reads the shipped field, so a Docker server keeps the
+    // isolated working dir even though the create request stays LocalWorkspace.
+    expect(
+      await resolveNewConversationWorkspace({ conversationId: cid }),
+    ).toEqual({
+      workingDir: "/workspace",
+      hooksProjectDir: null,
+      isolated: true,
     });
   });
 

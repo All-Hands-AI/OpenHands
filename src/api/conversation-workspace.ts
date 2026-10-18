@@ -21,9 +21,10 @@ const ISOLATED_WORKSPACE_DIR = "/workspace";
 export function usesIsolatedWorkspace(
   info: AgentServerInfo | null | undefined,
 ): boolean {
-  // Route through the same resolver as the execution-mode badge and the
-  // conversation builders so the displayed boundary always matches the
-  // workspace the server will actually be asked for (BM-004).
+  // Route through the same display resolver as the execution-mode badge, so
+  // the workspace the row is labelled with matches the working directory the
+  // next conversation uses. The create request itself stays LocalWorkspace
+  // (see `getRequestedExecutionMode`); the server owns the isolation (BM-005).
   return getBackendExecutionMode(info) === "docker";
 }
 

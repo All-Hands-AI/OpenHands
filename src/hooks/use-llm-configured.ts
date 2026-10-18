@@ -57,15 +57,14 @@ export function useLlmConfigured(): LlmConfiguredResult {
   const isLocal = backend.kind === "local";
 
   // The active AgentProfile is the current agent — an ACP profile owns its LLM
-  // via the subprocess and never needs an API key. Fall back to the global
-  // agent settings only while the profile list loads.
+  // via the subprocess and never needs an API key.
   const {
     activeProfile: activeAgentProfile,
+    agentKind: activeAgentKind,
     isLoading: activeAgentProfileLoading,
+    isError: activeAgentProfileError,
   } = useActiveAgentProfile();
-  const activeAgentKind = activeAgentProfile?.agent_kind;
-  const isAcpAgent =
-    (activeAgentKind ?? settings?.agent_settings?.agent_kind) === "acp";
+  const isAcpAgent = activeAgentKind === "acp";
   const hasApiKey = settings?.llm_api_key_set === true;
   // The LLM that will actually power the next conversation is the profile the
   // active AGENT profile references (`llm_profile_ref`) — conversations launch
@@ -88,12 +87,8 @@ export function useLlmConfigured(): LlmConfiguredResult {
     : undefined;
   // Fall back to the active LLM profile when the ref is absent (list loading,
   // or an agent profile without a ref) OR stale (names a profile that no longer
-  // exists). This mirrors the launch-time fallback in `useCreateConversation`,
-  // which drops a stale-ref profile launch to an `agent_settings` launch on the
-  // active LLM. Without this fallback the two contradict each other: launch
-  // succeeds via the fallback, but this hook reports `isConfigured: false` and
-  // spuriously disables the composer + shows the banner — even inside a running
-  // conversation (VascoSch92 review, #1571).
+  // exists): a launch runs the active LLM profile for a stale ref, so gating on
+  // the ref would disable a composer whose launch succeeds.
   const activeProfile =
     referencedProfile ??
     profilesData?.profiles.find(
@@ -148,10 +143,11 @@ export function useLlmConfigured(): LlmConfiguredResult {
   const settingsIndeterminate = settingsLoading || (settingsError && !settings);
   const configIndeterminate = configLoading || (configError && !config);
   // The active agent profile decides `isAcpAgent` and which LLM profile the
-  // next conversation runs; on a cold cache it's still loading, so decide
-  // nothing yet — otherwise an ACP agent (which needs no key) briefly reads as
-  // an unconfigured OpenHands agent and flashes the "LLM not set up" banner.
-  const agentProfileIndeterminate = activeAgentProfileLoading;
+  // next conversation runs; until it is known, decide nothing — otherwise an
+  // ACP agent (which needs no key) reads as an unconfigured OpenHands agent and
+  // shows the "LLM not set up" banner.
+  const agentProfileIndeterminate =
+    activeAgentProfileLoading || activeAgentProfileError;
   const profilesIndeterminate =
     profilesLoading || (profilesError && !profilesData);
   const activeProfileDetailIndeterminate =

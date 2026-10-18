@@ -44,9 +44,12 @@ export interface AgentServerInfo extends BaseServerInfo {
    * The shipped agent-server reports this as `conversation_runtime` (inherited
    * from the SDK's `ServerInfo`); `execution_runtime` is the forward-looking
    * name Canvas also accepts, so the display keeps working if the server starts
-   * emitting it. `getBackendExecutionMode()` is the single reader of both.
+   * emitting it. `getBackendExecutionMode()` is the single *display* reader of
+   * both; `getRequestedExecutionMode()` is the *request* reader and reads only
+   * `execution_runtime`.
    */
   execution_runtime?: "local" | "docker";
+  capabilities?: string[];
 }
 
 export type BackendExecutionMode = "local" | "docker";
@@ -127,15 +130,6 @@ export const isAgentServerUnsupportedVersionError = (
     "code" in error &&
     error.code === AGENT_SERVER_UNSUPPORTED_VERSION_ERROR_CODE);
 
-export const isAgentServerUnknownVersionError = (
-  error: unknown,
-): error is AgentServerUnknownVersionError =>
-  error instanceof AgentServerUnknownVersionError ||
-  (typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    error.code === AGENT_SERVER_UNKNOWN_VERSION_ERROR_CODE);
-
 /**
  * Returns true when the agent-server probe failed with HTTP 401.
  * In public mode this means the stored key is stale (server restarted
@@ -172,8 +166,8 @@ export function getCachedAgentServerInfo(options?: {
  * bootstrap, so a server that restarts in a different execution mode would
  * keep feeding conversation creation the old mode even though the badge (read
  * from the React Query cache) had updated. The backend health poll calls this
- * on each successful probe so the displayed boundary and the workspace the next
- * conversation requests cannot diverge (BM-004).
+ * on each successful probe so the displayed boundary and the working directory
+ * the next conversation uses cannot diverge (BM-005).
  *
  * Only the *effective local backend* owns the cache: a probe of any other
  * registered backend (or a cloud row) is ignored, so it cannot point the
@@ -246,18 +240,6 @@ export function getDisplayAgentServerVersion(
   return version;
 }
 
-export function getDisplayAgentServerSdkVersion(
-  serverInfo: AgentServerInfo,
-): string | null {
-  const version =
-    getRawAgentServerSdkVersion(serverInfo) ??
-    getComparableAgentServerVersion(serverInfo);
-  if (!version || version.toLowerCase() === UNKNOWN_AGENT_SERVER_VERSION) {
-    return null;
-  }
-  return version;
-}
-
 /**
  * Resolve the execution boundary a backend's agent-server runs conversations in.
  *
@@ -266,7 +248,12 @@ export function getDisplayAgentServerSdkVersion(
  * is reported (older servers), so callers can render nothing and leave the UI
  * unchanged.
  *
- * @spec BM-004 — Display the active backend's execution mode
+ * This is the *display* reader: it is what the execution-mode badge and the
+ * workspace-isolation UX read. It is deliberately not used to choose the
+ * workspace kind a create request sends — see
+ * {@link getRequestedExecutionMode}.
+ *
+ * @spec BM-005 — Display the active backend's execution mode
  */
 export function getBackendExecutionMode(
   serverInfo: AgentServerInfo | null | undefined,
@@ -278,12 +265,25 @@ export function getBackendExecutionMode(
   return raw === "local" || raw === "docker" ? raw : null;
 }
 
-export function getCachedAgentServerSdkVersion(
-  host?: string | null,
-): string | null {
-  if (!cachedAgentServerInfo) return null;
-  if (host && getEffectiveLocalBackend()?.host !== host) return null;
-  return getDisplayAgentServerSdkVersion(cachedAgentServerInfo);
+/**
+ * Resolve the execution mode to *request* when creating a conversation.
+ *
+ * Only the forward-looking `execution_runtime` field may select a
+ * `DockerExecutionWorkspace`. The shipped agent-server reports its boundary as
+ * `conversation_runtime`, and its Docker conversation router rejects any
+ * workspace kind other than `LocalWorkspace` with HTTP 422
+ * (`docker_runtime/routers.py`), so a create that read `conversation_runtime`
+ * here would fail on exactly the server the badge labels "Docker". Canvas
+ * therefore keeps requesting `LocalWorkspace` until the SDK accepts the Docker
+ * kind; the server owns the isolated workspace itself.
+ *
+ * @spec BM-005 — Display the active backend's execution mode
+ */
+export function getRequestedExecutionMode(
+  serverInfo: AgentServerInfo | null | undefined,
+): BackendExecutionMode | null {
+  const raw = serverInfo?.execution_runtime;
+  return raw === "local" || raw === "docker" ? raw : null;
 }
 
 export function getCachedAgentServerVersion(
@@ -413,6 +413,19 @@ export async function validateLocalBackend(
 ): Promise<string | null> {
   const serverInfo = await probeLocalBackendServerInfo(backend, timeout);
   return getDisplayAgentServerVersion(serverInfo);
+}
+
+/**
+ * Whether a {@link validateLocalBackend} failure is a decided answer from the
+ * server (rejected key, too-old version) rather than a transient miss, so
+ * probing again cannot change the outcome.
+ */
+export function isDefinitiveLocalBackendError(error: unknown): boolean {
+  return (
+    (error instanceof Error &&
+      error.message === INVALID_BACKEND_API_KEY_ERROR) ||
+    isAgentServerUnsupportedVersionError(error)
+  );
 }
 
 export async function loadAgentServerInfo() {
