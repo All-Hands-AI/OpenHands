@@ -21,11 +21,24 @@ The manifest requests `navigate-existing`, declares `handle_links: preferred`, a
 
 The first launch was interrupted by a production rebuild replacing lazy-loaded assets, producing stale-chunk 404s. Reloading onto the final build resolved them. Repeating the sidebar transitions with a cleared error log yielded zero page errors, console/HTTP app errors, or warnings, as recorded in the readbacks.
 
-## Remaining installed-app verification
+## Installed-app verification with the prerequisite metadata
 
-This checkout does not link `site.webmanifest` and its installable app name is empty. The separate PWA foundation is issue #17890 / PR #17895 and remains outside #17891's scope. The served manifest returned HTTP 200 with the requested launch fields and shortcuts, but OS installation, shortcut-menu activation, and existing-window reuse were not verified. Browser support and the user's link-capturing preference control whether launch declarations are honored; merely declaring `handle_links` does not prove capture.
+On October 18, 2026, the human contributor installed and exercised a temporary integration build on macOS in a visible Chrome window at `http://127.0.0.1:18900`.
 
-After the foundation lands, install Canvas in a supporting Chromium browser. Open it once, launch an in-scope link again, and confirm that the same window navigates. Exercise all three OS shortcuts and repeat under `--base-path /canvas`. Record the installed window, title changes, and OS shortcut menu before marking the PR ready for review.
+The temporary detached checkout combines feature commit `1ae0559a1d916737baf31e981d3577f7c6483646` with the installation-related subset of PWA PR #17895 at `b4452cd178c7a804b71585c217c8e342afd4c679`: its `src/root.tsx` patch, manifest foundation, and four PNG icons. The feature's `launch_handler`, `handle_links`, and `shortcuts` members were preserved when combining the manifest. The unrelated prerequisite theme and CSS changes were not included. These installation additions are confined to the temporary checkout and are not part of this branch or PR.
+
+`control-openhands doctor` passed against the real Local Agent Server 1.55.1 / automation 1.20.1 stack, confirmed build-input hash `75a7f40913bc00c6-dirty`, and reported no page errors. No model execution was needed.
+
+- The user supplied a [native Chrome installation dialog screenshot](user-install-dialog.png), then installed OpenHands.
+- The user's [native macOS Dock menu screenshot](user-dock-shortcuts.png) shows all three declared entries: New conversation, Conversations, and Automations.
+- After being asked to activate New conversation and Automations from the Dock, the user confirmed: “yes they are in the same window.” This is a manual report of shortcut navigation and existing-window reuse; a separate activation of the Conversations entry was not recorded.
+- With the installed app still open, the user clicked the Settings link (`/settings/llm`) from this chat and confirmed: “yes same app window.” This is a manual report of external-link capture into the existing app window.
+
+The screenshots establish the native install prompt and registered Dock entries. Window reuse and external-link navigation are human-reported observations, not an independently captured transition video or automated installed-window test. The automation browser's tab listing does not expose the installed app window, so it is not used as independent proof of those transitions.
+
+The main feature branch still lacks the separate installation foundation (#17890 / #17895). These results demonstrate integration with that prerequisite, not installation from this branch alone. Browser support and the user's link-capture settings affect link handling; the observations do not isolate or prove that `handle_links` caused capture. Installed behavior under `--base-path /canvas` remains unverified (relative URL resolution there is covered by automated tests).
+
+The issue still requests an installed-window recording of shortcut launches, external-link window reuse, and title changes. Installation under a deployment base path was not exercised in this manual pass.
 
 ## Reproduce the verified path
 
