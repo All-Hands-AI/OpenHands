@@ -1073,7 +1073,10 @@ describe("dev-safe CLI startup", () => {
       );
       chmodSync(uvxStub, 0o755);
 
-      const backendPort = await findFreePort(0);
+      const { backend: backendPort, vscode: vscodePort } = await findFreePorts([
+        { name: "backend", preferred: 0 },
+        { name: "vscode", preferred: 0 },
+      ]);
       const isPortListening = async () =>
         new Promise<boolean>((resolve) => {
           const socket = net
@@ -1091,6 +1094,7 @@ describe("dev-safe CLI startup", () => {
           ...process.env,
           PATH: `${stubDir}${path.delimiter}${process.env.PATH ?? ""}`,
           OH_CANVAS_SAFE_BACKEND_PORT: String(backendPort),
+          OH_CANVAS_SAFE_VSCODE_PORT: String(vscodePort),
         },
         stdio: ["ignore", "pipe", "pipe"],
       });

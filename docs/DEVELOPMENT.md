@@ -419,6 +419,7 @@ The standalone app and the exported provider/root wrapper now scope all bundled 
 ### Embedding strategy
 
 - Use `AgentServerUIProviders` in host apps. It renders a scoped style root by default.
+- Pass `queryClient` and `i18n` to scope those instances to that React tree. The provider no longer writes them to module-level singletons, so sibling roots stay independent. A dedicated `queryClient` is bound to that tree's `i18n` for query-error toasts. Chat event titles read `useTranslation().i18n`. Standalone and non-React callers (including route loaders) keep `getQueryClient()` / `setQueryClient()` and `getI18n()` / `setI18n()`.
 - For direct wrapper control, use `AgentServerUIRoot`.
 - The standalone app opts out of the provider wrapper because the router layout already renders the scoped root.
 
