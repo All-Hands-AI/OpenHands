@@ -1,7 +1,10 @@
+import { AUTOMATION_FORM_UPDATE_TOOL_NAME } from "#/constants/automation-form";
 import {
   CANVAS_UI_CLIENT_TOOL_NAME,
   LEGACY_CANVAS_UI_TOOL_NAME,
 } from "#/constants/canvas-ui";
+import { LAUNCH_CHILD_CONVERSATION_TOOL_NAME } from "#/constants/child-conversation";
+import { REQUEST_SECRET_TOOL_NAME } from "#/constants/secret-request";
 
 import {
   OpenHandsEvent,
@@ -15,9 +18,16 @@ import {
   BrowserObservation,
   BrowserNavigateAction,
   SwitchLLMObservation,
+  ClassifyAndSwitchLLMObservation,
+  AutomationFormUpdateAction,
   CanvasUIAction,
+  LaunchChildConversationAction,
+  RequestSecretAction,
 } from "./core";
-import { AgentErrorEvent } from "./core/events/observation-event";
+import {
+  AgentErrorEvent,
+  UserRejectObservation,
+} from "./core/events/observation-event";
 import { MessageEvent } from "./core/events/message-event";
 import { ActionEvent } from "./core/events/action-event";
 import {
@@ -33,6 +43,7 @@ import { HookExecutionEvent } from "./core/events/hook-execution-event";
 import { ACPToolCallEvent } from "./core/events/acp-tool-call-event";
 import { StreamingDeltaEvent } from "./core/events/streaming-delta-event";
 import { SystemPromptEvent } from "./core/events/system-event";
+import { CondensationEvent } from "./core/events/condensation-event";
 
 /**
  * Type guard to check if an unknown value is a valid BaseEvent
@@ -70,6 +81,17 @@ export const isObservationEvent = (
   event.observation !== null &&
   typeof event.observation === "object" &&
   "kind" in event.observation;
+
+/**
+ * Type guard function to check if an event is a user reject observation
+ * (an action rejected in confirmation mode or blocked by a PreToolUse hook)
+ */
+export const isUserRejectObservation = (
+  event: OpenHandsEvent,
+): event is UserRejectObservation =>
+  event.source === "environment" &&
+  "action_id" in event &&
+  "rejection_reason" in event;
 
 /**
  * Type guard function to check if an event is an agent error event
@@ -164,6 +186,16 @@ export const isSwitchLLMObservationEvent = (
   event.observation.kind === "SwitchLLMObservation";
 
 /**
+ * Type guard for router-driven model switches (Router/meta-profile classifier).
+ * Mirrors isSwitchLLMObservationEvent — same UI semantics, different tool.
+ */
+export const isClassifyAndSwitchLLMObservationEvent = (
+  event: OpenHandsEvent,
+): event is ObservationEvent<ClassifyAndSwitchLLMObservation> =>
+  isObservationEvent(event) &&
+  event.observation.kind === "ClassifyAndSwitchLLMObservation";
+
+/**
  * Type guard function to check if an action event is a BrowserNavigateAction
  */
 export const isBrowserNavigateActionEvent = (
@@ -183,6 +215,29 @@ export const isCanvasUIActionEvent = (
   isActionEvent(event) &&
   (event.tool_name === LEGACY_CANVAS_UI_TOOL_NAME ||
     event.tool_name === CANVAS_UI_CLIENT_TOOL_NAME);
+
+export const isAutomationFormUpdateActionEvent = (
+  event: OpenHandsEvent,
+): event is ActionEvent<AutomationFormUpdateAction> =>
+  isActionEvent(event) && event.tool_name === AUTOMATION_FORM_UPDATE_TOOL_NAME;
+
+/**
+ * Type guard for launch-child-conversation tool ActionEvents.
+ *
+ * Discriminates on tool_name, like `isCanvasUIActionEvent`, so the
+ * SDK-generated action kind stays contained in the constants module.
+ */
+export const isLaunchChildConversationActionEvent = (
+  event: OpenHandsEvent,
+): event is ActionEvent<LaunchChildConversationAction> =>
+  isActionEvent(event) &&
+  event.tool_name === LAUNCH_CHILD_CONVERSATION_TOOL_NAME;
+
+/** Type guard for request-secret tool ActionEvents. */
+export const isRequestSecretActionEvent = (
+  event: OpenHandsEvent,
+): event is ActionEvent<RequestSecretAction> =>
+  isActionEvent(event) && event.tool_name === REQUEST_SECRET_TOOL_NAME;
 
 /**
  * Type guard function to check if an event is a system prompt event
@@ -264,6 +319,14 @@ export const isStreamingDeltaEvent = (
   event: OpenHandsEvent,
 ): event is StreamingDeltaEvent =>
   "kind" in event && event.kind === "StreamingDeltaEvent";
+
+/**
+ * Type guard for condensation completion events (history was compacted).
+ */
+export const isCondensationEvent = (
+  event: OpenHandsEvent,
+): event is CondensationEvent =>
+  "kind" in event && event.kind === "Condensation";
 
 // =============================================================================
 // COMPATIBILITY TYPE GUARDS

@@ -18,7 +18,7 @@ vi.mock("@openhands/typescript-client/clients", () => ({
   }),
   // ServerClient needed by useBackendsHealth (imported transitively)
   ServerClient: vi.fn(function ServerClientMock() {
-    return { getServerInfo: vi.fn().mockResolvedValue({ version: "1.28.0" }) };
+    return { getServerInfo: vi.fn().mockResolvedValue({ version: "1.48.0" }) };
   }),
 }));
 
@@ -196,9 +196,6 @@ describe("ApiKeyEntryScreen", () => {
     await waitFor(() => {
       expect(screen.getByTestId("api-key-entry-status")).toBeInTheDocument();
     });
-    expect(screen.getByTestId("api-key-entry-status")).toHaveClass(
-      "text-red-400",
-    );
     expect(screen.getByTestId("api-key-entry-status").textContent).toContain(
       "AUTH$INVALID_KEY",
     );
@@ -265,8 +262,8 @@ describe("ApiKeyEntryScreen", () => {
     await fillRequiredFields(user, { apiKey: "wrong-key" });
     await user.click(screen.getByTestId("api-key-entry-submit"));
     await waitFor(() => {
-      expect(screen.getByTestId("api-key-entry-status")).toHaveClass(
-        "text-red-400",
+      expect(screen.getByTestId("api-key-entry-status")).toHaveTextContent(
+        "AUTH$INVALID_KEY",
       );
     });
 

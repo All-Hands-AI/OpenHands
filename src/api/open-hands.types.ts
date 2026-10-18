@@ -2,42 +2,9 @@ import { ConversationStatus } from "#/types/conversation-status";
 import { RuntimeStatus } from "#/types/runtime-status";
 import { Provider } from "#/types/settings";
 
-export interface ErrorResponse {
-  error: string;
-}
-
-export interface SaveFileSuccessResponse {
-  message: string;
-}
-
 export interface FileUploadSuccessResponse {
   uploaded_files: string[];
   skipped_files: { name: string; reason: string }[];
-}
-
-export interface FeedbackBodyResponse {
-  message: string;
-  feedback_id: string;
-  password: string;
-}
-
-export interface FeedbackResponse {
-  statusCode: number;
-  body: FeedbackBodyResponse;
-}
-
-export interface AuthenticationResponse {
-  message: string;
-  login?: string; // Only present when allow list is enabled
-}
-
-export interface Feedback {
-  version: string;
-  email: string;
-  token: string;
-  polarity: "positive" | "negative";
-  permissions: "public" | "private";
-  trajectory: unknown[];
 }
 
 export interface GetVSCodeUrlResponse {
@@ -60,7 +27,8 @@ export type ConversationTrigger =
   | "resolver"
   | "gui"
   | "suggested_task"
-  | "microagent_management";
+  | "microagent_management"
+  | "automation";
 
 export interface Conversation {
   conversation_id: string;
@@ -80,11 +48,6 @@ export interface Conversation {
   sub_conversation_ids?: string[];
   public?: boolean;
   llm_model?: string | null;
-}
-
-export interface ResultSet<T> {
-  results: T[];
-  next_page_id: string | null;
 }
 
 /**
@@ -120,43 +83,4 @@ export interface GitCommit {
 export interface GitCommitsPage {
   commits: GitCommit[];
   hasMore: boolean;
-}
-
-export interface InputMetadata {
-  name: string;
-  description: string;
-}
-
-export interface Microagent {
-  name: string;
-  type: "repo" | "knowledge" | "agentskills";
-  content: string;
-  triggers: string[];
-}
-
-export interface GetMicroagentsResponse {
-  microagents: Microagent[];
-}
-
-export interface GetMicroagentPromptResponse {
-  status: string;
-  prompt: string;
-}
-
-export interface IOption<T> {
-  label: string;
-  value: T;
-}
-
-export interface MicroagentContentResponse {
-  content: string;
-  path: string;
-  git_provider: Provider;
-  triggers: string[];
-}
-
-export type GetFilesResponse = string[];
-
-export interface GetFileResponse {
-  code: string;
 }

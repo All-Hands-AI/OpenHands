@@ -6,18 +6,27 @@ import toast from "react-hot-toast";
 
 import { HomeChatLauncher } from "#/components/features/home/home-chat-launcher";
 import AgentServerConversationService from "#/api/conversation-service/agent-server-conversation-service.api";
+import AutomationService from "#/api/automation-service/automation-service.api";
 import WorkspacesService from "#/api/workspaces-service/workspaces-service.api";
+import {
+  LAST_LOCAL_WORKSPACE_MODE_STORAGE_KEY,
+  writeStoredLocalWorkspaceMode,
+} from "#/utils/workspace-mode";
 
 const mockNavigate = vi.fn();
 const mockUseActiveBackend = vi.fn();
 const sendMessageWithAttachments = vi.fn();
 const mockClearAllFiles = vi.fn();
+const mockRestoreMessageToInputIfEmpty = vi.fn();
 const enqueueHomeTaskPendingMessage = vi.fn();
 const mockDisplayErrorToast = vi.fn();
 const mockUseLlmConfigured = vi.fn();
+const mockUseConversationWorkspace = vi.fn();
+const mockMarkAutomationSetupHandoff = vi.fn();
 
 let mockImages: File[] = [];
 let mockFiles: File[] = [];
+let mockIsolated = false;
 
 vi.mock("#/utils/send-message-with-attachments", () => ({
   sendMessageWithAttachments: (...args: unknown[]) =>
@@ -29,12 +38,18 @@ vi.mock("#/utils/enqueue-home-task-pending-message", () => ({
     enqueueHomeTaskPendingMessage(...args),
 }));
 
+vi.mock("#/api/automation-setup-handoff-store", () => ({
+  markAutomationSetupHandoff: (...args: unknown[]) =>
+    mockMarkAutomationSetupHandoff(...args),
+}));
+
 vi.mock("#/stores/conversation-store", () => ({
   useConversationStore: () => ({
     images: mockImages,
     files: mockFiles,
     imagesMarkedUploadAsFile: [],
     clearAllFiles: mockClearAllFiles,
+    restoreMessageToInputIfEmpty: mockRestoreMessageToInputIfEmpty,
   }),
 }));
 
@@ -68,6 +83,10 @@ vi.mock("#/hooks/use-llm-configured", () => ({
   useLlmConfigured: () => mockUseLlmConfigured(),
 }));
 
+vi.mock("#/hooks/query/use-conversation-workspace", () => ({
+  useConversationWorkspace: () => mockUseConversationWorkspace(),
+}));
+
 vi.mock("#/hooks/use-is-creating-conversation", () => ({
   useIsCreatingConversation: () => false,
 }));
@@ -86,13 +105,16 @@ vi.mock("#/components/features/chat/custom-chat-input", () => ({
   CustomChatInput: ({
     onSubmit,
     disabled,
+    placeholder,
   }: {
     onSubmit: (msg: string) => void;
     disabled?: boolean;
+    placeholder?: string;
   }) => (
     <button
       type="button"
       data-testid="stub-chat-submit"
+      data-placeholder={placeholder}
       disabled={disabled}
       onClick={() => onSubmit("hello world")}
     >
@@ -194,6 +216,13 @@ vi.mock("#/components/features/home/home-git-control-bar-preview", () => ({
       >
         New Worktree
       </button>
+      <button
+        type="button"
+        data-testid="stub-workspace-mode-local-repo"
+        onClick={() => onWorkspaceModeChange("local_repo")}
+      >
+        Local Repo
+      </button>
     </div>
   ),
 }));
@@ -201,6 +230,22 @@ vi.mock("#/components/features/home/home-git-control-bar-preview", () => ({
 // Stub the picker modal: pressing it selects one plugin then closes, mirroring
 // the real modal's `onChange` + `onClose` contract. The picker catalog itself
 // is covered by plugin-picker.test.tsx.
+vi.mock(
+  "#/components/features/automations/recommended-automations-launcher",
+  () => ({
+    RecommendedAutomationsLauncher: ({
+      variant,
+      className,
+    }: {
+      variant?: string;
+      className?: string;
+    }) =>
+      variant === "rail" ? (
+        <div data-testid="recommended-automations-rail" className={className} />
+      ) : null,
+  }),
+);
+
 vi.mock("#/components/features/plugins/plugin-picker-modal", () => ({
   PluginPickerModal: ({
     onChange,
@@ -285,11 +330,16 @@ describe("HomeChatLauncher", () => {
     vi.clearAllMocks();
     mockImages = [];
     mockFiles = [];
+    mockIsolated = false;
     mockUseActiveBackend.mockReturnValue(localBackend);
     mockUseLlmConfigured.mockReturnValue({
       isConfigured: true,
       isLoading: false,
     });
+    mockUseConversationWorkspace.mockImplementation(() => ({
+      isolated: mockIsolated,
+      unsupportedMessage: mockIsolated ? "isolated-unsupported" : null,
+    }));
     enqueueHomeTaskPendingMessage.mockResolvedValue(undefined);
     sendMessageWithAttachments.mockResolvedValue({
       text: "hello world",
@@ -298,14 +348,68 @@ describe("HomeChatLauncher", () => {
       fileUrls: [],
       timestamp: "2020-01-01T00:00:00.000Z",
     });
+    window.localStorage.removeItem(LAST_LOCAL_WORKSPACE_MODE_STORAGE_KEY);
     vi.spyOn(WorkspacesService, "listWorkspaces").mockResolvedValue({
       workspaces: [],
       workspaceParents: [],
+    });
+    // The launcher mounts the pinned/running automation dashboards, whose
+    // queries would otherwise fire real axios XHRs into MSW. If such a
+    // request is still in flight when the file's jsdom environment is torn
+    // down, MSW's XHR interceptor throws `ReferenceError:
+    // XMLHttpRequestUpload is not defined` as an unhandled rejection.
+    // Mocking the underlying service keeps all automation traffic in-process.
+    vi.spyOn(AutomationService, "checkHealth").mockResolvedValue({
+      status: "ok",
+    });
+    vi.spyOn(AutomationService, "getAutomations").mockResolvedValue({
+      automations: [],
+      total: 0,
     });
   });
 
   afterEach(() => {
     toast.remove();
+    window.localStorage.removeItem(LAST_LOCAL_WORKSPACE_MODE_STORAGE_KEY);
+  });
+
+  it("defaults to Code mode and switches to Automate mode", async () => {
+    renderLauncher();
+    const user = userEvent.setup();
+
+    expect(screen.getByTestId("home-launcher-mode-code")).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(screen.getByTestId("home-composer-actions")).toHaveAttribute(
+      "aria-disabled",
+      "false",
+    );
+    expect(screen.getByTestId("open-workspace-button")).toBeEnabled();
+    expect(screen.getByTestId("open-plugin-picker")).toBeEnabled();
+    expect(screen.getByTestId("stub-chat-submit")).toHaveAttribute(
+      "data-placeholder",
+      "SUGGESTIONS$WHAT_TO_BUILD",
+    );
+    await user.click(screen.getByTestId("home-launcher-mode-automate"));
+
+    expect(screen.getByTestId("home-launcher-mode-automate")).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(screen.getByTestId("home-composer-actions")).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    expect(screen.getByTestId("open-workspace-button")).toBeDisabled();
+    expect(screen.getByTestId("open-plugin-picker")).toBeDisabled();
+    expect(screen.getByTestId("stub-chat-submit")).toHaveAttribute(
+      "data-placeholder",
+      "HOME$AUTOMATE_PROMPT_PLACEHOLDER",
+    );
+    expect(
+      screen.getByTestId("recommended-automations-rail"),
+    ).toBeInTheDocument();
   });
 
   it("creates a conversation with just the typed query and navigates when no workspace is selected", async () => {
@@ -319,15 +423,13 @@ describe("HomeChatLauncher", () => {
     await user.click(screen.getByTestId("stub-chat-submit"));
 
     await waitFor(() => expect(createSpy).toHaveBeenCalledTimes(1));
+    expect(mockMarkAutomationSetupHandoff).not.toHaveBeenCalled();
+
     expect(createSpy).toHaveBeenCalledWith(
-      "hello world",
-      undefined,
-      undefined,
-      null,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
+      expect.objectContaining({
+        initialUserMsg: "hello world",
+        metadata: null,
+      }),
     );
     await waitFor(() =>
       expect(mockNavigate).toHaveBeenCalledWith("/conversations/conv-abc"),
@@ -368,18 +470,54 @@ describe("HomeChatLauncher", () => {
 
     await waitFor(() => expect(createSpy).toHaveBeenCalledTimes(1));
     expect(createSpy).toHaveBeenCalledWith(
-      "hello world",
-      undefined,
-      undefined,
-      null,
-      "/p/app",
-      "local_repo",
-      undefined,
-      undefined,
+      expect.objectContaining({
+        initialUserMsg: "hello world",
+        metadata: null,
+        workingDirOverride: "/p/app",
+        workspaceMode: "local_repo",
+      }),
     );
     await waitFor(() =>
       expect(mockNavigate).toHaveBeenCalledWith("/conversations/conv-ws"),
     );
+  });
+
+  it("omits a stale host workspace override on an isolated backend", async () => {
+    // A host folder selected while the backend looked like a normal local
+    // backend must not be forwarded once the backend advertises isolation: the
+    // server rejects it and the user sees an error toast for a selection the
+    // launcher already deems unsupported. `isolated` is read per render, so
+    // flipping the mocked value and forcing a re-render models the backend
+    // changing under the user.
+    mockUseConversationWorkspace.mockImplementation(() => ({
+      isolated: mockIsolated,
+      unsupportedMessage: mockIsolated ? "isolated-unsupported" : null,
+    }));
+    const createSpy = vi
+      .spyOn(AgentServerConversationService, "createConversation")
+      .mockResolvedValue(
+        makeConversationResponse({ app_conversation_id: "conv-iso" }),
+      );
+
+    renderLauncher();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByTestId("open-workspace-button"));
+    await user.click(
+      await screen.findByTestId("stub-workspace-dialog-confirm"),
+    );
+
+    mockIsolated = true;
+    await user.click(screen.getByTestId("stub-workspace-mode-new-worktree"));
+    await user.click(screen.getByTestId("stub-chat-submit"));
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalledTimes(1));
+    expect(createSpy.mock.calls[0]?.[0]).toMatchObject({
+      initialUserMsg: "hello world",
+      metadata: null,
+      workingDirOverride: undefined,
+      workspaceMode: undefined,
+    });
   });
 
   it("passes the picked workspace path with new-worktree mode when selected", async () => {
@@ -408,17 +546,47 @@ describe("HomeChatLauncher", () => {
 
     await waitFor(() => expect(createSpy).toHaveBeenCalledTimes(1));
     expect(createSpy).toHaveBeenCalledWith(
-      "hello world",
-      undefined,
-      undefined,
-      null,
-      "/p/app",
-      "new_worktree",
-      undefined,
-      undefined,
+      expect.objectContaining({
+        initialUserMsg: "hello world",
+        metadata: null,
+        workingDirOverride: "/p/app",
+        workspaceMode: "new_worktree",
+      }),
     );
     await waitFor(() =>
       expect(mockNavigate).toHaveBeenCalledWith("/conversations/conv-wt"),
+    );
+  });
+
+  it("restores and updates the last selected local workspace mode", async () => {
+    writeStoredLocalWorkspaceMode("new_worktree");
+    const { unmount } = renderLauncher();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByTestId("open-workspace-button"));
+    await user.click(
+      await screen.findByTestId("stub-workspace-dialog-confirm"),
+    );
+
+    expect(screen.getByTestId("stub-workspace-mode")).toHaveTextContent(
+      "local:new_worktree",
+    );
+
+    await user.click(screen.getByTestId("stub-workspace-mode-local-repo"));
+    expect(screen.getByTestId("stub-workspace-mode")).toHaveTextContent(
+      "local:local_repo",
+    );
+
+    unmount();
+    renderLauncher();
+
+    await user.click(screen.getByTestId("open-workspace-button"));
+    await user.click(
+      await screen.findByTestId("stub-workspace-dialog-confirm"),
+    );
+
+    expect(screen.getByTestId("stub-workspace-mode")).toHaveTextContent(
+      "local:local_repo",
     );
   });
 
@@ -443,6 +611,37 @@ describe("HomeChatLauncher", () => {
     ).toBeInTheDocument();
   });
 
+  it("allows Automate mode on cloud backends", async () => {
+    mockUseActiveBackend.mockReturnValue(cloudBackend);
+    const createSpy = vi
+      .spyOn(AgentServerConversationService, "createConversation")
+      .mockResolvedValue(makeConversationResponse());
+
+    renderLauncher();
+    const user = userEvent.setup();
+
+    expect(
+      screen.queryByText("HOME$AUTOMATE_LOCAL_BACKEND_ONLY"),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByTestId("home-launcher-mode-automate"));
+
+    expect(screen.getByTestId("home-launcher-mode-automate")).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(screen.getByTestId("stub-chat-submit")).toHaveAttribute(
+      "data-placeholder",
+      "HOME$AUTOMATE_PROMPT_PLACEHOLDER",
+    );
+
+    await user.click(screen.getByTestId("stub-chat-submit"));
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalledTimes(1));
+    expect(createSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ automationSetup: true }),
+    );
+  });
+
   it("passes the picked repository + branch payload on a cloud backend", async () => {
     mockUseActiveBackend.mockReturnValue(cloudBackend);
     const createSpy = vi
@@ -460,18 +659,14 @@ describe("HomeChatLauncher", () => {
 
     await waitFor(() => expect(createSpy).toHaveBeenCalledTimes(1));
     expect(createSpy).toHaveBeenCalledWith(
-      "hello world",
-      undefined,
-      undefined,
-      {
-        selected_repository: "org/repo",
-        selected_branch: "main",
-        git_provider: "github",
-      },
-      undefined,
-      undefined,
-      undefined,
-      undefined,
+      expect.objectContaining({
+        initialUserMsg: "hello world",
+        metadata: {
+          selected_repository: "org/repo",
+          selected_branch: "main",
+          git_provider: "github",
+        },
+      }),
     );
     await waitFor(() =>
       expect(mockNavigate).toHaveBeenCalledWith("/conversations/conv-repo"),
@@ -490,14 +685,9 @@ describe("HomeChatLauncher", () => {
 
     await waitFor(() => expect(createSpy).toHaveBeenCalledTimes(1));
     expect(createSpy).toHaveBeenCalledWith(
-      undefined,
-      undefined,
-      undefined,
-      null,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
+      expect.objectContaining({
+        metadata: null,
+      }),
     );
     await waitFor(() =>
       expect(sendMessageWithAttachments).toHaveBeenCalledTimes(1),
@@ -553,6 +743,32 @@ describe("HomeChatLauncher", () => {
     );
   });
 
+  it("does not hand the prompt back to a composer when a step after a successful create fails", async () => {
+    // Arrange — the conversation exists; only the follow-up enqueue fails.
+    mockUseActiveBackend.mockReturnValue(cloudBackend);
+    vi.spyOn(
+      AgentServerConversationService,
+      "createConversation",
+    ).mockResolvedValue(
+      makeConversationResponse({
+        id: "start-task-1",
+        app_conversation_id: null,
+      }),
+    );
+    enqueueHomeTaskPendingMessage.mockRejectedValue(new Error("Queue down"));
+
+    // Act
+    renderLauncher();
+    await userEvent.setup().click(screen.getByTestId("stub-chat-submit"));
+
+    // Assert — the prompt already belongs to the new conversation, so
+    // restoring it would replay it into that conversation's composer.
+    await waitFor(() =>
+      expect(mockDisplayErrorToast).toHaveBeenCalledWith("Queue down"),
+    );
+    expect(mockRestoreMessageToInputIfEmpty).not.toHaveBeenCalled();
+  });
+
   it("defers attachments and enqueues an optimistic pending message for cloud start tasks", async () => {
     mockUseActiveBackend.mockReturnValue(cloudBackend);
     mockImages = [new File(["x"], "shot.png", { type: "image/png" })];
@@ -571,14 +787,9 @@ describe("HomeChatLauncher", () => {
 
     await waitFor(() => expect(createSpy).toHaveBeenCalledTimes(1));
     expect(createSpy).toHaveBeenCalledWith(
-      undefined,
-      undefined,
-      undefined,
-      null,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
+      expect.objectContaining({
+        metadata: null,
+      }),
     );
     expect(sendMessageWithAttachments).not.toHaveBeenCalled();
     await waitFor(() =>
@@ -596,28 +807,70 @@ describe("HomeChatLauncher", () => {
     );
   });
 
-  it("attaches the picked plugins to the created conversation", async () => {
-    const createSpy = vi
-      .spyOn(AgentServerConversationService, "createConversation")
-      .mockResolvedValue(makeConversationResponse());
+  it.each([
+    {
+      name: "code mode with picked plugins",
+      prepare: async () => {
+        await userEvent.click(screen.getByTestId("open-plugin-picker"));
+        await userEvent.click(await screen.findByTestId("stub-plugin-pick"));
+      },
+      expectedPlugins: [{ source: "github:o/a", ref: null, repo_path: null }],
+      expectedAutomationSetup: false,
+      marksAutomationSetup: false,
+    },
+    {
+      name: "automate mode",
+      prepare: async () => {
+        await userEvent.click(
+          screen.getByTestId("home-launcher-mode-automate"),
+        );
+      },
+      expectedPlugins: undefined,
+      expectedAutomationSetup: true,
+      marksAutomationSetup: true,
+    },
+  ])(
+    "creates a conversation in $name",
+    async ({
+      prepare,
+      expectedPlugins,
+      expectedAutomationSetup,
+      marksAutomationSetup,
+    }) => {
+      const createSpy = vi
+        .spyOn(AgentServerConversationService, "createConversation")
+        .mockResolvedValue(makeConversationResponse());
 
+      renderLauncher();
+
+      await prepare();
+      await userEvent.click(screen.getByTestId("stub-chat-submit"));
+
+      await waitFor(() => expect(createSpy).toHaveBeenCalledTimes(1));
+      expect(createSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          initialUserMsg: "hello world",
+          plugins: expectedPlugins,
+          automationSetup: expectedAutomationSetup,
+          metadata: null,
+        }),
+      );
+      if (marksAutomationSetup) {
+        expect(mockMarkAutomationSetupHandoff).toHaveBeenCalledWith("conv-abc");
+      } else {
+        expect(mockMarkAutomationSetupHandoff).not.toHaveBeenCalled();
+      }
+    },
+  );
+
+  it("renders the recommended automations rail above pinned activity in Automate mode", async () => {
     renderLauncher();
     const user = userEvent.setup();
 
-    await user.click(screen.getByTestId("open-plugin-picker"));
-    await user.click(await screen.findByTestId("stub-plugin-pick"));
-    await user.click(screen.getByTestId("stub-chat-submit"));
+    await user.click(screen.getByTestId("home-launcher-mode-automate"));
 
-    await waitFor(() => expect(createSpy).toHaveBeenCalledTimes(1));
-    expect(createSpy).toHaveBeenCalledWith(
-      "hello world",
-      undefined,
-      [{ source: "github:o/a", ref: null, repo_path: null }],
-      null,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-    );
+    expect(
+      screen.getByTestId("recommended-automations-rail"),
+    ).toBeInTheDocument();
   });
 });

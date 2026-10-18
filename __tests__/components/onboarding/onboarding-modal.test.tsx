@@ -14,14 +14,26 @@ import {
 import { ActiveBackendProvider } from "#/contexts/active-backend-context";
 import { OnboardingModal } from "#/components/features/onboarding/onboarding-modal";
 import { ONBOARDING_DEFAULT_LLM_MODEL } from "#/components/features/onboarding/steps/setup-llm-step";
+import { SIDEBAR_ONBOARDING_CHECKLIST_DISMISSED_STORAGE_KEY } from "#/components/features/sidebar/sidebar-onboarding-checklist.constants";
 import { NavigationProvider } from "#/context/navigation-context";
 import SettingsService from "#/api/settings-service/settings-service.api";
 import { SecretsService } from "#/api/secrets-service";
 import { DEFAULT_SETTINGS } from "#/services/settings";
+import { useFreeModelsStore } from "#/stores/free-models-store";
 import * as telemetry from "#/services/telemetry";
 
 const llmSettingsScreenMock = vi.hoisted(() => vi.fn());
 const getServerInfoMock = vi.hoisted(() => vi.fn());
+const getSettingsMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
+const saveAgentProfileMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
+const getAgentProfileMock = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({ profile: { id: "default-profile-id" } }),
+);
+const activateAgentProfileMock = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({}),
+);
+const saveLlmProfileMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
+const activateLlmProfileMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
 let captureMock: MockInstance<typeof telemetry.trackEvent>;
 
 // Both the backend status badge in the embedded edit form and the
@@ -37,7 +49,33 @@ vi.mock("@openhands/typescript-client/clients", () => ({
   // `LlmSettingsScreen` is stubbed, so provide the minimal client it needs.
   SettingsClient: vi.fn(function SettingsClientMock() {
     return {
-      getSettings: vi.fn().mockResolvedValue({}),
+      getSettings: vi.fn(() => getSettingsMock()),
+    };
+  }),
+  // The local LLM step edits the active LLM profile (none here, so a fresh
+  // one) and saves the form as a profile.
+  ProfilesClient: vi.fn(function ProfilesClientMock() {
+    return {
+      listProfiles: vi.fn(() =>
+        Promise.resolve({ profiles: [], active_profile: null }),
+      ),
+      getProfile: vi.fn(() =>
+        Promise.resolve({ name: "", config: {}, api_key_set: false }),
+      ),
+      saveProfile: vi.fn((...args) => saveLlmProfileMock(...args)),
+      activateProfile: vi.fn((...args) => activateLlmProfileMock(...args)),
+    };
+  }),
+  AgentProfilesClient: vi.fn(function AgentProfilesClientMock() {
+    return {
+      listAgentProfiles: vi.fn(() =>
+        Promise.resolve({ profiles: [], active_agent_profile_id: null }),
+      ),
+      saveAgentProfile: vi.fn((...args) => saveAgentProfileMock(...args)),
+      getAgentProfile: vi.fn((...args) => getAgentProfileMock(...args)),
+      activateAgentProfile: vi.fn((...args) =>
+        activateAgentProfileMock(...args),
+      ),
     };
   }),
 }));
@@ -57,8 +95,25 @@ vi.mock("#/routes/llm-settings", async () => {
   const React = await import("react");
 
   return {
-    LlmSettingsScreen: (props: Record<string, unknown>) => {
+    LlmSettingsScreen: (props: {
+      initialValueOverrides?: Record<string, string | boolean>;
+      onSaveSuccess?: () => void;
+      onSaveControlChange?: (control: unknown) => void;
+    }) => {
       llmSettingsScreenMock(props);
+      const { onSaveControlChange } = props;
+      // Expose the save control the real form provides, with no changes.
+      React.useEffect(() => {
+        onSaveControlChange?.({
+          save: () => props.onSaveSuccess?.(),
+          isSaving: false,
+          isDirty: false,
+          values: props.initialValueOverrides ?? {},
+          view: "basic",
+          getDirtyPayload: () => ({ llm: {} }),
+          getSavePayload: () => ({}),
+        });
+      }, [onSaveControlChange]);
       return React.createElement(
         "div",
         { "data-testid": "llm-settings-screen-stub" },
@@ -149,6 +204,13 @@ async function waitForConfiguredBackendToBeSkipped() {
   );
 }
 
+// The LLM step's Next waits for the form's save control.
+async function clickLlmNext(user: ReturnType<typeof userEvent.setup>) {
+  const next = screen.getByTestId("onboarding-llm-next");
+  await waitFor(() => expect(next).toBeEnabled());
+  await user.click(next);
+}
+
 async function completeAgentStep(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByTestId("onboarding-agent-next"));
   await waitFor(
@@ -174,7 +236,7 @@ function seedCloudBackend() {
   return backend;
 }
 
-function renderModal(onClose = vi.fn()) {
+function renderModal(onClose = vi.fn(), options?: { initialStep?: number }) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -188,7 +250,10 @@ function renderModal(onClose = vi.fn()) {
     <QueryClientProvider client={queryClient}>
       <ActiveBackendProvider>
         <NavigationProvider value={navigationValue}>
-          <OnboardingModal onClose={onClose} />
+          <OnboardingModal
+            onClose={onClose}
+            initialStep={options?.initialStep}
+          />
         </NavigationProvider>
       </ActiveBackendProvider>
     </QueryClientProvider>,
@@ -202,6 +267,10 @@ beforeEach(() => {
   vi.stubEnv("VITE_BACKEND_BASE_URL", "http://localhost:9000");
   vi.stubEnv("VITE_SESSION_API_KEY", "session-key");
   __resetActiveStoreForTests();
+  useFreeModelsStore.getState().setFlags({
+    freeModels: new Set(),
+    defaultModel: null,
+  });
   // Clear accumulated spy/mock call history so per-test assertions (the
   // ACP secret-write checks and the LLM-defaults mock) don't see calls
   // leaked from a prior test. Covers `llmSettingsScreenMock` too.
@@ -211,7 +280,7 @@ beforeEach(() => {
     if (options?.host?.startsWith("https://127.0.0.1:8000")) {
       return Promise.reject(new Error("Failed to fetch"));
     }
-    return Promise.resolve({ version: "1.28.0" });
+    return Promise.resolve({ version: "1.52.0" });
   });
   // ChooseAgentStep's Next button now persists the selection via
   // saveSettings before advancing. Stub it so the rest of the flow
@@ -611,6 +680,47 @@ describe("OnboardingModal", () => {
     expect(screen.queryByText("BACKEND$LOGIN_OR")).toBeNull();
   });
 
+  it("shows a connection error when the backend API key is invalid", async () => {
+    window.localStorage.clear();
+    vi.stubEnv("VITE_BACKEND_BASE_URL", "");
+    vi.stubEnv("VITE_SESSION_API_KEY", "");
+    delete (window as unknown as Record<string, unknown>)
+      .__AGENT_CANVAS_SESSION_API_KEY__;
+    __resetActiveStoreForTests();
+
+    // Mock SettingsClient to throw a 401 error
+    const authError = new Error("Unauthorized");
+    authError.name = "HttpError";
+    (authError as any).status = 401;
+    getSettingsMock.mockRejectedValueOnce(authError);
+    // getServerInfoMock implicitly resolves, but shouldn't be reached if test is correct
+
+    renderModal();
+    const user = userEvent.setup();
+
+    await user.clear(screen.getByTestId("onboarding-backend-host"));
+    await user.type(
+      screen.getByTestId("onboarding-backend-host"),
+      "https://127.0.0.1:8000",
+    );
+    await user.clear(screen.getByTestId("onboarding-backend-api-key"));
+    await user.type(
+      screen.getByTestId("onboarding-backend-api-key"),
+      "invalid-session-key",
+    );
+    await user.click(screen.getByTestId("onboarding-backend-next"));
+
+    expect(
+      await screen.findByTestId("onboarding-backend-error"),
+    ).toHaveTextContent("BACKEND$CONNECTION_TEST_FAILED");
+    expect(screen.getByTestId("onboarding-backend-error")).toHaveTextContent(
+      "Invalid API key", // This comes from INVALID_BACKEND_API_KEY_ERROR
+    );
+
+    // Should not advance to the next step
+    expect(screen.queryByText("BACKEND$LOGIN_OR")).toBeNull();
+  });
+
   it("shows a connection error when saving an unreachable backend", async () => {
     window.localStorage.clear();
     vi.stubEnv("VITE_BACKEND_BASE_URL", "");
@@ -642,16 +752,36 @@ describe("OnboardingModal", () => {
     );
   });
 
-  it("pre-fills the LLM step with OpenAI GPT-5.5", () => {
+  it("pre-fills the LLM step with the OpenHands default model", async () => {
     renderModal();
 
-    expect(llmSettingsScreenMock).toHaveBeenCalledTimes(1);
-    expect(llmSettingsScreenMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        initialValueOverrides: {
-          "llm.model": ONBOARDING_DEFAULT_LLM_MODEL,
-        },
-      }),
+    await waitFor(() =>
+      expect(llmSettingsScreenMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          initialValueOverrides: expect.objectContaining({
+            "llm.model": ONBOARDING_DEFAULT_LLM_MODEL,
+          }),
+        }),
+      ),
+    );
+  });
+
+  it("pre-fills the LLM step with the DB-selected OpenHands default", async () => {
+    useFreeModelsStore.getState().setFlags({
+      freeModels: new Set(["openhands/gpt-5.2"]),
+      defaultModel: "openhands/gpt-5.2",
+    });
+
+    renderModal();
+
+    await waitFor(() =>
+      expect(llmSettingsScreenMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          initialValueOverrides: expect.objectContaining({
+            "llm.model": "openhands/gpt-5.2",
+          }),
+        }),
+      ),
     );
   });
 
@@ -683,12 +813,22 @@ describe("OnboardingModal", () => {
       "true",
     );
 
-    // Step 1 → 2
-    await user.click(screen.getByTestId("onboarding-llm-next"));
-    expect(screen.getByTestId("onboarding-modal")).toHaveAttribute(
-      "data-current-step",
-      "2",
+    // Step 1 → 2. On a local backend Next saves the form as an LLM profile
+    // and activates it before advancing.
+    await clickLlmNext(user);
+    await waitFor(() =>
+      expect(screen.getByTestId("onboarding-modal")).toHaveAttribute(
+        "data-current-step",
+        "2",
+      ),
     );
+    expect(saveLlmProfileMock).toHaveBeenCalledWith(
+      "gpt-5.6-sol",
+      expect.objectContaining({
+        llm: expect.objectContaining({ model: ONBOARDING_DEFAULT_LLM_MODEL }),
+      }),
+    );
+    expect(activateLlmProfileMock).toHaveBeenCalledWith("gpt-5.6-sol");
     expect(screen.getByTestId("onboarding-slide-2")).toHaveAttribute(
       "data-active",
       "true",
@@ -735,6 +875,12 @@ describe("OnboardingModal", () => {
     const scrollArea = screen.getByTestId("onboarding-scroll-area");
     const rail = screen.getByTestId("onboarding-slide-rail");
     expect(scrollArea.contains(rail)).toBe(true);
+    // Bottom padding matches the header (`pt-7`) so the last control is
+    // not flush against the modal edge. The region must size to its
+    // content (`min-h-0` + overflow, no `flex-1`) so a content-fitting
+    // step does not paint a leftover scrollbar.
+    expect(scrollArea).toHaveClass("pb-7");
+    expect(scrollArea).not.toHaveClass("flex-1");
   });
 
   it("keeps the LLM step heading and Back/Next outside the scrollable settings body", async () => {
@@ -773,15 +919,17 @@ describe("OnboardingModal", () => {
     expect(settings.contains(next)).toBe(false);
   });
 
-  it("hides the Say Hello OR separator when recommended automations are unavailable on Cloud", () => {
+  it("shows the Say Hello OR separator and recommended automations on Cloud", () => {
     seedCloudBackend();
 
     renderModal();
 
-    expect(screen.queryByTestId("onboarding-hello-or-separator")).toBeNull();
     expect(
-      screen.queryByTestId("onboarding-recommended-automations"),
-    ).toBeNull();
+      screen.getByTestId("onboarding-hello-or-separator"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId("onboarding-recommended-automations"),
+    ).toBeInTheDocument();
   });
 
   it("shows the setup slide with Gemini's credential fields", async () => {
@@ -925,7 +1073,7 @@ describe("OnboardingModal", () => {
 
     await waitForConfiguredBackendToBeSkipped();
     await completeAgentStep(user);
-    await user.click(screen.getByTestId("onboarding-llm-next"));
+    await clickLlmNext(user);
 
     const helloInput = screen.getByTestId(
       "onboarding-hello-input",
@@ -950,7 +1098,7 @@ describe("OnboardingModal", () => {
         "true",
       ),
     );
-    await user.click(screen.getByTestId("onboarding-llm-next"));
+    await clickLlmNext(user);
     await waitFor(() =>
       expect(screen.getByTestId("onboarding-slide-2")).toHaveAttribute(
         "data-active",
@@ -1081,7 +1229,7 @@ describe("OnboardingModal", () => {
       const user = userEvent.setup();
       await waitForConfiguredBackendToBeSkipped();
       await completeAgentStep(user);
-      await user.click(screen.getByTestId("onboarding-llm-next"));
+      await clickLlmNext(user);
       await waitFor(() =>
         expect(screen.getByTestId("onboarding-slide-2")).toHaveAttribute(
           "data-active",
@@ -1126,6 +1274,51 @@ describe("OnboardingModal", () => {
           agent: "openhands",
         }),
       );
+    });
+  });
+
+  describe("Getting Started checklist skip", () => {
+    it("renders a centered skip checkbox below the modal on Say Hello", async () => {
+      renderModal(vi.fn(), { initialStep: 3 });
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("onboarding-step-say-hello"),
+        ).toBeInTheDocument();
+      });
+
+      const checkbox = screen.getByTestId(
+        "onboarding-skip-getting-started-checklist",
+      );
+      expect(checkbox).toBeInTheDocument();
+      expect(checkbox).not.toBeChecked();
+      expect(
+        screen.getByText("ONBOARDING$SKIP_GETTING_STARTED_CHECKLIST"),
+      ).toBeInTheDocument();
+
+      const modal = screen.getByTestId("onboarding-modal");
+      expect(modal.contains(checkbox)).toBe(false);
+    });
+
+    it("persists dismissal when the skip checkbox is checked", async () => {
+      const user = userEvent.setup();
+      renderModal(vi.fn(), { initialStep: 3 });
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("onboarding-skip-getting-started-checklist"),
+        ).toBeInTheDocument();
+      });
+
+      await user.click(
+        screen.getByTestId("onboarding-skip-getting-started-checklist"),
+      );
+
+      expect(
+        window.localStorage.getItem(
+          SIDEBAR_ONBOARDING_CHECKLIST_DISMISSED_STORAGE_KEY,
+        ),
+      ).toBe("true");
     });
   });
 });

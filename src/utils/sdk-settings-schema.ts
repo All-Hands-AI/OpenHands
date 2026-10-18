@@ -112,13 +112,6 @@ export function getAgentSettingValue(
   return getSettingValue(settings, key, "agent_settings");
 }
 
-export function getConversationSettingValue(
-  settings: Settings,
-  key: string,
-): SettingsValue {
-  return getSettingValue(settings, key, "conversation_settings");
-}
-
 function isChoiceField(field: SettingsFieldSchema): boolean {
   return field.choices.length > 0;
 }
@@ -158,7 +151,28 @@ export function normalizeFieldValue(
   return String(resolvedValue);
 }
 
-function normalizeComparableValue(
+function stableJsonStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value);
+  }
+
+  if (Array.isArray(value)) {
+    return `[${value.map(stableJsonStringify).join(",")}]`;
+  }
+
+  const sortedEntries = Object.entries(value as Record<string, unknown>).sort(
+    ([leftKey], [rightKey]) => leftKey.localeCompare(rightKey),
+  );
+
+  return `{${sortedEntries
+    .map(
+      ([key, entryValue]) =>
+        `${JSON.stringify(key)}:${stableJsonStringify(entryValue)}`,
+    )
+    .join(",")}}`;
+}
+
+export function normalizeComparableValue(
   field: SettingsFieldSchema,
   rawValue: unknown,
 ): boolean | number | string | null {
@@ -225,13 +239,13 @@ function normalizeComparableValue(
         ) {
           return null;
         }
-        return JSON.stringify(parsed);
+        return stableJsonStringify(parsed);
       } catch {
         return trimmedValue;
       }
     }
 
-    return JSON.stringify(rawValue);
+    return stableJsonStringify(rawValue);
   }
 
   if (rawValue === null) {
@@ -302,12 +316,6 @@ export function inferInitialView(
   if (hasMinorOverride) return "all";
   if (hasMajorOverride) return "advanced";
   return "basic";
-}
-
-/** Determine which view tier to default to based on whether the user has
- *  overridden any non-critical settings. */
-export function hasAdvancedSettingsOverrides(settings: Settings): boolean {
-  return inferInitialView(settings) !== "basic";
 }
 
 export function isSettingsFieldVisible(

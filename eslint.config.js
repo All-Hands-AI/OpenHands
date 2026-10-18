@@ -36,6 +36,7 @@ import prettierPlugin from "eslint-plugin-prettier";
 import prettierConfig from "eslint-config-prettier";
 import unusedImportsPlugin from "eslint-plugin-unused-imports";
 import tanstackQueryPlugin from "@tanstack/eslint-plugin-query";
+import { plugin as shadcnPlugin } from "@shadcn/lint";
 import globals from "globals";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -45,6 +46,52 @@ const compat = new FlatCompat({
   baseDirectory: __dirname,
   resolvePluginsRelativeTo: __dirname,
 });
+
+/**
+ * ESLint rule: forbid raw `fetch` calls that target an agent-server `/api/...`
+ * path, so API access goes through the typed @openhands/typescript-client
+ * clients. Only statically-resolvable agent-server paths are flagged; external
+ * URLs, dynamic identifiers, and non-`/api/` draws (cookie-auth static
+ * fileserver, OAuth device verification) are left alone.
+ */
+function createNoDirectAgentServerFetchRule() {
+  return {
+    meta: {
+      type: "problem",
+      docs: {
+        description:
+          "Use typed @openhands/typescript-client clients instead of global fetch for agent-server API calls.",
+      },
+      messages: {
+        noRawFetch:
+          "Use a typed @openhands/typescript-client client (or AgentServerClient.request) instead of global fetch for agent-server API calls.",
+      },
+    },
+    create(context) {
+      function resolveStaticUrl(node) {
+        if (node.type === "Literal" && typeof node.value === "string") {
+          return node.value;
+        }
+        if (node.type === "TemplateLiteral") {
+          return node.quasis.map((q) => q.value.raw).join("");
+        }
+        return null;
+      }
+
+      return {
+        CallExpression(node) {
+          const callee = node.callee;
+          if (callee.type !== "Identifier" || callee.name !== "fetch") return;
+          const urlNode = node.arguments[0];
+          if (!urlNode) return;
+          const url = resolveStaticUrl(urlNode);
+          if (url === null || !url.includes("/api/")) return;
+          context.report({ node, messageId: "noRawFetch" });
+        },
+      };
+    },
+  };
+}
 
 export default [
   // Files / dirs we never want to lint.
@@ -60,6 +107,9 @@ export default [
       "test-results/**",
       "test-results-live/**",
       "public/mockServiceWorker.js",
+      // Self-contained browser ES module served to extensions at runtime;
+      // not part of the TypeScript project.
+      "src/fixtures/canvas-extensions/**/*.js",
       "src/i18n/declaration.d.ts",
     ],
   },
@@ -112,6 +162,13 @@ export default [
       // `// eslint-disable-next-line import/foo` comments keep working.
       import: importXPlugin,
       prettier: prettierPlugin,
+      // Local rule enforcing that agent-server API calls go through the typed
+      // @openhands/typescript-client clients instead of a raw `fetch`.
+      local: {
+        rules: {
+          "no-direct-agent-server-fetch": createNoDirectAgentServerFetchRule(),
+        },
+      },
     },
     settings: {
       react: { version: "detect" },
@@ -205,6 +262,14 @@ export default [
           ],
         },
       ],
+      // All agent-server API access must go through the typed
+      // @openhands/typescript-client clients. A raw global `fetch` against an
+      // agent-server `/api/...` path bypasses the typed access layer, so it is
+      // banned here (see also src/api/no-direct-agent-server-calls.test.ts).
+      // Browser-cookie-auth and external (non-agent-server) fetches — e.g. the
+      // workspace static fileserver, OAuth device verification, and the npm
+      // registry version check — do not target `/api/...` and are unaffected.
+      "local/no-direct-agent-server-fetch": "error",
 
       // Allow `interface Foo extends Bar<"foo"> {}` — the codebase uses this
       // discriminated-union pattern in `src/types/agent-server/**` and the
@@ -321,5 +386,118 @@ export default [
       "react-hooks/exhaustive-deps": "off",
       "react/react-in-jsx-scope": "off",
     },
+  },
+
+  // @shadcn/lint — design-system linter for Tailwind v4.
+  // Rules: https://github.com/shadcn-ui/lint/blob/main/docs/rules.md
+  // `no-arbitrary-values` stays at "warn": the remaining hits are one-offs
+  // (raw hex, vh/vw, calc(), grid templates) with no theme-scale equivalent.
+  // Class existence does not need component contracts. With no remaining
+  // unknown utilities, new findings fail lint; styling policy remains opt-in.
+  // Canvas primitives use #/ui, not the plugin's default components/ui path.
+  // require-static-classes is enabled for those consumers; imported class
+  // constants remain opaque, so its documented narrow exceptions remain.
+  // no-raw-colors starts at warn while existing palette colors are migrated
+  // and checked across themes (#18004). Keep verified plugin/config tokens exempt below.
+  // no-restyle first protects divider/toggle appearances; layout remains public,
+  // and ToggleSwitch callers can dim the control for disabled/pending states.
+  // Carets expose layout and text color; their padding/shape stay internal.
+  // Stateful carets own rotation through isOpen; generic icons retain orientation.
+  // Next: finish the color migration before promoting to error; define contracts
+  // for the remaining UI primitives and audit dynamic styles for no-inline-styles.
+  // 0.2.0 also improves render-prop, destructuring, barrel-export, and custom
+  // animation recognition. Vue/Svelte support adds no new rule names or parsers
+  // to this React project. 0.2.1 uses Tailwind's JS-config loader and recognizes
+  // module-defined font sizes, custom theme scales, and SVG paint-clearing classes.
+  // Keep dependency upgrades separate from rule activation.
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    plugins: { shadcn: shadcnPlugin },
+    rules: {
+      "shadcn/no-arbitrary-values": "warn",
+      "shadcn/no-restyle": [
+        "error",
+        {
+          // Adopt only primitives whose appearance contract is already settled.
+          // Typography, menus, and Pre need a separate design audit.
+          componentImports: [
+            "^#/ui/(divider|toggle-switch|combobox-caret)$",
+            // Match the existing re-export path explicitly too.
+            "^#/components/features/automations/toggle-switch$",
+          ],
+          allow: ["layout"],
+          contracts: [
+            // The button wrapper can express caller-owned disabled/pending state.
+            // ToggleSwitchVisual still owns the track/thumb color, shape, and effects.
+            { pattern: "^ToggleSwitch$", allow: ["layout", "opacity"] },
+            {
+              pattern: "^ComboboxCaretIcon$",
+              allow: ["layout", "text-color"],
+              message:
+                "Keep caret classes to layout and text color; the SVG owns its appearance.",
+            },
+            {
+              pattern: "^ComboboxCaret(Button|Inline)$",
+              allow: ["layout", "text-color"],
+              deny: ["rotate-*"],
+              message:
+                "Use isOpen for caret rotation; keep caller classes to layout and text color.",
+            },
+          ],
+        },
+      ],
+      "shadcn/no-raw-colors": [
+        "warn",
+        {
+          // Retain existing JS-config/plugin exceptions for a separate token audit.
+          // Exact classes only: do not exempt raw palettes or whole namespaces.
+          allow: [
+            // hero.ts / @heroui/theme: semantic colors pending the token audit.
+            "bg-background",
+            "bg-content1",
+            "text-primary-foreground",
+            // tailwind.config.js: existing named tokens, pending theme migration.
+            "bg-status-fail-bg",
+            "text-status-fail-text",
+            "text-content-muted",
+            "text-modal-muted",
+          ],
+        },
+      ],
+      // Warning-only while measured layout, portal placement, accessibility
+      // helpers and renderer interfaces are reviewed by their owners. The rule
+      // permits CSS variables itself; no broad property/color exception is needed.
+      "shadcn/no-inline-styles": "warn",
+      "shadcn/require-static-classes": [
+        "error",
+        { componentImports: ["^#/ui(/|$)"] },
+      ],
+      "shadcn/no-unknown-classes": [
+        "error",
+        {
+          allow: [
+            // src/index.css owns the overlay animation outside the theme graph.
+            "environment-switch-overlay",
+            // Selector target for has-[.conversation-overview-diffs-git-action:hover].
+            "conversation-overview-diffs-git-action",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // Primitive implementations own appearance and variant helpers. Token and
+    // unknown-class checks still apply to their definitions.
+    files: ["src/ui/**/*.{ts,tsx}"],
+    rules: {
+      "shadcn/no-restyle": "off",
+      "shadcn/require-static-classes": "off",
+    },
+  },
+  {
+    // Public embedding API: this owner must forward arbitrary caller styles.
+    // Its opaque object cannot be converted to custom-properties-only styles.
+    files: ["src/components/providers/agent-server-ui-root.tsx"],
+    rules: { "shadcn/no-inline-styles": "off" },
   },
 ];

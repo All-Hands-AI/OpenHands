@@ -6,6 +6,12 @@ import {
   writeStoredBackends,
 } from "./storage";
 import type { Backend, BackendSelection, ResolvedActiveBackend } from "./types";
+import {
+  currentLocationSearch,
+  readBackendSelectionFromUrl,
+  readLockedCloudOrgFromUrl,
+  removeOrgFromCurrentUrl,
+} from "./url-selection";
 
 type Listener = () => void;
 
@@ -88,9 +94,37 @@ function computeSnapshot(
   };
 }
 
+/**
+ * Resolve the selection this tab boots with. A backend pinned in the URL wins
+ * over stored state so a link opened in a new tab (cmd/ctrl-click, middle
+ * click, "Open in new tab") lands on the backend that owns the linked
+ * conversation, even when the new tab starts with an empty `sessionStorage`
+ * and would otherwise adopt the `localStorage` fallback. The honoured
+ * selection is persisted so later in-tab navigation — which drops the query
+ * parameters — keeps the same backend.
+ */
+function readInitialSelection(backends: Backend[]): BackendSelection | null {
+  const search = currentLocationSearch();
+  const fromUrl = readBackendSelectionFromUrl(backends, search);
+  if (fromUrl) {
+    writeStoredActiveBackend(fromUrl);
+    return fromUrl;
+  }
+  // The cloud's web app names the org it had selected. Honour it once, then
+  // drop it so a reload keeps any org picked here afterwards.
+  const handedBack = readLockedCloudOrgFromUrl(backends, search);
+  if (handedBack) {
+    writeStoredActiveBackend(handedBack);
+    removeOrgFromCurrentUrl();
+    return handedBack;
+  }
+  return readStoredActiveBackend();
+}
+
+const initialBackends = readStoredBackends();
 let snapshot: Snapshot = computeSnapshot(
-  readStoredBackends(),
-  readStoredActiveBackend(),
+  initialBackends,
+  readInitialSelection(initialBackends),
 );
 
 const listeners = new Set<Listener>();
@@ -161,6 +195,7 @@ export function subscribeActiveBackend(listener: Listener): () => void {
 /** Test-only: re-read storage and clear listeners. */
 
 export function __resetActiveStoreForTests(): void {
-  snapshot = computeSnapshot(readStoredBackends(), readStoredActiveBackend());
+  const backends = readStoredBackends();
+  snapshot = computeSnapshot(backends, readInitialSelection(backends));
   listeners.clear();
 }

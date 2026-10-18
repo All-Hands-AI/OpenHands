@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { getStoredConversationMetadata } from "#/api/conversation-metadata-store";
+import ProfilesService from "#/api/profiles-service/profiles-service.api";
 
 const {
   mockHttpPost,
@@ -17,6 +18,7 @@ const {
   mockGetSettingsForConversation,
   mockUseLlmProfiles,
   mockListInstalledPlugins,
+  mockGetTelemetryDistinctId,
 } = vi.hoisted(() => ({
   mockHttpPost: vi.fn(),
   mockConversationClient: vi.fn(),
@@ -25,6 +27,7 @@ const {
   mockGetSettingsForConversation: vi.fn(),
   mockUseLlmProfiles: vi.fn(),
   mockListInstalledPlugins: vi.fn(),
+  mockGetTelemetryDistinctId: vi.fn(),
 }));
 
 vi.mock("@openhands/typescript-client/clients", async () => {
@@ -51,7 +54,8 @@ vi.mock("#/api/agent-server-config", () => ({
   getBakedSessionApiKey: vi.fn(() => "test-session-key"),
   getAgentServerSessionApiKey: vi.fn(() => "test-session-key"),
   getAgentServerWorkingDir: vi.fn(() => "/workspace/project/agent-canvas"),
-  buildConversationWorkingDir: vi.fn(
+  getWorkspaceRootForBackend: vi.fn(() => "/workspace/project/agent-canvas"),
+  buildConversationWorkingDirForBackend: vi.fn(
     (id: string) => `/state/workspaces/${id.replace(/-/g, "")}`,
   ),
   shouldLoadPublicSkills: vi.fn(() => true),
@@ -68,6 +72,10 @@ vi.mock("#/api/settings-service/settings-service.api", () => ({
 
 vi.mock("#/hooks/use-tracking", () => ({
   useTracking: () => ({ trackConversationCreated: vi.fn() }),
+}));
+
+vi.mock("#/services/telemetry", () => ({
+  getTelemetryDistinctId: mockGetTelemetryDistinctId,
 }));
 
 vi.mock("#/hooks/query/use-llm-profiles", () => ({
@@ -98,6 +106,7 @@ describe("useCreateConversation persists selected repository metadata", () => {
     // Default: no installed plugins, so the existing repo/workspace/profile
     // assertions are unaffected. Plugin-specific tests override this.
     mockListInstalledPlugins.mockResolvedValue([]);
+    mockGetTelemetryDistinctId.mockReset().mockResolvedValue(null);
     mockHttpPost.mockReset();
     mockGetSettings.mockReset();
     mockGetSettingsForConversation.mockReset();
@@ -133,6 +142,7 @@ describe("useCreateConversation persists selected repository metadata", () => {
 
   afterEach(() => {
     window.localStorage.clear();
+    vi.restoreAllMocks();
   });
 
   it("stores the selected repo/branch/provider in the metadata store after a successful create", async () => {
@@ -190,9 +200,10 @@ describe("useCreateConversation persists selected repository metadata", () => {
   });
 
   it("stamps the active LLM profile even when no repo or workspace is attached (#1082)", async () => {
-    mockUseLlmProfiles.mockReturnValue({
-      data: { active_profile: "team-default" },
-    });
+    vi.spyOn(ProfilesService, "listProfiles").mockResolvedValue({
+      profiles: [{ name: "team-default" }],
+      active_profile: "team-default",
+    } as never);
 
     const { result } = renderHook(() => useCreateConversation(), { wrapper });
 
@@ -204,10 +215,7 @@ describe("useCreateConversation persists selected repository metadata", () => {
       selected_repository: null,
       selected_branch: null,
       git_provider: null,
-      selected_workspace: null,
-      workspace_mode: null,
       active_profile: "team-default",
-      plugins: null,
     });
   });
 

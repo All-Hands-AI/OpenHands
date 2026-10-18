@@ -13,7 +13,6 @@ import { SkillsModal } from "../conversation-panel/skills-modal";
 import { HooksModal } from "../conversation-panel/hooks-modal";
 import { ConfirmDeleteModal } from "../conversation-panel/confirm-delete-modal";
 import { ConfirmStopModal } from "../conversation-panel/confirm-stop-modal";
-import { MetricsModal } from "./metrics-modal/metrics-modal";
 import { TranscriptExportModal } from "./transcript-export-modal";
 
 export function ConversationName() {
@@ -27,7 +26,7 @@ export function ConversationName() {
   const [transcriptExportModalVisible, setTranscriptExportModalVisible] =
     React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const ellipsisAnchorRef = React.useRef<HTMLDivElement>(null);
+  const ellipsisAnchorRef = React.useRef<HTMLButtonElement>(null);
 
   // Use the custom hook for context menu handlers
   const {
@@ -43,8 +42,6 @@ export function ConversationName() {
     shareUrl,
     handleConfirmDelete,
     handleConfirmStop,
-    metricsModalVisible,
-    setMetricsModalVisible,
     systemModalVisible,
     setSystemModalVisible,
     skillsModalVisible,
@@ -146,7 +143,7 @@ export function ConversationName() {
   return (
     <>
       <div
-        className="flex items-center gap-2 h-[22px] text-base font-normal text-left pl-0 lg:pl-1 min-w-0"
+        className="flex items-center gap-2 h-5.5 text-base font-normal text-left pl-0 lg:pl-1 min-w-0"
         data-testid="conversation-name"
       >
         {titleMode === "edit" ? (
@@ -158,11 +155,11 @@ export function ConversationName() {
             onKeyUp={handleKeyUp}
             type="text"
             defaultValue={conversation.title || ""}
-            className="text-white leading-5 bg-transparent border-none outline-none text-base font-normal w-fit max-w-fit field-sizing-content"
+            className="text-contrast leading-5 bg-transparent border-none outline-none text-base font-normal w-fit max-w-fit field-sizing-content"
           />
         ) : (
           <div
-            className="text-white leading-5 truncate"
+            className="text-contrast leading-5 truncate"
             data-testid="conversation-name-title"
             onDoubleClick={handleDoubleClick}
             title={conversation.title || ""}
@@ -172,11 +169,12 @@ export function ConversationName() {
         )}
 
         {titleMode !== "edit" && (
-          <div
-            ref={ellipsisAnchorRef}
-            className="relative flex items-center shrink-0"
-          >
-            <EllipsisButton onClick={handleEllipsisClick} />
+          <div className="relative flex items-center shrink-0">
+            <EllipsisButton
+              ref={ellipsisAnchorRef}
+              onClick={handleEllipsisClick}
+              ariaLabel={t(I18nKey.COMMON$MORE_OPTIONS)}
+            />
             {contextMenuOpen && (
               <ConversationNameContextMenu
                 onClose={() => setContextMenuOpen(false)}
@@ -207,12 +205,6 @@ export function ConversationName() {
           </div>
         )}
       </div>
-
-      {/* Metrics Modal */}
-      <MetricsModal
-        isOpen={metricsModalVisible}
-        onOpenChange={setMetricsModalVisible}
-      />
 
       {transcriptExportModalVisible && conversationId && (
         <TranscriptExportModal

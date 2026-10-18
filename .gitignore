@@ -6,6 +6,10 @@ src/i18n/declaration.ts
 node_modules/
 build/
 logs/
+/.tmp/live-e2e-state/
+# Scratch space for local E2E runs. Ignore the whole directory: besides the
+# mock-llm state dirs, the suite also drops an automation DB and an unignored
+# `secrets.json` here, which should never be committable.
 /.tmp/
 dist/
 __pycache__
@@ -39,3 +43,6 @@ build-fresh/
 /resources/bin/
 # Downloaded Node.js distribution (populated by `npm run download-node` before packaging)
 /resources/node/
+# Per-arch runtime downloads for macOS universal builds (ELECTRON_ARCH=universal)
+/resources/bin-*/
+/resources/node-*/

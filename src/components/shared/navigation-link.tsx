@@ -3,6 +3,7 @@ import {
   useNavigation,
   type NavigationOptions,
 } from "#/context/navigation-context";
+import { buildAgentCanvasPath } from "#/utils/base-path";
 
 interface NavigationLinkClassNameState {
   isActive: boolean;
@@ -24,16 +25,27 @@ function isModifiedEvent(event: React.MouseEvent<HTMLAnchorElement>) {
   return event.metaKey || event.altKey || event.ctrlKey || event.shiftKey;
 }
 
+/**
+ * `currentPath` is a pathname, so compare against the pathname portion of
+ * `to`. Links may carry a query string (e.g. the backend identity pinned on
+ * sidebar conversation links) that must not defeat the active check.
+ */
+function toPathname(to: string) {
+  return to.split(/[?#]/)[0];
+}
+
 function isPathActive(currentPath: string, to: string, end: boolean) {
-  if (to === "/") {
-    return currentPath === to;
+  const path = toPathname(to);
+
+  if (path === "/") {
+    return currentPath === path;
   }
 
   if (end) {
-    return currentPath === to;
+    return currentPath === path;
   }
 
-  return currentPath === to || currentPath.startsWith(`${to}/`);
+  return currentPath === path || currentPath.startsWith(`${path}/`);
 }
 
 export const NavigationLink = React.forwardRef<
@@ -50,6 +62,7 @@ export const NavigationLink = React.forwardRef<
       children,
       target,
       rel,
+      "aria-current": ariaCurrent,
       ...props
     },
     ref,
@@ -80,12 +93,14 @@ export const NavigationLink = React.forwardRef<
       <a
         {...props}
         ref={ref}
-        href={to}
+        href={buildAgentCanvasPath(to)}
         target={target}
         rel={rel}
         onClick={handleClick}
         className={resolvedClassName}
-        aria-current={isActive ? "page" : undefined}
+        // A caller that knows the link stands for a whole section (e.g. the
+        // sidebar Customize row on /mcp) can mark it current explicitly.
+        aria-current={ariaCurrent ?? (isActive ? "page" : undefined)}
       >
         {children}
       </a>
