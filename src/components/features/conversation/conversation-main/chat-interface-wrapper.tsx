@@ -12,13 +12,25 @@ import {
 
 interface ChatInterfaceWrapperProps {
   isRightPanelShown: boolean;
+  showGitControlBar?: boolean;
+  showEmptyStateSuggestions?: boolean;
+  composerDockTarget?: HTMLElement | null;
+  onDockedComposerSubmit?: () => void;
+  minimalComposer?: boolean;
+  composerPlaceholder?: string;
 }
 
 const THREAD_CLASSNAME =
-  "w-full min-w-0 max-w-[800px] h-full flex flex-col min-h-0";
+  "w-full min-w-0 max-w-200 h-full flex flex-col min-h-0";
 
 export function ChatInterfaceWrapper({
   isRightPanelShown: _isRightPanelShown,
+  showGitControlBar = true,
+  showEmptyStateSuggestions = true,
+  composerDockTarget = null,
+  onDockedComposerSubmit,
+  minimalComposer = false,
+  composerPlaceholder,
 }: ChatInterfaceWrapperProps) {
   const isMobile = useBreakpoint();
   const reduceMotion = useReducedMotion();
@@ -41,7 +53,14 @@ export function ChatInterfaceWrapper({
     >
       <div className="flex min-h-0 min-w-0 flex-1 justify-center overflow-hidden">
         <div className={THREAD_CLASSNAME}>
-          <ChatInterface />
+          <ChatInterface
+            showGitControlBar={showGitControlBar}
+            showEmptyStateSuggestions={showEmptyStateSuggestions}
+            composerDockTarget={composerDockTarget}
+            onDockedComposerSubmit={onDockedComposerSubmit}
+            minimalComposer={minimalComposer}
+            composerPlaceholder={composerPlaceholder}
+          />
         </div>
       </div>
       <AnimatePresence>

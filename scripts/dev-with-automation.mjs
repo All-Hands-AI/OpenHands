@@ -71,6 +71,12 @@ import {
   signalProcessTree,
 } from "./dev-process-utils.mjs";
 import { fileLog, stripAnsi } from "./logger.mjs";
+import {
+  applySessionKeyPolicy,
+  bindHostArgs,
+  isLoopbackBind,
+  resolveBindHost,
+} from "./bind-host.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, "..");
@@ -176,6 +182,7 @@ function parseArgs() {
     public: false,
     frontendOnly: false,
     backendOnly: false,
+    host: null,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -215,6 +222,10 @@ function parseArgs() {
       case "--backend-only":
         config.backendOnly = true;
         break;
+      case "-H":
+      case "--host":
+        config.host = args[++i];
+        break;
       case "-h":
       case "--help":
         showHelp();
@@ -237,6 +248,9 @@ USAGE:
 
 OPTIONS:
   -p, --port <port>           Ingress port (default: 8000)
+  -H, --host <host>           Bind address for ingress/static (default: 127.0.0.1).
+                              Use 0.0.0.0 or :: to listen on all interfaces; the
+                              session key will not be injected into HTML.
   --automation-ref <ref>      Git ref for automation (branch/tag/SHA)
   --automation-repo <url>     Git repo URL (default: ${DEFAULT_AUTOMATION_REPO})
   --static                    Serve an existing production build instead of Vite
@@ -250,6 +264,7 @@ OPTIONS:
 
 ENVIRONMENT VARIABLES:
   PORT                        Alternative to --port
+  OH_BIND_HOST                Alternative to --host (default: 127.0.0.1)
   OH_AUTOMATION_GIT_REF       Git ref for automation (overrides default version)
   OH_AUTOMATION_VERSION       Specific PyPI version for automation (default: ${DEFAULT_AUTOMATION_VERSION})
   OH_AUTOMATION_LOCAL_PATH    Absolute path to a local automation checkout (overridden only by --automation-git-ref)
@@ -476,6 +491,20 @@ async function buildConfig(args, env = process.env) {
     );
   }
 
+  const bindHost = resolveBindHost({
+    flag: args.host,
+    env:
+      env.OH_BIND_HOST ||
+      (env.OH_CONVERSATION_RUNTIME === "docker" ? "0.0.0.0" : undefined),
+  });
+  if (!isLoopbackBind(bindHost) && !isPublic) {
+    logService(
+      "auth",
+      `Bind host ${bindHost} is not loopback — session key will not be injected into HTML`,
+      c.yellow,
+    );
+  }
+
   return {
     // Ingress port (main entry point)
     ingressPort: preferredIngressPort,
@@ -495,6 +524,7 @@ async function buildConfig(args, env = process.env) {
 
     // Data directories (same as dev-safe.mjs)
     stateDir,
+    tmuxTmpDir: safeConfig.tmuxTmpDir,
     // Only bake the host-side workspace path when this launcher also starts
     // the agent-server that can read it. In frontend-only mode the backend may
     // be a tunnel/remote service, so leave VITE_WORKING_DIR unset unless the
@@ -516,6 +546,7 @@ async function buildConfig(args, env = process.env) {
     launchAutomation,
 
     verbose: args.verbose,
+    bindHost,
   };
 }
 
@@ -578,6 +609,7 @@ function ensureDirectories(config) {
 
   if (config.launchAgentServer) {
     dirs.push(
+      config.tmuxTmpDir,
       join(config.stateDir, "dev_conversations"),
       join(config.stateDir, "workspaces"),
       join(config.stateDir, "bash_events"),
@@ -696,11 +728,14 @@ function spawnService(name, command, args, options = {}) {
   return proc;
 }
 
-async function waitForService(name, url, timeoutMs = 30000) {
+async function waitForService(name, url, timeoutMs = 30000, proc = null) {
   const start = Date.now();
   let lastError = null;
 
   while (Date.now() - start < timeoutMs) {
+    // A service that already exited will never answer; let the caller report
+    // the exit instead of polling until the timeout.
+    if (proc && !isProcessRunning(proc)) return false;
     try {
       const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
       if (res.ok) {
@@ -919,6 +954,7 @@ function startAgentServer(config) {
     OH_CANVAS_SAFE_STATE_DIR: config.stateDir,
     OH_CANVAS_SAFE_BACKEND_PORT: config.agentServerPort.toString(),
     OH_CANVAS_SAFE_VSCODE_PORT: config.vscodePort.toString(),
+    TMUX_TMPDIR: config.tmuxTmpDir,
   });
 
   const agentServerEnv = {
@@ -970,7 +1006,7 @@ function startAutomationBackend(config) {
   const automationCmd = buildAutomationCommand(process.env);
   logService("automation", `Using ${automationCmd.source}`, c.dim);
 
-  spawnService(
+  return spawnService(
     "automation",
     automationCmd.command,
     [
@@ -1067,6 +1103,24 @@ function startAutomationBackend(config) {
 
 let shuttingDown = false;
 
+// Services run in their own process groups, so they outlive the launcher
+// unless it stops them: SIGTERM each tree, then SIGKILL what is still running.
+async function stopServices() {
+  for (const [name, proc] of processes) {
+    logService(name, "Stopping...", c.dim);
+    signalProcessTree(proc, "SIGTERM");
+  }
+
+  await delay(3000);
+
+  for (const [name, proc] of processes) {
+    if (isProcessRunning(proc)) {
+      logService(name, "Force stopping...", c.dim);
+      signalProcessTree(proc, "SIGKILL");
+    }
+  }
+}
+
 function shutdown() {
   if (shuttingDown) return;
   shuttingDown = true;
@@ -1075,26 +1129,63 @@ function shutdown() {
   console.log(`${c.yellow}Shutting down...${c.reset}`);
   fileLog("info", "Shutting down...");
 
-  for (const [name, proc] of processes) {
-    logService(name, "Stopping...", c.dim);
-    signalProcessTree(proc, "SIGTERM");
-  }
-
-  setTimeout(() => {
-    for (const [name, proc] of processes) {
-      if (isProcessRunning(proc)) {
-        logService(name, "Force stopping...", c.dim);
-        signalProcessTree(proc, "SIGKILL");
-      }
-    }
+  stopServices().then(() => {
     shutdownHooks.run();
     process.exit(0);
-  }, 3000);
+  });
+}
+
+/**
+ * Watch the automation backend until it answers, and stop the stack if it
+ * exits first. It exits during startup when, for example, a database
+ * migration fails (#18299); leaving the stack up made Automate silently
+ * unavailable. The launcher announces the stack without waiting for this, so
+ * a healthy start is not delayed; a failure stops every service and then calls
+ * `onFailure`. A slow start (first-run download) only logs a timeout.
+ */
+async function watchAutomationStartup(config, proc, timeoutMs, onFailure) {
+  const ready = await waitForService(
+    "automation",
+    `http://127.0.0.1:${config.autoBackendPort}${AUTOMATION_ROUTE_PREFIX}/health`,
+    timeoutMs,
+    proc,
+  );
+  if (ready || isProcessRunning(proc) || shuttingDown) return;
+
+  const exit =
+    proc.exitCode !== null
+      ? `code ${proc.exitCode}`
+      : `signal ${proc.signalCode}`;
+  const message =
+    `The automation backend exited during startup (${exit}). ` +
+    "Its [automation] log lines show why.";
+  logError(message);
+  await stopServices();
+  onFailure(new Error(message));
 }
 
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
 process.on("SIGHUP", shutdown);
+
+/**
+ * One MARS web bridge per stack, on the server the browser reaches: the
+ * ingress, guarded by the stack's session key (the same one the page holds).
+ * The static child behind it gets `MARS_WEB=0`: a second bridge there would
+ * answer /mars/* with its own, separate sign-in state for anyone who opens
+ * that port directly. Without a key the ingress bridge would take
+ * destroySession and savePat from any local process, the agent's shell
+ * included, so a stack with no session key mounts nothing. Electron turns it
+ * off altogether (`config.marsWebBridge`), its preload provides the bridge.
+ */
+export function buildMarsWebEnv(role, config) {
+  if (role === "static" || config.marsWebBridge === false) {
+    return { MARS_WEB: "0" };
+  }
+  return config.sessionApiKey
+    ? { MARS_WEB_KEY: config.sessionApiKey }
+    : { MARS_WEB: "0" };
+}
 
 function startIngress(config) {
   logService("ingress", `Starting on port ${config.ingressPort}...`, c.yellow);
@@ -1112,6 +1203,7 @@ function startIngress(config) {
       ingressScript,
       "--port",
       config.ingressPort.toString(),
+      ...bindHostArgs(config.bindHost),
       ...(runtimeServicesInfo
         ? ["--runtime-services-info", runtimeServicesInfo]
         : []),
@@ -1122,6 +1214,7 @@ function startIngress(config) {
     {
       cwd: projectRoot,
       color: c.yellow,
+      env: buildMarsWebEnv("ingress", config),
     },
   );
 }
@@ -1132,10 +1225,12 @@ function startIngress(config) {
  * frontend connected to the backend can populate the agent's
  * `<RUNTIME_SERVICES>` system-prompt block.
  */
-export function buildAutomationRuntimeServicesInfo(config) {
+export function buildAutomationRuntimeServicesInfo(config, env = process.env) {
+  const dockerConversationRuntime = env.OH_CONVERSATION_RUNTIME === "docker";
+  const agentHostAlias = config.agentHostAlias ?? getAgentHostAlias(env);
   return buildRuntimeServicesInfo({
     mode: config.mode ?? "dev:automation",
-    agentHostAlias: config.agentHostAlias ?? "localhost",
+    agentHostAlias,
     agentServerPort: config.agentServerPort,
     ingressPort: config.ingressPort,
     frontendPort: config.launchFrontend ? config.vitePort : undefined,
@@ -1144,21 +1239,27 @@ export function buildAutomationRuntimeServicesInfo(config) {
     // description shown to the agent matches reality.
     frontendKind: config.frontendKind ?? "vite",
     automation: config.launchAutomation
-      ? { port: config.autoBackendPort }
+      ? dockerConversationRuntime
+        ? { url: `http://${agentHostAlias}:${config.ingressPort}` }
+        : { port: config.autoBackendPort }
       : undefined,
   });
 }
 
-function startVite(config) {
-  logService("vite", `Starting on port ${config.vitePort}...`, c.magenta);
+export function getAgentHostAlias(env = process.env) {
+  return env.OH_CONVERSATION_RUNTIME === "docker"
+    ? "host.docker.internal"
+    : "localhost";
+}
 
-  const frontendCommand = buildNpmScriptCommand("dev:frontend");
-
+function buildViteFrontendEnv(config) {
+  /** @type {Record<string, string>} */
   const viteEnv = {
     // Full-stack mode points Vite at this launcher's ingress. Frontend-only
     // mode uses the separately running backend ingress instead.
     ...buildViteBackendEnv(config),
     VITE_FRONTEND_PORT: config.vitePort.toString(),
+    VITE_BIND_HOST: config.bindHost,
   };
   if (config.viteWorkingDir) {
     viteEnv.VITE_WORKING_DIR = config.viteWorkingDir;
@@ -1181,15 +1282,34 @@ function startVite(config) {
     viteEnv.VITE_VSCODE_TARGET = `http://127.0.0.1:${config.vscodePort}`;
   }
 
-  // In local mode, bake the session key into the frontend so the user
-  // never has to paste it. In public mode, omit the key and set
-  // VITE_AUTH_REQUIRED so the frontend shows the API key entry screen
-  // immediately (no network round-trip needed).
-  if (config.launchAgentServer && config.isPublic) {
+  // The Vite origin is directly reachable on its own port, so it must use the
+  // same bind/key policy as ingress and the static server. Local loopback mode
+  // keeps transparent auth; public or off-loopback mode serves no credential
+  // and shows the API-key entry screen.
+  const policy = applySessionKeyPolicy({
+    host: config.bindHost,
+    sessionApiKey:
+      config.launchAgentServer && !config.isPublic
+        ? config.sessionApiKey
+        : null,
+    authRequired: Boolean(config.launchAgentServer && config.isPublic),
+    warn: (msg) => logService("vite", msg, c.yellow),
+  });
+  if (policy.authRequired) {
     viteEnv.VITE_AUTH_REQUIRED = "true";
-  } else if (config.launchAgentServer) {
-    viteEnv.VITE_SESSION_API_KEY = config.sessionApiKey;
   }
+  if (policy.sessionApiKey) {
+    viteEnv.VITE_SESSION_API_KEY = policy.sessionApiKey;
+  }
+
+  return viteEnv;
+}
+
+function startVite(config) {
+  logService("vite", `Starting on port ${config.vitePort}...`, c.magenta);
+
+  const frontendCommand = buildNpmScriptCommand("dev:frontend");
+  const viteEnv = buildViteFrontendEnv(config);
 
   spawnService("vite", frontendCommand.command, frontendCommand.args, {
     cwd: config.canvasPath,
@@ -1398,11 +1518,16 @@ async function main(options = {}) {
     // AUTOMATION_AGENT_SERVER_URL.
     sandboxAgentServerUrl,
     staticMode: staticModeOverride,
+    // Whether the ingress hosts the MARS web bridge (DigitalOcean Managed
+    // Agents for the browser). Electron passes false: its preload already
+    // provides the bridge, and a second one would hold its own sign-in state
+    // and, with MARS_TOKEN set, validate the token against DO at every start.
+    marsWebBridge = true,
     defaultStaticMode = false,
     buildStaticFrontend,
     staticDir: staticDirOverride,
     // Hostname the agent uses to reach services running on the host.
-    agentHostAlias = "localhost",
+    agentHostAlias = getAgentHostAlias(),
     // Human-readable label for the dev mode, surfaced in the agent's
     // <RUNTIME_SERVICES> system-prompt block.
     mode = "dev:automation",
@@ -1425,6 +1550,11 @@ async function main(options = {}) {
     // download / install progress to the user. `level` is one of
     // "stdout" | "stderr" | "info" | "warn" | "error".
     onServiceLog,
+    // Called with an Error when the automation backend exits before it
+    // becomes healthy, after every service has been stopped. That can happen
+    // after `main()` has returned. Defaults to exiting the process with
+    // code 1; embedded launchers (Electron) pass their own handler.
+    onAutomationStartupFailure = () => process.exit(1),
   } = options;
 
   // Install the listener early so log lines emitted before the first
@@ -1514,6 +1644,7 @@ async function main(options = {}) {
   // so downstream helpers (Vite spawn, static build) can produce a
   // runtime-services info object describing what the agent can reach.
   config.mode = mode;
+  config.marsWebBridge = marsWebBridge;
   config.agentHostAlias = agentHostAlias;
   config.frontendKind = useStaticMode ? "static" : "vite";
   ensureDirectories(config);
@@ -1575,9 +1706,9 @@ async function main(options = {}) {
   }
 
   // 3. Start automation backend
-  if (config.launchAutomation) {
-    startAutomationBackend(config);
-  }
+  const automationProc = config.launchAutomation
+    ? startAutomationBackend(config)
+    : null;
 
   // 4. Start frontend server (Vite dev server OR static server)
   if (config.launchFrontend) {
@@ -1598,6 +1729,17 @@ async function main(options = {}) {
   await delay(1000);
 
   printBanner(config);
+
+  // 7. Watch the automation backend in the background: if it exits before it
+  //    is healthy, stop the stack and report the failure.
+  if (automationProc) {
+    void watchAutomationStartup(
+      config,
+      automationProc,
+      agentServerReadyTimeoutMs,
+      onAutomationStartupFailure,
+    );
+  }
 
   // Return the resolved config + readiness signal so embedded launchers can
   // (a) build URLs from the actual allocated ports and (b) decide whether to
@@ -1626,23 +1768,38 @@ function startStaticFrontend(config, staticDir) {
       staticDir,
       "--port",
       String(config.vitePort),
+      ...bindHostArgs(config.bindHost),
       ...(process.env.VITE_BASE_PATH
         ? ["--base-path", process.env.VITE_BASE_PATH]
         : []),
-      // In local mode, inject the API key so the pre-built frontend can
-      // authenticate transparently. In public mode, pass --auth-required
-      // so the frontend shows the API key entry screen instead.
-      ...(config.launchAgentServer && !config.isPublic && config.sessionApiKey
-        ? ["--session-api-key", config.sessionApiKey]
-        : []),
-      ...(config.launchAgentServer && config.isPublic
-        ? ["--auth-required"]
-        : []),
+      // In local mode on loopback, inject the API key so the pre-built
+      // frontend can authenticate transparently. Off-loopback binds (and
+      // public mode) use the API key entry screen instead.
+      ...(() => {
+        const policy = applySessionKeyPolicy({
+          host: config.bindHost,
+          sessionApiKey:
+            config.launchAgentServer && !config.isPublic
+              ? config.sessionApiKey
+              : null,
+          authRequired: Boolean(config.launchAgentServer && config.isPublic),
+          warn: (msg) => logService("static", msg, c.yellow),
+        });
+        const flags = [];
+        if (policy.sessionApiKey) {
+          flags.push("--session-api-key", policy.sessionApiKey);
+        }
+        if (policy.authRequired) {
+          flags.push("--auth-required");
+        }
+        return flags;
+      })(),
       // Inject runtime-services info so the agent knows what's reachable.
       ...(runtimeServicesInfo
         ? ["--runtime-services-info", runtimeServicesInfo]
         : []),
       // Proxy routes only to services that this launch mode started.
+      // (MARS web bridge: see the env below — the ingress hosts it.)
       ...buildRouteArgs(getLocalServiceRoutes(config)),
       // Only the static server injects into the document, so only it can tell
       // the frontend this origin serves the editor. The ingress routes the same
@@ -1656,6 +1813,7 @@ function startStaticFrontend(config, staticDir) {
     {
       cwd: config.canvasPath,
       color: c.magenta,
+      env: buildMarsWebEnv("static", config),
     },
   );
 }
@@ -1671,6 +1829,7 @@ export {
   buildConfig,
   buildRouteArgs,
   buildViteBackendEnv,
+  buildViteFrontendEnv,
   getAgentServerBaseUrl,
   getFrontendBackend,
   getLocalServiceRoutes,
@@ -1691,8 +1850,6 @@ export {
   DEFAULT_AUTOMATION_PACKAGE,
   DEFAULT_AUTOMATION_VERSION,
   DEFAULT_AUTOMATION_SDK_VERSION,
-  DEFAULT_BACKEND_PORT,
-  DEFAULT_AUTOMATION_PORT,
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
