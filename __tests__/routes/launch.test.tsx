@@ -402,7 +402,6 @@ describe("LaunchRoute", () => {
       renderLaunchRoute(`?plugins=${encoded}`);
 
       // Check that the checkbox has a label associated with it
-      const checkbox = screen.getByTestId("trust-checkbox");
       const label = document.querySelector('label[for="trust-checkbox"]');
       expect(label).toBeInTheDocument();
     });
@@ -601,15 +600,22 @@ describe("LaunchRoute", () => {
   });
 });
 
-it("identifies unsupported Local plugin parameters before creating a conversation", async () => {
-  const user = userEvent.setup();
-  renderLaunchRoute(
-    `?plugins=${btoa(JSON.stringify([{ source: "local-plugin", parameters: { city: "Tokyo" } }]))}`,
-  );
-  await user.click(screen.getByTestId("trust-checkbox"));
-  expect(screen.getByRole("alert")).toHaveTextContent(
-    "LAUNCH$PARAMETERS_UNSUPPORTED_LOCAL",
-  );
-  expect(screen.getByTestId("start-conversation-button")).toBeDisabled();
-  expect(mockMutateAsync).not.toHaveBeenCalled();
-});
+it.each(
+  [{ city: "Tokyo" }, 5, false, []].map((parameters) => ({ parameters })),
+)(
+  "identifies unsupported Local plugin parameters $parameters before creating a conversation",
+  async ({ parameters }) => {
+    vi.clearAllMocks();
+    const user = userEvent.setup();
+    renderLaunchRoute(
+      `?plugins=${btoa(JSON.stringify([{ source: "local-plugin", parameters }]))}`,
+    );
+    await user.click(screen.getByTestId("trust-checkbox"));
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "LAUNCH$PARAMETERS_UNSUPPORTED_LOCAL",
+    );
+    expect(screen.getByTestId("start-conversation-button")).toBeDisabled();
+    await user.click(screen.getByTestId("start-conversation-button"));
+    expect(mockMutateAsync).not.toHaveBeenCalled();
+  },
+);

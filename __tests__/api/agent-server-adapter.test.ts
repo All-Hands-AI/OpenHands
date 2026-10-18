@@ -155,6 +155,43 @@ describe("buildStartConversationRequest", () => {
     },
   );
 
+  it.each(
+    [5, 0, true, false, "", "Tokyo", [], [false]].map((parameters) => ({
+      parameters,
+    })),
+  )(
+    "rejects malformed plugin parameters instead of silently stripping $parameters",
+    ({ parameters }) => {
+      // Launch links can carry JSON values outside PluginSpec's static type.
+      const plugins = JSON.parse(
+        JSON.stringify([{ source: "local-plugin", parameters }]),
+      );
+      expect(() =>
+        buildStartConversationRequest({ settings: DEFAULT_SETTINGS, plugins }),
+      ).toThrow();
+    },
+  );
+
+  it.each([undefined, null, {}])(
+    "keeps coordinate-only plugins when parameters are %o",
+    (parameters) => {
+      const payload = buildStartConversationRequest({
+        settings: DEFAULT_SETTINGS,
+        plugins: [
+          {
+            source: "local-plugin",
+            ref: "main",
+            repo_path: "plugin",
+            parameters,
+          },
+        ],
+      });
+      expect(payload.plugins).toEqual([
+        { source: "local-plugin", ref: "main", repo_path: "plugin" },
+      ]);
+    },
+  );
+
   it("includes the resolved title LLM profile when configured", () => {
     const payload = buildStartConversationRequest({
       settings: DEFAULT_SETTINGS,

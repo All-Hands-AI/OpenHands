@@ -4,8 +4,14 @@ export function hasPluginParameters(
   plugins: PluginSpec[] | undefined,
 ): boolean {
   return (
-    plugins?.some(
-      (plugin) => Object.keys(plugin.parameters ?? {}).length > 0,
-    ) ?? false
+    plugins?.some(({ parameters }) => {
+      if (parameters == null) return false;
+      // URL payloads can contain scalars or arrays despite PluginSpec's type.
+      return (
+        typeof parameters !== "object" ||
+        Array.isArray(parameters) ||
+        Object.keys(parameters).length > 0
+      );
+    }) ?? false
   );
 }
