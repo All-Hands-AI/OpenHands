@@ -78,3 +78,60 @@ describe("DetailHeader — enabled toggle gating", () => {
     ).toBeInTheDocument();
   });
 });
+
+describe("DetailHeader — phone layout and responsive wrapping", () => {
+  it("stacks on mobile viewports with min-w-0 title and wrapping action row", () => {
+    renderHeader({
+      automation: {
+        ...disabledAutomation,
+        name: "QA_Inert_Event_Detail",
+        enabled: true,
+      },
+      onRunNow: vi.fn(),
+      canManage: true,
+      canToggle: true,
+    });
+
+    const heading = screen.getByRole("heading", {
+      name: "QA_Inert_Event_Detail",
+    });
+    expect(heading).toBeInTheDocument();
+    expect(heading).toHaveClass("break-words");
+
+    const titleContainer = heading.parentElement;
+    expect(titleContainer).toHaveClass("min-w-0");
+
+    const switchControl = screen.getByRole("switch");
+    const actionContainer = switchControl.parentElement;
+    expect(actionContainer).toHaveClass("flex-wrap");
+
+    // The row containing title and action controls must stack below `sm`
+    const headerRow = titleContainer?.parentElement;
+    expect(headerRow).toHaveClass("flex-col");
+    expect(headerRow).toHaveClass("sm:flex-row");
+    expect(headerRow).toHaveClass("sm:justify-between");
+  });
+
+  it("renders controls correctly with short names and partial action items", () => {
+    renderHeader({
+      automation: {
+        ...disabledAutomation,
+        name: "QA",
+        enabled: false,
+      },
+      canManage: false,
+      canToggle: false,
+    });
+
+    const heading = screen.getByRole("heading", { name: "QA" });
+    expect(heading).toBeInTheDocument();
+    expect(heading).toHaveClass("break-words");
+    expect(
+      screen.getByTestId("active-status-badge-inactive"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText(I18nKey.AUTOMATIONS$ACTIONS_MENU),
+    ).toBeInTheDocument();
+  });
+});
+
