@@ -524,7 +524,7 @@ const TERMINAL_TOOL_NAME = "terminal";
  * default (or empty) is left out, so the host's own git config keeps
  * authoring commits until the user enters an identity (#17899).
  */
-export function buildGitIdentityEnv(
+function buildGitIdentityEnv(
   settings: Pick<Settings, "git_user_name" | "git_user_email">,
 ): Record<string, string> | null {
   const env: Record<string, string> = {};
@@ -1842,13 +1842,7 @@ export async function buildStartConversationRequestWithEncryptedSettings(options
     import("./hooks-service"),
     import("./tool-catalog-service/tool-catalog-service.api"),
   ]);
-  // Only an inline OpenHands agent with unset `tools` and a git identity to
-  // apply needs the server's default tool set spelled out.
-  const needsDefaultTools =
-    !options.agentProfileId &&
-    !isAcpAgent(options.settings) &&
-    buildGitIdentityEnv(options.settings) !== null &&
-    !Array.isArray(toRecord(options.settings.agent_settings).tools);
+  const settingsPromise = SettingsService.getSettingsForConversation();
 
   const [
     settingsResult,
@@ -1858,7 +1852,7 @@ export async function buildStartConversationRequestWithEncryptedSettings(options
     metaProfiles,
     toolCatalog,
   ] = await Promise.all([
-    SettingsService.getSettingsForConversation(),
+    settingsPromise,
     SecretsService.getSecrets(),
     fetchBackendServerInfo(),
     options.hooksProjectDir === null
@@ -1867,11 +1861,20 @@ export async function buildStartConversationRequestWithEncryptedSettings(options
     // Best-effort: if the meta-profiles endpoint is unreachable we cannot
     // confirm a router is active, so fail closed (no route-at-start suffix).
     MetaProfilesService.listMetaProfiles().catch(() => null),
-    // Best-effort: without the catalog the server default stands, without
-    // the identity.
-    needsDefaultTools
-      ? ToolCatalogService.getCatalog().catch(() => null)
-      : Promise.resolve(null),
+    settingsPromise.then(({ agentSettings }) => {
+      // Redacted settings and encrypted launch settings have separate caches.
+      // Decide from the same agent snapshot that will build the payload.
+      const needsDefaultTools =
+        !options.agentProfileId &&
+        !isAcpAgent({ ...options.settings, agent_settings: agentSettings }) &&
+        buildGitIdentityEnv(options.settings) !== null &&
+        getAgentTools(agentSettings) === undefined;
+      // Best-effort: without the catalog the server default stands, without
+      // the identity.
+      return needsDefaultTools
+        ? ToolCatalogService.getCatalog().catch(() => null)
+        : null;
+    }),
   ]);
 
   const { agentSettings, conversationSettings, secretsEncrypted } =
