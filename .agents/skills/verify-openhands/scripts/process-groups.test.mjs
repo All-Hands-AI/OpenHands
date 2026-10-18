@@ -121,6 +121,44 @@ test.each(["appearing", "exiting"])(
   },
 );
 
+test("an unrelated exiting process with pgrp -1 does not keep a zombie group alive", () => {
+  const f = fixture([
+    [101, 77, "Z"],
+    [102, 77, "Z"],
+    [7998, -1, "X"],
+  ]);
+  try {
+    // Shape reported from Linux /proc while this unrelated process exited.
+    writeFileSync(
+      join(f.root, "7998", "stat"),
+      "7998 (python3) X 0 -1 -1 0 -1 4227148 62 0 0 0 0 0 0 0 20 0",
+    );
+    assert.equal(groupAlive(77, f.options), false);
+  } finally {
+    f.clean();
+  }
+});
+
+test.each([
+  "201 (worker) X 1 not-a-group 0",
+  "201 (worker) X 1 77.5 0",
+  "201 (worker) X 1 9007199254740992 0",
+  "201 (worker) X 1 -9007199254740992 0",
+  "201 (worker) ? 1 -1 0",
+  "999 (worker) X 1 -1 0",
+])("uncertain unrelated process metadata prevents cleanup: %s", (stat) => {
+  const f = fixture([
+    [101, 77, "Z"],
+    [201, 88, "S"],
+  ]);
+  try {
+    writeFileSync(join(f.root, "201", "stat"), stat);
+    assert.equal(groupAlive(77, f.options), true);
+  } finally {
+    f.clean();
+  }
+});
+
 test.each([
   ["ENOENT", false],
   ["ESRCH", false],
@@ -157,9 +195,13 @@ test.each([
   "joining live",
   "joining zombie",
   "exiting",
+  "losing its group",
   "reused for a live process",
 ])("a target group member %s prevents cleanup", (change) => {
-  const f = fixture([[101, 77, "Z"]]);
+  const f = fixture([
+    [100, 77, "Z"],
+    [101, 77, "Z"],
+  ]);
   let scans = 0;
   try {
     assert.equal(
@@ -176,6 +218,8 @@ test.each([
               );
             } else if (change === "exiting") {
               rmSync(join(root, "101"), { recursive: true });
+            } else if (change === "losing its group") {
+              writeFileSync(join(root, "101", "stat"), "101 (worker) X 1 -1 0");
             } else {
               writeFileSync(join(root, "101", "stat"), "101 (worker) S 1 77 0");
             }

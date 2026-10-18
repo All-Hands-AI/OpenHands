@@ -42,15 +42,19 @@ export function groupAlive(
           .slice(close + 2)
           .trim()
           .split(/\s+/);
+        const processGroup = Number(fields[2]);
         if (
           close < 0 ||
           !stat.startsWith(`${name} (`) ||
           !/^[RSDZTtWXxIPK]$/.test(fields[0]) ||
-          !/^\d+$/.test(fields[2])
+          !/^-?\d+$/.test(fields[2]) ||
+          !Number.isSafeInteger(processGroup)
         ) {
           return true;
         }
-        if (Number(fields[2]) !== pgid) continue;
+        // Linux may report pgrp -1 during exit. Valid nonpositive values cannot
+        // belong to our positive target group; malformed metadata stays unsafe.
+        if (processGroup !== pgid) continue;
         members.add(name);
         if (fields[0] !== "Z" && fields[0] !== "X" && fields[0] !== "x")
           return true;
