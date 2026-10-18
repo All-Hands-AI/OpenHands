@@ -20,15 +20,27 @@
  */
 
 import {
+  getAgentServerBaseUrl,
   getBakedSessionApiKey,
   isServedOriginHost,
 } from "#/api/agent-server-config";
+import { setRegisteredBackends } from "#/api/backend-registry/active-store";
+import {
+  DEFAULT_LOCAL_BACKEND_NAME,
+  SEEDED_DEFAULT_BACKEND_ID,
+} from "#/api/backend-registry/default-backend";
 import { readStoredBackends } from "#/api/backend-registry/storage";
+import type { Backend } from "#/api/backend-registry/types";
 import type { MarsBridge } from "./mars-tunnel-backend";
 
 export const MARS_WEB_HEALTH_PATH = "/mars/health";
 const RPC_PREFIX = "/mars/rpc/";
 const PROBE_TIMEOUT_MS = 1_500;
+/** Header name carrying the hosting session key on `/mars/rpc/*`. */
+const REQUEST_KEY_HEADER = "x-session-api-key";
+
+/** Last `/mars/health` `authRequired` signal seen by the probe. */
+let lastProbeAuthRequired = false;
 
 interface RpcEnvelope<T> {
   result?: T;
@@ -167,7 +179,11 @@ export async function probeMarsWebBridge(
     // A server that answers every path with index.html is also a 200; only
     // the bridge says `{ ok: true }`.
     try {
-      const body = (await response.json()) as { ok?: unknown };
+      const body = (await response.json()) as {
+        ok?: unknown;
+        authRequired?: unknown;
+      };
+      lastProbeAuthRequired = body.authRequired === true;
       return body?.ok === true;
     } catch {
       return false;
@@ -191,4 +207,114 @@ export async function installMarsWebBridge(): Promise<boolean> {
   if (!(await probeMarsWebBridge())) return false;
   window.marsBridge = createMarsWebBridge();
   return true;
+}
+
+/** Auth posture of the page's own MARS bridge routes. */
+export interface MarsWebBridgeAuth {
+  /** `/mars/*` routes sit behind the server's session key. */
+  required: boolean;
+  /** The page has no key to present (no baked key, no stored served-origin key). */
+  missing: boolean;
+}
+
+/**
+ * Determine whether the page's own bridge needs a session key the page cannot
+ * currently supply, using the same headers `rpc()` would send.
+ *
+ * `authRequired` is the bridge's own `/mars/health` `authRequired` signal (the
+ * RPC routes 401 without the key). `missing` is whether those headers carry no
+ * key — neither a baked key nor a stored served-origin key. On a fresh keyed
+ * non-loopback bind both are true: the bridge is mounted, the page has no key,
+ * and any `/mars/rpc/*` call would fail 401.
+ *
+ * Honest under-reporting (ambient auth reads as available) is preferred over
+ * flipping an existing self-configuring setup to a dead-end key prompt.
+ */
+export function resolveMarsWebBridgeAuth(
+  authRequired: boolean,
+  options: { headers?: Record<string, string> } = {},
+): MarsWebBridgeAuth {
+  if (!authRequired) return { required: false, missing: false };
+  const headers =
+    options.headers ??
+    (typeof window !== "undefined" ? getMarsBridgeHeaders() : {});
+  const hasKey = Object.keys(headers).some(
+    (name) => name.toLowerCase() === REQUEST_KEY_HEADER,
+  );
+  return { required: true, missing: !hasKey };
+}
+
+/**
+ * The `authRequired` flag the page's own bridge reported during probing. Used
+ * for the onboarding hosting-auth-first gate without re-issuing the request.
+ */
+export function getMarsWebBridgeAuthRequired(): boolean {
+  return lastProbeAuthRequired;
+}
+
+/**
+ * Pass the hosting session key to the bridge immediately, then hand it to the
+ * backend registry so subsequent pages reload onto an authenticated hosted
+ * bridge. The key is treated purely as the bridge/host credential (never the
+ * DigitalOcean token and never a guest backend key).
+ */
+export async function saveHostingSessionKey(
+  key: string,
+  selectors?: { fetch?: typeof fetch },
+): Promise<void> {
+  const fetchImpl = selectors?.fetch ?? fetch;
+  const response = await fetchImpl(`${RPC_PREFIX}getAuthState`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Session-API-Key": key,
+    },
+    body: JSON.stringify({ args: [] }),
+  });
+  if (!response.ok) {
+    throw new MarsWebBridgeError(
+      response.status === 401
+        ? "session key required"
+        : String(response.status),
+      response.status,
+    );
+  }
+  installServedOriginSessionKey(key);
+}
+
+/**
+ * Persist the hosting session key onto the active served-origin local backend
+ * so `getMarsBridgeHeaders()` (and the app's own `/server_info` auth) picks it
+ * up on the next rendering pass. `getMarsBridgeHeaders()` looks the key up on
+ * the *active* local backend, so this must write through `setRegisteredBackends`
+ * (which notifies the active store) rather than `writeStoredBackends` alone.
+ */
+function installServedOriginSessionKey(key: string): void {
+  const baseUrl = getAgentServerBaseUrl();
+  if (!baseUrl) return;
+
+  const backends = readStoredBackends();
+  const target = backends.find(
+    (b) => b.kind === "local" && isServedOriginHost(b.host),
+  );
+  if (target) {
+    setRegisteredBackends(
+      backends.map((b) =>
+        b.id === target.id ? { ...b, apiKey: key.trim() } : b,
+      ),
+    );
+    return;
+  }
+
+  const fallback: Backend = {
+    id: SEEDED_DEFAULT_BACKEND_ID,
+    name: DEFAULT_LOCAL_BACKEND_NAME,
+    host: baseUrl,
+    apiKey: key.trim(),
+    kind: "local",
+    // `authMode` is optional on `Backend`; omit it so the entry reads exactly
+    // like other user-created local backends (the registry validates both
+    // `undefined` and `"api-key"`).
+  };
+  setRegisteredBackends([fallback, ...backends]);
 }
