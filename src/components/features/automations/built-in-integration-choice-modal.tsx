@@ -12,9 +12,9 @@ import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalCloseButton } from "#/components/shared/modals/modal-close-button";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { McpLogoBadge } from "#/components/features/mcp-logo-badge";
-import { BrandBadge } from "#/components/shared/badge";
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
+import { extensionModuleCardPillClassName } from "#/utils/extension-module-card-classes";
 import { modalTitleLgClassName } from "#/utils/modal-classes";
 
 /**
@@ -108,13 +108,13 @@ export function BuiltInIntegrationChoiceModal({
         <div className="flex flex-col gap-3 px-6 pb-6 sm:flex-row">
           <div
             data-testid="built-in-integration-choice-option-built-in"
-            className="flex flex-1 flex-col gap-3 rounded-xl border border-primary bg-surface-raised p-4"
+            className="flex flex-1 flex-col gap-3 rounded-xl border border-border bg-surface-raised p-4"
           >
             <div className="flex items-start justify-between gap-2">
               <McpLogoBadge entry={integration} />
-              <BrandBadge className="shrink-0 whitespace-nowrap px-2.5 py-1 text-xs">
+              <span className={extensionModuleCardPillClassName}>
                 {t(I18nKey.SETTINGS$SKILLS_RECOMMENDED)}
-              </BrandBadge>
+              </span>
             </div>
             <div className="flex flex-col gap-1">
               <h3 className="text-sm font-semibold text-contrast">
@@ -141,7 +141,7 @@ export function BuiltInIntegrationChoiceModal({
                     className="flex items-center gap-2 text-sm text-contrast"
                   >
                     <CircleCheck
-                      className="size-4 shrink-0 text-primary"
+                      className="size-4 shrink-0 text-tertiary-light"
                       aria-hidden
                     />
                     {feature}
