@@ -24,13 +24,11 @@ import {
   type SkillFilterState,
 } from "#/components/features/skills/skill-filter";
 import { SkillsToolbar } from "#/components/features/skills/skills-toolbar";
+import { useActiveBackend } from "#/contexts/active-backend-context";
 import { useSettings } from "#/hooks/query/use-settings";
+import { useSkillCatalog } from "#/hooks/query/use-skill-catalog";
 import { useSkills } from "#/hooks/query/use-skills";
 import { useSkillEnablement } from "#/hooks/use-skill-enablement";
-import {
-  ActiveProfileLoadError,
-  ActiveProfileScopeNotice,
-} from "#/components/features/settings/agent-profiles/active-profile-scope-notice";
 import { I18nKey } from "#/i18n/declaration";
 import type { SkillInfo } from "#/types/settings";
 import {
@@ -46,10 +44,16 @@ const SEARCH_URL_SYNC_DELAY_MS = 300;
 function SkillsSettingsScreen() {
   const { t } = useTranslation("openhands");
 
+  const { backend } = useActiveBackend();
+  const isCloud = backend.kind === "cloud";
   const { data: settings, isLoading: settingsLoading } = useSettings();
-  const { data: skills, isLoading: skillsLoading } = useSkills();
-  const { isEnabled, setEnabled, profileName, isAcp, isError, retry } =
-    useSkillEnablement();
+  // Locally the page lists what agent profiles can select; Cloud lists its own skills.
+  const catalog = useSkillCatalog();
+  const cloudSkills = useSkills(undefined, { enabled: isCloud });
+  const { data: skills, isLoading: skillsLoading } = isCloud
+    ? cloudSkills
+    : catalog;
+  const { isEnabled, setEnabled } = useSkillEnablement();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [queryInput, setQueryInput] = React.useState(
@@ -155,18 +159,21 @@ function SkillsSettingsScreen() {
               >
                 {t(I18nKey.SETTINGS$SKILLS_PAGE_DESCRIPTION)}
               </div>
-              <div
-                data-testid="skills-new-conversation-notice"
-                className="max-w-2xl text-xs text-tertiary-alt"
-              >
-                {t(I18nKey.SETTINGS$SKILLS_NEW_CONVERSATION_NOTICE)}
-              </div>
-              <ActiveProfileScopeNotice
-                profileName={profileName}
-                isAcp={isAcp}
-                className="max-w-2xl"
-              />
-              {isError && <ActiveProfileLoadError onRetry={retry} />}
+              {isCloud ? (
+                <div
+                  data-testid="skills-new-conversation-notice"
+                  className="max-w-2xl text-xs text-tertiary-alt"
+                >
+                  {t(I18nKey.SETTINGS$SKILLS_NEW_CONVERSATION_NOTICE)}
+                </div>
+              ) : (
+                <div
+                  data-testid="skills-default-list-notice"
+                  className="max-w-2xl text-xs text-tertiary-alt"
+                >
+                  {t(I18nKey.SETTINGS$SKILLS_DEFAULT_LIST_NOTICE)}
+                </div>
+              )}
             </div>
             <BrandButton
               type="button"

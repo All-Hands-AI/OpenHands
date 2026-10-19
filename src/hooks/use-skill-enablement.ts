@@ -1,211 +1,144 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { useActiveBackend } from "#/contexts/active-backend-context";
 import { useActiveProfileBehavior } from "#/hooks/use-active-profile-behavior";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { useSettings } from "#/hooks/query/use-settings";
+import { useSkillCatalog } from "#/hooks/query/use-skill-catalog";
 import { I18nKey } from "#/i18n/declaration";
-import type { SkillInfo } from "#/types/settings";
+import type { Settings, SkillInfo } from "#/types/settings";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import {
   buildSkillEnablementFilter,
   CATALOG_SKILL_NAMES,
-  isCatalogSkill,
+  defaultSkillEnablement,
   profileSkillEnablement,
+  publicSkillTest,
   resolveEnabledCatalogSkills,
+  sameSkillSelection,
+  toggleSkill,
   type SkillEnablement,
 } from "#/utils/skill-enablement";
 
 /**
- * Where the selection lives: a local agent profile, the active one unless
- * `agentProfileId` names another, and the account's settings on Cloud, which
- * creates conversations from its own catalog and keeps that catalog deny-list
- * governed.
+ * Which skills the allow-list governs: the server's catalog skills locally.
+ * Cloud keeps every skill deny-list governed.
  */
-function useEnablementSource(agentProfileId?: string | null): {
-  enablement: SkillEnablement | undefined;
-  /** The local profile the selection belongs to; null on Cloud. */
-  profileName: string | null;
-  /** The local profile runs an ACP agent, which has no selection. */
-  isAcp: boolean;
-  isError: boolean;
-  retry: () => void;
-  save: (enablement: SkillEnablement) => Promise<unknown>;
-} {
-  const { data: settings, isLoading: settingsLoading } = useSettings();
-  const { mutateAsync: saveSettings } = useSaveSettings();
-  const active = useActiveProfileBehavior(agentProfileId);
-  const cloudDisabled = settings?.disabled_skills;
-  const publicSkills = active.profile?.public_skills;
-  const profileDisabled = active.profile?.disabled_skills;
-  const hasProfile = active.profile !== null;
-  const settingsReady = !settingsLoading && !!settings;
-
-  const enablement = React.useMemo<SkillEnablement | undefined>(() => {
-    if (!active.isLocal) {
-      return !settingsReady
-        ? undefined
-        : {
-            enabledSkills: [...CATALOG_SKILL_NAMES],
-            disabledSkills: cloudDisabled ?? [],
-          };
-    }
-    return hasProfile
-      ? profileSkillEnablement({
-          public_skills: publicSkills,
-          disabled_skills: profileDisabled,
-        })
-      : undefined;
-  }, [
-    active.isLocal,
-    settingsReady,
-    cloudDisabled,
-    hasProfile,
-    publicSkills,
-    profileDisabled,
-  ]);
-
-  return {
-    enablement,
-    profileName: active.isLocal ? active.profileName : null,
-    isAcp: active.isLocal && active.isAcp,
-    isError: active.isError,
-    retry: active.retry,
-    save: active.isLocal
-      ? (next) =>
-          active.save({
-            public_skills: resolveEnabledCatalogSkills(next),
-            disabled_skills: next.disabledSkills ?? [],
-          })
-      : (next) => saveSettings({ disabled_skills: next.disabledSkills ?? [] }),
-  };
+export function usePublicSkillTest(): (name: string) => boolean {
+  const { backend } = useActiveBackend();
+  const { data: catalog } = useSkillCatalog();
+  return React.useMemo(
+    () => (backend.kind === "cloud" ? () => false : publicSkillTest(catalog)),
+    [backend.kind, catalog],
+  );
 }
 
-/** Read-only view of the rule, for surfaces that list skills without toggling. */
+/** Read-only view of a profile's selection, the active one unless `agentProfileId` names another. */
 export function useSkillEnabledFilter(
   agentProfileId?: string | null,
 ): (skill: SkillInfo) => boolean {
-  const { enablement } = useEnablementSource(agentProfileId);
+  const { data: settings } = useSettings();
+  const active = useActiveProfileBehavior(agentProfileId);
+  const { data: catalog } = useSkillCatalog();
+  const isPublic = usePublicSkillTest();
+  const cloudDisabled = settings?.disabled_skills;
+  const { profile } = active;
+
+  const enablement = React.useMemo<SkillEnablement>(() => {
+    if (!active.isLocal) return { disabledSkills: cloudDisabled ?? [] };
+    if (!profile) return {};
+    const publicNames = catalog
+      ?.filter((skill) => skill.origin === "public")
+      .map((skill) => skill.name);
+    return profileSkillEnablement(profile, publicNames ?? CATALOG_SKILL_NAMES);
+  }, [active.isLocal, cloudDisabled, profile, catalog]);
 
   return React.useMemo(() => {
-    const isEnabled = buildSkillEnablementFilter(enablement ?? {});
+    const isEnabled = buildSkillEnablementFilter(enablement, isPublic);
     return (skill: SkillInfo) => isEnabled(skill.name);
-  }, [enablement]);
+  }, [enablement, isPublic]);
 }
 
 export interface SkillEnablementController {
   isEnabled: (skill: SkillInfo) => boolean;
   setEnabled: (skillName: string, enabled: boolean) => void;
-  /** The local profile being edited; null on Cloud. */
-  profileName: string | null;
-  /** The local profile runs an ACP agent, so nothing can be toggled. */
-  isAcp: boolean;
-  /** The local profile could not be loaded, so nothing can be toggled. */
-  isError: boolean;
-  retry: () => void;
 }
 
-/** Stable form of both lists, so an unchanged set can skip the save. */
-function snapshot(enablement: SkillEnablement): string {
-  return JSON.stringify([
-    [...resolveEnabledCatalogSkills(enablement)].sort(),
-    [...(enablement.disabledSkills ?? [])].sort(),
-  ]);
-}
-
-/** Same array reference when the membership already matches, to skip a save. */
-function withMembership(
-  list: string[],
-  name: string,
-  present: boolean,
-): string[] {
-  if (list.includes(name) === present) return list;
-  return present ? [...list, name] : list.filter((entry) => entry !== name);
+function readGlobalEnablement(
+  settings: Settings,
+  isCloud: boolean,
+): SkillEnablement {
+  return isCloud
+    ? { disabledSkills: settings.disabled_skills ?? [] }
+    : defaultSkillEnablement(settings);
 }
 
 /**
- * Shared toggle state for every surface that switches skills on and off.
- *
- * Which of the two lists a skill belongs to is decided here alone, so one
- * surface cannot write a preference another cannot see.
+ * The default skill selection: the one new agent profiles start from
+ * locally, and the account's deny-list on Cloud.
  */
-export function useSkillEnablement(
-  agentProfileId?: string | null,
-): SkillEnablementController {
+export function useSkillEnablement(): SkillEnablementController {
   const { t } = useTranslation("openhands");
-  const {
-    enablement: source,
-    profileName,
-    isAcp,
-    isError,
-    retry,
-    save,
-  } = useEnablementSource(agentProfileId);
-  const usesCatalogAllowList = profileName !== null;
+  const { backend } = useActiveBackend();
+  const isCloud = backend.kind === "cloud";
+  const { data: settings, isLoading: settingsLoading } = useSettings();
+  const { mutate: saveSettings } = useSaveSettings();
+  const isPublic = usePublicSkillTest();
 
   const [enablement, setEnablement] = React.useState<SkillEnablement>({});
-  // The latest selection, read by toggles so a save never sees stale state.
-  const enablementRef = React.useRef<SkillEnablement | null>(null);
-  const saveRef = React.useRef(save);
-  saveRef.current = save;
+  const savedRef = React.useRef<SkillEnablement | null>(null);
 
   React.useEffect(() => {
-    if (!source) return;
-    enablementRef.current = source;
-    setEnablement(source);
-  }, [profileName, source]);
+    if (settingsLoading || !settings) return;
+    const hydrated = readGlobalEnablement(settings, isCloud);
+    savedRef.current = hydrated;
+    setEnablement(hydrated);
+  }, [
+    settingsLoading,
+    settings?.enabled_skills,
+    settings?.disabled_skills,
+    isCloud,
+  ]);
+
+  React.useEffect(() => {
+    // Writing the hydrated value straight back would persist a migration the
+    // user never confirmed.
+    const saved = savedRef.current;
+    if (saved === null || sameSkillSelection(saved, enablement)) return;
+    savedRef.current = enablement;
+
+    const disabledSkills = enablement.disabledSkills ?? [];
+    saveSettings(
+      isCloud
+        ? { disabled_skills: disabledSkills }
+        : {
+            enabled_skills: resolveEnabledCatalogSkills(enablement),
+            disabled_skills: disabledSkills,
+          },
+      {
+        onError: (error) => {
+          displayErrorToast(
+            retrieveAxiosErrorMessage(error) || t(I18nKey.ERROR$GENERIC),
+          );
+        },
+      },
+    );
+  }, [enablement, isCloud, saveSettings, t]);
 
   const isEnabled = React.useMemo(() => {
-    const enabled = buildSkillEnablementFilter(enablement);
+    const enabled = buildSkillEnablementFilter(enablement, isPublic);
     return (skill: SkillInfo) => enabled(skill.name);
-  }, [enablement]);
+  }, [enablement, isPublic]);
 
   const setEnabled = React.useCallback(
     (skillName: string, enabled: boolean) => {
-      if (isAcp) {
-        displayErrorToast(
-          t(I18nKey.SETTINGS$BEHAVIOR_ACP_PROFILE, { name: profileName }),
-        );
-        return;
-      }
-      const previous = enablementRef.current;
-      // Nothing to edit until the saved selection has loaded.
-      if (!previous) {
-        if (isError) {
-          displayErrorToast(t(I18nKey.SETTINGS$BEHAVIOR_PROFILE_LOAD_FAILED));
-        }
-        return;
-      }
-      const allowListed = usesCatalogAllowList && isCatalogSkill(skillName);
-      const next: SkillEnablement = {
-        enabledSkills: allowListed
-          ? withMembership(
-              resolveEnabledCatalogSkills(previous),
-              skillName,
-              enabled,
-            )
-          : previous.enabledSkills,
-        // A catalog skill switched back on also leaves the deny-list, where
-        // a profile's earlier deny-list model may still hold it.
-        disabledSkills: withMembership(
-          previous.disabledSkills ?? [],
-          skillName,
-          !enabled && !allowListed,
-        ),
-      };
-      if (snapshot(next) === snapshot(previous)) return;
-      enablementRef.current = next;
-      setEnablement(next);
-      saveRef.current(next).catch((error) => {
-        displayErrorToast(
-          retrieveAxiosErrorMessage(error) ||
-            (error instanceof Error ? error.message : "") ||
-            t(I18nKey.ERROR$GENERIC),
-        );
-      });
+      setEnablement((previous) =>
+        toggleSkill(previous, skillName, enabled, isPublic),
+      );
     },
-    [usesCatalogAllowList, isAcp, isError, profileName, t],
+    [isPublic],
   );
 
-  return { isEnabled, setEnabled, profileName, isAcp, isError, retry };
+  return { isEnabled, setEnabled };
 }

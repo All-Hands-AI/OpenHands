@@ -26,6 +26,8 @@ Public skills are loaded from the `@openhands/extensions` npm package at build t
 
 Bundled catalog skills use the persisted `enabled_skills` allow-list defaulted from `DEFAULT_ENABLED_SKILL_NAMES`. User and project skills remain enabled unless listed in `disabled_skills`. Keep this logic centralized in `src/utils/skill-enablement.ts`. The Agent Server no longer clones the extensions repository or uses `EXTENSIONS_REF` for public skills.
 
+On a local backend, the Skills page lists `GET /api/skills/catalog` (`SkillsService.getSkillCatalog`): exactly the skills an agent profile launch can load, each with an `origin` of `public` or `user`. That `origin`, not the bundled catalog, decides which list a toggle writes. The page's `enabled_skills` / `disabled_skills` are only the default list a new agent profile is seeded with; each profile stores its own `public_skills` / `disabled_skills`, edited in the profile editor's Skills section. Repo skills are not listed and always load. Cloud keeps the account `disabled_skills` deny-list.
+
 
 ## Workspace files
 

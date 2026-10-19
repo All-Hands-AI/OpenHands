@@ -67,10 +67,14 @@ export type SettingsSchema = {
 
 export type SkillType = "repo" | "knowledge" | "agentskills";
 
+/** Where a server-listed skill comes from: the public catalog or the user's own skills. */
+export type SkillOrigin = "public" | "user";
+
 export type SkillInfo = {
   name: string;
   type: SkillType;
   source: string | null;
+  origin?: SkillOrigin;
   description?: string | null;
   triggers?: string[];
   /**

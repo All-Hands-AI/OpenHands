@@ -10,8 +10,9 @@ import {
 } from "#/routes/agent-settings";
 import SettingsService from "#/api/settings-service/settings-service.api";
 import { SecretsService } from "#/api/secrets-service";
+import SkillsService from "#/api/skills-service";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
-import { Settings } from "#/types/settings";
+import { Settings, SkillInfo } from "#/types/settings";
 import {
   ACP_PROVIDERS,
   ACP_VERTEX_SAFE_MODEL,
@@ -1408,6 +1409,78 @@ describe("AgentSettingsScreen — MCP scope dirty tracking", () => {
         screen.getByTestId("agent-settings-secrets-mode"),
       ).toBeInTheDocument();
     });
+  });
+});
+
+describe("AgentSettingsScreen — skills", () => {
+  const CATALOG: SkillInfo[] = [
+    { name: "alpha", type: "knowledge", source: null, origin: "public" },
+    { name: "beta", type: "knowledge", source: null, origin: "public" },
+    { name: "mine", type: "knowledge", source: null, origin: "user" },
+  ];
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    vi.spyOn(SettingsService, "getSettings").mockResolvedValue(buildSettings());
+    vi.spyOn(SecretsService, "getSecrets").mockResolvedValue([]);
+    vi.spyOn(SkillsService, "getSkillCatalog").mockResolvedValue(CATALOG);
+    acpAuthStatusMock.mockReturnValue({
+      status: "unknown",
+      isChecking: false,
+      isSupported: true,
+    });
+    acpModelDiscoveryMock.mockReturnValue(NO_DISCOVERY);
+  });
+
+  it("opens on the stored list and saves an edit to it", async () => {
+    let control: AgentSettingsSaveControl | null = null;
+    renderAgentSettingsScreen({
+      agentSettingsOverride: {
+        agent_kind: "openhands",
+        public_skills: ["alpha"],
+        disabled_skills: [],
+      },
+      onSaveControlChange: (next) => {
+        control = next;
+      },
+    });
+    const beta = await screen.findByTestId("agent-settings-skills-beta");
+    expect(screen.getByTestId("agent-settings-skills-alpha")).toBeChecked();
+    expect(beta).not.toBeChecked();
+    expect(screen.getByTestId("agent-settings-skills-mine")).toBeChecked();
+
+    const user = userEvent.setup();
+    await user.click(beta);
+    await user.click(screen.getByTestId("agent-settings-skills-mine"));
+
+    await waitFor(() => expect(control!.isDirty).toBe(true));
+    expect(control!.buildAgentProfileFields()).toMatchObject({
+      public_skills: ["alpha", "beta"],
+      disabled_skills: ["mine"],
+    });
+  });
+
+  it("keeps a profile without a list unset until the user edits it", async () => {
+    let control: AgentSettingsSaveControl | null = null;
+    renderAgentSettingsScreen({
+      agentSettingsOverride: {
+        agent_kind: "openhands",
+        public_skills: null,
+        disabled_skills: [],
+      },
+      onSaveControlChange: (next) => {
+        control = next;
+      },
+    });
+
+    // No stored list loads every catalog skill.
+    expect(
+      await screen.findByTestId("agent-settings-skills-beta"),
+    ).toBeChecked();
+    expect(control!.isDirty).toBe(false);
+    expect(control!.buildAgentProfileFields()).not.toHaveProperty(
+      "public_skills",
+    );
   });
 });
 
