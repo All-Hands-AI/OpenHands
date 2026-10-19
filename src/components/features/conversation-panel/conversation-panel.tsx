@@ -61,7 +61,10 @@ import {
 import { useArchivedConversationsStore } from "#/stores/archived-conversations-store";
 import { usePinnedConversationsStore } from "#/stores/pinned-conversations-store";
 import { uniqueById } from "#/utils/unique-by-id";
-import { isEffectivelyArchivedConversation } from "#/utils/conversation-archive-status";
+import {
+  isEffectivelyArchivedConversation,
+  isMissingSandboxStatus,
+} from "#/utils/conversation-archive-status";
 import type { SandboxStatus } from "#/api/conversation-service/agent-server-conversation-service.types";
 
 interface ConversationPanelProps {
@@ -203,8 +206,9 @@ export function ConversationPanel({
   // The one predicate every archived presentation reads: a row is effectively
   // archived when the user archived it, or when its runtime is missing and
   // non-resumable. List visibility, the "Archived" chip, the dimmed title, and
-  // the archive/unarchive menu direction all derive from this so they cannot
-  // disagree. (`sandbox_status: "ERROR"` is intentionally not archived.)
+  // the status dot all derive from this so they cannot disagree.
+  // (`sandbox_status: "ERROR"` is intentionally not archived.) Menu availability
+  // is a separate concern and does not read this predicate alone.
   const isRowArchived = React.useCallback(
     (conversation: { id: string; sandbox_status?: SandboxStatus | null }) =>
       isEffectivelyArchivedConversation(
@@ -872,14 +876,20 @@ export function ConversationPanel({
       options?: { inPinnedSection?: boolean },
     ) => {
       const isPinned = pinnedIds.includes(conversation.id);
-      // The row presents as archived when the user archived it or its runtime
-      // is missing; both drive list visibility, the chip, the dot, the title,
-      // and the menu direction. A row presented as archived offers exactly one
-      // direction, "Unarchive", which clears any stored archive intent. On a
-      // runtime-derived archive the missing runtime keeps the row archived, so
-      // it stays presented as archived after "Unarchive" (the status
-      // indicator, list visibility, and chip remain in agreement).
+      // Presentation: a row looks archived when the user archived it or its
+      // runtime is missing and non-resumable. This single predicate drives list
+      // visibility, the chip, the dot, and the dimmed title.
       const isArchived = isRowArchived(conversation);
+      // Action availability is separate from presentation. "Unarchive" is only
+      // meaningful when clearing the browser-local flag actually returns the row
+      // to the unarchived state, so it is offered solely for an explicitly
+      // archived row whose runtime is not missing. A missing, non-resumable
+      // runtime cannot be restored from this menu, so such a row offers neither
+      // "Archive" nor "Unarchive", even when a stored archive flag is set.
+      const explicitlyArchived = archivedIdSet.has(conversation.id);
+      const runtimeMissing = isMissingSandboxStatus(
+        conversation.sandbox_status,
+      );
       if (compact) {
         return (
           <CompactConversationRow
@@ -962,9 +972,10 @@ export function ConversationPanel({
               onDelete={() =>
                 handleDeleteProject(conversation.id, conversation.title ?? "")
               }
-              // At most one direction per row: "Archive" until the row is
-              // presented as archived, then "Unarchive" — the same predicate
-              // that drives the chip, the dot, and list visibility.
+              // Archive is offered until the row is effectively archived; the
+              // reverse direction, "Unarchive", is offered only when the row is
+              // explicitly archived and its runtime is not missing. A
+              // missing-runtime row offers neither.
               onArchive={
                 isArchived
                   ? undefined
@@ -975,7 +986,7 @@ export function ConversationPanel({
                       )
               }
               onUnarchive={
-                isArchived
+                explicitlyArchived && !runtimeMissing
                   ? () => handleUnarchiveProject(conversation.id)
                   : undefined
               }

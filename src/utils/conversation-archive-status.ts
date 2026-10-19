@@ -32,8 +32,13 @@ export function isRuntimeUnavailableSandboxStatus(
 /**
  * The single "effective archived" predicate: a conversation is archived when
  * the user explicitly archived it, or when its runtime is missing and
- * non-resumable. Drives list visibility, the "Archived" chip, and the
- * archive/unarchive menu direction so those never disagree.
+ * non-resumable. Drives the archived presentation (list visibility, the
+ * "Archived" chip, the dimmed title, and the status dot) so those never
+ * disagree.
+ *
+ * This is presentation only. Menu availability is a separate concern: a
+ * missing, non-resumable runtime cannot be restored from the menu, so such a
+ * row offers neither "Archive" nor "Unarchive" even when this returns true.
  */
 export function isEffectivelyArchivedConversation(
   sandboxStatus: SandboxStatus | null | undefined,

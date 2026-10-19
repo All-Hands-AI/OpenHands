@@ -67,14 +67,16 @@
       presentation from one predicate, and stops conflating a missing runtime with an errored one.</p>
     </header>
 
-    <p style="font-size:13.5px;color:var(--muted)">10 files &nbsp;·&nbsp; <b style="color:var(--ok)">+233</b> / <b style="color:var(--crit)">−16</b> &nbsp;·&nbsp; no dependency or wire-contract changes &nbsp;·&nbsp; fixes
+    <p style="font-size:13.5px;color:var(--muted)">14 source/test files &nbsp;·&nbsp; <b style="color:var(--ok)">+538</b> / <b style="color:var(--crit)">−30</b> &nbsp;·&nbsp; no dependency or wire-contract changes &nbsp;·&nbsp; fixes
       <a class="src" href="https://github.com/OpenHands/OpenHands/issues/18155">#18155</a></p>
 
     <div class="callout"><b>★ Key takeaway.</b> A row is now "effectively archived" when the user archived it
       <i>or</i> its runtime is missing and non-resumable; that one predicate drives list visibility, the
-      "Archived" chip, and the menu direction. <code>ERROR</code> keeps its red "Error" indicator and is never
-      archived. The single new symbol is
-      <a class="src" href="https://github.com/OpenHands/OpenHands/blob/261a7ef99091348fd39a49dbc9238bcca7cc311b/src/utils/conversation-archive-status.ts#L38">isEffectivelyArchivedConversation · src/utils/conversation-archive-status.ts:38</a>.</div>
+      "Archived" chip, and the status dot. <code>ERROR</code> keeps its red "Error" indicator and is never
+      archived. Menu availability is separate: <em>Unarchive</em> is offered only when clearing the explicit
+      archive flag actually returns the row to the default list, so a missing, non-resumable runtime offers
+      neither direction. The single new symbol is
+      <a class="src" href="https://github.com/OpenHands/OpenHands/blob/261a7ef99091348fd39a49dbc9238bcca7cc311b/src/utils/conversation-archive-status.ts#L43">isEffectivelyArchivedConversation · src/utils/conversation-archive-status.ts:43</a>.</div>
 
     <section id="sec1">
       <h2><span class="num">1</span>The bug: two archived notions disagreed</h2>
@@ -125,7 +127,7 @@
         <tr><th>Concern</th><th>Symbol</th><th>Returns true for</th><th>Drives</th></tr>
         <tr><td>Runtime unavailable (read-only)</td><td><code>isRuntimeUnavailableSandboxStatus</code></td><td>MISSING, ERROR</td><td>WebSocket gating, chat input, git/panel toggles</td></tr>
         <tr><td>Missing &amp; non-resumable</td><td><code>isMissingSandboxStatus</code></td><td>MISSING</td><td>status dot "Archived", dimmed title</td></tr>
-        <tr><td><b>Effective archived</b></td><td><code>isEffectivelyArchivedConversation</code></td><td>explicit archive <b>or</b> MISSING</td><td>list visibility, "Archived" chip, ⋮ menu direction</td></tr>
+        <tr><td><b>Effective archived</b></td><td><code>isEffectivelyArchivedConversation</code></td><td>explicit archive <b>or</b> MISSING</td><td>list visibility, "Archived" chip, status dot</td></tr>
       </table>
       <div class="callout note"><b>ⓘ Why ERROR stays read-only but not archived.</b> An errored sandbox is
       also gone and cannot be resumed, so its runtime-backed affordances remain read-only
@@ -149,8 +151,8 @@
           <text x="284" y="154" font-size="11">"Archived" chip</text>
           <text x="284" y="170" font-size="11">under "Show archived"</text>
           <rect x="470" y="134" width="180" height="46" rx="6" fill="var(--card)" stroke="var(--ok)"/>
-          <text x="484" y="154" font-size="11">⋮ menu direction</text>
-          <text x="484" y="170" font-size="11">Unarchive on any archived row</text>
+          <text x="484" y="154" font-size="11">status dot / title</text>
+          <text x="484" y="170" font-size="11">archive icon + dimmed</text>
           <path d="M365 180 L365 196" stroke="var(--accent)" stroke-width="1.2"/>
           <text x="365" y="212" font-size="10.5" fill="var(--muted)" text-anchor="middle">conversation-panel.tsx:208 isRowArchived()</text>
         </svg>
@@ -205,16 +207,23 @@ archivedIdSet.has(conversation.id)</code></pre>
       <code>isMissingSandboxStatus</code> (MISSING), <code>isRuntimeUnavailableSandboxStatus</code>
       (MISSING||ERROR), and the new <code>isEffectivelyArchivedConversation</code> (explicit || MISSING).</p>
 
-      <h3>✏️ The panel — <a class="src" href="https://github.com/OpenHands/OpenHands/blob/261a7ef99091348fd39a49dbc9238bcca7cc311b/src/components/features/conversation-panel/conversation-panel.tsx#L208">conversation-panel.tsx:208</a></h3>
+      <h3>✏️ The panel — <a class="src" href="https://github.com/OpenHands/OpenHands/blob/261a7ef99091348fd39a49dbc9238bcca7cc311b/src/components/features/conversation-panel/conversation-panel.tsx#L212">conversation-panel.tsx:212</a></h3>
       <p>Adds one <code>isRowArchived(conversation)</code> callback. The display filter, the <code>isArchived</code>
-      handed to cards, and the ⋮ menu direction all call it instead of <code>archivedIdSet.has(id)</code>.
+      handed to cards, and the status dot all call it instead of <code>archivedIdSet.has(id)</code>.
       Delete/prune logic still reads the unfiltered loaded set, so hiding a row never shrinks what can be deleted.</p>
-      <p>The ⋮ menu offers <b>at most one</b> direction per row: <em>Archive</em> until the row is
-      effectively archived, then <em>Unarchive</em> — the same predicate that drives the chip, the dot,
-      and list visibility. "Unarchive" clears the user's explicit archive intent. On a runtime-derived
-      archive (a missing, non-resumable runtime) the missing runtime keeps the row archived, so it stays
-      presented as archived after "Unarchive"; the status indicator, list visibility, and chip remain in
-      agreement, and no runtime is resumed or connected to.</p>
+      <p>Menu availability is a <b>separate</b> concern from presentation
+      (<a class="src" href="https://github.com/OpenHands/OpenHands/blob/261a7ef99091348fd39a49dbc9238bcca7cc311b/src/components/features/conversation-panel/conversation-panel.tsx#L989">conversation-panel.tsx:989</a>).
+      The ⋮ menu offers at most one direction per row, and a missing, non-resumable runtime offers <b>neither</b>:</p>
+      <ul style="font-size:14.5px;margin:8px 0">
+        <li><b>Archive</b> — offered while the row is not effectively archived (same <code>isRowArchived</code>
+        predicate as the chip and list visibility).</li>
+        <li><b>Unarchive</b> — offered only for an explicitly archived row whose runtime is <i>not</i> missing
+        (<code>explicitlyArchived &amp;&amp; !isMissingSandboxStatus(...)</code>), i.e. only when clearing the
+        browser-local flag actually returns the row to the unarchived state.</li>
+        <li><b>Neither</b> — a missing, non-resumable runtime, including when a stored archive flag is also set:
+        the missing runtime keeps the row archived, so clearing the flag would be a no-op the user cannot
+        observe.</li>
+      </ul>
 
       <h3>✏️ Status dot &amp; dimmed title</h3>
       <p><a class="src" href="https://github.com/OpenHands/OpenHands/blob/261a7ef99091348fd39a49dbc9238bcca7cc311b/src/components/features/conversation-panel/conversation-status-dot.tsx#L128">conversation-status-dot.tsx</a>,
@@ -256,21 +265,26 @@ archivedIdSet.has(conversation.id)</code></pre>
             <td>the MISSING row is <b>hidden</b></td></tr>
         <tr><td>Real backend, ⋮ menu on that row</td>
             <td><code>[…,"<b>Archive Conversation</b>","Delete Conversation"]</code></td>
-            <td><code>[…,"<b>Unarchive Conversation</b>","Delete Conversation"]</code> — exactly one direction, as archived everywhere</td></tr>
+            <td>neither direction — the row is missing-runtime, so "Archive" and "Unarchive" are both absent</td></tr>
         <tr><td>Default list (Show archived off)</td>
             <td>MISSING row <b>shown</b> with a gray archive dot + dimmed title, no chip</td>
             <td>MISSING row <b>hidden</b> (archived); ERROR row shown with red "Error"</td></tr>
         <tr><td>⋮ menu on the archived row</td>
             <td><code>["Rename","Edit tags","Stop Conversation","Download conversation data","<b>Archive Conversation</b>","Delete Conversation"]</code></td>
-            <td><code>[…,"<b>Unarchive Conversation</b>","Delete Conversation"]</code> — exactly one direction; "Archive" is never offered on an archived row</td></tr>
+            <td>no "Archive" and no "Unarchive" — a missing, non-resumable runtime cannot change its effective archived state from this menu</td></tr>
+        <tr><td>Explicitly archived row, runtime present</td>
+            <td>—</td>
+            <td>⋮ menu offers <b>Unarchive</b> (never "Archive"), and it returns the row to the default list</td></tr>
         <tr><td>ERROR row presentation</td>
             <td>red "Error" dot, but dimmed title (wrongly archived)</td>
             <td>red "Error" dot, title not dimmed, never chipped/archived</td></tr>
       </table>
-      <p style="font-size:13.5px;color:var(--muted)">Twelve captures (real-backend and mock, 3 before · 3 after
-      each: default list, "Show archived", archived-row ⋮ menu) are attached to the PR under
-      <b>Video/Screenshots</b>. Unit/integration tests cover the predicate's MISSING/ERROR/local-non-resumable cases,
-      the dot's MISSING→archive render, and the panel's default-hide / show-archived behavior.</p>
+      <p style="font-size:13.5px;color:var(--muted)">Thirteen captures (real-backend and mock, before · after
+      each: default list, "Show archived", archived-row ⋮ menu, plus a mock explicitly-archived row offering
+      Unarchive) are attached to the PR under <b>Video/Screenshots</b>. Unit/integration tests cover the
+      predicate's MISSING/ERROR/local-non-resumable cases, the dot's MISSING→archive render, the panel's
+      default-hide / show-archived behavior, and the menu offering neither direction on a missing-runtime row
+      (including the both-explicitly-archived-and-missing case).</p>
       <div class="callout note"><b>ⓘ Where MISSING actually comes from.</b> The local (non-Docker) agent server
       reports every catalog conversation as <code>runtime_status: "available"</code>, so it never yields a
       <code>MISSING</code> row; the adapter maps <code>MISSING</code> from a Cloud
@@ -280,13 +294,15 @@ archivedIdSet.has(conversation.id)</code></pre>
       (missing+non-resumable → <code>MISSING</code>; missing+resumable → <code>null</code>). The real-backend
       captures above reproduce exactly that: a conversation created in local mode, then read back after the server
       restarted in Docker mode, yields <code>runtime_status: "missing"</code> + <code>can_resume: false</code>.</div>
-      <div class="callout note"><b>ⓘ Why the ⋮ menu offers exactly one direction.</b>
-      The menu offers <em>Archive</em> until the row is effectively archived, then <em>Unarchive</em> —
-      both read the same <code>isRowArchived</code> predicate as the chip, dot, and list visibility, so the
-      surfaces cannot disagree. On a purely runtime-derived archive the missing, non-resumable runtime keeps
-      the row archived, so it stays presented as archived after "Unarchive": the action clears the user's
-      explicit archive intent (if any) without resuming or connecting to the runtime, and the chip, dot, and
-      list visibility continue to present it as archived everywhere.</div>
+      <div class="callout note"><b>ⓘ Presentation vs. action availability.</b>
+      Archive presentation and the ability to unarchive are not the same thing. The chip, dot, and list
+      visibility all read <code>isRowArchived</code>; the ⋮ menu reads that plus whether the action can
+      actually change the effective state. A row is offered <em>Archive</em> while it is not effectively
+      archived, <em>Unarchive</em> only when it is explicitly archived <i>and</i> its runtime is not missing,
+      and <em>neither</em> when the runtime is missing and non-resumable — clearing the browser-local flag
+      would leave the missing runtime keeping the row archived, so it is not a useful Unarchive operation.
+      An explicitly archived row whose runtime is present still offers <em>Unarchive</em>, which clears the
+      flag and returns it to the default list.</div>
     </section>
 
     <p style="margin-top:40px;font-size:12.5px;color:var(--subtle)">Temporary review artifact under <code>.pr/</code>; removed after merge.</p>

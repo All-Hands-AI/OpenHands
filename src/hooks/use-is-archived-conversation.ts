@@ -7,8 +7,8 @@ import { isRuntimeUnavailableSandboxStatus } from "#/utils/conversation-archive-
  * missing (non-resumable) sandbox and an errored one.
  *
  * This is the read-only gate, not the archive predicate: use
- * `isEffectivelyArchivedConversation` for list visibility, the "Archived"
- * chip, and the archive/unarchive direction.
+ * `isEffectivelyArchivedConversation` for the archived presentation (list
+ * visibility, the "Archived" chip, the dimmed title, and the status dot).
  */
 export function useIsArchivedConversation() {
   const { data: conversation } = useActiveConversation();
