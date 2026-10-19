@@ -133,6 +133,7 @@ describe("SkillsService.getSkillCatalog", () => {
       expect.objectContaining({
         name: "another-public-skill",
         origin: "public",
+        source: "public",
         category: "productivity",
         license: "MIT",
       }),

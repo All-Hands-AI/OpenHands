@@ -61,11 +61,13 @@ function toCatalogSkill(entry: unknown): SkillInfo {
     throw new Error("The agent server returned a malformed skill catalog.");
   }
   const skill = entry as unknown as SkillInfo;
-  const bundled =
-    skill.origin === "public" ? BUNDLED_BY_NAME.get(skill.name) : undefined;
-  if (!bundled) return skill;
+  if (skill.origin !== "public") return skill;
+  // Shown as the catalog, as the bundled entries are, rather than a server path.
+  const listed = { ...skill, source: "public" };
+  const bundled = BUNDLED_BY_NAME.get(skill.name);
+  if (!bundled) return listed;
   return {
-    ...skill,
+    ...listed,
     category: bundled.category,
     license: skill.license ?? bundled.license ?? null,
     compatibility: skill.compatibility ?? bundled.compatibility ?? null,
