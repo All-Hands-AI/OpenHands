@@ -5,6 +5,11 @@ import { createServer as createViteServer, type ViteDevServer } from "vite";
 import viteConfig from "../vite.config";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { server as mockApiServer } from "../src/mocks/node";
+import { build } from "vite";
+import { execFileSync } from "node:child_process";
+import { mkdtemp, writeFile, symlink, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 
 afterEach(() => {
   delete process.env.BUILD_LIB;
@@ -132,9 +137,6 @@ describe("vite library build", () => {
     expect(config.build?.lib).toMatchObject({
       formats: ["es"],
     });
-    expect(config.build?.rollupOptions?.external).toEqual(
-      expect.arrayContaining(["react", "react-dom", "react-router"]),
-    );
     expect(config.build?.rollupOptions?.output).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -291,3 +293,67 @@ describe("vite runtime services metadata", () => {
     },
   );
 });
+it("emits browser-compatible ESM when a bundled CommonJS dependency requires a React peer", async () => {
+  process.env.BUILD_LIB = "true";
+  const directory = await mkdtemp(join(tmpdir(), "canvas-esm-peer-"));
+  try {
+    await writeFile(
+      join(directory, "package.json"),
+      JSON.stringify({ type: "module" }),
+    );
+    await symlink(
+      resolve("node_modules"),
+      join(directory, "node_modules"),
+      "dir",
+    );
+    await writeFile(
+      join(directory, "entry.js"),
+      'export { useSyncExternalStore } from "use-sync-external-store/shim"; export { motion } from "framer-motion";',
+    );
+    const config = await viteConfig({ mode: "production", command: "build" });
+    const built = await build({
+      ...config,
+      configFile: false,
+      logLevel: "error",
+      root: directory,
+      build: {
+        ...config.build,
+        sourcemap: false,
+        lib: { entry: join(directory, "entry.js"), formats: ["es"] },
+        outDir: join(directory, "dist"),
+      },
+    });
+    const outputs = Array.isArray(built) ? built : [built];
+    const esm = outputs[0];
+    if (!("output" in esm))
+      throw new Error("Expected a completed library build");
+    const entry = esm.output.find(
+      (chunk) => chunk.type === "chunk" && chunk.isEntry,
+    );
+    if (!entry) throw new Error("Library entry was not emitted");
+    await writeFile(
+      join(directory, "consumer.mjs"),
+      `import React from "react"; import { motion as hostMotion } from "framer-motion"; import { useSyncExternalStore, motion } from ${JSON.stringify("./dist/" + entry.fileName)}; if (useSyncExternalStore !== React.useSyncExternalStore) throw new Error("React peer hook was not preserved"); if (motion !== hostMotion) throw new Error("Motion dependency was not preserved");`,
+    );
+
+    // A native ESM consumer has no CommonJS require shim, like a browser host.
+    execFileSync(process.execPath, [join(directory, "consumer.mjs")], {
+      stdio: "pipe",
+    });
+    const cjs = outputs[1];
+    if (!("output" in cjs)) throw new Error("Expected CommonJS library output");
+    const commonEntry = cjs.output.find(
+      (chunk) => chunk.type === "chunk" && chunk.isEntry,
+    );
+    if (!commonEntry) throw new Error("CommonJS entry was not emitted");
+    await writeFile(
+      join(directory, "consumer.cjs"),
+      `const React = require("react"); const { motion: hostMotion } = require("framer-motion"); const { useSyncExternalStore, motion } = require(${JSON.stringify("./dist/" + commonEntry.fileName)}); if (useSyncExternalStore !== React.useSyncExternalStore) throw new Error("CommonJS React peer hook was not preserved"); if (motion !== hostMotion) throw new Error("CommonJS Motion dependency was not preserved");`,
+    );
+    execFileSync(process.execPath, [join(directory, "consumer.cjs")], {
+      stdio: "pipe",
+    });
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+}, 30000);

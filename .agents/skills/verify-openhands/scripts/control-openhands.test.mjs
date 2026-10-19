@@ -3,15 +3,18 @@
 //   npx vitest run .agents/skills/verify-openhands
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
+import { EventEmitter } from "node:events";
 import {
   existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
+  rmSync,
   writeFileSync,
 } from "node:fs";
 import { createServer } from "node:net";
+import { createServer as createHttpServer } from "node:http";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -51,7 +54,18 @@ import {
   withoutPauses,
 } from "./lib/recording.mjs";
 import { MAX_PAGES, collectEvents, countImages } from "./lib/events-paging.mjs";
-import { redactBody, redactUrl } from "./lib/network-bodies.mjs";
+import {
+  redactBody,
+  redactUrl,
+  redactBodyFields,
+  networkEntryForOutput,
+  BODY_FIELDS_LIMIT_BYTES,
+} from "./lib/network-bodies.mjs";
+import {
+  observeWebSocket,
+  webSocketMetadata,
+  isWebSocketObservation,
+} from "./lib/websocket-events.mjs";
 import { buildLocator, parseRole, toCss } from "./lib/selectors.mjs";
 import {
   classifyAttempt,
@@ -1852,6 +1866,226 @@ test.skipIf(process.platform === "win32")(
   },
 );
 
+test("browser network-state restores connectivity and rejects invalid modes before dispatch", async () => {
+  // Arrange a browser service. The CLI must route state changes without
+  // confusing the observation-only network log with network availability.
+  const runDir = mkdtempSync(join(tmpdir(), "cov-network-state-"));
+  mkdirSync(join(runDir, "private"));
+  writeFileSync(join(runDir, "run.json"), "{}\n");
+  let offline = false;
+  let requests = 0;
+  const server = createHttpServer(async (req, res) => {
+    requests += 1;
+    let body = "";
+    for await (const chunk of req) body += chunk;
+    const { cmd, args } = JSON.parse(body);
+    assert.equal(cmd, "network-state");
+    if (args.state !== "status") offline = args.state === "offline";
+    res.setHeader("content-type", "application/json");
+    res.end(JSON.stringify({ ok: true, offline }));
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  writeFileSync(
+    join(runDir, "private", "browser.json"),
+    JSON.stringify({
+      pid: process.pid,
+      port: server.address().port,
+      token: "dummy-control-token",
+    }),
+  );
+  const invoke = (state) =>
+    new Promise((resolve, reject) => {
+      const child = spawn(process.execPath, [
+        cli,
+        "browser",
+        "network-state",
+        ...state,
+        "--run",
+        runDir,
+      ]);
+      let output = "";
+      child.stdout.on("data", (chunk) => {
+        output += chunk;
+      });
+      child.on("error", reject);
+      child.on("close", (code) => resolve({ code, ...JSON.parse(output) }));
+    });
+  try {
+    // Act / Assert: status is read-only, and online restores the prior
+    // offline browser. Bad input must not reach or mutate the service.
+    assert.equal((await invoke(["offline"])).offline, true);
+    assert.equal((await invoke(["status"])).offline, true);
+    assert.equal((await invoke(["online"])).offline, false);
+    const before = requests;
+    for (const args of [[], ["sometimes"], ["offline", "extra"]]) {
+      assert.equal((await invoke(args)).code, 2);
+    }
+    assert.equal(requests, before);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    rmSync(runDir, { recursive: true, force: true });
+  }
+});
+
+test("WebSocket subscription events preserve cursors and counts without secrets or frame content", () => {
+  // Arrange the underlying Playwright socket event source; the real observer
+  // must expose only metadata to browser-events.jsonl and browser events.
+  const socket = new EventEmitter();
+  socket.url = () =>
+    "ws://user:SOCKET_PASSWORD@localhost:18800/sockets/events/qa?after_seq=7&session_api_key=SESSION_SECRET&unknown=OPAQUE_SECRET";
+  const events = [];
+  observeWebSocket(socket, (kind, detail) => events.push({ kind, ...detail }), {
+    connectionId: "qa-connection",
+    pageUrl: () =>
+      "http://user:PAGE_PASSWORD@localhost:18800/conversations/qa?api_key=PAGE_SECRET#TOKEN_SECRET",
+  });
+  // Act: even authentication frames and error text must never be retained.
+  socket.emit("framereceived", {
+    payload: "RECEIVED_SECRET",
+    headers: { authorization: "HEADER_SECRET" },
+  });
+  socket.emit("framesent", { payload: Buffer.from("SENT_SECRET") });
+  socket.emit("socketerror", "ERROR_SECRET");
+  socket.emit("close");
+  // Assert the consumer contract, including healthy/error classification.
+  assert.equal(events[0].afterSeq, "7");
+  assert.equal(new URL(events[0].url).searchParams.get("after_seq"), "7");
+  const opened = events.find((e) => e.kind === "websocket-open");
+  assert.equal(opened.observed, "first-frame");
+  assert.equal(opened.receivedFrames, 1);
+  const closed = events.at(-1);
+  assert.equal(closed.receivedFrames, 1);
+  assert.equal(closed.sentFrames, 1);
+  assert.equal(closed.connectionId, events[0].connectionId);
+  assert.deepEqual(
+    events.filter((e) => !isWebSocketObservation(e.kind)).map((e) => e.kind),
+    ["websocket-error"],
+  );
+  const shown = JSON.stringify(events);
+  for (const secret of [
+    "SOCKET_PASSWORD",
+    "SESSION_SECRET",
+    "OPAQUE_SECRET",
+    "PAGE_PASSWORD",
+    "PAGE_SECRET",
+    "TOKEN_SECRET",
+    "RECEIVED_SECRET",
+    "HEADER_SECRET",
+    "SENT_SECRET",
+    "ERROR_SECRET",
+  ])
+    assert.ok(!shown.includes(secret));
+  assert.equal(
+    webSocketMetadata("ws://localhost/x?after_seq=NOT_A_CURSOR_SECRET")
+      .afterSeq,
+    undefined,
+  );
+  assert.ok(
+    !JSON.stringify(
+      webSocketMetadata("ws://localhost/x?after_seq=NOT_A_CURSOR_SECRET"),
+    ).includes("NOT_A_CURSOR_SECRET"),
+  );
+  assert.ok(
+    !JSON.stringify(
+      webSocketMetadata(
+        "ws://localhost/x?after_seq=7&after_seq=DUPLICATE_SECRET",
+      ),
+    ).includes("DUPLICATE_SECRET"),
+  );
+  assert.equal(
+    webSocketMetadata("ws://localhost/x?after_seq=7&after_seq=8").afterSeq,
+    undefined,
+  );
+  assert.ok(
+    !JSON.stringify(
+      webSocketMetadata("ws://localhost/x?SECRET_NAME=ignored"),
+    ).includes("SECRET_NAME"),
+  );
+  assert.deepEqual(webSocketMetadata("invalid SECRET"), {
+    url: "<unavailable>",
+  });
+});
+
+test("browser events delivers filtered WebSocket metadata to the CLI consumer", async () => {
+  const runDir = mkdtempSync(join(tmpdir(), "cov-websocket-events-"));
+  mkdirSync(join(runDir, "private"));
+  writeFileSync(join(runDir, "run.json"), "{}\n");
+  const socket = new EventEmitter();
+  socket.url = () =>
+    "ws://localhost:18800/sockets/events/qa?after_seq=42&session_api_key=PRIVATE_SECRET";
+  const events = [];
+  observeWebSocket(
+    socket,
+    (kind, detail) =>
+      events.push({ ts: new Date().toISOString(), kind, ...detail }),
+    {
+      connectionId: "qa-reconnect",
+      pageUrl: () => "http://localhost:18800/conversations/qa",
+    },
+  );
+  socket.emit("framesent", { payload: "AUTH_SECRET" });
+  socket.emit("close");
+  const server = createHttpServer(async (req, res) => {
+    let body = "";
+    for await (const chunk of req) body += chunk;
+    const { cmd, args } = JSON.parse(body);
+    assert.equal(cmd, "events");
+    assert.equal(args.kinds, "websocket-open,websocket-close");
+    assert.equal(args.last, "2");
+    const wanted = args.kinds.split(",");
+    res.setHeader("content-type", "application/json");
+    res.end(
+      JSON.stringify({
+        ok: true,
+        events: events
+          .filter((e) => wanted.includes(e.kind))
+          .slice(-Number(args.last)),
+      }),
+    );
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  writeFileSync(
+    join(runDir, "private", "browser.json"),
+    JSON.stringify({
+      pid: process.pid,
+      port: server.address().port,
+      token: "dummy-control-token",
+    }),
+  );
+  try {
+    const output = await new Promise((resolve, reject) => {
+      const child = spawn(process.execPath, [
+        cli,
+        "browser",
+        "events",
+        "--kinds",
+        "websocket-open,websocket-close",
+        "--last",
+        "2",
+        "--run",
+        runDir,
+      ]);
+      let stdout = "";
+      child.stdout.on("data", (chunk) => {
+        stdout += chunk;
+      });
+      child.on("error", reject);
+      child.on("close", (code) => resolve({ code, stdout }));
+    });
+    assert.equal(output.code, 0);
+    const result = JSON.parse(output.stdout);
+    assert.equal(result.events.length, 2);
+    assert.equal(result.events[0].afterSeq, "42");
+    assert.equal(result.events[1].sentFrames, 1);
+    assert.ok(result.events.every((e) => Number.isFinite(Date.parse(e.ts))));
+    assert.ok(!output.stdout.includes("PRIVATE_SECRET"));
+    assert.ok(!output.stdout.includes("AUTH_SECRET"));
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    rmSync(runDir, { recursive: true, force: true });
+  }
+});
+
 // A run directory with no stack behind it: enough for evidence and bug runs
 // whose recipes only call offline commands.
 function fakeRun(revision = "abc") {
@@ -2353,4 +2587,194 @@ test("help documents assert and bug, and the shipped map's known-bug blocks are 
   const list = run(["bug", "list"]);
   assert.equal(list.json.ok, true, list.stdout);
   assert.ok(list.json.count >= 1);
+});
+
+test("network plugin projection survives display truncation without exposing other fields", () => {
+  const request = JSON.stringify({
+    system_prompt: "unrelated-system-prompt-".repeat(200),
+    llm: { api_key: "never-project-me" },
+    plugins: [
+      {
+        source: "qa-plugin",
+        parameters: { greeting: "edited dummy value", count: 7, enabled: true },
+      },
+    ],
+    unrelated: { plugins: ["not-top-level"] },
+  });
+  assert.throws(() => JSON.parse(redactBody(request))); // existing display cap
+  const projection = redactBodyFields(request);
+  assert.deepEqual(projection, {
+    bodyFields: {
+      plugins: [
+        {
+          source: "qa-plugin",
+          parameters: {
+            greeting: "edited dummy value",
+            count: 7,
+            enabled: true,
+          },
+        },
+      ],
+    },
+  });
+  const serialized = JSON.stringify(projection);
+  assert.doesNotMatch(
+    serialized,
+    /system_prompt|unrelated|never-project-me|not-top-level/,
+  );
+  const entry = {
+    path: "/api/conversations",
+    body: redactBody(request),
+    ...projection,
+  };
+  assert.deepEqual(networkEntryForOutput(entry, false), {
+    path: "/api/conversations",
+  });
+  assert.deepEqual(
+    networkEntryForOutput(entry, true).bodyFields,
+    projection.bodyFields,
+  );
+});
+
+test("network plugin projection recursively redacts credentials maps and credential URLs", () => {
+  const projection = redactBodyFields(
+    JSON.stringify({
+      plugins: [
+        {
+          source: "https://user:pw@example.test/plugin?token=TOKEN&ref=main",
+          parameters: {
+            label: "dummy edited value",
+            nested: [
+              {
+                secret: "sensitive",
+                token: "tok",
+                api_key: "api-value",
+                password: "pass-value",
+                normal: "shown",
+              },
+            ],
+            credentials: { value: "hidden", list: ["nested-secret"] },
+            env: { NAME: "env-value", KEEP: "**********" },
+            headers: { Authorization: "Bearer actual-token" },
+          },
+        },
+      ],
+    }),
+  );
+  const plugin = projection.bodyFields.plugins[0];
+  assert.equal(plugin.parameters.label, "dummy edited value");
+  assert.deepEqual(plugin.parameters.nested, [
+    {
+      secret: "<redacted 9 chars>",
+      token: "<redacted 3 chars>",
+      api_key: "<redacted 9 chars>",
+      password: "<redacted 10 chars>",
+      normal: "shown",
+    },
+  ]);
+  assert.deepEqual(plugin.parameters.credentials, {
+    value: "<redacted 6 chars>",
+    list: ["<redacted 13 chars>"],
+  });
+  assert.deepEqual(plugin.parameters.env, {
+    NAME: "<redacted 9 chars>",
+    KEEP: "**********",
+  });
+  assert.equal(plugin.parameters.headers.Authorization, "<redacted 19 chars>");
+  assert.doesNotMatch(plugin.source, /user|pw|TOKEN/);
+  assert.match(plugin.source, /ref=main/);
+  const all = redactBodyFields(
+    JSON.stringify({ plugins: [{ source: "private", parameters: ["value"] }] }),
+    { all: true },
+  );
+  assert.deepEqual(all.bodyFields.plugins, [
+    { source: "<redacted 7 chars>", parameters: ["<redacted 5 chars>"] },
+  ]);
+});
+
+test("network plugin projection bounds complete UTF-8 JSON and omits non-JSON or non-top-level fields", () => {
+  for (const input of [
+    undefined,
+    null,
+    "",
+    "not-json",
+    "a=1&plugins=raw",
+    '[{"plugins":[]}]',
+    '{"nested":{"plugins":[]}}',
+  ]) {
+    assert.deepEqual(redactBodyFields(input), {});
+  }
+  assert.deepEqual(redactBodyFields('{"plugins":null}'), {
+    bodyFields: { plugins: null },
+  });
+  const near = { plugins: [{ parameters: { value: "😀".repeat(2000) } }] };
+  const fitting = redactBodyFields(JSON.stringify(near));
+  assert.ok(
+    Buffer.byteLength(JSON.stringify(fitting.bodyFields), "utf8") <=
+      BODY_FIELDS_LIMIT_BYTES,
+  );
+  const oversized = redactBodyFields(
+    JSON.stringify({ plugins: [{ parameters: { value: "😀".repeat(5000) } }] }),
+  );
+  assert.equal(oversized.bodyFields, undefined);
+  assert.equal(
+    oversized.bodyFieldsOmitted.plugins,
+    "redacted projection exceeds 16384 UTF-8 bytes",
+  );
+  assert.doesNotMatch(JSON.stringify(oversized), /😀/);
+  assert.deepEqual(
+    networkEntryForOutput({ path: "/api/conversations", ...oversized }, false),
+    { path: "/api/conversations" },
+  );
+  // The bound applies after redaction: a long credential never creates a huge projection.
+  const redacted = redactBodyFields(
+    JSON.stringify({ plugins: [{ api_key: "s".repeat(20000) }] }),
+  );
+  assert.equal(
+    redacted.bodyFields.plugins[0].api_key,
+    "<redacted 20000 chars>",
+  );
+});
+
+test("browser media validates motion before dispatch and preserves playback observation", async () => {
+  const runDir = mkdtempSync(join(tmpdir(), "cov-media-motion-"));
+  mkdirSync(join(runDir, "private"));
+  writeFileSync(join(runDir, "run.json"), "{}\n");
+  const calls = [];
+  const server = createHttpServer(async (req, res) => {
+    let body = "";
+    for await (const chunk of req) body += chunk;
+    const call = JSON.parse(body);
+    calls.push(call);
+    res.setHeader("content-type", "application/json");
+    res.end(JSON.stringify({ ok: true, plays: [] }));
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  writeFileSync(join(runDir, "private", "browser.json"), JSON.stringify({
+    pid: process.pid, port: server.address().port, token: "dummy-control-token",
+  }));
+  const invoke = (args) => new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [cli, "browser", "media", ...args, "--run", runDir]);
+    let output = "";
+    child.stdout.on("data", (chunk) => { output += chunk; });
+    child.on("error", reject);
+    child.on("close", (code) => resolve({ code, ...JSON.parse(output) }));
+  });
+  try {
+    for (const mode of ["reduce", "no-preference"]) {
+      assert.equal((await invoke(["--reduced-motion", mode])).code, 0);
+      assert.equal(calls.at(-1).cmd, "media");
+      assert.equal(calls.at(-1).args.reducedMotion, mode);
+    }
+    assert.equal((await invoke(["--clear"])).code, 0);
+    assert.deepEqual(calls.at(-1).args, { clear: true });
+    assert.equal((await invoke([])).code, 0);
+    const before = calls.length;
+    for (const args of [["--reduced-motion"], ["--reduced-motion", "sometimes"], ["reduce"], ["extra", "--reduced-motion", "reduce"]])
+      assert.equal((await invoke(args)).code, 2);
+    assert.equal(calls.length, before, "invalid media input must not mutate the browser");
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    rmSync(runDir, { recursive: true, force: true });
+  }
 });

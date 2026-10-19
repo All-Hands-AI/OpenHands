@@ -524,6 +524,7 @@ async function buildConfig(args, env = process.env) {
 
     // Data directories (same as dev-safe.mjs)
     stateDir,
+    tmuxTmpDir: safeConfig.tmuxTmpDir,
     // Only bake the host-side workspace path when this launcher also starts
     // the agent-server that can read it. In frontend-only mode the backend may
     // be a tunnel/remote service, so leave VITE_WORKING_DIR unset unless the
@@ -608,6 +609,7 @@ function ensureDirectories(config) {
 
   if (config.launchAgentServer) {
     dirs.push(
+      config.tmuxTmpDir,
       join(config.stateDir, "dev_conversations"),
       join(config.stateDir, "workspaces"),
       join(config.stateDir, "bash_events"),
@@ -726,11 +728,14 @@ function spawnService(name, command, args, options = {}) {
   return proc;
 }
 
-async function waitForService(name, url, timeoutMs = 30000) {
+async function waitForService(name, url, timeoutMs = 30000, proc = null) {
   const start = Date.now();
   let lastError = null;
 
   while (Date.now() - start < timeoutMs) {
+    // A service that already exited will never answer; let the caller report
+    // the exit instead of polling until the timeout.
+    if (proc && !isProcessRunning(proc)) return false;
     try {
       const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
       if (res.ok) {
@@ -949,6 +954,7 @@ function startAgentServer(config) {
     OH_CANVAS_SAFE_STATE_DIR: config.stateDir,
     OH_CANVAS_SAFE_BACKEND_PORT: config.agentServerPort.toString(),
     OH_CANVAS_SAFE_VSCODE_PORT: config.vscodePort.toString(),
+    TMUX_TMPDIR: config.tmuxTmpDir,
   });
 
   const agentServerEnv = {
@@ -1000,7 +1006,7 @@ function startAutomationBackend(config) {
   const automationCmd = buildAutomationCommand(process.env);
   logService("automation", `Using ${automationCmd.source}`, c.dim);
 
-  spawnService(
+  return spawnService(
     "automation",
     automationCmd.command,
     [
@@ -1097,6 +1103,24 @@ function startAutomationBackend(config) {
 
 let shuttingDown = false;
 
+// Services run in their own process groups, so they outlive the launcher
+// unless it stops them: SIGTERM each tree, then SIGKILL what is still running.
+async function stopServices() {
+  for (const [name, proc] of processes) {
+    logService(name, "Stopping...", c.dim);
+    signalProcessTree(proc, "SIGTERM");
+  }
+
+  await delay(3000);
+
+  for (const [name, proc] of processes) {
+    if (isProcessRunning(proc)) {
+      logService(name, "Force stopping...", c.dim);
+      signalProcessTree(proc, "SIGKILL");
+    }
+  }
+}
+
 function shutdown() {
   if (shuttingDown) return;
   shuttingDown = true;
@@ -1105,21 +1129,39 @@ function shutdown() {
   console.log(`${c.yellow}Shutting down...${c.reset}`);
   fileLog("info", "Shutting down...");
 
-  for (const [name, proc] of processes) {
-    logService(name, "Stopping...", c.dim);
-    signalProcessTree(proc, "SIGTERM");
-  }
-
-  setTimeout(() => {
-    for (const [name, proc] of processes) {
-      if (isProcessRunning(proc)) {
-        logService(name, "Force stopping...", c.dim);
-        signalProcessTree(proc, "SIGKILL");
-      }
-    }
+  stopServices().then(() => {
     shutdownHooks.run();
     process.exit(0);
-  }, 3000);
+  });
+}
+
+/**
+ * Watch the automation backend until it answers, and stop the stack if it
+ * exits first. It exits during startup when, for example, a database
+ * migration fails (#18299); leaving the stack up made Automate silently
+ * unavailable. The launcher announces the stack without waiting for this, so
+ * a healthy start is not delayed; a failure stops every service and then calls
+ * `onFailure`. A slow start (first-run download) only logs a timeout.
+ */
+async function watchAutomationStartup(config, proc, timeoutMs, onFailure) {
+  const ready = await waitForService(
+    "automation",
+    `http://127.0.0.1:${config.autoBackendPort}${AUTOMATION_ROUTE_PREFIX}/health`,
+    timeoutMs,
+    proc,
+  );
+  if (ready || isProcessRunning(proc) || shuttingDown) return;
+
+  const exit =
+    proc.exitCode !== null
+      ? `code ${proc.exitCode}`
+      : `signal ${proc.signalCode}`;
+  const message =
+    `The automation backend exited during startup (${exit}). ` +
+    "Its [automation] log lines show why.";
+  logError(message);
+  await stopServices();
+  onFailure(new Error(message));
 }
 
 process.on("SIGINT", shutdown);
@@ -1508,6 +1550,11 @@ async function main(options = {}) {
     // download / install progress to the user. `level` is one of
     // "stdout" | "stderr" | "info" | "warn" | "error".
     onServiceLog,
+    // Called with an Error when the automation backend exits before it
+    // becomes healthy, after every service has been stopped. That can happen
+    // after `main()` has returned. Defaults to exiting the process with
+    // code 1; embedded launchers (Electron) pass their own handler.
+    onAutomationStartupFailure = () => process.exit(1),
   } = options;
 
   // Install the listener early so log lines emitted before the first
@@ -1659,9 +1706,9 @@ async function main(options = {}) {
   }
 
   // 3. Start automation backend
-  if (config.launchAutomation) {
-    startAutomationBackend(config);
-  }
+  const automationProc = config.launchAutomation
+    ? startAutomationBackend(config)
+    : null;
 
   // 4. Start frontend server (Vite dev server OR static server)
   if (config.launchFrontend) {
@@ -1682,6 +1729,17 @@ async function main(options = {}) {
   await delay(1000);
 
   printBanner(config);
+
+  // 7. Watch the automation backend in the background: if it exits before it
+  //    is healthy, stop the stack and report the failure.
+  if (automationProc) {
+    void watchAutomationStartup(
+      config,
+      automationProc,
+      agentServerReadyTimeoutMs,
+      onAutomationStartupFailure,
+    );
+  }
 
   // Return the resolved config + readiness signal so embedded launchers can
   // (a) build URLs from the actual allocated ports and (b) decide whether to
