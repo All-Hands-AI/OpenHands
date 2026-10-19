@@ -544,6 +544,49 @@ Full skill body.`,
     );
   });
 
+  it("sends two quick toggles in order, the second carrying both", async () => {
+    // Each save replaces both lists, so a second save that overtook the
+    // first would lose the second toggle.
+    const user = userEvent.setup();
+    const first = buildSkill({ name: "first" });
+    const second = buildSkill({ name: "second" });
+    vi.spyOn(SkillsService, "getSkillCatalog").mockResolvedValue([
+      first,
+      second,
+    ]);
+    vi.spyOn(SettingsService, "getSettings").mockResolvedValue(
+      buildSettings({ enabled_skills: [], disabled_skills: [] }),
+    );
+    let releaseFirst: () => void = () => {};
+    const saveSettings = vi
+      .spyOn(SettingsService, "saveSettings")
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            releaseFirst = () => resolve(true);
+          }),
+      )
+      .mockResolvedValue(true);
+
+    renderSkillsSettingsScreen();
+    await user.click(await screen.findByTestId(`skill-toggle-${first.name}`));
+    await user.click(screen.getByTestId(`skill-toggle-${second.name}`));
+
+    await waitFor(() => expect(saveSettings).toHaveBeenCalled());
+    await new Promise((resolve) => {
+      setTimeout(resolve, 50);
+    });
+    expect(saveSettings).toHaveBeenCalledTimes(1);
+    act(() => releaseFirst());
+
+    await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(2));
+    expect(saveSettings).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        disabled_skills: [first.name, second.name],
+      }),
+    );
+  });
+
   it("saves a catalog toggle to the default allow-list rather than its deny-list", async () => {
     const user = userEvent.setup();
     vi.spyOn(SkillsService, "getSkillCatalog").mockResolvedValue([

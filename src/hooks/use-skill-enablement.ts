@@ -83,48 +83,26 @@ export function useSkillEnablement(): SkillEnablementController {
   const { backend } = useActiveBackend();
   const isCloud = backend.kind === "cloud";
   const { data: settings, isLoading: settingsLoading } = useSettings();
-  const { mutate: saveSettings } = useSaveSettings();
+  const { mutateAsync: saveSettings } = useSaveSettings();
   const isPublic = usePublicSkillTest();
 
   const [enablement, setEnablement] = React.useState<SkillEnablement>({});
-  const savedRef = React.useRef<SkillEnablement | null>(null);
+  // The newest selection, read by toggles so a save never sees stale state.
+  const enablementRef = React.useRef<SkillEnablement | null>(null);
+  const hydratedForRef = React.useRef<string | null>(null);
+  // Each save replaces both lists, so saves must reach the server in order.
+  const saveQueueRef = React.useRef<Promise<unknown>>(Promise.resolve());
 
+  // Hydrate once per backend: after that the newest selection is this one,
+  // and a refetch landing between two saves would roll it back.
   React.useEffect(() => {
-    if (settingsLoading || !settings) return;
+    if (settingsLoading || !settings || hydratedForRef.current === backend.id)
+      return;
+    hydratedForRef.current = backend.id;
     const hydrated = readGlobalEnablement(settings, isCloud);
-    savedRef.current = hydrated;
+    enablementRef.current = hydrated;
     setEnablement(hydrated);
-  }, [
-    settingsLoading,
-    settings?.enabled_skills,
-    settings?.disabled_skills,
-    isCloud,
-  ]);
-
-  React.useEffect(() => {
-    // Writing the hydrated value straight back would persist a migration the
-    // user never confirmed.
-    const saved = savedRef.current;
-    if (saved === null || sameSkillSelection(saved, enablement)) return;
-    savedRef.current = enablement;
-
-    const disabledSkills = enablement.disabledSkills ?? [];
-    saveSettings(
-      isCloud
-        ? { disabled_skills: disabledSkills }
-        : {
-            enabled_skills: resolveEnabledCatalogSkills(enablement),
-            disabled_skills: disabledSkills,
-          },
-      {
-        onError: (error) => {
-          displayErrorToast(
-            retrieveAxiosErrorMessage(error) || t(I18nKey.ERROR$GENERIC),
-          );
-        },
-      },
-    );
-  }, [enablement, isCloud, saveSettings, t]);
+  }, [settingsLoading, settings, isCloud, backend.id]);
 
   const isEnabled = React.useMemo(() => {
     const enabled = buildSkillEnablementFilter(enablement, isPublic);
@@ -133,11 +111,29 @@ export function useSkillEnablement(): SkillEnablementController {
 
   const setEnabled = React.useCallback(
     (skillName: string, enabled: boolean) => {
-      setEnablement((previous) =>
-        toggleSkill(previous, skillName, enabled, isPublic),
-      );
+      const previous = enablementRef.current;
+      if (!previous) return;
+      const next = toggleSkill(previous, skillName, enabled, isPublic);
+      if (sameSkillSelection(previous, next)) return;
+      enablementRef.current = next;
+      setEnablement(next);
+
+      const disabledSkills = next.disabledSkills ?? [];
+      const update = isCloud
+        ? { disabled_skills: disabledSkills }
+        : {
+            enabled_skills: resolveEnabledCatalogSkills(next),
+            disabled_skills: disabledSkills,
+          };
+      saveQueueRef.current = saveQueueRef.current
+        .then(() => saveSettings(update))
+        .catch((error) => {
+          displayErrorToast(
+            retrieveAxiosErrorMessage(error) || t(I18nKey.ERROR$GENERIC),
+          );
+        });
     },
-    [isPublic],
+    [isPublic, isCloud, saveSettings, t],
   );
 
   return { isEnabled, setEnabled };
