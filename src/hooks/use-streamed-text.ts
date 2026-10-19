@@ -1,21 +1,13 @@
 import React from "react";
 import { create } from "zustand";
 
-/**
- * Reveal pace floor, in characters per millisecond (60 chars/s). A slow model,
- * and the last of a reply once the model has stopped, are still typed out at
- * a reading pace rather than dropped in at once.
- */
+/** Reveal pace, in characters per millisecond (60 chars/s). */
 const PACE = 0.06;
 
 /**
- * Time constant of the catch-up. Past a backlog of `PACE * MAX_LAG_MS`
- * characters the reveal drains `backlog / MAX_LAG_MS` per millisecond, so
- * while the model streams it settles at most this much of the model's output
- * behind it, which smooths the chunk cadence, and once the model stops the
- * rest is on screen within about a second and a half. It is a decay constant,
- * not a bound: at 10 s, a fast model's reply kept typing for 20-30 s after
- * the model had finished.
+ * Backlog is drained at `backlog / MAX_LAG_MS` per ms once that exceeds
+ * `PACE`, so the reveal trails a fast model by about this long and catches
+ * up within about a second of it stopping.
  */
 const MAX_LAG_MS = 500;
 
@@ -49,10 +41,9 @@ export const useIsRevealingStreamedText = () =>
  * Reveal `target` on a clock rather than at the granularity the network
  * happened to deliver it (#15493).
  *
- * Text is revealed at a steady pace, at least `PACE` and faster as the backlog
- * grows, so chunks that land in bursts are smoothed over `MAX_LAG_MS` instead
- * of a jump followed by a pause, and the reveal never trails the model by much
- * more than that. Text that is not an extension of what is
+ * Text is revealed at a steady `PACE`, so chunks that land in bursts read as
+ * writing instead of a jump followed by a pause; only a backlog worth more
+ * than `MAX_LAG_MS` speeds it up. Text that is not an extension of what is
  * already on screen (a superseding retry, or a different slot) snaps
  * immediately rather than being re-typed.
  */

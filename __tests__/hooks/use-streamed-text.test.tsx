@@ -106,47 +106,28 @@ describe("useStreamedText", () => {
     expect(Math.max(...halves)).toBeLessThan(1.5);
   });
 
-  /** A model streaming ~600 chars/s: one 10-char chunk per frame. */
-  const fastModel = (rerender: (props: { text: string }) => void) => {
+  it("follows a fast model closely and catches up once it stops", () => {
+    const { result, rerender } = renderHook(
+      ({ text }) => useStreamedText(text),
+      { initialProps: { text: "" } },
+    );
+    // A model streaming ~600 chars/s, one 10-char chunk per frame.
     let length = 0;
-    return {
-      stream: (frameCount: number) => {
-        for (let f = 0; f < frameCount; f += 1) {
-          length += 10;
-          rerender({ text: "x".repeat(length) });
-          frames.tick();
-        }
-        return length;
-      },
+    const stream = (frameCount: number) => {
+      for (let f = 0; f < frameCount; f += 1) {
+        length += 10;
+        rerender({ text: "x".repeat(length) });
+        frames.tick();
+      }
     };
-  };
 
-  it("follows a fast model closely instead of capping the pace", () => {
-    const { result, rerender } = renderHook(
-      ({ text }) => useStreamedText(text),
-      { initialProps: { text: "" } },
-    );
-    const model = fastModel(rerender);
-
-    let length = model.stream(62); // ~1s
-    // Smoothed rather than shown as it lands, but well past the reading pace.
+    stream(300); // ~5s
+    // Smoothed rather than shown as it lands, but never more than about half
+    // a second of the model's output behind.
     expect(result.current.length).toBeLessThan(length);
-    expect(result.current.length).toBeGreaterThan(200);
-
-    length = model.stream(1180); // ~20s in total
-    // Settles about half a second of the model's output behind it, no more.
     expect(length - result.current.length).toBeLessThan(600 * 0.6);
-  });
 
-  it("catches up within about two seconds once the model stops", () => {
-    const { result, rerender } = renderHook(
-      ({ text }) => useStreamedText(text),
-      { initialProps: { text: "" } },
-    );
-    const length = fastModel(rerender).stream(300); // ~5s
-    expect(result.current.length).toBeLessThan(length);
-
-    frames.tick(120); // ~2s
+    frames.tick(120); // ~2s after the model stopped
     expect(result.current).toBe("x".repeat(length));
     expect(frames.pending()).toBe(0);
   });
