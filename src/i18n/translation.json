@@ -52432,5 +52432,23 @@
     "uk": "Типовий профіль завжди запускається з маршрутизатором, вибраним на сторінці «Маршрутизатор моделей». Щоб вибрати власний, створіть іменований профіль.",
     "ca": "El perfil predeterminat sempre s'inicia amb l'encaminador triat a la pàgina Encaminador de models. Crea un perfil amb nom per triar-ne un de propi.",
     "id": "Profil default selalu diluncurkan dengan router yang dipilih di halaman Model Router. Buat profil bernama untuk memilih router sendiri."
+  },
+  "SETTINGS$AGENT_PROFILE_ROUTER_FIRST": {
+    "en": "First saved router",
+    "ja": "最初に保存されたルーター",
+    "zh-CN": "第一个已保存的路由器",
+    "zh-TW": "第一個已儲存的路由器",
+    "ko-KR": "처음 저장된 라우터",
+    "no": "Første lagrede ruter",
+    "it": "Primo router salvato",
+    "pt": "Primeiro roteador salvo",
+    "es": "Primer enrutador guardado",
+    "ar": "أول موجّه محفوظ",
+    "fr": "Premier routeur enregistré",
+    "tr": "İlk kaydedilen yönlendirici",
+    "de": "Erster gespeicherter Router",
+    "uk": "Перший збережений маршрутизатор",
+    "ca": "Primer encaminador desat",
+    "id": "Router tersimpan pertama"
   }
 }

@@ -78,6 +78,7 @@ import {
   agentProfileSupportsInstructions,
   agentProfileSupportsSkills,
   agentProfileSupportsTools,
+  agentProfileSupportsRouter,
 } from "#/api/agent-profiles-service/profile-field-support";
 import { useSearchSecrets } from "#/hooks/query/use-get-secrets";
 
@@ -101,8 +102,9 @@ type AgentSettingsSnapshot = {
 };
 
 const TOOL_CONCURRENCY_FIELD_KEY = "tool_concurrency_limit";
-// Not a valid meta-profile name, so it can't collide with one.
+// Not valid meta-profile names, so they can't collide with one.
 const ROUTER_OFF_KEY = "__off__";
+const ROUTER_FIRST_KEY = "__first__";
 const MCP_SERVER_REFS_KEY = "mcp_server_refs";
 const SECRET_REFS_KEY = "secret_refs";
 const TOOLS_KEY = "tools";
@@ -864,15 +866,19 @@ export function AgentSettingsScreen({
   };
   // --- Model Router (OpenHands; stored on the profile) ---
   // `default` launches with the router chosen on the Model Router page instead.
-  const routerEditable = !isDefaultProfile;
+  const routerSupported = agentProfileSupportsRouter();
+  const routerEditable = routerSupported && !isDefaultProfile;
   const { data: metaProfilesData } = useMetaProfiles({
     enabled: routerEditable,
   });
-  const initialRouter =
-    agentSettingsOverride?.enable_classify_and_switch_llm_tool === true &&
-    typeof agentSettingsOverride?.meta_profile_ref === "string"
-      ? agentSettingsOverride.meta_profile_ref
-      : null;
+  // On without a name means the server picks the first saved router.
+  let initialRouter: string | null = null;
+  if (agentSettingsOverride?.enable_classify_and_switch_llm_tool === true) {
+    initialRouter =
+      typeof agentSettingsOverride.meta_profile_ref === "string"
+        ? agentSettingsOverride.meta_profile_ref
+        : ROUTER_FIRST_KEY;
+  }
   const [router, setRouter] = useState<string | null>(initialRouter);
   useEffect(() => {
     setRouter(initialRouter);
@@ -882,7 +888,10 @@ export function AgentSettingsScreen({
   );
   // A router that no longer exists fails the launch, so keep it visible.
   const routerDangling =
-    router !== null && !!metaProfilesData && !routerNames.includes(router);
+    router !== null &&
+    router !== ROUTER_FIRST_KEY &&
+    !!metaProfilesData &&
+    !routerNames.includes(router);
 
   // --- Save control ---
   // Ref-backed so the exposed builder/credential fns read the freshest state at
@@ -1061,7 +1070,7 @@ export function AgentSettingsScreen({
       selectedTools: orderedSelectedTools,
       toolParams: initialTools.params,
       toolCatalogLoaded,
-      router: routerEditable ? router : undefined,
+      router: routerDirty ? router : undefined,
       systemPromptMode,
       systemPromptText,
       systemPromptEditable: showSystemPrompt,
@@ -1204,7 +1213,7 @@ export function AgentSettingsScreen({
         </div>
       ) : null}
 
-      {!isAcp ? (
+      {!isAcp && routerSupported ? (
         <div
           className="flex flex-col gap-2.5"
           data-testid="agent-settings-router"
@@ -1223,6 +1232,14 @@ export function AgentSettingsScreen({
                     key: ROUTER_OFF_KEY,
                     label: t(I18nKey.SETTINGS$AGENT_PROFILE_ROUTER_OFF),
                   },
+                  ...(initialRouter === ROUTER_FIRST_KEY
+                    ? [
+                        {
+                          key: ROUTER_FIRST_KEY,
+                          label: t(I18nKey.SETTINGS$AGENT_PROFILE_ROUTER_FIRST),
+                        },
+                      ]
+                    : []),
                   ...[
                     ...routerNames,
                     ...(routerDangling && router ? [router] : []),

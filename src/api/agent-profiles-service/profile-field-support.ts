@@ -19,3 +19,8 @@ export function agentProfileSupportsTools(): boolean {
 export function agentProfileSupportsSkills(): boolean {
   return getActiveBackend().backend.kind !== "cloud";
 }
+
+/** Local only: cloud backends keep routers in the organization's store. */
+export function agentProfileSupportsRouter(): boolean {
+  return getActiveBackend().backend.kind !== "cloud";
+}
