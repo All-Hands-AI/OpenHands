@@ -585,6 +585,92 @@ test.describe("UI regressions", () => {
     await expect(page.getByTestId("loading-older-events")).toHaveCount(0);
   });
 
+  // ── Drag-selection stays inside the message feed ─────────────────
+
+  /**
+   * Drags from a message in the feed past the top/bottom edge. Without the
+   * clamp the selection escapes to the pane header (up) or the composer
+   * (down); with it the focus stays inside the feed.
+   */
+  async function dragSelectionPastEdge(page: Page, direction: "up" | "down") {
+    const scroller = await waitForScrollableConversation(page);
+    // Park mid-feed, then let any auto-scroll settle before measuring so the
+    // pointer coordinates still point at a message when the drag starts.
+    await scroller.evaluate((el) => {
+      const feed = el;
+      feed.scrollTop = Math.round((feed.scrollHeight - feed.clientHeight) / 2);
+    });
+    await page.waitForTimeout(300);
+
+    const geometry = await scroller.evaluate((el, dir) => {
+      const feed = el;
+      const bounds = feed.getBoundingClientRect();
+      const walker = document.createTreeWalker(feed, NodeFilter.SHOW_TEXT);
+      const candidates: { x: number; y: number }[] = [];
+      let node: Node | null;
+      while ((node = walker.nextNode())) {
+        if (!node.textContent || node.textContent.trim().length < 8) continue;
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        const rect = range.getBoundingClientRect();
+        if (rect.top > bounds.top + 30 && rect.bottom < bounds.bottom - 30) {
+          candidates.push({
+            x: Math.round(rect.left + 8),
+            y: Math.round(rect.top + rect.height / 2),
+          });
+        }
+      }
+      const start = dir === "down" ? candidates[0] : candidates.at(-1);
+      if (!start) throw new Error(`no draggable message found (${dir})`);
+      // Stay inside the viewport but outside the feed so the selection tries to
+      // escape into the pane header (up) or the composer (down).
+      return {
+        start,
+        targetY: dir === "down" ? window.innerHeight - 1 : 1,
+      };
+    }, direction);
+
+    await page.mouse.move(geometry.start.x, geometry.start.y);
+    await page.mouse.down();
+    await page.mouse.move(geometry.start.x, geometry.targetY, { steps: 30 });
+    await page.waitForTimeout(300);
+
+    const result = await scroller.evaluate((el) => {
+      const feed = el;
+      const selection = window.getSelection();
+      return {
+        focusInFeed: feed.contains(selection?.focusNode ?? null),
+        text: selection?.toString() ?? "",
+      };
+    });
+
+    await page.mouse.up();
+    return result;
+  }
+
+  for (const direction of ["up", "down"] as const) {
+    test(`keeps drag-selection in the feed when dragging ${direction} past the edge`, async ({
+      page,
+    }) => {
+      test.setTimeout(60_000);
+      await routeSessionApiKey(page);
+      await routePaginationConversation(page);
+
+      await page.goto(`/conversations/${PAGINATION_CONVERSATION_ID}`, {
+        waitUntil: "domcontentloaded",
+      });
+      await expect(
+        page.getByText("Pagination message 100", { exact: true }),
+      ).toBeVisible({ timeout: 15_000 });
+
+      const selection = await dragSelectionPastEdge(page, direction);
+
+      expect(selection.focusInFeed).toBe(true);
+      expect(selection.text.length).toBeGreaterThan(0);
+      expect(selection.text).not.toContain("Disconnected");
+    });
+  }
+
   // ── #1076: workspace selection persistence ───────────────────────
 
   test("selected workspace persists after navigating away and returning", async ({
