@@ -5,10 +5,6 @@ import { OpenHandsEvent } from "#/types/agent-server/core";
 import { GenericEventMessage } from "#/components/features/chat/generic-event-message";
 import { cn } from "#/utils/utils";
 import { I18nKey } from "#/i18n/declaration";
-import {
-  statusToneBadgeClassName,
-  statusToneTextClassName,
-} from "#/utils/status-tone-classes";
 
 interface HookExecutionEventMessageProps {
   event: OpenHandsEvent;
@@ -52,22 +48,9 @@ function getStatusText(blocked: boolean, success: boolean): string {
 }
 
 function getStatusClassName(blocked: boolean, success: boolean): string {
-  if (blocked) {
-    return cn(
-      statusToneBadgeClassName.warning,
-      "dark:bg-amber-900/50 dark:text-amber-300",
-    );
-  }
-  if (success) {
-    return cn(
-      statusToneBadgeClassName.success,
-      "dark:bg-green-900/50 dark:text-green-300",
-    );
-  }
-  return cn(
-    statusToneBadgeClassName.danger,
-    "dark:bg-red-900/50 dark:text-red-300",
-  );
+  if (blocked) return "bg-feedback-warning/10 text-feedback-warning";
+  if (success) return "bg-feedback-success/10 text-feedback-success";
+  return "bg-feedback-error/10 text-feedback-error";
 }
 
 export function HookExecutionEventMessage({
@@ -121,7 +104,7 @@ export function HookExecutionEventMessage({
       )}
 
       {event.blocked && event.reason && (
-        <div className="text-warning dark:text-amber-400">
+        <div className="text-feedback-warning">
           <span className="text-text-subtle">
             {t(I18nKey.HOOK$BLOCKED_REASON)}:
           </span>{" "}
@@ -137,9 +120,7 @@ export function HookExecutionEventMessage({
       )}
 
       {event.error && (
-        <div
-          className={cn(statusToneTextClassName.danger, "dark:text-red-400")}
-        >
+        <div className="text-feedback-error">
           <span className="text-text-subtle">{t(I18nKey.HOOK$ERROR)}:</span>{" "}
           {event.error}
         </div>
@@ -157,7 +138,7 @@ export function HookExecutionEventMessage({
       {event.stderr && (
         <div>
           <span className="text-text-subtle">{t(I18nKey.HOOK$STDERR)}:</span>
-          <pre className="text-xs bg-surface p-2 rounded mt-1 overflow-x-auto max-h-40 overflow-y-auto text-warning dark:text-amber-300">
+          <pre className="text-xs bg-surface p-2 rounded mt-1 overflow-x-auto max-h-40 overflow-y-auto text-feedback-warning">
             {event.stderr}
           </pre>
         </div>

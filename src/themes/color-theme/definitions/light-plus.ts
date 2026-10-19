@@ -113,10 +113,10 @@ export const LIGHT_PLUS_TOKENS: Partial<
   "--oh-border-subtle": "#D1D1D1",
   "--oh-separator": "rgba(31, 31, 31, 0.16)",
   "--oh-divider": "color-mix(in srgb, var(--oh-contrast) 24%, transparent)",
-  "--oh-focus": "#007ACC",
+  "--oh-focus": "#0075C4",
   "--oh-status-success": "#0E743B",
   "--oh-status-error": "#C12A1C",
-  "--oh-link": "#0068AE",
+  "--oh-link": "#005A99",
   "--oh-info": "#0068AE",
   // Opaque tints: a translucent 10% fill darkens over tertiary/raised panels
   // and drops the tone ink below 4.5:1. Solarized inherits these references.

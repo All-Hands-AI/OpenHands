@@ -22,7 +22,6 @@ import { useTracking } from "#/hooks/use-tracking";
 import { I18nKey } from "#/i18n/declaration";
 import ChevronDownSmallIcon from "#/icons/chevron-down-small.svg?react";
 import { cn } from "#/utils/utils";
-import { statusToneBannerClassName } from "#/utils/status-tone-classes";
 import { getBackendStatusLabel } from "#/components/features/backends/backend-status-label";
 
 interface CheckBackendStepProps {
@@ -56,16 +55,15 @@ function ConnectionBanner({
         role="status"
         data-testid="onboarding-backend-connected"
         className={cn(
-          "flex items-start gap-3 rounded-xl px-4 py-3 dark:border-green-500/40 dark:bg-green-500/10",
-          statusToneBannerClassName.success,
+          "flex items-start gap-3 rounded-xl border border-status-success/40 bg-status-success/5 px-4 py-3",
         )}
       >
-        <CheckCircle2 className="mt-0.5 size-5 shrink-0 dark:text-green-400" />
+        <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-status-success" />
         <div className="flex flex-col gap-1">
-          <span className="text-sm font-medium dark:text-green-200">
+          <span className="text-sm font-medium text-feedback-success">
             {t(I18nKey.ONBOARDING$BACKEND_CONNECTED_TITLE)}
           </span>
-          <span className="text-xs text-foreground dark:text-green-200/80">
+          <span className="text-xs text-feedback-success">
             {t(I18nKey.ONBOARDING$BACKEND_CONNECTED_BODY)}
           </span>
         </div>
@@ -82,17 +80,14 @@ function ConnectionBanner({
       <div
         role="alert"
         data-testid="onboarding-backend-disconnected"
-        className={cn(
-          "flex items-start gap-3 rounded-xl px-4 py-3 dark:border-red-500/40 dark:bg-red-500/10",
-          statusToneBannerClassName.danger,
-        )}
+        className="flex items-start gap-3 rounded-xl border border-status-error/40 bg-status-error/5 px-4 py-3"
       >
-        <AlertCircle className="mt-0.5 size-5 shrink-0 dark:text-red-400" />
+        <AlertCircle className="mt-0.5 size-5 shrink-0 text-status-error" />
         <div className="flex flex-col gap-1">
-          <span className="text-sm font-medium dark:text-red-200">
+          <span className="text-sm font-medium text-feedback-error">
             {statusLabel}
           </span>
-          <span className="text-xs text-foreground dark:text-red-200/80">
+          <span className="text-xs text-feedback-error">
             {t(I18nKey.ONBOARDING$BACKEND_DISCONNECTED_BODY)}
           </span>
         </div>

@@ -1,5 +1,6 @@
 import React from "react";
 import { AppearancePortal } from "#/components/shared/appearance-portal";
+import { useEscapeBoundary } from "#/hooks/use-close-on-escape";
 import { useModalFocus } from "./use-modal-focus";
 
 interface ModalBackdropProps {
@@ -25,6 +26,9 @@ export function ModalBackdrop({
   "aria-label": ariaLabel,
 }: ModalBackdropProps) {
   const focus = useModalFocus({ elevated });
+  // The dialog is on top: menus and drawers opened before it never take its
+  // Escape, whether or not it closes on Escape itself.
+  useEscapeBoundary(true);
 
   React.useEffect(() => {
     if (!closeOnEscape) return undefined;

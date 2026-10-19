@@ -14,6 +14,7 @@ import {
   buildStartConversationRequest,
   buildStartConversationRequestWithEncryptedSettings,
   fetchBackendExecutionRuntime,
+  backendSupportsLaunchLlmOverride,
   getDefaultConversationTitle,
   parseRuntimeServicesInfo,
   toAppConversation,
@@ -142,6 +143,55 @@ beforeEach(() => {
 });
 
 describe("buildStartConversationRequest", () => {
+  it.each([{ city: "Tokyo" }, { metric: false }, { days: 0 }])(
+    "rejects unsupported plugin parameters instead of silently stripping %o",
+    (parameters) => {
+      expect(() =>
+        buildStartConversationRequest({
+          settings: DEFAULT_SETTINGS,
+          plugins: [{ source: "local-plugin", parameters }],
+        }),
+      ).toThrow();
+    },
+  );
+
+  it.each(
+    [5, 0, true, false, "", "Tokyo", [], [false]].map((parameters) => ({
+      parameters,
+    })),
+  )(
+    "rejects malformed plugin parameters instead of silently stripping $parameters",
+    ({ parameters }) => {
+      // Launch links can carry JSON values outside PluginSpec's static type.
+      const plugins = JSON.parse(
+        JSON.stringify([{ source: "local-plugin", parameters }]),
+      );
+      expect(() =>
+        buildStartConversationRequest({ settings: DEFAULT_SETTINGS, plugins }),
+      ).toThrow();
+    },
+  );
+
+  it.each([undefined, null, {}])(
+    "keeps coordinate-only plugins when parameters are %o",
+    (parameters) => {
+      const payload = buildStartConversationRequest({
+        settings: DEFAULT_SETTINGS,
+        plugins: [
+          {
+            source: "local-plugin",
+            ref: "main",
+            repo_path: "plugin",
+            parameters,
+          },
+        ],
+      });
+      expect(payload.plugins).toEqual([
+        { source: "local-plugin", ref: "main", repo_path: "plugin" },
+      ]);
+    },
+  );
+
   it("includes the resolved title LLM profile when configured", () => {
     const payload = buildStartConversationRequest({
       settings: DEFAULT_SETTINGS,
@@ -1513,6 +1563,20 @@ describe("buildRuntimeServicesSystemSuffix", () => {
 
     expect(runtime).toBe("local");
     expect(mockGetServerInfo).toHaveBeenCalledOnce();
+  });
+
+  it("reports the per-launch LLM override from server capabilities", async () => {
+    mockGetCachedAgentServerInfo.mockReturnValue({
+      version: "1.54.0",
+      capabilities: ["tool_catalog_v1"],
+    });
+    await expect(backendSupportsLaunchLlmOverride()).resolves.toBe(false);
+
+    mockGetCachedAgentServerInfo.mockReturnValue({
+      version: "1.54.0",
+      capabilities: ["tool_catalog_v1", "agent_launch_pipeline_v1"],
+    });
+    await expect(backendSupportsLaunchLlmOverride()).resolves.toBe(true);
   });
 });
 

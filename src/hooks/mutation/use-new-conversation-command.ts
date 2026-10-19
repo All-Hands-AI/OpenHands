@@ -2,7 +2,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 import { I18nKey } from "#/i18n/declaration";
-import AgentServerConversationService from "#/api/conversation-service/agent-server-conversation-service.api";
 import {
   displayErrorToast,
   displaySuccessToast,
@@ -13,6 +12,8 @@ import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { useSettings } from "#/hooks/query/use-settings";
 import { useMetaProfiles } from "#/hooks/query/use-meta-profiles";
 import { useTracking } from "#/hooks/use-tracking";
+import { useActiveBackend } from "#/contexts/active-backend-context";
+import { launchConversation } from "#/hooks/mutation/resolve-conversation-launch";
 
 export const useNewConversationCommand = () => {
   const queryClient = useQueryClient();
@@ -22,6 +23,7 @@ export const useNewConversationCommand = () => {
   const { data: settings } = useSettings();
   const { data: metaProfiles } = useMetaProfiles();
   const { trackConversationCreated } = useTracking();
+  const { backend, orgId } = useActiveBackend();
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -32,7 +34,13 @@ export const useNewConversationCommand = () => {
       // /new reuses the parent conversation's sandbox (matches OpenHands
       // cloud behavior); it is NOT a sub-conversation, so parent_conversation_id
       // and agent_type stay undefined.
-      const startTask = await AgentServerConversationService.createConversation(
+      const startTask = await launchConversation(
+        {
+          queryClient,
+          backendId: backend.id,
+          orgId,
+          isCloud: backend.kind === "cloud",
+        },
         {
           sandboxId: conversation.sandbox_id ?? undefined,
           // Only stamp the toggle when it's on so the default /new path

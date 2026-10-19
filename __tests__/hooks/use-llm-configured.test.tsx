@@ -23,7 +23,14 @@ vi.mock("#/contexts/active-backend-context", () => ({
   useActiveBackend: () => useActiveBackendMock(),
 }));
 vi.mock("#/hooks/use-active-agent-profile", () => ({
-  useActiveAgentProfile: () => useActiveAgentProfileMock(),
+  useActiveAgentProfile: () => {
+    const value = useActiveAgentProfileMock();
+    return {
+      isError: false,
+      agentKind: value.activeProfile?.agent_kind,
+      ...value,
+    };
+  },
 }));
 
 function wrapper({ children }: { children: ReactNode }) {
@@ -181,5 +188,27 @@ describe("useLlmConfigured (local, agent-profile-driven)", () => {
 
     const { result } = renderHook(() => useLlmConfigured(), { wrapper });
     expect(result.current.isConfigured).toBe(true);
+  });
+
+  it("stays indeterminate when the profile list failed with nothing cached", () => {
+    useSettingsMock.mockReturnValue({
+      data: {
+        agent_settings: { agent_kind: "acp" },
+        llm_api_key_set: false,
+      },
+    });
+    useLlmProfilesMock.mockReturnValue(
+      llmProfiles("default", [{ name: "default", api_key_set: false }]),
+    );
+    useActiveAgentProfileMock.mockReturnValue({
+      activeProfile: null,
+      agentKind: undefined,
+      isLoading: false,
+      isError: true,
+    });
+
+    const { result } = renderHook(() => useLlmConfigured(), { wrapper });
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.isConfigured).toBe(false);
   });
 });

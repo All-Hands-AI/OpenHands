@@ -1154,7 +1154,7 @@ function BackendOptionTab({
       className={cn(
         "relative flex min-h-14 w-full cursor-pointer items-center gap-2.5 px-2.5 py-2.5 text-left transition-colors",
         "not-last:border-r not-last:border-r-border",
-        "focus-visible:z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-300",
+        "focus-visible:z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus",
         isSelected
           ? "bg-surface-raised text-contrast after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-primary"
           : "text-muted hover:bg-surface-raised hover:text-contrast",
@@ -1276,7 +1276,7 @@ function AgentServerGuidance({ location }: { location: AgentServerLocation }) {
             // fill spans the full row.
             "flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-3 py-2 text-left font-medium",
             "transition-colors hover:bg-interactive-hover",
-            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300",
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
           )}
         >
           <span className="flex min-w-0 items-center gap-2">
@@ -1383,7 +1383,7 @@ function AddBackendChooser({
           type="button"
           data-testid="add-backend-provider-digitalocean"
           onClick={onSelectProvider}
-          className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-border bg-base-secondary px-4 py-3 text-left transition-colors hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300"
+          className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-border bg-base-secondary px-4 py-3 text-left transition-colors hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
         >
           <span
             className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface-raised"
@@ -1636,9 +1636,9 @@ function AddBackendAddModeBody({
         <div
           aria-hidden={providerOpen}
           inert={providerOpen ? true : undefined}
-          style={{ transform: `translateX(${providerOpen ? -100 : 0}%)` }}
           className={cn(
             "w-full transition-transform duration-300 ease-out motion-reduce:transition-none",
+            providerOpen ? "-translate-x-full" : "translate-x-0",
             providerOpen && "pointer-events-none absolute inset-0",
           )}
         >
@@ -1681,9 +1681,9 @@ function AddBackendAddModeBody({
         <div
           aria-hidden={!providerOpen}
           inert={!providerOpen ? true : undefined}
-          style={{ transform: `translateX(${providerOpen ? 0 : 100}%)` }}
           className={cn(
             "w-full transition-transform duration-300 ease-out motion-reduce:transition-none",
+            providerOpen ? "translate-x-0" : "translate-x-full",
             !providerOpen && "pointer-events-none absolute inset-0",
           )}
         >
