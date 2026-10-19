@@ -199,6 +199,27 @@ Preconditions:
   control-openhands assert --field count --equals 1 -- browser count 'testid=uncommitted-changes-row'
   ```
 
+Regression check (`F08.files-rich-plain`, toml-file):
+
+```sh
+control-openhands browser viewport desktop
+control-openhands fixture git-repo --name qa-toml-proof
+control-openhands conversation start --workspace qa-toml-proof --prompt 'Use only file_editor to create or replace qa.toml inside this workspace containing exactly four lines: [build-system], requires = [], [project], name = "qa". Put each on its own line; do not include commas between lines. Then reply DONE. Do nothing else.' --wait --timeout 180
+QA_PANEL_OPEN=$(control-openhands browser attr 'testid=right-panel-toggle' aria-pressed | jq -r '."aria-pressed"')
+if [ "$QA_PANEL_OPEN" != true ]; then
+  control-openhands browser click 'testid=right-panel-toggle'
+fi
+QA_FILES_SELECTED=$(control-openhands browser attr 'testid=conversation-tab-files' aria-selected | jq -r '."aria-selected"')
+if [ "$QA_FILES_SELECTED" != true ]; then
+  control-openhands browser click 'testid=conversation-tab-files'
+fi
+control-openhands browser click 'testid=files-tab-refresh'
+control-openhands browser click 'testid=file-tree-file-qa.toml'
+control-openhands browser wait 'testid=file-content-viewer-highlighted >> .token.table'
+control-openhands browser screenshot --feature F08.files-rich-plain --name toml-file-proof
+control-openhands assert --field value --equals inline -- browser eval 'getComputedStyle(document.querySelector("[data-testid=file-content-viewer-highlighted] .token.table")).display'
+```
+
 ## Gotchas
 
 - When the drawer is closed, its tabs stay mounted at width 0. `browser count 'testid=files-tab'` is `1` even then, so assert with `browser visible` or `right-panel-toggle` `aria-pressed`.

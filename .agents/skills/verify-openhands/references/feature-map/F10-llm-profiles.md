@@ -117,7 +117,7 @@ Preconditions:
 
 - **Bedrock named-profile import (`F10.default-used`).** In the run-owned launcher environment set `AWS_EC2_METADATA_DISABLED=true`, then `restart` and `doctor`; verify that flag without printing other environment contents. Arrange an own profile with `model: bedrock/anthropic.claude-3-haiku-20240307-v1:0`, `aws_profile_name: qa_nonexistent`, region `us-east-1`, retries `0`, and both `base_url` and `aws_bedrock_runtime_endpoint` `http://127.0.0.1:1/v1`. A dummy-only API-key presence marker is needed for Canvas's send gate; the SDK filters that non-Bedrock key on this IAM path. Activate and start a real Home chat; inspect the error privately. Expected: the dependency imports and the missing named profile is reported before any AWS/provider request. A connection error cannot prove successful Bedrock inference. Restore the launcher environment and active profile, then remove only the own fixture.
 
-- **Unavailable subscription upstream is handled (`F10.subscription`).** Expected: device-start failure reports 502/504 rather than a server crash. Known failure (reproduced twice 2026-10-16, [OpenHands/software-agent-sdk#5880](https://github.com/OpenHands/software-agent-sdk/issues/5880)): real Connect returned 500 with the backend offline. The block uses an owned offline proxy; browser offline alone does not cut the backend request. The cached runtime must already exist: `UV_OFFLINE=1` prevents its dependency resolver from reaching the blocked network. The block changes only this run's environment, keeps model defaults on refused loopback, and restores/restarts it in `EXIT`. The poll branch remains blocked without a genuine pending device token.
+- **Unavailable subscription upstream is handled (`F10.subscription`).** Expected: device-start failure reports 502/504 rather than a server crash. Known failure (reproduced twice 2026-10-16, [OpenHands/software-agent-sdk#5880](https://github.com/OpenHands/software-agent-sdk/issues/5880)): real Connect returned 500 with the backend offline. The block uses an owned offline proxy; browser offline alone does not cut the backend request. The cached runtime must already exist: `UV_OFFLINE=1` prevents its dependency resolver from reaching the blocked network. The block changes only this run's environment, keeps model defaults on refused loopback, and restores/restarts it in `EXIT`. The offline restart also overrides the current command's proxy variables because the harness deliberately refreshes machine-scoped proxy settings from the caller when restarting; editing only the saved launcher environment does not make the backend offline. The poll branch remains blocked without a genuine pending device token.
 
   ```sh known-bug F10.subscription offline-start
   QA_SUB_ENV="$OH_VERIFY_RUN/private/qa-known-subscription-env.json"
@@ -135,7 +135,7 @@ Preconditions:
   d['NO_PROXY']=d['no_proxy']='127.0.0.1,localhost,::1'
   p.write_text(json.dumps(d))
   PYENV
-  control-openhands restart --timeout 120
+  env HTTP_PROXY=http://127.0.0.1:1 HTTPS_PROXY=http://127.0.0.1:1 ALL_PROXY=http://127.0.0.1:1 http_proxy=http://127.0.0.1:1 https_proxy=http://127.0.0.1:1 all_proxy=http://127.0.0.1:1 NO_PROXY=127.0.0.1,localhost,::1 no_proxy=127.0.0.1,localhost,::1 UV_OFFLINE=1 control-openhands restart --timeout 120
   control-openhands doctor
   control-openhands browser viewport desktop
   control-openhands browser goto /settings/llm
@@ -146,6 +146,28 @@ Preconditions:
   control-openhands browser click 'testid=subscription-connect' --observe 'role=status' --observe-ms 1000
   control-openhands assert --field recent.0.status --matches '^(502|504)$' --bug 'recent.0.status eq 500 && recent.0.path eq "/api/llm/subscription/openai/device/start"' -- browser network --filter '/api/llm/subscription/openai/device/start'  # bug
   ```
+
+Regression check (`F10.edit`, server-save-reason). Precondition: an ordinary configured active profile (for example the skill's DeepSeek preset) already exists; do not activate the disposable `QA_KNOWN_SAVE_REASON` profile. On an empty registry, first-profile auto-activation would change the scenario and make cleanup incomplete. The real 500 is the refused-save fixture for this UI check, not the expected SDK error contract (see the separate SDK known failure below):
+
+```sh
+trap 'control-openhands browser reload >/dev/null; control-openhands api DELETE /api/profiles/QA_KNOWN_SAVE_REASON --write >/dev/null; control-openhands browser goto /settings/llm >/dev/null' EXIT
+control-openhands api POST /api/profiles/QA_KNOWN_SAVE_REASON --write --data '{"llm":{"model":"openai/gpt-4o","api_key":"qa-not-real","base_url":"http://127.0.0.1:1/v1","num_retries":0,"timeout":2},"include_secrets":true}'
+control-openhands browser viewport desktop
+control-openhands browser goto /settings/llm
+control-openhands browser wait '[data-testid=profile-row]:has([title="QA_KNOWN_SAVE_REASON"])'
+control-openhands browser click '[data-testid=profile-row]:has([title="QA_KNOWN_SAVE_REASON"]) >> testid=profile-menu-trigger'
+control-openhands browser click 'testid=profile-edit'
+control-openhands browser click 'testid=sdk-section-all-toggle'
+control-openhands browser fill 'testid=sdk-settings-llm.max_input_tokens' 16000
+control-openhands browser toasts --history --clear
+control-openhands browser network --clear
+control-openhands browser click 'testid=save-profile-btn' --observe 'testid=save-profile-btn' --observe-ms 3000
+control-openhands assert --field recent.0.status --equals 500 -- browser network --filter '/api/profiles/QA_KNOWN_SAVE_REASON'
+control-openhands assert --field text --equals 'Edit LLM Profile' -- browser text 'testid=profile-editor-title'
+control-openhands browser screenshot --feature F10.edit --name server-save-reason
+control-openhands assert --field toasts.0.text --matches 'configured model.*16,000.*below the minimum of 16,384' -- browser toasts
+```
+
 
 ## Gotchas
 
@@ -180,3 +202,4 @@ Preconditions:
 - Known issue [OpenHands/software-agent-sdk#5862](https://github.com/OpenHands/software-agent-sdk/issues/5862): DeepSeek invalid-key401 responses can be classified as bad-request errors. Blocked by this pass's loopback-only provider routing: a real invalid-key validation request to DeepSeek must be authorized to capture its actual 401 shape. No usable key or successful inference is needed, but a loopback connection error does not prove this classification. (`F10.create-validation`).
 - Known issue [OpenHands/software-agent-sdk#5838](https://github.com/OpenHands/software-agent-sdk/issues/5838): A live LLM switch during a running tool step can be acknowledged before the new LLM is persisted for GET/restart. Blocked: needs a genuine model-issued bounded tool step (for example `sleep 20`) and an approved starting model. Refused-loopback initialization never enters that step. (`F10.default-used`).
 - Known issue [#17806](https://github.com/OpenHands/OpenHands/issues/17806): A model-only Save must preserve an untouched key. Current SDK 1.55 refused-loopback validation rejects Save before persistence; the stored key marker remains set. Completing Basic/Advanced preserved-key and runtime-switch proof needs an approved route that accepts preflight. Keep dummy traffic on refused loopback until an external route is authorized; a rejected Save does not establish either key loss or successful preservation through Save. (`F10.edit`).
+- Known failure (reproduced 2026-10-17, [OpenHands/software-agent-sdk#6026](https://github.com/OpenHands/software-agent-sdk/issues/6026)) (`F10.edit`): validating or saving Max Input Tokens `16000`, below the 16,384 minimum, answers 500 instead of a client 4xx. Canvas displays the server's context-window reason and keeps the editor open; the separate Agent Server status-code defect remains.

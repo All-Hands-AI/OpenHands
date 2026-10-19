@@ -30,7 +30,7 @@ Source: `src/routes/conversation.tsx`, `src/components/features/conversation/`, 
 - `F07.delete-confirm`: Delete Conversation names the title in a confirmation; Cancel keeps it, Confirm Delete removes it and returns to `/conversations`.
 - `F07.branch-from-message`: Branch from here on a message forks the conversation as `<title> (branch)`; on a user message the message is left out and its text goes back into the composer.
 - `F07.right-panel-toggle`: the header panel button shows and hides the right tabs panel (closed again after a reload).
-- `F07.overview-toggle`: the header (i) button shows and hides the Overview column, which is exclusive with the right panel.
+- `F07.overview-toggle`: the header (i) button shows and hides the Overview column, which is exclusive with the right panel. At phone width it should reveal the Overview content on click. Known failure (reproduced twice 2026-10-17, [#16792](https://github.com/OpenHands/OpenHands/issues/16792)): at 390×844 the label changes from Show overview to Hide overview, but neither the Overview panel nor a phone dropdown renders.
 - `F07.git-actions-menu`: the header Git actions menu offers Commits, Pull, Push, Create PR and Create New Branch; each pre-fills the composer without sending, and Send becomes enabled so the user can submit or edit the prompt.
 - `F07.git-control-bar`: under the composer, a folder workspace shows an inert workspace chip and the branch; with a GitHub `origin` the repo and branch chips link to GitHub and Pull, Push and Pull Request appear.
 - `F07.git-control-bar-send`: the Pull, Push and Pull Request chips send their git prompt to the agent at once.
@@ -121,6 +121,28 @@ Preconditions:
   control-openhands browser screenshot --feature F07.delete-confirm --name stale-delete
   control-openhands assert --field recent.0.status --equals 404 --bug-shows 400 -- browser network --filter "/api/conversations/$QA_ID"  # bug
   ```
+
+Regression check (`F07.display-cost`, phone-menu):
+
+```sh
+control-openhands browser viewport phone
+control-openhands conversation start --prompt 'Reply only OK. Do not run tools.' --wait --timeout 180
+control-openhands browser click 'testid=chat-pane-header >> testid=ellipsis-button'
+control-openhands browser click 'testid=conversation-name-context-menu >> testid=display-cost-button'
+control-openhands browser eval 'new Promise(r=>setTimeout(r,1000))'
+control-openhands browser screenshot --feature F07.display-cost --name phone-menu-proof
+control-openhands assert --field value --equals true -- browser eval 'location.pathname.endsWith("/panel") && document.querySelector("[data-testid=usage-panel]") !== null'
+```
+
+```sh known-bug F07.overview-toggle phone-overview
+control-openhands browser viewport phone
+control-openhands conversation start --prompt 'Reply only OK. Do not run any tools.' --wait --timeout 180
+control-openhands browser wait 'testid=conversation-overview-toggle'
+control-openhands browser click 'testid=conversation-overview-toggle'
+control-openhands assert --field aria-label --equals 'Hide overview' -- browser attr 'testid=conversation-overview-toggle' aria-label
+control-openhands browser screenshot --feature F07.overview-toggle --name phone-overview
+control-openhands assert --field count --equals 1 --bug-shows 0 -- browser count 'testid=conversation-overview-panel' # bug
+```
 
 ## Gotchas
 
