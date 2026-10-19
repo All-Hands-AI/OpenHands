@@ -99,8 +99,8 @@ function recorder(path = []) {
   };
 }
 
-function run(args, env = {}) {
-  const result = spawnSync(process.execPath, [cli, ...args], {
+function run(args, env = {}, execArgv = []) {
+  const result = spawnSync(process.execPath, [...execArgv, cli, ...args], {
     encoding: "utf8",
     env: {
       ...process.env,
@@ -206,6 +206,103 @@ test("usage errors exit 2 with a hint; a missing run exits 3", () => {
   const noRun = run(["doctor"]);
   assert.equal(noRun.status, 3);
   assert.match(noRun.json.hint, /control-openhands launch/);
+});
+
+// Exercise the real launch guard with deterministic OS inputs. An empty PATH
+// stops an accepted measurement at the next prerequisite, before any build or
+// service starts. The preload changes only memory readings in this child.
+function launchWithMemory(memory, flags = []) {
+  const emptyPath = mkdtempSync(join(tmpdir(), "cov-empty-path-"));
+  const preload = `
+    import fs from "node:fs";
+    import os from "node:os";
+    import { syncBuiltinESMExports } from "node:module";
+    const memory = ${JSON.stringify(memory)};
+    Object.defineProperty(process, "platform", { value: memory.platform });
+    process.availableMemory = () => memory.availableMb * 1024 * 1024;
+    os.freemem = () => memory.freeMb * 1024 * 1024;
+    const readFileSync = fs.readFileSync;
+    fs.readFileSync = (path, ...args) => {
+      if (path !== "/proc/meminfo") return readFileSync(path, ...args);
+      if (memory.meminfo !== undefined) return memory.meminfo;
+      throw new Error("/proc/meminfo is unavailable");
+    };
+    syncBuiltinESMExports();
+  `;
+  try {
+    return run(["launch", "--new", ...flags], { PATH: emptyPath }, [
+      "--import",
+      `data:text/javascript,${encodeURIComponent(preload)}`,
+    ]);
+  } finally {
+    rmSync(emptyPath, { recursive: true, force: true });
+  }
+}
+
+test.each([
+  {
+    name: "macOS launch accepts available memory beyond unused pages",
+    platform: "darwin",
+    freeMb: 300,
+    availableMb: 8192,
+    error: /uvx is not on PATH/,
+  },
+  {
+    name: "macOS launch refuses genuinely low available memory",
+    platform: "darwin",
+    freeMb: 8192,
+    availableMb: 1024,
+    error: /Only 1024 MB of memory available/,
+  },
+  {
+    name: "macOS launch refuses an unknown native memory reading",
+    platform: "darwin",
+    freeMb: 8192,
+    availableMb: 0,
+    error: /Only 0 MB of memory available/,
+  },
+  {
+    name: "macOS launch honors a custom minimum against available memory",
+    platform: "darwin",
+    freeMb: 300,
+    availableMb: 3000,
+    flags: ["--min-free-mb", "4000"],
+    error: /Only 3000 MB of memory available/,
+  },
+  {
+    name: "Linux launch keeps using MemAvailable",
+    platform: "linux",
+    freeMb: 300,
+    availableMb: 0,
+    meminfo: "MemFree:        307200 kB\nMemAvailable:  8388608 kB\n",
+    error: /uvx is not on PATH/,
+  },
+  {
+    name: "Linux launch keeps the free memory fallback when proc is missing",
+    platform: "linux",
+    freeMb: 4096,
+    availableMb: 0,
+    error: /uvx is not on PATH/,
+  },
+  {
+    name: "Linux launch keeps the free memory fallback without MemAvailable",
+    platform: "linux",
+    freeMb: 1024,
+    availableMb: 8192,
+    meminfo: "MemFree:       1048576 kB\n",
+    error: /Only 1024 MB of memory available/,
+  },
+  {
+    name: "other platforms keep the free memory fallback",
+    platform: "win32",
+    freeMb: 4096,
+    availableMb: 0,
+    error: /uvx is not on PATH/,
+  },
+])("$name", ({ flags, error, ...memory }) => {
+  const result = launchWithMemory(memory, flags);
+  assert.equal(result.status, 3);
+  assert.match(result.json.error, error);
 });
 
 test("keys are refused on argv before any request is made", () => {
