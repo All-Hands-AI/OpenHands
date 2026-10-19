@@ -169,6 +169,10 @@ function normalizeDraft(value: AutomationSetupDraft): AutomationSetupDraft {
     typeof value.editingAutomationId === "string"
       ? value.editingAutomationId.trim()
       : "";
+  const existingCustomTarballPath =
+    typeof value.existingCustomTarballPath === "string"
+      ? value.existingCustomTarballPath.trim()
+      : "";
   const serverDraftId =
     typeof value.serverDraftId === "string" ? value.serverDraftId.trim() : "";
   const materializedAutomationId =
@@ -189,6 +193,7 @@ function normalizeDraft(value: AutomationSetupDraft): AutomationSetupDraft {
     ...(normalizedPlugins.length > 0 ? { plugins: normalizedPlugins } : {}),
     form: normalizedForm,
     ...(editingAutomationId ? { editingAutomationId } : {}),
+    ...(existingCustomTarballPath ? { existingCustomTarballPath } : {}),
     ...(serverDraftId ? { serverDraftId } : {}),
     ...(materializedAutomationId ? { materializedAutomationId } : {}),
     ...(fieldMetadata ? { fieldMetadata } : {}),
