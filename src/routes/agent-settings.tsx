@@ -43,6 +43,16 @@ import {
   type ProfileScopeMode,
 } from "#/constants/profile-scope";
 import { useToolCatalog } from "#/hooks/query/use-tool-catalog";
+import { useSkillCatalog } from "#/hooks/query/use-skill-catalog";
+import {
+  buildSkillEnablementFilter,
+  profileSkillEnablement,
+  publicSkillTest,
+  sameSkillSelection,
+  toggleSkill,
+  toProfileSkillFields,
+  type SkillEnablement,
+} from "#/utils/skill-enablement";
 import { flattenMcpConfig } from "#/utils/mcp-installed-servers";
 import { parseMcpConfig } from "#/utils/mcp-config";
 import {
@@ -134,6 +144,8 @@ export type AgentProfileFieldsDraft =
       mcp_server_refs: string[] | null;
       tool_concurrency_limit?: number;
       secret_refs?: string[] | null;
+      public_skills?: string[];
+      disabled_skills?: string[];
       tools?: ProfileToolSpec[] | null;
       persona?: string | null;
       system_message_suffix?: string | null;
@@ -165,6 +177,8 @@ export interface AgentProfileFieldsInput {
   selectedSecrets: string[];
   /** Whether the backend's *profile* model accepts `secret_refs`. */
   secretRefsSupportedOnProfile: boolean;
+  /** The skill selection to store; undefined keeps the stored one. */
+  skillEnablement?: SkillEnablement;
   toolsMode?: ProfileScopeMode;
   selectedTools?: string[];
   /** Stored params per tool, kept so the editor cannot drop what it ignores. */
@@ -211,6 +225,7 @@ export function buildAgentProfileFields(
     secretsMode,
     selectedSecrets,
     secretRefsSupportedOnProfile,
+    skillEnablement,
     toolsMode = "standard",
     selectedTools = [],
     toolParams = {},
@@ -249,6 +264,8 @@ export function buildAgentProfileFields(
       ...mcpRefs,
       ...secretRefs,
     };
+  if (skillEnablement)
+    Object.assign(fields, toProfileSkillFields(skillEnablement));
   if (systemPromptEditable) {
     const text = systemPromptText.trim() ? systemPromptText : null;
     fields.system_message_suffix = systemPromptMode === "append" ? text : null;
@@ -319,9 +336,8 @@ export function AgentSettingsScreen({
   const { data: schema } = useAgentSettingsSchema(
     settings?.agent_settings_schema,
   );
-  const acpProviders = getAcpProvidersForBackend(
-    useActiveBackend().backend.kind,
-  );
+  const backendKind = useActiveBackend().backend.kind;
+  const acpProviders = getAcpProvidersForBackend(backendKind);
 
   const fields = React.useMemo(
     () => schema?.sections.flatMap((section) => section.fields),
@@ -456,6 +472,73 @@ export function AgentSettingsScreen({
         .filter((name) => selectedMcpServers.includes(name)),
     [mcpCatalog, selectedMcpServers],
   );
+  // --- Skills (OpenHands; the selection a profile launch loads) ---
+  // `default` launches with the Skills page selection instead.
+  const skillsEditable = !isDefaultProfile;
+  const {
+    data: skillCatalog,
+    isError: skillCatalogFailed,
+    refetch: refetchSkillCatalog,
+  } = useSkillCatalog({ enabled: skillsEditable });
+  const isPublicSkill = React.useMemo(
+    () => publicSkillTest(skillCatalog),
+    [skillCatalog],
+  );
+  const storedPublicSkills = agentSettingsOverride?.public_skills;
+  const hasStoredSkillList = Array.isArray(storedPublicSkills);
+  const initialSkills = React.useMemo<SkillEnablement | undefined>(() => {
+    const disabled = agentSettingsOverride?.disabled_skills;
+    const stored = {
+      public_skills: hasStoredSkillList
+        ? (storedPublicSkills as string[])
+        : null,
+      disabled_skills: Array.isArray(disabled) ? (disabled as string[]) : [],
+    };
+    if (hasStoredSkillList) return profileSkillEnablement(stored);
+    // No stored list means every catalog skill, which only the catalog can name.
+    if (!skillCatalog) return undefined;
+    return profileSkillEnablement(
+      stored,
+      skillCatalog
+        .filter((skill) => skill.origin === "public")
+        .map((skill) => skill.name),
+    );
+  }, [
+    agentSettingsOverride,
+    hasStoredSkillList,
+    storedPublicSkills,
+    skillCatalog,
+  ]);
+  const [editedSkills, setEditedSkills] = useState<SkillEnablement | null>(
+    null,
+  );
+  const currentSkills = editedSkills ?? initialSkills;
+  const enabledSkillNames = React.useMemo(() => {
+    if (!skillCatalog || !currentSkills) return [];
+    const isEnabled = buildSkillEnablementFilter(currentSkills, isPublicSkill);
+    return skillCatalog
+      .map((skill) => skill.name)
+      .filter((name) => isEnabled(name));
+  }, [skillCatalog, currentSkills, isPublicSkill]);
+  const toggleProfileSkill = useCallback(
+    (name: string, enabled: boolean) =>
+      setEditedSkills((previous) => {
+        const base = previous ?? initialSkills;
+        return base
+          ? toggleSkill(base, name, enabled, isPublicSkill)
+          : previous;
+      }),
+    [initialSkills, isPublicSkill],
+  );
+  // A seeded or stored list is written back; an unset one only once edited.
+  const skillsToSave = skillsEditable
+    ? (editedSkills ?? (hasStoredSkillList ? initialSkills : undefined))
+    : undefined;
+  const skillsDirty =
+    editedSkills !== null &&
+    initialSkills !== undefined &&
+    !sameSkillSelection(editedSkills, initialSkills);
+
   // --- Secret scope (both variants; a base-model field) ---
   const secretRefsSupportedOnProfile = agentProfileSupportsSecretRefs();
   const { data: savedSecrets } = useSearchSecrets({
@@ -695,7 +778,10 @@ export function AgentSettingsScreen({
         isCustomAcpModel !== loadedSnapshot.isCustomAcpModel
       : toolConcurrency !== initialToolConcurrency || systemPromptDirty);
   const credentialsDirty = acpCredentialForm.isDirty;
-  const isAnyDirty = settingsDirty || credentialsDirty;
+  const isAnyDirty =
+    settingsDirty ||
+    credentialsDirty ||
+    (agentType === "openhands" && skillsDirty);
   const customToolsUninitialized =
     toolCatalogLoaded &&
     agentType === "openhands" &&
@@ -805,6 +891,7 @@ export function AgentSettingsScreen({
       secretsMode,
       selectedSecrets: orderedSelectedSecrets,
       secretRefsSupportedOnProfile,
+      skillEnablement: skillsToSave,
       toolsMode,
       selectedTools: orderedSelectedTools,
       toolParams: initialTools.params,
@@ -1183,6 +1270,67 @@ export function AgentSettingsScreen({
                 : I18nKey.SETTINGS$AGENT_PROFILE_SECRETS_ALL_HINT,
             )}
           </Typography.Text>
+        </div>
+      ) : null}
+
+      {agentType === "openhands" && backendKind !== "cloud" ? (
+        <div
+          className="flex flex-col gap-2.5"
+          data-testid="agent-settings-skills-section"
+        >
+          <Typography.Text className="text-sm">
+            {t(I18nKey.SETTINGS$AGENT_PROFILE_SKILLS)}
+          </Typography.Text>
+          {!skillsEditable ? (
+            <Typography.Text
+              testId="agent-settings-skills-default-profile"
+              className="text-xs text-tertiary-alt"
+            >
+              {t(I18nKey.SETTINGS$AGENT_PROFILE_SKILLS_DEFAULT_PROFILE)}
+            </Typography.Text>
+          ) : (
+            <>
+              {skillCatalog && currentSkills ? (
+                <div className="max-h-80 overflow-y-auto pr-1">
+                  <ProfileScopeList
+                    testId="agent-settings-skills"
+                    items={skillCatalog.map((skill) => ({
+                      name: skill.name,
+                      description: t(
+                        skill.origin === "public"
+                          ? I18nKey.SETTINGS$SKILL_ORIGIN_PUBLIC
+                          : I18nKey.SETTINGS$SKILL_ORIGIN_USER,
+                      ),
+                    }))}
+                    selected={enabledSkillNames}
+                    isDisabled={isSaving}
+                    onToggle={toggleProfileSkill}
+                  />
+                </div>
+              ) : null}
+              {skillCatalogFailed ? (
+                <div
+                  className="flex items-center gap-2"
+                  data-testid="agent-settings-skills-load-failed"
+                >
+                  <Typography.Text className="text-xs text-feedback-error">
+                    {t(I18nKey.SETTINGS$AGENT_PROFILE_SKILLS_LOAD_FAILED)}
+                  </Typography.Text>
+                  <BrandButton
+                    testId="agent-settings-skills-retry"
+                    type="button"
+                    variant="secondary"
+                    onClick={() => refetchSkillCatalog()}
+                  >
+                    {t(I18nKey.SETTINGS$AGENT_PROFILE_TOOLS_RETRY)}
+                  </BrandButton>
+                </div>
+              ) : null}
+              <Typography.Text className="text-xs text-tertiary-alt">
+                {t(I18nKey.SETTINGS$AGENT_PROFILE_SKILLS_HINT)}
+              </Typography.Text>
+            </>
+          )}
         </div>
       ) : null}
 

@@ -20,6 +20,7 @@ import { useSaveAgentProfile } from "#/hooks/mutation/use-save-agent-profile";
 import { useRenameAgentProfile } from "#/hooks/mutation/use-rename-agent-profile";
 import { useAgentProfiles } from "#/hooks/query/use-agent-profiles";
 import { useLlmProfiles } from "#/hooks/query/use-llm-profiles";
+import { useSettings } from "#/hooks/query/use-settings";
 import {
   displayErrorToast,
   displaySuccessToast,
@@ -32,6 +33,10 @@ import { BackNavButton } from "#/components/shared/buttons/back-nav-button";
 import { Typography } from "#/ui/typography";
 import { useSettingsSectionHeader } from "#/contexts/settings-section-header-context";
 import { parseCommand } from "#/utils/acp-command";
+import {
+  defaultSkillEnablement,
+  toProfileSkillFields,
+} from "#/utils/skill-enablement";
 
 type ViewMode = "list" | "create" | "edit";
 
@@ -61,6 +66,10 @@ function toAgentSettingsOverride(
     tools: (profile.tools as SettingsValue) ?? null,
     tool_concurrency_limit: profile.tool_concurrency_limit,
     secret_refs: secretRefs,
+    public_skills:
+      (profile as { public_skills?: string[] | null }).public_skills ?? null,
+    disabled_skills:
+      (profile as { disabled_skills?: string[] }).disabled_skills ?? [],
     persona: profile.persona ?? null,
     system_message_suffix: profile.system_message_suffix ?? null,
   };
@@ -80,6 +89,7 @@ export function AgentProfilesLocalView() {
   const { data: profilesData } = useAgentProfiles();
   const { data: llmProfilesData, isLoading: isLlmProfilesLoading } =
     useLlmProfiles();
+  const { data: settings } = useSettings();
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [profileName, setProfileName] = useState("");
@@ -123,11 +133,15 @@ export function AgentProfilesLocalView() {
   const handleAddProfile = useCallback(() => {
     setProfileName("");
     setEditingProfile(null);
-    setOverride({ agent_kind: "openhands" });
+    // A new profile starts from the skills selected on the Skills page.
+    setOverride({
+      agent_kind: "openhands",
+      ...toProfileSkillFields(defaultSkillEnablement(settings ?? {})),
+    });
     setLlmProfileRef(defaultLlmProfileRef);
     setSaveControl(null);
     setViewMode("create");
-  }, [defaultLlmProfileRef]);
+  }, [defaultLlmProfileRef, settings]);
 
   const handleEditProfile = useCallback(
     async (summary: AgentProfileSummary) => {
