@@ -77,9 +77,12 @@ control-openhands stop                         # stops only this run; evidence s
   every shell command when other agents share the machine: an agent that drives
   someone else's run corrupts both evidence ledgers. For the same reason never
   `pkill -f` or `killall` by pattern; `control-openhands stop` ends only your run.
-- **Launch** refuses to start when less than about 2 GB of memory is free: each
-  run holds an Agent Server, automation, a static frontend and Chromium (about
-  1.5 GB together). Stop runs you are done with; several agents on one machine
+- **Launch** refuses to start when less than about 2 GB of memory is available
+  (Linux `MemAvailable`, macOS `process.availableMemory()`, otherwise unused
+  memory). On macOS, libuv >=1.52 includes reclaimable pages; older Node builds
+  can still refuse conservatively. Each run holds an Agent Server, automation,
+  a static frontend and Chromium (about 1.5 GB together). Stop runs you are done
+  with; several agents on one machine
   should each `launch --new`, export their own `OH_VERIFY_RUN`, and never touch
   another agent's run.
 - **Launch** starts `bin/agent-canvas.mjs` from this checkout with a private
