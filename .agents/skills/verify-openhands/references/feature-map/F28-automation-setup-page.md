@@ -28,12 +28,12 @@ Source: `src/routes/automation-setup-new.tsx`, `src/components/features/automati
 - `F28.event-trigger`: choosing **Event** replaces the schedule with Event source (default **GitHub**, sent as `github`; its menu lists the webhook sources registered on this backend plus **Custom**), Event key (default `issue_comment.created`), **Add Filter** (one free-text filter input), **Ask Agent**, the notice `Event sources need a public URL to deliver webhooks to this instance.`, and a **Test event payload** pre-filled with a JSON object for that source and key. A source the backend has not registered (menu **Custom**, then a typed name) adds **Register this as a custom webhook source**, checked by default.
 - `F28.timeout`: **Add Timeout** adds an optional **Timeout seconds** number field with a remove button; `1800` saves and the draft reads **Ready to test**.
 - `F28.draft-save`: **Save draft** works on any form, valid or not; the first save replaces the URL with `?draftId=<id>`, shows the **Draft saved** bar (relative time, **View test runs**, **Test**) and the toast `Draft saved in this conversation.`, and the save state reads **Saved just now**. The draft appears in the dashboard Drafts group (F21).
-- `F28.draft-validation`: the server validates on save, not on blur. An invalid draft is still saved (`dispatchable: false`) and its first error replaces **Ready to test** in the draft bar: an empty prompt shows `Field required` (also under Prompt), a bad custom cron shows `Value error, Invalid cron expression: every day`. A field error stays until the next save. **Test** stays enabled on a saved invalid draft: it saves again, opens **Test runs** with the same error in a red alert and dispatches nothing.
+- `F28.draft-validation`: the server validates on save, not on blur. An invalid draft is still saved (`dispatchable: false`) and its first error replaces **Ready to test** in the draft bar: an empty prompt shows `Field required` (also under Prompt), a bad custom cron shows `Value error, Invalid cron expression: every day`. A field error stays until the next save. **Test** stays enabled on a saved invalid draft: it saves again, opens **Test runs** with the same error in a red alert and dispatches nothing. Known failure (reproduced twice 2026-10-17, [#18601](https://github.com/OpenHands/OpenHands/issues/18601)): after a successful draft Test, saving an invalid cron and reloading shows a red `Latest test passed` pill instead of the current validation error, although the API marks the draft non-dispatchable. The Test runs alert still shows the correct error.
 - `F28.draft-save-error`: a draft the server refuses outright (a timeout above 1800 returns `422`) sets the save state to **Save failed** and shows one error toast with the reason the API gives (a timeout of 1801 reads `Value error, timeout must not exceed 1800 seconds (30 minutes)`). The draft bar drops its validity pill (no stale **Ready to test**) until a save succeeds.
 - `F28.required-before-test`: Test and Create check locally first and send nothing when a required field is empty: `Add a prompt before continuing.` (Prompt or Plugin kind), `Add a plugin source before continuing.`, `Add Python code before continuing.`, `Add an entrypoint command before continuing.`, `Add a setup script path before continuing.`, `Add a setup script before continuing.`; an event Test with a payload that is not a JSON object shows `Enter a valid JSON object before testing this event automation.` A blank Name is not an error: it is derived from the prompt.
 - `F28.test-gated`: in create mode **Test** stays disabled until the draft is saved and unchanged since; editing any field after a save disables it again until the next **Save draft**.
-- `F28.draft-test`: **Test** on a saved, valid draft opens **Test runs** (with **Back**), shows `Test run started.` and a Pending row; it runs a hidden disabled copy of the draft, not a dashboard automation. Expected: the row reaches Successful or Failed by itself. Known failure #18263 (reproduced again 2026-10-15 on a Custom Python draft): the row stays Pending and the page does not poll the runs after the first request.
-- `F28.create`: **Create Automation** creates the automation enabled, navigates to `/automations/<id>` (a Custom Python automation shows **Script**), and removes the draft from the dashboard Drafts group.
+- `F28.draft-test`: **Test** on a saved, valid draft opens **Test runs** (with **Back**), shows `Test run started.` and a Pending row; it runs a hidden disabled copy of the draft, not a dashboard automation. Expected: the row reaches Successful or Failed by itself. Known failure #18263 (reproduced again 2026-10-15 on a Custom Python draft): the row stays Pending and the page does not poll the runs after the first request. Known failure (reproduced once 2026-10-17, SDK1.55.1, [OpenHands/software-agent-sdk#6024](https://github.com/OpenHands/software-agent-sdk/issues/6024)): gracefully restarting an owned deferred-init Agent Server during the Custom Test command can leave its persisted BashCommand without final BashOutput. Reopening Test runs → View logs showed `RUNNING` / `(no output)`; two postrestart BashOutput searches returned zero. Expected: an interrupted command retains terminal status/output and Logs stops implying it is running. This is the shared F23/F28 RunLogsModal consumer; native Terminal, SIGKILL, phone and fix attribution were not verified.
+- `F28.create`: **Create Automation** creates the automation enabled, navigates to `/automations/<id>` (a Custom Python automation shows **Script**), and removes the draft from the dashboard Drafts group. Known failure (reproduced 2026-10-17, [OpenHands/automation#594](https://github.com/OpenHands/automation/issues/594), automation 1.20.1, local SQLite WAL): successful writes can be invisible to the immediately following request on one keep-alive connection. A real no-pause client returned `Upload not found` on 3/50 upload201→create attempts and `Automation not found` on 2/50 create201→GET attempts. The separately exercised real UI sequence succeeded 21/21; no UI toast failure is claimed from the direct-service test. Expected: successful writes are visible to dependent requests without a delay. All test definitions used disabled inert events, were never dispatched, and were deleted with their uploads.
 - `F28.error-contrast`: the draft bar's error pill and the Test runs error alert use the theme's error color (`text-feedback-error`) and reach at least 4.5:1 in all five color themes. Their tints follow the same theme error color: the pill a 5% tint over the draft bar surface, the alert a 10% tint with a 40% border.
 
 ## How to get to it (user POV)
@@ -50,7 +50,7 @@ Preconditions:
 
 - Baseline state (`launch`, `doctor`, `onboard --skip`). No LLM is needed: every bullet uses the Custom Python kind or never dispatches, and the agent-assisted path stays in F22.
 - Desktop viewport; the `F28.error-contrast` bullet switches color themes (Settings → Application, `F16`) and restores the default.
-- Every recipe below was run as written on 2026-10-16 on a fresh local `control-openhands launch` of main with Agent Server 1.55.1 and no LLM; the blank-form, presets and error-contrast recipes again on 2026-10-17. Documented known failures remain failures.
+- The original recipes were run on 2026-10-16 on a fresh local `control-openhands launch` of main with Agent Server 1.55.1 and no LLM; the blank-form, presets and error-contrast recipes were run again on 2026-10-17. The dated 2026-10-17 maintenance evidence separately proves the added regression checks and known-bug block. Documented known failures remain failures.
 
 - **Blank form (`F28.open-blank`).** Run `control-openhands conversation list`, `control-openhands browser goto /automations`, `control-openhands browser click 'testid=automations-add-automation'` and `control-openhands browser click 'testid=automations-add-automation-create' --expect-url '/automations/setup$'`. Then `browser value 'testid=automation-setup-name'` is `New Automation`, `browser attr 'testid=automation-setup-name' placeholder` is `Standup digest`, `browser value 'testid=automation-setup-prompt'` is empty, `browser attr 'testid=automation-setup-frequency-daily' aria-checked` is `true`, `browser value 'testid=automation-setup-time'` is `09:00`, `browser text 'testid=automation-setup-save-state'` is `Unsaved changes` and `browser enabled 'testid=automation-setup-test'` is `false`. `conversation list` is unchanged.
 - **Presets (`F28.schedule-presets`).** For each of `once`, `hourly`, `daily`, `weekdays`, `weekly`, `custom` run `control-openhands browser click 'testid=automation-setup-frequency-<preset>'` and `control-openhands browser testids 'testid=automation-setup-at-row'` (`browser snapshot` is an ARIA tree and does not list test ids): Once has `automation-setup-datetime`, Hourly only `automation-setup-timezone`, Daily and Weekdays `automation-setup-time`, Weekly also `automation-setup-weekday` (value `1`), Custom `automation-setup-custom-schedule`. Click Weekly, then Custom: `browser value 'testid=automation-setup-custom-schedule'` is Weekly's `0 9 * * 1`. Click Weekly, `browser fill 'testid=automation-setup-time' 10:30`, click Custom: `30 10 * * 1`. Fill the Custom field with `15 8 * * 2` and click Custom again: it stays `15 8 * * 2`. Click Daily, then Custom: `30 10 * * *` (the preset's, not the typed cron). `browser count 'testid=automation-setup-timezone >> option'` is `13`. Click Daily again.
@@ -63,6 +63,54 @@ Preconditions:
 - **Create (`F28.create`).** Run `control-openhands browser click 'testid=automation-setup-create' --expect-url '/automations/[0-9a-f-]{36}$'`. The detail h1 is `QA_F28 Probe 2`, the badge reads Active and the page shows **Script**. `browser goto /automations`: `browser count 'testid=automation-setup-draft-resume-<draft-id>'` is `0`.
 - **Error contrast (`F28.error-contrast`).** Switch to Light+ (`F16`), open a draft whose cron is `every day` (as in the invalid-drafts bullet), and `browser screenshot 'testid=automation-setup-draft-details' --feature F28.error-contrast --name light-plus`. Read the pill's computed `color` and `backgroundColor` with `browser eval`: the background is the text color at alpha `0.05` (Light+ `rgb(192, 40, 45)` and `oklab(0.528 0.170 0.080 / 0.05)`). Composite every ancestor's background down to the pill (painting each on a 1×1 canvas and reading the pixel normalizes `oklab()`), then the text color, and compute the WCAG ratio: at least 4.5:1. Click `testid=automation-setup-test` and inspect `testid=automation-setup-draft-runs-error` the same way: background alpha `0.1`, `borderTopColor` alpha `0.4`, same hue as the text. Repeat both checks in OpenHands-DeepSea, OpenHands-Neutral, OpenHands-Neo and Solarized Light, then restore OpenHands-Neutral. On 2026-10-17 the pill/alert ratios were Light+ 4.86/4.99, DeepSea 5.10/6.16, Neo and Neutral 4.86/4.95, Solarized Light 4.57/4.78.
 - **Cleanup.** Delete `QA_F28 Probe 2` from its kebab and any leftover `QA_F28` draft with its trash icon, as in F21; `api GET /api/automation/v1/drafts` lists none.
+
+Preset-to-Custom regression check (`F28.schedule-presets`):
+
+```sh
+control-openhands browser viewport desktop
+control-openhands browser goto /automations/setup
+control-openhands browser wait 'testid=automation-setup-frequency-weekly'
+control-openhands browser click 'testid=automation-setup-frequency-weekly'
+control-openhands browser fill 'testid=automation-setup-time' '10:30'
+control-openhands browser select 'testid=automation-setup-weekday' '3'
+control-openhands browser click 'testid=automation-setup-frequency-custom'
+control-openhands browser screenshot --feature F28.schedule-presets --name weekly-to-custom-proof
+control-openhands assert --field value --equals '30 10 * * 3' -- browser value 'testid=automation-setup-custom-schedule'
+```
+
+```sh known-bug F28.draft-validation stale-test-success
+control-openhands browser viewport desktop
+control-openhands browser goto /automations/setup
+control-openhands browser fill 'testid=automation-setup-name' QA_Stale_Test_Success
+control-openhands browser click 'testid=automation-setup-kind-custom'
+control-openhands browser click 'testid=automation-setup-frequency-custom'
+control-openhands browser fill 'testid=automation-setup-custom-schedule' '0 0 1 1 *'
+control-openhands browser click 'testid=automation-setup-save-draft'
+control-openhands browser hover 'testid=automation-setup-name'
+control-openhands browser wait-url 'draftId='
+QA_DRAFT_ID=$(control-openhands browser url | jq -r '.url|capture("draftId=(?<id>[a-f0-9-]+)").id')
+trap 'control-openhands api DELETE "/api/automation/v1/drafts/$QA_DRAFT_ID" --write >/dev/null; control-openhands browser goto /automations >/dev/null' EXIT
+control-openhands browser click 'testid=automation-setup-test'
+control-openhands browser wait 'testid=automation-setup-draft-run'
+QA_MATERIALIZED_ID=$(control-openhands api GET "/api/automation/v1/drafts/$QA_DRAFT_ID" | jq -r .body.materialized_automation_id)
+QA_RUN_STATE=''
+for QA_ATTEMPT in $(seq 1 20); do
+  QA_RUN_STATE=$(control-openhands api GET "/api/automation/v1/$QA_MATERIALIZED_ID/runs?limit=10" | jq -r '.body.runs[0].status // ""')
+  [ "$QA_RUN_STATE" = COMPLETED ] && break
+  sleep 3
+done
+[ "$QA_RUN_STATE" = COMPLETED ]
+control-openhands browser reload
+control-openhands browser text 'testid=automation-setup-draft-validity'
+control-openhands browser fill 'testid=automation-setup-custom-schedule' 'every day'
+control-openhands browser click 'testid=automation-setup-save-draft'
+control-openhands browser hover 'testid=automation-setup-name'
+control-openhands browser reload
+control-openhands assert --field body.dispatchable --equals false -- api GET "/api/automation/v1/drafts/$QA_DRAFT_ID"
+control-openhands browser screenshot --feature F28.draft-validation --name stale-test-success
+control-openhands assert --field text --equals 'Value error, Invalid cron expression: every day' --bug-shows 'Latest test passed' -- browser text 'testid=automation-setup-draft-validity' # bug
+```
+
 
 ## Gotchas
 

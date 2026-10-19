@@ -54,7 +54,13 @@ import {
   withoutPauses,
 } from "./lib/recording.mjs";
 import { MAX_PAGES, collectEvents, countImages } from "./lib/events-paging.mjs";
-import { redactBody, redactUrl } from "./lib/network-bodies.mjs";
+import {
+  redactBody,
+  redactUrl,
+  redactBodyFields,
+  networkEntryForOutput,
+  BODY_FIELDS_LIMIT_BYTES,
+} from "./lib/network-bodies.mjs";
 import {
   observeWebSocket,
   webSocketMetadata,
@@ -93,8 +99,8 @@ function recorder(path = []) {
   };
 }
 
-function run(args, env = {}) {
-  const result = spawnSync(process.execPath, [cli, ...args], {
+function run(args, env = {}, execArgv = []) {
+  const result = spawnSync(process.execPath, [...execArgv, cli, ...args], {
     encoding: "utf8",
     env: {
       ...process.env,
@@ -200,6 +206,103 @@ test("usage errors exit 2 with a hint; a missing run exits 3", () => {
   const noRun = run(["doctor"]);
   assert.equal(noRun.status, 3);
   assert.match(noRun.json.hint, /control-openhands launch/);
+});
+
+// Exercise the real launch guard with deterministic OS inputs. An empty PATH
+// stops an accepted measurement at the next prerequisite, before any build or
+// service starts. The preload changes only memory readings in this child.
+function launchWithMemory(memory, flags = []) {
+  const emptyPath = mkdtempSync(join(tmpdir(), "cov-empty-path-"));
+  const preload = `
+    import fs from "node:fs";
+    import os from "node:os";
+    import { syncBuiltinESMExports } from "node:module";
+    const memory = ${JSON.stringify(memory)};
+    Object.defineProperty(process, "platform", { value: memory.platform });
+    process.availableMemory = () => memory.availableMb * 1024 * 1024;
+    os.freemem = () => memory.freeMb * 1024 * 1024;
+    const readFileSync = fs.readFileSync;
+    fs.readFileSync = (path, ...args) => {
+      if (path !== "/proc/meminfo") return readFileSync(path, ...args);
+      if (memory.meminfo !== undefined) return memory.meminfo;
+      throw new Error("/proc/meminfo is unavailable");
+    };
+    syncBuiltinESMExports();
+  `;
+  try {
+    return run(["launch", "--new", ...flags], { PATH: emptyPath }, [
+      "--import",
+      `data:text/javascript,${encodeURIComponent(preload)}`,
+    ]);
+  } finally {
+    rmSync(emptyPath, { recursive: true, force: true });
+  }
+}
+
+test.each([
+  {
+    name: "macOS launch accepts available memory beyond unused pages",
+    platform: "darwin",
+    freeMb: 300,
+    availableMb: 8192,
+    error: /uvx is not on PATH/,
+  },
+  {
+    name: "macOS launch refuses genuinely low available memory",
+    platform: "darwin",
+    freeMb: 8192,
+    availableMb: 1024,
+    error: /Only 1024 MB of memory available/,
+  },
+  {
+    name: "macOS launch refuses an unknown native memory reading",
+    platform: "darwin",
+    freeMb: 8192,
+    availableMb: 0,
+    error: /Only 0 MB of memory available/,
+  },
+  {
+    name: "macOS launch honors a custom minimum against available memory",
+    platform: "darwin",
+    freeMb: 300,
+    availableMb: 3000,
+    flags: ["--min-free-mb", "4000"],
+    error: /Only 3000 MB of memory available/,
+  },
+  {
+    name: "Linux launch keeps using MemAvailable",
+    platform: "linux",
+    freeMb: 300,
+    availableMb: 0,
+    meminfo: "MemFree:        307200 kB\nMemAvailable:  8388608 kB\n",
+    error: /uvx is not on PATH/,
+  },
+  {
+    name: "Linux launch keeps the free memory fallback when proc is missing",
+    platform: "linux",
+    freeMb: 4096,
+    availableMb: 0,
+    error: /uvx is not on PATH/,
+  },
+  {
+    name: "Linux launch keeps the free memory fallback without MemAvailable",
+    platform: "linux",
+    freeMb: 1024,
+    availableMb: 8192,
+    meminfo: "MemFree:       1048576 kB\n",
+    error: /Only 1024 MB of memory available/,
+  },
+  {
+    name: "other platforms keep the free memory fallback",
+    platform: "win32",
+    freeMb: 4096,
+    availableMb: 0,
+    error: /uvx is not on PATH/,
+  },
+])("$name", ({ flags, error, ...memory }) => {
+  const result = launchWithMemory(memory, flags);
+  assert.equal(result.status, 3);
+  assert.match(result.json.error, error);
 });
 
 test("keys are refused on argv before any request is made", () => {
@@ -2581,4 +2684,194 @@ test("help documents assert and bug, and the shipped map's known-bug blocks are 
   const list = run(["bug", "list"]);
   assert.equal(list.json.ok, true, list.stdout);
   assert.ok(list.json.count >= 1);
+});
+
+test("network plugin projection survives display truncation without exposing other fields", () => {
+  const request = JSON.stringify({
+    system_prompt: "unrelated-system-prompt-".repeat(200),
+    llm: { api_key: "never-project-me" },
+    plugins: [
+      {
+        source: "qa-plugin",
+        parameters: { greeting: "edited dummy value", count: 7, enabled: true },
+      },
+    ],
+    unrelated: { plugins: ["not-top-level"] },
+  });
+  assert.throws(() => JSON.parse(redactBody(request))); // existing display cap
+  const projection = redactBodyFields(request);
+  assert.deepEqual(projection, {
+    bodyFields: {
+      plugins: [
+        {
+          source: "qa-plugin",
+          parameters: {
+            greeting: "edited dummy value",
+            count: 7,
+            enabled: true,
+          },
+        },
+      ],
+    },
+  });
+  const serialized = JSON.stringify(projection);
+  assert.doesNotMatch(
+    serialized,
+    /system_prompt|unrelated|never-project-me|not-top-level/,
+  );
+  const entry = {
+    path: "/api/conversations",
+    body: redactBody(request),
+    ...projection,
+  };
+  assert.deepEqual(networkEntryForOutput(entry, false), {
+    path: "/api/conversations",
+  });
+  assert.deepEqual(
+    networkEntryForOutput(entry, true).bodyFields,
+    projection.bodyFields,
+  );
+});
+
+test("network plugin projection recursively redacts credentials maps and credential URLs", () => {
+  const projection = redactBodyFields(
+    JSON.stringify({
+      plugins: [
+        {
+          source: "https://user:pw@example.test/plugin?token=TOKEN&ref=main",
+          parameters: {
+            label: "dummy edited value",
+            nested: [
+              {
+                secret: "sensitive",
+                token: "tok",
+                api_key: "api-value",
+                password: "pass-value",
+                normal: "shown",
+              },
+            ],
+            credentials: { value: "hidden", list: ["nested-secret"] },
+            env: { NAME: "env-value", KEEP: "**********" },
+            headers: { Authorization: "Bearer actual-token" },
+          },
+        },
+      ],
+    }),
+  );
+  const plugin = projection.bodyFields.plugins[0];
+  assert.equal(plugin.parameters.label, "dummy edited value");
+  assert.deepEqual(plugin.parameters.nested, [
+    {
+      secret: "<redacted 9 chars>",
+      token: "<redacted 3 chars>",
+      api_key: "<redacted 9 chars>",
+      password: "<redacted 10 chars>",
+      normal: "shown",
+    },
+  ]);
+  assert.deepEqual(plugin.parameters.credentials, {
+    value: "<redacted 6 chars>",
+    list: ["<redacted 13 chars>"],
+  });
+  assert.deepEqual(plugin.parameters.env, {
+    NAME: "<redacted 9 chars>",
+    KEEP: "**********",
+  });
+  assert.equal(plugin.parameters.headers.Authorization, "<redacted 19 chars>");
+  assert.doesNotMatch(plugin.source, /user|pw|TOKEN/);
+  assert.match(plugin.source, /ref=main/);
+  const all = redactBodyFields(
+    JSON.stringify({ plugins: [{ source: "private", parameters: ["value"] }] }),
+    { all: true },
+  );
+  assert.deepEqual(all.bodyFields.plugins, [
+    { source: "<redacted 7 chars>", parameters: ["<redacted 5 chars>"] },
+  ]);
+});
+
+test("network plugin projection bounds complete UTF-8 JSON and omits non-JSON or non-top-level fields", () => {
+  for (const input of [
+    undefined,
+    null,
+    "",
+    "not-json",
+    "a=1&plugins=raw",
+    '[{"plugins":[]}]',
+    '{"nested":{"plugins":[]}}',
+  ]) {
+    assert.deepEqual(redactBodyFields(input), {});
+  }
+  assert.deepEqual(redactBodyFields('{"plugins":null}'), {
+    bodyFields: { plugins: null },
+  });
+  const near = { plugins: [{ parameters: { value: "😀".repeat(2000) } }] };
+  const fitting = redactBodyFields(JSON.stringify(near));
+  assert.ok(
+    Buffer.byteLength(JSON.stringify(fitting.bodyFields), "utf8") <=
+      BODY_FIELDS_LIMIT_BYTES,
+  );
+  const oversized = redactBodyFields(
+    JSON.stringify({ plugins: [{ parameters: { value: "😀".repeat(5000) } }] }),
+  );
+  assert.equal(oversized.bodyFields, undefined);
+  assert.equal(
+    oversized.bodyFieldsOmitted.plugins,
+    "redacted projection exceeds 16384 UTF-8 bytes",
+  );
+  assert.doesNotMatch(JSON.stringify(oversized), /😀/);
+  assert.deepEqual(
+    networkEntryForOutput({ path: "/api/conversations", ...oversized }, false),
+    { path: "/api/conversations" },
+  );
+  // The bound applies after redaction: a long credential never creates a huge projection.
+  const redacted = redactBodyFields(
+    JSON.stringify({ plugins: [{ api_key: "s".repeat(20000) }] }),
+  );
+  assert.equal(
+    redacted.bodyFields.plugins[0].api_key,
+    "<redacted 20000 chars>",
+  );
+});
+
+test("browser media validates motion before dispatch and preserves playback observation", async () => {
+  const runDir = mkdtempSync(join(tmpdir(), "cov-media-motion-"));
+  mkdirSync(join(runDir, "private"));
+  writeFileSync(join(runDir, "run.json"), "{}\n");
+  const calls = [];
+  const server = createHttpServer(async (req, res) => {
+    let body = "";
+    for await (const chunk of req) body += chunk;
+    const call = JSON.parse(body);
+    calls.push(call);
+    res.setHeader("content-type", "application/json");
+    res.end(JSON.stringify({ ok: true, plays: [] }));
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  writeFileSync(join(runDir, "private", "browser.json"), JSON.stringify({
+    pid: process.pid, port: server.address().port, token: "dummy-control-token",
+  }));
+  const invoke = (args) => new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [cli, "browser", "media", ...args, "--run", runDir]);
+    let output = "";
+    child.stdout.on("data", (chunk) => { output += chunk; });
+    child.on("error", reject);
+    child.on("close", (code) => resolve({ code, ...JSON.parse(output) }));
+  });
+  try {
+    for (const mode of ["reduce", "no-preference"]) {
+      assert.equal((await invoke(["--reduced-motion", mode])).code, 0);
+      assert.equal(calls.at(-1).cmd, "media");
+      assert.equal(calls.at(-1).args.reducedMotion, mode);
+    }
+    assert.equal((await invoke(["--clear"])).code, 0);
+    assert.deepEqual(calls.at(-1).args, { clear: true });
+    assert.equal((await invoke([])).code, 0);
+    const before = calls.length;
+    for (const args of [["--reduced-motion"], ["--reduced-motion", "sometimes"], ["reduce"], ["extra", "--reduced-motion", "reduce"]])
+      assert.equal((await invoke(args)).code, 2);
+    assert.equal(calls.length, before, "invalid media input must not mutate the browser");
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    rmSync(runDir, { recursive: true, force: true });
+  }
 });

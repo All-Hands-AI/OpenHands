@@ -1624,9 +1624,9 @@ function AddBackendAddModeBody({
         <div
           aria-hidden={providerOpen}
           inert={providerOpen ? true : undefined}
-          style={{ transform: `translateX(${providerOpen ? -100 : 0}%)` }}
           className={cn(
             "w-full transition-transform duration-300 ease-out motion-reduce:transition-none",
+            providerOpen ? "-translate-x-full" : "translate-x-0",
             providerOpen && "pointer-events-none absolute inset-0",
           )}
         >
@@ -1669,9 +1669,9 @@ function AddBackendAddModeBody({
         <div
           aria-hidden={!providerOpen}
           inert={!providerOpen ? true : undefined}
-          style={{ transform: `translateX(${providerOpen ? 0 : 100}%)` }}
           className={cn(
             "w-full transition-transform duration-300 ease-out motion-reduce:transition-none",
+            providerOpen ? "translate-x-0" : "translate-x-full",
             !providerOpen && "pointer-events-none absolute inset-0",
           )}
         >

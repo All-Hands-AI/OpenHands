@@ -58,7 +58,7 @@ Preconditions:
 - Desktop viewport unless a bullet says otherwise. Microphone dictation is blocked in the sandbox browser (no microphone); `+` > Git tools needs a conversation on a git workspace (not driven here).
 
 - **Type and send (`F05.send-message`).** On `/conversations/<id>` run `control-openhands browser attr 'testid=submit-button' aria-label` (`Send message`), `control-openhands browser enabled 'testid=submit-button'` (`false`), `control-openhands browser type 'testid=chat-input' 'Reply with only:'`, `control-openhands browser enabled 'testid=submit-button'` (`true`), `control-openhands browser press Shift+Enter`, `control-openhands browser type 'testid=chat-input' 'ok2'` and `control-openhands browser eval "document.querySelector('[data-testid=chat-input]').innerText"`: `Reply with only:\nok2`. Run `control-openhands browser press Enter --selector 'testid=chat-input'`; the field is empty and `control-openhands browser count 'testid=stop-button'` is `1` while the agent runs. Then `control-openhands conversation wait <id> --fresh --timeout 180` (a fast model can finish before a separate `--until running` wait starts, which then times out on `finished`), `control-openhands browser reload` and `control-openhands browser count 'testid=user-message >> has-text=ok2'`: `1`; `control-openhands browser text 'testid=agent-message >> nth=-1'` is `ok2`.
-- **Draft survives navigation (`F05.draft-persistence`).** Run `control-openhands browser type 'testid=chat-input' 'QA draft text'` and wait out the 500 ms save: `control-openhands browser eval "new Promise(r=>setTimeout(()=>r(JSON.parse(localStorage.getItem('conversation-state-<id>')).draftMessage),1500))"` returns `QA draft text`. Then `control-openhands browser click 'testid=backend-selector-settings-link' --expect-url settings`, `control-openhands browser back` and the `innerText` eval above: `QA draft text`. `control-openhands browser reload` restores it again. A draft typed just before leaving is flushed, not lost: `control-openhands browser type 'testid=chat-input' ' plus fast'` and at once `control-openhands browser click 'testid=backend-selector-settings-link' --expect-url settings`, `control-openhands browser back`: the eval reads `QA draft text plus fast`. The same holds for an immediate sidebar switch to another conversation and back (that other conversation's composer stays empty). Clear with `control-openhands browser fill 'testid=chat-input' ''` and wait a second before navigating. A slash command the chat handles itself (`/model`, `/new`) clears the saved draft with the composer: after `control-openhands browser type 'testid=chat-input' '/model'`, a pause of 1 second, `control-openhands browser press Escape` and `control-openhands browser press Enter --selector 'testid=chat-input'`, the Settings round trip above brings back an empty composer and the `draftMessage` eval returns `null`. `/new` the same way opens a new conversation (toast `Starting a new conversation.`); `control-openhands browser goto /conversations/<id>` shows the source conversation's composer empty and its `draftMessage` `null`.
+- **Draft survives navigation (`F05.draft-persistence`).** Run `control-openhands browser type 'testid=chat-input' 'QA draft text'` and wait out the 500 ms save: `control-openhands browser eval "new Promise(r=>setTimeout(()=>r(JSON.parse(localStorage.getItem('conversation-state-<id>')).draftMessage),1500))"` returns `QA draft text`. Then `control-openhands browser click 'testid=backend-selector-settings-link' --expect-url '/settings/agents'`, `control-openhands browser back` and the `innerText` eval above: `QA draft text`. `control-openhands browser reload` restores it again. A draft typed just before leaving is flushed, not lost: `control-openhands browser type 'testid=chat-input' ' plus fast'` and at once `control-openhands browser click 'testid=backend-selector-settings-link' --expect-url '/settings/agents'`, `control-openhands browser back`: the eval reads `QA draft text plus fast`. The same holds for an immediate sidebar switch to another conversation and back (that other conversation's composer stays empty). Clear with `control-openhands browser fill 'testid=chat-input' ''` and wait a second before navigating. A slash command the chat handles itself (`/model`, `/new`) clears the saved draft with the composer: after `control-openhands browser type 'testid=chat-input' '/model'`, a pause of 1 second, `control-openhands browser press Escape` and `control-openhands browser press Enter --selector 'testid=chat-input'`, the Settings round trip above brings back an empty composer and the `draftMessage` eval returns `null`. `/new` the same way opens a new conversation (toast `Starting a new conversation.`); `control-openhands browser goto /conversations/<id>` shows the source conversation's composer empty and its `draftMessage` `null`.
 - **Home draft (`F05.draft-persistence`).** Run `control-openhands browser goto /`, `control-openhands browser type 'testid=chat-input' 'QA home draft'`, `control-openhands browser goto /settings/secrets`, `control-openhands browser goto /`, then the `innerText` eval: `QA home draft`; `control-openhands browser storage --session` lists `oh:home-prompt-draft`. The automation setup page's docked composer (`/automations/setup`, F22) keeps no draft and never touches the Home one. With `QA home draft` still in the Home composer, run `control-openhands browser goto /automations`, `control-openhands browser click 'testid=automations-add-automation'`, `control-openhands browser click 'testid=automations-add-automation-create' --expect-url '/automations/setup'` and `control-openhands browser wait 'testid=chat-input'`: the `innerText` eval is empty. `control-openhands browser type 'testid=chat-input' 'Reply with only the word ok2. Do not run any tools.'`, then `control-openhands browser eval "new Promise(r=>setTimeout(()=>r(sessionStorage.getItem('oh:home-prompt-draft')),1500))"` still returns `QA home draft`. `control-openhands browser click 'testid=submit-button' --expect-url '/conversations/'` and `control-openhands browser click 'testid=sidebar-conversations-link' --expect-url '/conversations(\?|$)'`: the Home composer shows `QA home draft`. Clear it (`fill 'testid=chat-input' ''`, wait a second) and repeat the setup send: New Chat is empty and `browser storage --session --values` has no `oh:home-prompt-draft`. Unsent text in the setup composer is lost when the user leaves that page (by design).
 - **Auto-resize (`F05.composer-resize`).** On `/conversations/<id>` (`control-openhands browser goto /conversations/<id>`; Home draft left `/`) type `line`, then eight times `control-openhands browser press Shift+Enter` and `control-openhands browser type 'testid=chat-input' 'lineN'` (`line2`…`line9`): `control-openhands browser bbox 'testid=chat-input'` grows by 20 px per line, from `height` `20` to `180`; after `control-openhands browser fill 'testid=chat-input' ''` it is `20`. `control-openhands browser count '#resize-grip'` is `1`. The grip is an invisible 12 px strip with a resize cursor: `control-openhands browser eval "(()=>{const g=document.getElementById('resize-grip');return [g.children.length,getComputedStyle(g).cursor,getComputedStyle(g).backgroundColor].join()})()"` is `0,ns-resize,rgba(0, 0, 0, 0)`, and no line appears above the field on `browser hover '#resize-grip'`, during a drag or after `browser click '#resize-grip'` (screenshots). `control-openhands browser drag '#resize-grip' --by 0,-200` makes the empty field `220` high and `control-openhands browser drag '#resize-grip' --by 0,150` brings it to `70`; after `control-openhands browser reload` it is `20` again (the dragged height is not kept).
 - **Tools menu and macros (`F05.plus-menu`).** On `/conversations/<id>` run `control-openhands browser click 'testid=chat-plus-button'` and `control-openhands browser testids 'testid=tools-context-menu'`: `macros-button`, `show-skills-button`, `show-hooks-button`, `show-agent-tools-button`, `add-files-and-images-button` (no `git-tools-button` outside a repository). `control-openhands browser hover 'testid=macros-button'` shows `macros-submenu` with `increase-test-coverage-button`, `fix-readme-button`, `auto-merge-prs-button`, `clean-dependencies-button`. `control-openhands browser click 'testid=fix-readme-button'` closes the menu and fills the composer with `Please look at the README and make the following improvements…`; the `testid=user-message` count is unchanged. Clear with `control-openhands browser fill 'testid=chat-input' ''`. Open the menu again and `control-openhands browser press Escape`: `browser count 'testid=tools-context-menu'` is `0` and `control-openhands browser eval "document.activeElement.dataset.testid"` is `chat-plus-button`.
@@ -107,6 +107,70 @@ Preconditions:
 
 - **Home file re-pick (`F05.attach-files`).** As a separate check after the conversation recipes, run `control-openhands browser goto /`, upload the file fixture with `control-openhands browser upload 'testid=upload-image-input' "$OH_VERIFY_RUN/evidence/_fixtures/qa-note.txt"`, remove it with `control-openhands browser click 'role=button[name="Remove qa-note.txt"]'`, upload that same path again, then `control-openhands browser count 'role=button[name="Remove qa-note.txt"]'`. Expected: `1`. Known failure (reproduced 2026-10-12, [#17471](https://github.com/OpenHands/OpenHands/issues/17471)): the second pick is ignored and the count is `0`. End with `browser reload` to clear the file input.
 - **Unmatched failed-conversation profile (`F05.profile-identity`).** Separate disposable check: record the original active profile with `control-openhands llm show`, then create an empty Local conversation with a new dummy profile pointing to closed loopback `http://127.0.0.1:9` (`llm set --no-validate`, as F06's dummy-profile precondition does); give it model `openai/gpt-4o`. After `browser reset` and `onboard --skip`, reopen it and send `Reply with only QA. Do not run any tools.`. Change the same saved profile to `openai/gpt-4o-mini` with `llm set --no-validate`, then reload and read `browser text 'testid=chat-input-llm-profile'` and `conversation status <id>`. Known failure (reproduced 2026-10-12, [#16263](https://github.com/OpenHands/OpenHands/issues/16263)): once the loopback turn errors, the pill reads Select a model despite a loaded active profile and the persisted conversation model. This check covers the missing browser stamp and unmatched-model case, not successful provider output. Reactivate the original profile with `control-openhands api POST /api/profiles/<original-profile>/activate --write`, then delete the disposable conversation and profile afterwards.
+
+Regression check (`F05.draft-persistence`, handled-model):
+
+```sh
+control-openhands browser viewport desktop
+control-openhands conversation start --prompt 'Reply only OK. Do not run tools.' --wait --timeout 180
+control-openhands browser type 'testid=chat-input' '/model'
+control-openhands browser eval 'new Promise(r=>setTimeout(r,1100))'
+control-openhands browser press Escape
+control-openhands browser press Enter --selector 'testid=chat-input'
+control-openhands browser click 'testid=backend-selector-settings-link' --expect-url '/settings/agents'
+control-openhands browser back
+control-openhands browser wait 'testid=chat-input'
+control-openhands browser screenshot --feature F05.draft-persistence --name handled-model-proof
+control-openhands assert --field value --equals '' -- browser eval 'document.querySelector("[data-testid=chat-input]").innerText'
+```
+
+Regression check (`F05.draft-persistence`, handled-new):
+
+```sh
+control-openhands browser viewport desktop
+control-openhands conversation start --prompt 'Reply only OK. Do not run tools.' --wait --timeout 180
+QA_OLD_URL="$(control-openhands browser url | python3 -c 'import json,sys; print(json.load(sys.stdin)["url"])')"
+control-openhands browser type 'testid=chat-input' '/new'
+control-openhands browser eval 'new Promise(r=>setTimeout(r,1100))'
+control-openhands browser press Escape
+control-openhands browser press Enter --selector 'testid=chat-input'
+control-openhands browser eval 'new Promise(r=>setTimeout(r,1500))'
+control-openhands browser goto "$QA_OLD_URL"
+control-openhands browser wait 'testid=chat-input'
+control-openhands browser screenshot --feature F05.draft-persistence --name handled-new-proof
+control-openhands assert --field value --equals '' -- browser eval 'document.querySelector("[data-testid=chat-input]").innerText'
+```
+
+Regression check (`F05.build-plan-shortcut`, focused empty composer):
+
+```sh
+control-openhands browser viewport desktop
+control-openhands fixture git-repo --name qa-shortcut-proof
+rm -f "$OH_VERIFY_RUN/workspace/qa-shortcut-proof/hello.txt" "$OH_VERIFY_RUN/workspace/qa-shortcut-proof/.agents_tmp/PLAN.md"
+control-openhands conversation start --workspace qa-shortcut-proof --prompt 'Reply only OK. Do not run any tools.' --wait --timeout 180
+QA_PARENT="$(control-openhands browser url | python3 -c 'import json,sys; print(json.load(sys.stdin)["url"].split("/conversations/")[1].split("?")[0])')"
+trap 'control-openhands conversation pause "$QA_PARENT" >/dev/null' EXIT
+control-openhands browser fill 'testid=chat-input' '/plan'
+control-openhands browser press Escape
+control-openhands browser press Enter --selector 'testid=chat-input'
+QA_PLANNER=''
+for QA_TRY in 1 2 3 4 5 6 7 8 9 10; do
+  QA_PLANNER="$(control-openhands api GET "/api/conversations/$QA_PARENT" --pick sub_conversation_ids | python3 -c 'import json,sys; a=json.load(sys.stdin)["value"]; print(a[-1] if a else "")')"
+  if [ -n "$QA_PLANNER" ]; then break; fi
+  control-openhands browser eval 'new Promise(r=>setTimeout(r,500))'
+done
+[ -n "$QA_PLANNER" ]
+control-openhands browser fill 'testid=chat-input' 'Plan creating hello.txt containing hi in this workspace only. Three tiny steps. Write PLAN.md using your planning tool; do not implement.'
+control-openhands browser press Enter --selector 'testid=chat-input'
+control-openhands conversation wait "$QA_PLANNER" --fresh --timeout 240
+control-openhands browser wait 'testid=plan-preview-content' --timeout 60000
+control-openhands browser fill 'testid=chat-input' ''
+control-openhands browser focus 'testid=chat-input'
+control-openhands browser press Control+Enter --selector 'testid=chat-input'
+control-openhands browser eval 'new Promise(r=>setTimeout(r,1000))'
+control-openhands browser screenshot --feature F05.build-plan-shortcut --name focused-composer-proof
+control-openhands assert --field count --equals 1 -- browser count 'testid=user-message >> has-text=Execute the plan based on the .agents_tmp/PLAN.md file.'
+```
 
 ## Gotchas
 
