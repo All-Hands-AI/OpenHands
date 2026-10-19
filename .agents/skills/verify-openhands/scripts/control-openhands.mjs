@@ -26,6 +26,7 @@ import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { deflateSync, gunzipSync } from "node:zlib";
 import { buildIdentity } from "./lib/build-id.mjs";
+import { groupAlive, privatePurgeAllowed } from "./lib/process-groups.mjs";
 import {
   editorOffset,
   launcherEnvFor,
@@ -38,6 +39,7 @@ import {
   classifyAttempt,
   judgeAssertion,
   knownBugBlocks,
+  parseBugPredicate,
   proofVerdict,
 } from "./lib/known-bug.mjs";
 import { routePattern } from "./lib/route-pattern.mjs";
@@ -223,16 +225,6 @@ function processAlive(pid) {
   }
 }
 
-function groupAlive(pgid) {
-  if (!pgid) return false;
-  try {
-    process.kill(-pgid, 0);
-    return true;
-  } catch (error) {
-    return error.code === "EPERM";
-  }
-}
-
 function commandLine(pid) {
   try {
     if (existsSync(`/proc/${pid}/cmdline`)) {
@@ -359,6 +351,7 @@ function defaults() {
 }
 
 function availableMemoryBytes() {
+  if (process.platform === "darwin") return process.availableMemory();
   // MemAvailable counts reclaimable cache; os.freemem() alone understates it.
   try {
     const line = readFileSync("/proc/meminfo", "utf8").match(
@@ -750,9 +743,8 @@ async function cmdLaunch({ flags }) {
     OH_CANVAS_SAFE_BACKEND_PORT: String(ports.agentServer),
     OH_CANVAS_SAFE_AUTOMATION_PORT: String(ports.automation),
     OH_CANVAS_SAFE_VITE_PORT: String(ports.frontend),
-    // A private tmux server per run (OpenHands/OpenHands#17946: the launcher's
-    // <stateDir>/tmux is never created, so runs would share one server). It
-    // lives under /tmp because a socket below the long run path would exceed
+    // A private tmux socket directory per run. It lives under /tmp, not the launcher's
+    // <stateDir>/tmux, because a socket below the long run path would exceed
     // the 108-byte Unix socket limit.
     TMUX_TMPDIR: tmuxDirFor(dir),
   });
@@ -1300,7 +1292,7 @@ async function cmdStop({ flags }) {
   for (const [name, port] of Object.entries(run.ports))
     ports[name] = (await portOpen(port)) ? "still open" : "closed";
   result.launcherStopped = !groupAlive(pgid);
-  if (result.launcherStopped) {
+  if (privatePurgeAllowed(result.launcherStopped, ports)) {
     releaseClaim(run);
     rmSync(tmuxPathFor(run.dir), { recursive: true, force: true });
   }
@@ -1310,9 +1302,9 @@ async function cmdStop({ flags }) {
   const evidence = listFiles(join(run.dir, "evidence"));
   result.evidenceFiles = evidence.length;
   if (flags["purge-private"]) {
-    if (!result.launcherStopped)
+    if (!privatePurgeAllowed(result.launcherStopped, ports))
       throw new CliError(
-        "Refusing to purge private state while processes are alive.",
+        "Refusing to purge private state while processes or ports are alive.",
         { code: 3 },
       );
     const privateDir = join(run.dir, "private");
@@ -2728,9 +2720,23 @@ async function cmdBrowser({ positional, flags }) {
       );
       result = await browserCall(run, "tooltip", { selector: sel, timeout });
       break;
-    case "media":
-      result = await browserCall(run, "media", { clear: Boolean(flags.clear) });
+    case "media": {
+      const reducedMotion = flags["reduced-motion"];
+      if (
+        rest.length ||
+        (reducedMotion !== undefined &&
+          !["reduce", "no-preference"].includes(reducedMotion))
+      )
+        usage(
+          "browser media --reduced-motion needs reduce | no-preference",
+          "control-openhands browser media --reduced-motion no-preference",
+        );
+      result = await browserCall(run, "media", {
+        clear: Boolean(flags.clear),
+        reducedMotion,
+      });
       break;
+    }
     case "toasts":
       result = await browserCall(run, "toasts", {
         history: Boolean(flags.history),
@@ -2818,6 +2824,16 @@ async function cmdBrowser({ positional, flags }) {
         force: true,
       });
       result = { stopped, profileCleared: true, ...(await startBrowser(run)) };
+      break;
+    }
+    case "network-state": {
+      const state = rest[0];
+      if (rest.length !== 1 || !["offline", "online", "status"].includes(state))
+        usage(
+          "browser network-state needs offline | online | status",
+          "control-openhands browser network-state offline",
+        );
+      result = await browserCall(run, "network-state", { state });
       break;
     }
     case "network":
@@ -3398,6 +3414,16 @@ async function cmdAssert({ positional, flags }) {
       "assert needs --field PATH, one of --equals VALUE or --matches REGEX, and -- <control-openhands command>",
       "control-openhands assert --field enabled --equals true --bug-shows false -- browser enabled 'testid=submit-button'",
     );
+  const bug =
+    flags.bug === undefined || flags.bug === true
+      ? undefined
+      : String(flags.bug);
+  const bugProblems = bug === undefined ? [] : parseBugPredicate(bug).problems;
+  if (bugProblems.length)
+    usage(
+      `--bug ${bugProblems.join("; ")}`,
+      `control-openhands assert --field status --equals 200 --bug 'status eq 500 && body.error contains "has no attribute"' -- api GET /api/...`,
+    );
   const env = { ...process.env };
   if (flags.run && flags.run !== true) env.OH_VERIFY_RUN = resolve(flags.run);
   const child = runSelf(positional.map(String), { env });
@@ -3411,6 +3437,7 @@ async function cmdAssert({ positional, flags }) {
       flags["bug-shows"] === undefined || flags["bug-shows"] === true
         ? undefined
         : String(flags["bug-shows"]),
+    bug,
   });
   const result = {
     ok: judged.kind === "hold",
@@ -3418,18 +3445,20 @@ async function cmdAssert({ positional, flags }) {
     field: flags.field,
     expected: hasEquals ? String(flags.equals) : `/${flags.matches}/`,
     bugShows: flags["bug-shows"] === true ? undefined : flags["bug-shows"],
+    bug,
     command: positional.join(" "),
     output:
       judged.kind === "error"
         ? (child.json ?? child.stdout.slice(-2000))
         : undefined,
   };
-  // Under `bug run` every assertion is logged, so the runner can tell the
-  // marked assertion's mismatch from an error at the same line.
+  // Under `bug run` every assertion is logged with the recipe line that ran
+  // it, so the runner reads the marked command's own result, never one a
+  // later cleanup step logged.
   if (process.env.OH_VERIFY_ASSERT_LOG)
     appendFileSync(
       process.env.OH_VERIFY_ASSERT_LOG,
-      `${JSON.stringify({ ts: new Date().toISOString(), ...result, output: undefined })}\n`,
+      `${JSON.stringify({ ts: new Date().toISOString(), line: process.env.OH_VERIFY_LINE, ...result, output: undefined })}\n`,
     );
   out(result);
   if (judged.kind === "error") process.exitCode = child.code || 1;
@@ -3475,10 +3504,15 @@ function selectBlocks(id, flags) {
 }
 
 function runBlock(run, block, { timeoutMs, logFile, failureFile, scriptFile }) {
+  // The DEBUG trap tags every command (and the asserts it runs) with its
+  // line. The ERR trap keeps the first failure only, and retags what runs
+  // after it (an EXIT trap's cleanup), so neither overwrites the observation.
   const preamble = [
     "set -eo pipefail",
     `cd ${JSON.stringify(repoRoot)}`,
-    `trap 'printf "%s\\t%s\\n" "$LINENO" "$BASH_COMMAND" > ${JSON.stringify(failureFile)}' ERR`,
+    "export OH_VERIFY_LINE=",
+    "trap 'OH_VERIFY_LINE=$LINENO' DEBUG",
+    `trap '[ -e ${JSON.stringify(failureFile)} ] || printf "%s\\t%s\\n" "$LINENO" "$BASH_COMMAND" > ${JSON.stringify(failureFile)}; OH_VERIFY_LINE=after-failure' ERR`,
   ];
   writeFileSync(scriptFile, `${preamble.join("\n")}\n${block.script}\n`);
   const env = {
@@ -3521,6 +3555,7 @@ function runBlock(run, block, { timeoutMs, logFile, failureFile, scriptFile }) {
         failedCommand = cmd.join("\t").slice(0, 500);
       }
       done({
+        lineOffset: preamble.length,
         exitCode: timedOut ? null : code,
         timedOut,
         failedLine,
@@ -3600,8 +3635,16 @@ async function cmdBug({ positional, flags }) {
             failureFile,
             scriptFile: join(work, `${stamp}.sh`),
           });
-        const asserts = readJsonl(logFile);
-        const assertion = asserts.at(-1);
+        const asserts = readJsonl(logFile).map((a) => ({
+          ...a,
+          line: /^\d+$/.test(a.line ?? "")
+            ? Number(a.line) - exec.lineOffset
+            : a.line,
+        }));
+        const [start, end] = block.bugRanges[0];
+        const assertion = asserts
+          .filter((a) => a.line >= start && a.line <= end)
+          .at(-1);
         const doctorAfter =
           exec.exitCode !== 0 && doctorBefore !== false ? doctor() : undefined;
         const { status, reason } = classifyAttempt({
@@ -3611,6 +3654,7 @@ async function cmdBug({ positional, flags }) {
           timedOut: exec.timedOut,
           failedLine: exec.failedLine,
           bugLines: block.bugLines,
+          bugRanges: block.bugRanges,
           assertion,
         });
         const page = daemonInfo(run)
@@ -3653,6 +3697,8 @@ async function cmdBug({ positional, flags }) {
                 expected: assertion.expected,
                 actual: assertion.actual,
                 bugShows: assertion.bugShows,
+                bug: assertion.bug,
+                bugChecks: assertion.bugChecks,
               }
             : undefined,
           doctorBefore,
@@ -3859,6 +3905,7 @@ const BROWSER_VERBS = new Set([
   "tooltip",
   "media",
   "network",
+  "network-state",
   "toasts",
   "reset",
   "clipboard",
@@ -4514,7 +4561,7 @@ Drive and observe
 
 Evidence and map
   evidence      add | list | report — the run's pass/fail/blocked/not-run ledger
-  assert        --field F --equals V [--bug-shows B] -- <command> — check one value of a command's output
+  assert        --field F --equals V [--bug-shows B | --bug P] -- <command> — check one value of a command's output
   bug           list | run ID --attempts 2 | proof ID — known bugs as executable expected failures
   map           check | coverage | ids | routes | affected | testids | baseline — keep the feature map honest
 
@@ -4578,7 +4625,9 @@ Exit 3 when any check fails.
 
 Stops the browser daemon and SIGTERMs the launcher's process group (SIGKILL
 after 30 s), verifies every run port closed and counts evidence files.
---purge-private then deletes private/ (keys, state, logs) and recounts evidence.
+On Linux, a group containing only defunct processes counts as stopped.
+--purge-private requires the group stopped and every run port closed, then
+deletes private/ (keys, state, logs) and recounts evidence.
 `,
   api: `control-openhands api <METHOD> </path> [--data JSON|@file | --data-file F --content-type T] [--write] [--pick a.b.c] [--max-bytes N]
 
@@ -4724,7 +4773,9 @@ Verbs
                                          whose page should see it; the server's clock is untouched)
   errors [--clear] [--all] [--app-only] [--no-warnings]        page/console/HTTP errors since last clear
                                          (--clear prints the list, then empties it: run it before the action)
-  events [--kinds pageerror,dialog,download] [--last N]
+  events [--kinds pageerror,dialog,download,websocket-created,websocket-open,websocket-close,websocket-error] [--last N]
+        (WebSocket metadata: redacted URLs/pages, numeric after_seq, timestamps and frame counts; no bodies/headers)
+        (websocket-open is the first observed frame, not the handshake timestamp; counts update at lifecycle entries)
   eval <js expression>                   read-only inspection; never mutate app state with it
   tabs | tab <i> | tab new [/path] [--allow-external] | close-tab <i> | dialogs [--policy accept|dismiss]
         (tab new: a plain second tab, no opener and no sessionStorage, as a user opening the app again)
@@ -4733,11 +4784,17 @@ Verbs
   downloads [--last N] [--inspect] [--contains TEXT]   saved files; --inspect adds a text head or zip entry names
   storage [--session] [--values]         localStorage (or sessionStorage) keys; values only on request
                                          (keys, tokens and secrets inside values are redacted)
-  media [--clear]                        media playback recorded since load (sound features)
+  media [--clear] [--reduced-motion reduce|no-preference]
+                                         observe playback; optionally emulate active-page motion preference
+  network-state offline|online|status     interrupt or restore this browser context's real network; status is read-only
+                                         (all its tabs; restore online before doctor/cleanup; no request interception)
   network [--external] [--filter REGEX] [--clear] [--last N] [--bodies]   requests with status and redacted query (rows under "recent")
         (--bodies adds each app-origin write's body, JSON with credential values and env/header maps
          replaced by their length, URL userinfo and secret-named query values redacted in any string;
-         the settings API's ********** placeholder is kept as is)
+         the settings API's ********** placeholder is kept as is; body is capped at 2000 chars.
+         bodyFields.plugins projects only top-level plugins before that cap, recursively redacted,
+         at most 16384 UTF-8 bytes; oversized values are omitted with bodyFieldsOmitted.plugins.
+         Body fields and omission metadata are absent without --bodies)
                                          (privacy/telemetry checks; --clear as for errors)
   toasts [--history [--clear]]          toasts on screen now (with links); --history adds every
                                          status/alert text seen since this page loaded
@@ -4764,15 +4821,20 @@ first (a daily pass against yesterday's run). --json prints the same data.
 Rows from \`bug run\` add xfail (a known bug reproduced) and xpass (it stopped
 reproducing); xpass rows sort right after fail rows.
 `,
-  assert: `control-openhands assert --field PATH (--equals VALUE | --matches REGEX) [--bug-shows VALUE] -- <control-openhands command...>
+  assert: `control-openhands assert --field PATH (--equals VALUE | --matches REGEX) [--bug-shows VALUE] [--bug PREDICATE] -- <control-openhands command...>
 
 Runs the command, reads PATH (dotted, e.g. value, viewport.width) from its JSON
 output and compares it: strings as they are, other values as JSON. Exit 0 when
 it holds; 1 on a mismatch; the command's own code when it fails or has no such
-field (kind "error": no value was compared). --bug-shows names the value a known
-bug produces: a mismatch with any other value is kind "other-symptom".
+field (kind "error": no value was compared). --bug-shows and --bug name what a
+known bug produces; a mismatch that does not match them is kind "other-symptom".
+--bug-shows V is short for "--bug 'PATH eq V'". --bug takes "PATH OP [VALUE]"
+clauses joined by "&&", on any field of the output, with OP one of eq, ne,
+contains, not-contains, matches (regex), exists, missing; quote a VALUE with
+spaces. The result lists each clause under bugChecks.
 
   control-openhands assert --field enabled --equals true -- browser enabled 'testid=submit-button'
+  control-openhands assert --field text --equals Saved --bug 'text contains "An error occurred"' -- browser text 'testid=toast'
 `,
   bug: `control-openhands bug list [--file PATH]
 control-openhands bug run ID [--name N] [--attempts N] [--label L] [--timeout SEC] [--no-doctor] [--file PATH]
@@ -4780,11 +4842,12 @@ control-openhands bug proof ID --baseline RUN_DIR --fix RUN_DIR [--baseline-labe
 
 A known bug in the map can carry a fenced block, opened with
 "\`\`\`sh known-bug <ID> [name]", whose commands assert the correct behavior. Its one
-line ending in "# bug" is a "control-openhands assert ... --bug-shows <value>".
+command ending in "# bug" (continued lines ending in "\\" count as one) is a
+"control-openhands assert ... --bug-shows <value>" or "... --bug <predicate>".
 
 'run' executes the block in bash (set -eo pipefail) against the run, each
 attempt after a passing doctor, and classifies it:
-  xfail  the "# bug" assertion failed and saw the bug's value (reproduced)
+  xfail  the "# bug" assertion failed and saw the bug's symptom (reproduced)
   xpass  every command held (the bug did not reproduce: review the map note)
   fail   anything else: doctor failed before (setup) or after (backend), a
          timeout, an earlier line (setup) or a later one, the bug line's command
@@ -4792,6 +4855,9 @@ attempt after a passing doctor, and classifies it:
 Each attempt is appended to evidence/known-bugs/attempts.jsonl (revision,
 backend, viewport, recipe hash, failing line, assertion, transcript) and to the
 ledger as an xfail/xpass/fail row. Exit 0 only when every attempt is xfail.
+Each assertion is logged with the recipe line that ran it, and the first
+failure is the one kept, so a cleanup step (an EXIT trap) cannot replace the
+marked command's observation.
 
 'proof' compares the attempts of the current recipe on a baseline run and a fix
 run: verified only when the baseline has at least two attempts, all xfail, the

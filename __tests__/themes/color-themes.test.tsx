@@ -18,7 +18,7 @@ describe("color themes", () => {
   // @spec MCP-004 — Form feedback follows readable theme text roles
   // @spec WN-001 — Warning feedback also meets the small-text contrast contract
   it.each(Object.entries(COLOR_THEMES))(
-    "keeps small feedback text readable on the %s modal surface",
+    "keeps feedback, links, and keyboard focus readable on the %s theme surfaces",
     (_key, theme) => {
       // Resolve the shipped palette, including stylesheet-owned defaults.
       const variables: Record<string, string> = {
@@ -60,6 +60,165 @@ describe("color themes", () => {
         ).toBeGreaterThanOrEqual(4.5);
       }
 
+      // Markdown links appear in chat, user bubbles, and file/plan previews.
+      for (const surfaceRole of [
+        "--oh-color-base",
+        "--oh-color-base-secondary",
+        "--oh-surface-raised",
+        "--oh-color-tertiary",
+      ]) {
+        expect(
+          contrast(
+            luminance(resolve("--oh-link")),
+            luminance(resolve(surfaceRole)),
+          ),
+          `--oh-link against ${surfaceRole}`,
+        ).toBeGreaterThanOrEqual(4.5);
+
+        // Single GitHub alert panels tint each Markdown host surface at 10%.
+        // These are the shipped Tailwind v4 alert colors resolved to sRGB.
+        for (const [alert, color] of [
+          ["Note", "#2b7fff"],
+          ["Tip", "#00bc7d"],
+          ["Important", "#ad46ff"],
+          ["Warning", "#efb100"],
+          ["Caution", "#ff2056"],
+        ]) {
+          const host = channels(resolve(surfaceRole));
+          const alertSurface = channels(color).map(
+            (channel, index) => channel * 0.1 + host[index] * 0.9,
+          );
+          expect(
+            contrast(luminance(resolve("--oh-link")), luminance(alertSurface)),
+            `--oh-link against ${alert} tint over ${surfaceRole}`,
+          ).toBeGreaterThanOrEqual(4.5);
+        }
+      }
+
+      const statusSurfaces = ["--oh-color-base", "--oh-color-base-secondary"];
+      const statusTextRoles = [
+        ["--oh-feedback-success", "--oh-status-success"],
+        ["--oh-feedback-error", "--oh-status-error"],
+      ] as const;
+      for (const surfaceToken of statusSurfaces) {
+        const base = channels(resolve(surfaceToken));
+        for (const [textRole, statusRole] of statusTextRoles) {
+          const tint = channels(resolve(statusRole)).map(
+            (channel, index) => channel * 0.05 + base[index] * 0.95,
+          );
+          expect(
+            contrast(luminance(resolve(textRole)), luminance(tint)),
+            `${textRole} against a 5% ${statusRole} tint over ${surfaceToken}`,
+          ).toBeGreaterThanOrEqual(4.5);
+        }
+      }
+      expect(
+        contrast(
+          luminance(resolve("--oh-contrast")),
+          luminance(resolve("--oh-surface-raised")),
+        ),
+        "--oh-contrast against the configured credential banner surface",
+      ).toBeGreaterThanOrEqual(4.5);
+
+      // Hook status badges tint the same feedback role over the chat canvas.
+      const hookCanvas = channels(resolve("--oh-color-base"));
+      for (const role of [
+        "--oh-feedback-success",
+        "--oh-feedback-warning",
+        "--oh-feedback-error",
+      ]) {
+        const tint = channels(resolve(role)).map(
+          (channel, index) => channel * 0.1 + hookCanvas[index] * 0.9,
+        );
+        expect(
+          contrast(luminance(resolve(role)), luminance(tint)),
+          `${role} against its 10% hook status tint`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+
+      // Focus contrast includes each neutral control surface.
+      for (const surfaceRole of [
+        "--oh-color-base",
+        "--oh-color-base-secondary",
+        "--oh-surface-raised",
+        "--oh-interactive-hover",
+      ]) {
+        expect(
+          contrast(
+            luminance(resolve("--oh-focus")),
+            luminance(resolve(surfaceRole)),
+          ),
+          `--oh-focus against ${surfaceRole}`,
+        ).toBeGreaterThanOrEqual(3);
+      }
+
+      // @spec FF-001 — Theme-aware validation and load errors
+      // Validate the automation pill and Test runs alert on their actual surfaces.
+      for (const [surfaceRole, opacity] of [
+        ["--oh-surface", 0.05],
+        ["--oh-color-base", 0.1],
+      ] as const) {
+        const surface = channels(resolve(surfaceRole));
+        const tintedSurface = channels(resolve("--oh-feedback-error")).map(
+          (channel, index) =>
+            channel * opacity + surface[index] * (1 - opacity),
+        );
+        expect(
+          contrast(
+            luminance(resolve("--oh-feedback-error")),
+            luminance(tintedSurface),
+          ),
+          `--oh-feedback-error against its ${opacity * 100}% tint over ${surfaceRole}`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+
+      // @spec HL-001 — Home mode labels stay readable on the hover pill
+      expect(
+        contrast(
+          luminance(resolve("--oh-contrast")),
+          luminance(resolve("--oh-interactive-hover")),
+        ),
+        "--oh-contrast against the Home mode toggle pill",
+      ).toBeGreaterThanOrEqual(4.5);
+
+      // Context meter text and fills preserve contrast in each palette.
+      const contextMeterSurface = luminance(resolve("--oh-surface-raised"));
+      const contextMeterTrack = luminance(resolve("--oh-color-tertiary"));
+      for (const role of ["--oh-feedback-error", "--oh-feedback-warning"]) {
+        expect(
+          contrast(luminance(resolve(role)), contextMeterSurface),
+          `${role} against the context meter raised surface`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+      for (const role of [
+        "--oh-foreground",
+        "--oh-feedback-warning",
+        "--oh-status-error",
+      ]) {
+        expect(
+          contrast(luminance(resolve(role)), contextMeterTrack),
+          `${role} against the context meter track`,
+        ).toBeGreaterThanOrEqual(3);
+      }
+
+      // The composer popover outlines the full range even when its tertiary
+      // track sits close to the raised background. The button background paints
+      // under its translucent border; compare that composite with the popover.
+      const boundaryWeight =
+        Number.parseFloat(resolve("--oh-context-window-track-weight")) / 100;
+      const trackBackground = channels(resolve("--oh-color-tertiary"));
+      const popoverBoundary = channels(
+        resolve("--oh-context-window-foreground"),
+      ).map(
+        (channel, index) =>
+          channel * boundaryWeight +
+          trackBackground[index] * (1 - boundaryWeight),
+      );
+      expect(
+        contrast(luminance(popoverBoundary), contextMeterSurface),
+        "context range boundary against the composer popover raised surface",
+      ).toBeGreaterThanOrEqual(3);
+
       const warningInk = luminance(resolve("--oh-feedback-warning"));
       const trustBackground = channels(resolve("--oh-background"));
       const warningTint = channels(resolve("--oh-warning"));
@@ -78,6 +237,32 @@ describe("color themes", () => {
           `--oh-feedback-warning against ${surfaceName}`,
         ).toBeGreaterThanOrEqual(4.5);
       }
+
+      // Critic scores and small supporting text render directly on the chat canvas.
+      for (const role of [
+        "--oh-feedback-success",
+        "--oh-feedback-warning",
+        "--oh-feedback-error",
+        "--oh-text-tertiary",
+        "--oh-contrast",
+      ]) {
+        expect(
+          contrast(
+            luminance(resolve(role)),
+            luminance(resolve("--oh-color-base")),
+          ),
+          `${role} against the critic canvas surface`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+
+      // @spec TN-001 — Toast text stays readable on the toast surface
+      expect(
+        contrast(
+          luminance(resolve("--oh-contrast")),
+          luminance(resolve("--oh-color-tertiary")),
+        ),
+        "--oh-contrast against the toast surface",
+      ).toBeGreaterThanOrEqual(4.5);
     },
   );
 

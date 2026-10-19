@@ -147,9 +147,13 @@ export default function AutomationSetupNew() {
         {composerTarget
           ? createPortal(
               <ComposerDockedProvider enabled minimal>
+                {/* No conversation route is mounted here, so a persisting
+                    composer would read and write the Home draft. The prompt
+                    belongs to this setup only and is not kept as a draft. */}
                 <InteractiveChatBox
                   onSubmit={(content) => startConversationFromPrompt(content)}
                   disabled={isPending || !draft}
+                  persistDraft={false}
                   showGitControlBar={false}
                   placeholder={t(
                     I18nKey.AUTOMATION_SETUP$DOCKED_COMPOSER_PLACEHOLDER,
