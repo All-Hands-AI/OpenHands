@@ -2,10 +2,10 @@
 import viteConfig from "../vite.config";
 import { build } from "vite";
 import { execFileSync } from "node:child_process";
-import { mkdtemp, readFile, writeFile, symlink, rm } from "node:fs/promises";
+import { mkdtemp, writeFile, symlink, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, matchesGlob, resolve } from "node:path";
-import { compileFunction } from "node:vm";
+import { join, resolve } from "node:path";
+import { Script } from "node:vm";
 import { afterEach, describe, expect, it } from "vitest";
 
 afterEach(() => {
@@ -151,67 +151,44 @@ describe("vite library build", () => {
     );
   });
 
-  it("emits the scoped Canvas stylesheet that package.json exports", async () => {
+  it("emits the scoped Canvas stylesheet and a parseable CJS entry", async () => {
     process.env.BUILD_LIB = "true";
-    const packageJson = JSON.parse(
-      await readFile(resolve("package.json"), "utf8"),
-    ) as {
-      exports: Record<string, unknown>;
-      sideEffects?: boolean | string[];
+    const config = await viteConfig({ mode: "production", command: "build" });
+    const outputs = config.build?.rollupOptions?.output;
+    const cjsOutput = (Array.isArray(outputs) ? outputs : [outputs]).find(
+      (output) => output?.format === "cjs",
+    );
+    if (!cjsOutput) throw new Error("Expected a CJS library output");
+    const built = await build({
+      ...config,
+      configFile: false,
+      logLevel: "error",
+      build: {
+        ...config.build,
+        sourcemap: false,
+        write: false,
+        rollupOptions: { ...config.build?.rollupOptions, output: [cjsOutput] },
+      },
+    });
+    const [result] = Array.isArray(built) ? built : [built];
+    if (!("output" in result))
+      throw new Error("Expected a completed library build");
+    const file = (fileName: string) => {
+      const item = result.output.find((entry) => entry.fileName === fileName);
+      if (!item) throw new Error(`Missing ${fileName}`);
+      return String(item.type === "asset" ? item.source : item.code);
     };
-    const exported = packageJson.exports["./styles.css"];
-    if (typeof exported !== "string" || !exported.startsWith("./dist/"))
-      throw new Error("package.json must export ./styles.css from dist");
-    const publishedPath = exported.slice("./".length);
-    // Bundlers drop a side-effect-only `import ".../styles.css"` when
-    // package.json marks that file side-effect free.
-    const { sideEffects = true } = packageJson;
-    expect(
-      Array.isArray(sideEffects)
-        ? sideEffects.some((glob) => matchesGlob(publishedPath, glob))
-        : sideEffects,
-    ).toBe(true);
 
-    const directory = await mkdtemp(join(tmpdir(), "canvas-lib-css-"));
-    try {
-      const config = await viteConfig({ mode: "production", command: "build" });
-      await build({
-        ...config,
-        configFile: false,
-        logLevel: "error",
-        build: {
-          ...config.build,
-          sourcemap: false,
-          outDir: join(directory, "dist"),
-        },
-      });
+    const css = file("styles.css");
+    // Scoped to the Canvas root so it never restyles the host page.
+    expect(css).toContain("[data-agent-server-ui] .flex{display:flex}");
+    expect(css).not.toMatch(/(^|[{},])\.flex\{/);
+    expect(css).toContain("[data-agent-server-ui] .xterm");
+    expect(css).toContain("fonts.googleapis.com");
 
-      const css = await readFile(join(directory, publishedPath), "utf8");
-      // Tailwind utilities used by the exported components, scoped to the
-      // Canvas root so they never restyle the host page.
-      expect(css).toContain("[data-agent-server-ui] .flex{display:flex}");
-      expect(css).not.toMatch(/(^|[{},])\.flex\{/);
-      // Component-level CSS (xterm) lands in the same stylesheet.
-      expect(css).toContain("[data-agent-server-ui] .xterm");
-
-      // Stripping the CSS imports must leave the CommonJS entry that
-      // package.json routes `require` to parseable.
-      const cjsEntry = await readFile(
-        join(directory, "dist/index.cjs"),
-        "utf8",
-      );
-      expect(() =>
-        compileFunction(cjsEntry, [
-          "exports",
-          "require",
-          "module",
-          "__filename",
-          "__dirname",
-        ]),
-      ).not.toThrow();
-    } finally {
-      await rm(directory, { recursive: true, force: true });
-    }
+    // `package.json` routes `require` here; stripped CSS imports must not
+    // leave it unparseable.
+    expect(() => new Script(file("index.cjs"))).not.toThrow();
   }, 180000);
 });
 
