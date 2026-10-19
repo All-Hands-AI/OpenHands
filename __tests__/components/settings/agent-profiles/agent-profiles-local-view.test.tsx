@@ -277,6 +277,8 @@ describe("AgentProfilesLocalView save mapping", () => {
       tool_concurrency_limit: 4,
       mcp_server_refs: ["github"],
       disabled_skills: ["deploy-checklist"],
+      enable_classify_and_switch_llm_tool: true,
+      meta_profile_ref: "fast-router",
     };
     vi.mocked(AgentProfilesService.getProfile).mockResolvedValue({
       name: "default",
@@ -319,6 +321,9 @@ describe("AgentProfilesLocalView save mapping", () => {
       // The editor's Condenser and Verification sections open on these.
       condenser: { kind: "NoOpCondenserSettings" },
       verification: { critic_enabled: true },
+      // The editor's Model Router section opens on these.
+      enable_classify_and_switch_llm_tool: true,
+      meta_profile_ref: "fast-router",
     });
 
     await user.click(screen.getByTestId("save-agent-profile-btn"));
@@ -341,6 +346,8 @@ describe("AgentProfilesLocalView save mapping", () => {
       tool_concurrency_limit: 4,
       mcp_server_refs: ["github"],
       disabled_skills: ["deploy-checklist"],
+      enable_classify_and_switch_llm_tool: true,
+      meta_profile_ref: "fast-router",
     });
     expect(profile).not.toHaveProperty("id");
     expect(profile).not.toHaveProperty("name");

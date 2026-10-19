@@ -70,6 +70,7 @@ import {
   toProfileSkillFields,
   type SkillEnablement,
 } from "#/utils/skill-enablement";
+import { useMetaProfiles } from "#/hooks/query/use-meta-profiles";
 import { flattenMcpConfig } from "#/utils/mcp-installed-servers";
 import { parseMcpConfig } from "#/utils/mcp-config";
 import {
@@ -100,6 +101,8 @@ type AgentSettingsSnapshot = {
 };
 
 const TOOL_CONCURRENCY_FIELD_KEY = "tool_concurrency_limit";
+// Not a valid meta-profile name, so it can't collide with one.
+const ROUTER_OFF_KEY = "__off__";
 const MCP_SERVER_REFS_KEY = "mcp_server_refs";
 const SECRET_REFS_KEY = "secret_refs";
 const TOOLS_KEY = "tools";
@@ -173,6 +176,8 @@ export type AgentProfileFieldsDraft =
       public_skills?: string[];
       disabled_skills?: string[];
       tools?: ProfileToolSpec[] | null;
+      enable_classify_and_switch_llm_tool?: boolean;
+      meta_profile_ref?: string | null;
       persona?: string | null;
       system_message_suffix?: string | null;
       condenser?: Record<string, SettingsValue>;
@@ -213,6 +218,8 @@ export interface AgentProfileFieldsInput {
   toolParams?: Record<string, Record<string, SettingsValue>>;
   /** Whether the tool catalog loaded; `tools` is only written then. */
   toolCatalogLoaded?: boolean;
+  /** The Model Router to store: a meta-profile name, null for none, undefined to keep it. */
+  router?: string | null;
   systemPromptMode: SystemPromptMode;
   systemPromptText: string;
   /** False when the section is hidden, so neither prompt field is written. */
@@ -261,6 +268,7 @@ export function buildAgentProfileFields(
     selectedTools = [],
     toolParams = {},
     toolCatalogLoaded = false,
+    router,
     systemPromptMode,
     systemPromptText,
     systemPromptEditable,
@@ -312,6 +320,10 @@ export function buildAgentProfileFields(
       selected: selectedTools,
       params: toolParams,
     });
+  }
+  if (router !== undefined) {
+    fields.enable_classify_and_switch_llm_tool = router !== null;
+    fields.meta_profile_ref = router;
   }
   if (toolConcurrencyField) {
     // Reuse the schema-driven coercion/validation; throws on bad input.
@@ -850,6 +862,27 @@ export function AgentSettingsScreen({
     if (!control.isDirty && storedBehavior[section]) return undefined;
     return fromBehaviorFormValues(schema, section, control.values);
   };
+  // --- Model Router (OpenHands; stored on the profile) ---
+  // `default` launches with the router chosen on the Model Router page instead.
+  const routerEditable = !isDefaultProfile;
+  const { data: metaProfilesData } = useMetaProfiles({
+    enabled: routerEditable,
+  });
+  const initialRouter =
+    agentSettingsOverride?.enable_classify_and_switch_llm_tool === true &&
+    typeof agentSettingsOverride?.meta_profile_ref === "string"
+      ? agentSettingsOverride.meta_profile_ref
+      : null;
+  const [router, setRouter] = useState<string | null>(initialRouter);
+  useEffect(() => {
+    setRouter(initialRouter);
+  }, [initialRouter]);
+  const routerNames = (metaProfilesData?.meta_profiles ?? []).map(
+    ({ name }) => name,
+  );
+  // A router that no longer exists fails the launch, so keep it visible.
+  const routerDangling =
+    router !== null && !!metaProfilesData && !routerNames.includes(router);
 
   // --- Save control ---
   // Ref-backed so the exposed builder/credential fns read the freshest state at
@@ -881,6 +914,7 @@ export function AgentSettingsScreen({
   const secretScopeDirty =
     secretsMode !== initialSecretRefs.mode ||
     !sameScopeSelection(orderedSelectedSecrets, initialSecretRefs.selected);
+  const routerDirty = routerEditable && router !== initialRouter;
   const toolSelectionDirty =
     toolsMode !== initialTools.mode ||
     (toolsMode === "custom" &&
@@ -906,7 +940,8 @@ export function AgentSettingsScreen({
         isCustomAcpModel !== loadedSnapshot.isCustomAcpModel
       : toolConcurrency !== initialToolConcurrency ||
         systemPromptDirty ||
-        behaviorDirty);
+        behaviorDirty ||
+        routerDirty);
   const credentialsDirty = acpCredentialForm.isDirty;
   const isAnyDirty =
     settingsDirty ||
@@ -1026,6 +1061,7 @@ export function AgentSettingsScreen({
       selectedTools: orderedSelectedTools,
       toolParams: initialTools.params,
       toolCatalogLoaded,
+      router: routerEditable ? router : undefined,
       systemPromptMode,
       systemPromptText,
       systemPromptEditable: showSystemPrompt,
@@ -1168,6 +1204,61 @@ export function AgentSettingsScreen({
         </div>
       ) : null}
 
+      {!isAcp ? (
+        <div
+          className="flex flex-col gap-2.5"
+          data-testid="agent-settings-router"
+        >
+          <Typography.Text className="text-sm">
+            {t(I18nKey.SETTINGS$NAV_META_LLM)}
+          </Typography.Text>
+          {routerEditable ? (
+            <>
+              <SettingsDropdownInput
+                testId="agent-settings-router-select"
+                name="agent-router"
+                label=""
+                items={[
+                  {
+                    key: ROUTER_OFF_KEY,
+                    label: t(I18nKey.SETTINGS$AGENT_PROFILE_ROUTER_OFF),
+                  },
+                  ...[
+                    ...routerNames,
+                    ...(routerDangling && router ? [router] : []),
+                  ].map((name) => ({ key: name, label: name })),
+                ]}
+                selectedKey={router ?? ROUTER_OFF_KEY}
+                isDisabled={isSaving}
+                onSelectionChange={(key) => {
+                  if (key === null || key === undefined) return;
+                  setRouter(key === ROUTER_OFF_KEY ? null : String(key));
+                }}
+              />
+              {routerDangling ? (
+                <Typography.Text
+                  testId="agent-settings-router-dangling"
+                  className="text-xs text-danger"
+                >
+                  {t(I18nKey.SETTINGS$AGENT_PROFILE_ROUTER_DANGLING, {
+                    name: router,
+                  })}
+                </Typography.Text>
+              ) : null}
+              <Typography.Text className="text-xs text-tertiary-alt">
+                {t(I18nKey.SETTINGS$AGENT_PROFILE_ROUTER_HINT)}
+              </Typography.Text>
+            </>
+          ) : (
+            <Typography.Text
+              testId="agent-settings-router-default-profile"
+              className="text-xs text-tertiary-alt"
+            >
+              {t(I18nKey.SETTINGS$AGENT_PROFILE_ROUTER_DEFAULT_PROFILE)}
+            </Typography.Text>
+          )}
+        </div>
+      ) : null}
       {!isAcp && toolConcurrencyField ? (
         <SchemaField
           field={toolConcurrencyField}
