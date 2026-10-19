@@ -2,9 +2,9 @@
 import viteConfig from "../vite.config";
 import { build } from "vite";
 import { execFileSync } from "node:child_process";
-import { mkdtemp, writeFile, symlink, rm } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile, symlink, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join, matchesGlob, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 afterEach(() => {
@@ -149,6 +149,58 @@ describe("vite library build", () => {
       ]),
     );
   });
+
+  it("emits the scoped Canvas stylesheet that package.json exports", async () => {
+    process.env.BUILD_LIB = "true";
+    const packageJson = JSON.parse(
+      await readFile(resolve("package.json"), "utf8"),
+    ) as {
+      exports: Record<string, unknown>;
+      sideEffects?: boolean | string[];
+    };
+    const exported = packageJson.exports["./styles.css"];
+    if (typeof exported !== "string" || !exported.startsWith("./dist/"))
+      throw new Error("package.json must export ./styles.css from dist");
+    const publishedPath = exported.slice("./".length);
+    // Bundlers drop a side-effect-only `import ".../styles.css"` when
+    // package.json marks that file side-effect free.
+    const { sideEffects = true } = packageJson;
+    expect(
+      Array.isArray(sideEffects)
+        ? sideEffects.some((glob) => matchesGlob(publishedPath, glob))
+        : sideEffects,
+    ).toBe(true);
+
+    const directory = await mkdtemp(join(tmpdir(), "canvas-lib-css-"));
+    try {
+      const config = await viteConfig({ mode: "production", command: "build" });
+      const outputs = config.build?.rollupOptions?.output;
+      const esOutput = (Array.isArray(outputs) ? outputs : [outputs]).find(
+        (output) => output?.format === "es",
+      );
+      await build({
+        ...config,
+        configFile: false,
+        logLevel: "error",
+        build: {
+          ...config.build,
+          sourcemap: false,
+          outDir: join(directory, "dist"),
+          rollupOptions: { ...config.build?.rollupOptions, output: esOutput },
+        },
+      });
+
+      const css = await readFile(join(directory, publishedPath), "utf8");
+      // Tailwind utilities used by the exported components, scoped to the
+      // Canvas root so they never restyle the host page.
+      expect(css).toContain("[data-agent-server-ui] .flex{display:flex}");
+      expect(css).not.toMatch(/(^|[{},])\.flex\{/);
+      // Component-level CSS (xterm) lands in the same stylesheet.
+      expect(css).toContain("[data-agent-server-ui] .xterm");
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  }, 180000);
 });
 
 it("emits browser-compatible ESM when a bundled CommonJS dependency requires a React peer", async () => {

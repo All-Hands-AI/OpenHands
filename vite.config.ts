@@ -26,6 +26,14 @@ const LIB_EXTERNALS = [
   "framer-motion",
 ];
 const APP_CHUNK_MAX_BYTES = 450 * 1024;
+// Library mode extracts every CSS import in the library graph into one
+// stylesheet. Give it a stable name so package.json can export it as
+// `@openhands/agent-canvas/styles.css`; other assets keep hashed names.
+const LIB_CSS_FILE_NAME = "styles";
+const libAssetFileNames = ({ names }: { names: string[] }) =>
+  names.includes(`${LIB_CSS_FILE_NAME}.css`)
+    ? `${LIB_CSS_FILE_NAME}.css`
+    : "assets/[name]-[hash][extname]";
 
 // Suites verified to be DOM-free: they import pure functions only, touch no
 // DOM, Web Storage, timers or network, and therefore need neither the jsdom
@@ -232,6 +240,7 @@ export default defineConfig(({ mode }) => {
           lib: {
             entry: LIB_ENTRY,
             formats: ["es"],
+            cssFileName: LIB_CSS_FILE_NAME,
           },
           rollupOptions: {
             output: [
@@ -241,7 +250,7 @@ export default defineConfig(({ mode }) => {
                 preserveModulesRoot: "src",
                 entryFileNames: "[name].js",
                 chunkFileNames: "chunks/[name]-[hash].js",
-                assetFileNames: "assets/[name]-[hash][extname]",
+                assetFileNames: libAssetFileNames,
               },
               {
                 format: "cjs",
@@ -249,7 +258,7 @@ export default defineConfig(({ mode }) => {
                 preserveModulesRoot: "src",
                 entryFileNames: "[name].cjs",
                 chunkFileNames: "chunks/[name]-[hash].cjs",
-                assetFileNames: "assets/[name]-[hash][extname]",
+                assetFileNames: libAssetFileNames,
                 exports: "named",
               },
             ],

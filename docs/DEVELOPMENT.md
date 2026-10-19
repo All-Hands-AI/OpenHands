@@ -420,6 +420,15 @@ The standalone app and the exported provider/root wrapper now scope all bundled 
 
 ### Embedding strategy
 
+- Load the Canvas stylesheet once in the host app, next to the component imports:
+
+  ```tsx
+  import "@openhands/agent-canvas/styles.css";
+  import { AgentServerUIProviders } from "@openhands/agent-canvas";
+  ```
+
+  `npm run build:lib` emits it as `dist/styles.css`. It holds the Tailwind, HeroUI, xterm, and app CSS for every exported component, scoped under `[data-agent-server-ui]`, and it `@import`s the Outfit and IBM Plex Mono fonts from Google Fonts. The JavaScript entries do not import it, so a host without a CSS loader (server rendering, tests) can still import the components. Without the stylesheet the components render unstyled and `styleOverrides` has no visible effect.
+
 - Use `AgentServerUIProviders` in host apps. It renders a scoped style root by default.
 - For direct wrapper control, use `AgentServerUIRoot`.
 - The standalone app opts out of the provider wrapper because the router layout already renders the scoped root.

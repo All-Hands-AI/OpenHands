@@ -249,6 +249,7 @@
       "import": "./dist/i18n/index.js",
       "require": "./dist/i18n/index.cjs"
     },
+    "./styles.css": "./dist/styles.css",
     "./package.json": "./package.json"
   },
   "peerDependencies": {
