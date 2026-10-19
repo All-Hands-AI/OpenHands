@@ -9,12 +9,19 @@ import React from "react";
  * — to the pane header when dragging up, or to the composer/footer when
  * dragging down — so the selection focus escapes the message list.
  *
- * While a primary-button drag that started inside the feed is in progress, any
- * selection whose focus leaves the feed is pulled back to the feed edge nearest
- * the pointer. The selection anchor is preserved, so the range grows to the
- * first/last message instead of the layout edge. Selection elsewhere is
- * untouched because the clamp only engages for drags that begin inside the
- * feed.
+ * While a primary-button drag that started inside the feed is in progress, a
+ * selection whose focus escapes past the top or bottom edge is pulled back to
+ * that edge. The clamp rebuilds the range from the original drag anchor with
+ * `Selection.collapse()` + `Selection.extend()`, which keeps the browser's
+ * selection anchor. That anchor is what native selection movement resumes from,
+ * so re-entering the feed after an upward escape continues from where the drag
+ * began; replacing the range with `addRange()` instead moves the browser anchor
+ * to the feed element, making a re-entered selection start at the first message.
+ *
+ * Only vertical escapes are clamped: a sideways escape leaves the pointer
+ * between the vertical bounds, so the native selection is left untouched rather
+ * than being treated as an upward one. Selection elsewhere is untouched because
+ * the clamp only engages for drags that begin inside the feed.
  */
 export function useClampDragSelection(
   containerRef: React.RefObject<HTMLElement | null>,
@@ -49,7 +56,7 @@ export function useClampDragSelection(
     };
 
     const clampSelection = () => {
-      if (!dragging) return;
+      if (!dragging || pointerY === null) return;
       const selection = window.getSelection();
       if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
         return;
@@ -64,17 +71,21 @@ export function useClampDragSelection(
       if (focusNode && container.contains(focusNode)) return;
 
       const bounds = container.getBoundingClientRect();
-      const below = pointerY === null || pointerY >= bounds.bottom;
-      const range = document.createRange();
+      const above = pointerY < bounds.top;
+      const below = pointerY >= bounds.bottom;
+      // A sideways escape keeps the pointer between the vertical bounds; leave
+      // the native selection alone instead of clamping it to the top edge.
+      if (!above && !below) return;
+      if (!container.contains(dragAnchor.node)) return;
+
+      // Rebuild from the original anchor with collapse() + extend() so the
+      // browser keeps the drag anchor and native movement can resume from it.
+      selection.collapse(dragAnchor.node, dragAnchor.offset);
       if (below) {
-        range.setStart(dragAnchor.node, dragAnchor.offset);
-        range.setEnd(container, container.childNodes.length);
+        selection.extend(container, container.childNodes.length);
       } else {
-        range.setStart(container, 0);
-        range.setEnd(dragAnchor.node, dragAnchor.offset);
+        selection.extend(container, 0);
       }
-      selection.removeAllRanges();
-      selection.addRange(range);
     };
 
     // Capture phase so the drag is tracked before any handler stops propagation.

@@ -602,7 +602,36 @@ test.describe("UI regressions", () => {
     });
     await page.waitForTimeout(300);
 
-    const geometry = await scroller.evaluate((el, dir) => {
+    const start = await pickVisibleMessage(
+      page,
+      direction === "down" ? "first" : "last",
+    );
+    // Stay inside the viewport but outside the feed so the selection tries to
+    // escape into the pane header (up) or the composer (down).
+    const targetY = direction === "down" ? page.viewportSize()!.height - 1 : 1;
+
+    await page.mouse.move(start.x, start.y);
+    await page.mouse.down();
+    await page.mouse.move(start.x, targetY, { steps: 30 });
+    await page.waitForTimeout(300);
+
+    const result = await scroller.evaluate((el) => {
+      const feed = el;
+      const selection = window.getSelection();
+      return {
+        focusInFeed: feed.contains(selection?.focusNode ?? null),
+        text: selection?.toString() ?? "",
+      };
+    });
+
+    await page.mouse.up();
+    return result;
+  }
+
+  /** A point inside the first or last fully visible message text node. */
+  async function pickVisibleMessage(page: Page, position: "first" | "last") {
+    const scroller = await waitForScrollableConversation(page);
+    return scroller.evaluate((el, pos) => {
       const feed = el;
       const bounds = feed.getBoundingClientRect();
       const walker = document.createTreeWalker(feed, NodeFilter.SHOW_TEXT);
@@ -620,32 +649,10 @@ test.describe("UI regressions", () => {
           });
         }
       }
-      const start = dir === "down" ? candidates[0] : candidates.at(-1);
-      if (!start) throw new Error(`no draggable message found (${dir})`);
-      // Stay inside the viewport but outside the feed so the selection tries to
-      // escape into the pane header (up) or the composer (down).
-      return {
-        start,
-        targetY: dir === "down" ? window.innerHeight - 1 : 1,
-      };
-    }, direction);
-
-    await page.mouse.move(geometry.start.x, geometry.start.y);
-    await page.mouse.down();
-    await page.mouse.move(geometry.start.x, geometry.targetY, { steps: 30 });
-    await page.waitForTimeout(300);
-
-    const result = await scroller.evaluate((el) => {
-      const feed = el;
-      const selection = window.getSelection();
-      return {
-        focusInFeed: feed.contains(selection?.focusNode ?? null),
-        text: selection?.toString() ?? "",
-      };
-    });
-
-    await page.mouse.up();
-    return result;
+      const point = pos === "first" ? candidates[0] : candidates.at(-1);
+      if (!point) throw new Error(`no draggable message found (${pos})`);
+      return point;
+    }, position);
   }
 
   for (const direction of ["up", "down"] as const) {
@@ -670,6 +677,65 @@ test.describe("UI regressions", () => {
       expect(selection.text).not.toContain("Disconnected");
     });
   }
+
+  /**
+   * Drags from a message, past the top edge, and back into the feed without
+   * releasing. With the clamp rebuilding the range via `collapse()` +
+   * `extend()`, the browser anchor survives, so the selection resumes from the
+   * original message instead of restarting at the first feed child.
+   */
+  test("keeps the original anchor when an upward drag reenters the feed", async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+    await routeSessionApiKey(page);
+    await routePaginationConversation(page);
+    await page.goto(`/conversations/${PAGINATION_CONVERSATION_ID}`, {
+      waitUntil: "domcontentloaded",
+    });
+    await expect(
+      page.getByText("Pagination message 100", { exact: true }),
+    ).toBeVisible({ timeout: 15_000 });
+
+    const scroller = await waitForScrollableConversation(page);
+    await scroller.evaluate((el) => {
+      const feed = el;
+      feed.scrollTop = Math.round((feed.scrollHeight - feed.clientHeight) / 2);
+    });
+    await page.waitForTimeout(300);
+
+    const start = await pickVisibleMessage(page, "last");
+
+    // Start on the bottom-most visible message, escape past the top edge, then
+    // come back down into the feed without releasing the button.
+    await page.mouse.move(start.x, start.y);
+    await page.mouse.down();
+    await page.mouse.move(start.x, 1, { steps: 20 });
+    await page.waitForTimeout(400);
+
+    const reenter = await pickVisibleMessage(page, "last");
+    await page.mouse.move(reenter.x, reenter.y, { steps: 20 });
+    await page.waitForTimeout(400);
+
+    const selection = await scroller.evaluate((el) => {
+      const s = window.getSelection();
+      const text = s?.toString() ?? "";
+      const numbers = [...text.matchAll(/Pagination message (\d+)/g)].map((m) =>
+        Number(m[1]),
+      );
+      return {
+        focusInFeed: el.contains(s?.focusNode ?? null),
+        anchorInFeed: el.contains(s?.anchorNode ?? null),
+        minNumber: numbers.length ? Math.min(...numbers) : null,
+      };
+    });
+    await page.mouse.up();
+
+    expect(selection.anchorInFeed).toBe(true);
+    expect(selection.focusInFeed).toBe(true);
+    // Re-entering near the bottom must not restart the range at message 1.
+    expect(selection.minNumber).toBeGreaterThan(1);
+  });
 
   // ── #1076: workspace selection persistence ───────────────────────
 

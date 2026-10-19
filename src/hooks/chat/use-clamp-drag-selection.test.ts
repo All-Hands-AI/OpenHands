@@ -21,6 +21,20 @@ function mountChatPane(): Fixture {
   const message = document.createElement("p");
   message.textContent = "Local pagination message 100";
   feed.append(message);
+  // jsdom reports a zero-size rect; give the feed real vertical bounds so the
+  // pointer position maps to the top/bottom edge the way it does in the pane.
+  feed.getBoundingClientRect = () =>
+    ({
+      top: 100,
+      bottom: 400,
+      left: 0,
+      right: 300,
+      width: 300,
+      height: 300,
+      x: 0,
+      y: 100,
+      toJSON: () => ({}),
+    }) as DOMRect;
 
   const chrome = document.createElement("div");
   const chromeText = document.createElement("span");
@@ -97,6 +111,44 @@ describe("useClampDragSelection", () => {
 
     expect(feed.contains(selection.focusNode)).toBe(true);
     expect(selection.toString()).not.toContain("Conversation name");
+  });
+
+  it("keeps the browser anchor when the drag escapes past the top edge", () => {
+    const { feed, message, headerText } = mountChatPane();
+    renderHook(() => useClampDragSelection({ current: feed }));
+
+    mouseDownOn(feed, 300);
+    const selection = dragSelection(
+      message.firstChild!,
+      headerText.firstChild!,
+      5,
+    );
+
+    dragPointerTo(0);
+
+    // The browser anchor must stay on the original text, not be moved to the
+    // feed element: native movement resumes from the anchor when the pointer
+    // re-enters the feed, so a container anchor would restart at message 1.
+    expect(selection.anchorNode).toBe(message.firstChild);
+    expect(feed.contains(selection.focusNode)).toBe(true);
+  });
+
+  it("leaves a sideways escape untouched", () => {
+    const { feed, message, chromeText } = mountChatPane();
+    renderHook(() => useClampDragSelection({ current: feed }));
+
+    mouseDownOn(feed, 250);
+    const selection = dragSelection(
+      message.firstChild!,
+      chromeText.firstChild!,
+      5,
+    );
+
+    // The pointer stays between the feed's vertical bounds, so this is not a
+    // top/bottom escape and must not be clamped to the feed's first message.
+    dragPointerTo(250);
+
+    expect(feed.contains(selection.focusNode)).toBe(false);
   });
 
   it("keeps the selection stable across repeated clamp updates", () => {
