@@ -1,3 +1,12 @@
+## Raw-color class-map scanning
+
+`shadcn/no-raw-colors` stays at warning severity. The audited component paths in
+`eslint.config.js` also enable `scanAllStrings` so literal class recipes remain
+visible when dynamic map or helper lookups hide them from class-site analysis.
+Keep this adoption scoped: scanning every string can mistake program tags for
+color utilities. Review newly included findings before extending the file list;
+the shared exact legacy-token exceptions remain unchanged.
+
 ## Inline-style rollout
 
 `shadcn/no-inline-styles` runs at warning severity across source, including UI

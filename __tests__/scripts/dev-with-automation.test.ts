@@ -6,9 +6,15 @@
 // http://localhost:3000/), breaking that resolution; the Node environment
 // has the standard WHATWG URL behavior that honors the file:// base.
 import net from "node:net";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
@@ -327,6 +333,61 @@ describe("buildConfig", () => {
     };
   }
 
+  // Exercise the public launcher entry point through its existing embedder
+  // prerequisite callback. Stop before services start; no test-only exports.
+  function launchDirectoryProbe(env: Record<string, string>, args: string[]) {
+    const probeHome = path.dirname(env.OH_SESSION_API_KEY_PATH);
+    const script = `
+      import { main } from ${JSON.stringify(pathToFileURL(path.join(repoRoot, "scripts/dev-with-automation.mjs")).href)};
+      process.argv = [process.execPath, "directory-probe", ...${JSON.stringify(args)}];
+      try {
+        await main({
+          staticMode: true,
+          skipNpmCheck: true,
+          extraPrereqs(config) {
+            console.log("QA_DIRECTORY_PROBE=" + JSON.stringify({ stateDir: config.stateDir, tmuxTmpDir: config.tmuxTmpDir }));
+            throw new Error("qa-directory-probe-complete");
+          },
+        });
+      } catch (error) {
+        if (error.message !== "qa-directory-probe-complete") throw error;
+      }
+    `;
+    // Only command discovery is stubbed. No backend executes in this probe.
+    if (process.platform === "win32") {
+      writeFileSync(path.join(probeHome, "uvx.cmd"), "@exit /b 0\r\n");
+    } else {
+      writeFileSync(path.join(probeHome, "uvx"), "#!/bin/sh\nexit 0\n", {
+        mode: 0o700,
+      });
+    }
+    // An ambient TMUX_TMPDIR (e.g. npm test run inside tmux) would mask the
+    // default; only the case's own env may set it.
+    const { TMUX_TMPDIR: _ambientTmuxTmpDir, ...parentEnv } = process.env;
+    const result = spawnSync(
+      process.execPath,
+      ["--input-type=module", "-e", script],
+      {
+        env: {
+          ...parentEnv,
+          ...env,
+          HOME: probeHome,
+          PATH: `${probeHome}${path.delimiter}${process.env.PATH ?? ""}`,
+          OH_AGENT_SERVER_LOCAL_PATH: "",
+          OH_AUTOMATION_LOCAL_PATH: "",
+        },
+        encoding: "utf8",
+        timeout: 15_000,
+      },
+    );
+    expect(result.status, result.stderr).toBe(0);
+    const line = result.stdout
+      .split("\n")
+      .find((item) => item.startsWith("QA_DIRECTORY_PROBE="));
+    expect(line, result.stdout).toBeDefined();
+    return JSON.parse(line!.slice("QA_DIRECTORY_PROBE=".length));
+  }
+
   it("builds default config with correct ports", async () => {
     const config = await buildConfig({}, envWithIsolatedKeyPath());
 
@@ -349,6 +410,49 @@ describe("buildConfig", () => {
       config.vitePort,
     ]);
     expect(ports.size).toBe(4);
+  });
+
+  it("creates separate default tmux directories before local backends start", async () => {
+    const configs = [];
+    for (let n = 0; n < 2; n += 1) {
+      const env = envWithIsolatedKeyPath();
+      env.OH_CANVAS_SAFE_STATE_DIR = path.join(
+        path.dirname(env.OH_SESSION_API_KEY_PATH),
+        "state",
+      );
+      const config = launchDirectoryProbe(env, ["--backend-only"]);
+      const expected = path.join(config.stateDir, "tmux");
+      expect(config.tmuxTmpDir).toBe(expected);
+      expect(existsSync(expected)).toBe(true);
+      configs.push(config);
+    }
+    expect(configs[0].tmuxTmpDir).not.toBe(configs[1].tmuxTmpDir);
+  });
+
+  it("creates and preserves an explicit socket-capable TMUX_TMPDIR", async () => {
+    const env = envWithIsolatedKeyPath();
+    env.OH_CANVAS_SAFE_STATE_DIR = path.join(
+      path.dirname(env.OH_SESSION_API_KEY_PATH),
+      "state",
+    );
+    env.TMUX_TMPDIR = path.join(
+      path.dirname(env.OH_SESSION_API_KEY_PATH),
+      "sockets",
+    );
+    const config = launchDirectoryProbe(env, ["--backend-only"]);
+    expect(config.tmuxTmpDir).toBe(env.TMUX_TMPDIR);
+    expect(existsSync(env.TMUX_TMPDIR)).toBe(true);
+    expect(existsSync(path.join(config.stateDir, "tmux"))).toBe(false);
+  });
+
+  it("does not create a local terminal directory in frontend-only mode", async () => {
+    const env = envWithIsolatedKeyPath();
+    env.OH_CANVAS_SAFE_STATE_DIR = path.join(
+      path.dirname(env.OH_SESSION_API_KEY_PATH),
+      "state",
+    );
+    const config = launchDirectoryProbe(env, ["--frontend-only"]);
+    expect(existsSync(path.join(config.stateDir, "tmux"))).toBe(false);
   });
 
   it("lets --automation-git-ref win over an exported OH_AUTOMATION_LOCAL_PATH", async () => {
