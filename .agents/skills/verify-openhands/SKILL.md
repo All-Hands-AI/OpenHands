@@ -77,9 +77,12 @@ control-openhands stop                         # stops only this run; evidence s
   every shell command when other agents share the machine: an agent that drives
   someone else's run corrupts both evidence ledgers. For the same reason never
   `pkill -f` or `killall` by pattern; `control-openhands stop` ends only your run.
-- **Launch** refuses to start when less than about 2 GB of memory is free: each
-  run holds an Agent Server, automation, a static frontend and Chromium (about
-  1.5 GB together). Stop runs you are done with; several agents on one machine
+- **Launch** refuses to start when less than about 2 GB of memory is available
+  (Linux `MemAvailable`, macOS `process.availableMemory()`, otherwise unused
+  memory). On macOS, libuv >=1.52 includes reclaimable pages; older Node builds
+  can still refuse conservatively. Each run holds an Agent Server, automation,
+  a static frontend and Chromium (about 1.5 GB together). Stop runs you are done
+  with; several agents on one machine
   should each `launch --new`, export their own `OH_VERIFY_RUN`, and never touch
   another agent's run.
 - **Launch** starts `bin/agent-canvas.mjs` from this checkout with a private
@@ -121,12 +124,34 @@ control-openhands stop                         # stops only this run; evidence s
   `browser reset` (fresh browser profile: first run again), `service stop
   automation|agent-server` (backend-down UI), `restart` (same state after a
   backend restart: persistence and reconnection) and `restart --rotate-key`
-  (stale session key). `restart` keeps the browser on its page. While a service
+  (stale session key). `restart` keeps the browser on its page.
+  `browser network-state offline|online|status` disconnects or reconnects the
+  browser context without changing backend state or intercepting requests;
+  restore `online` before doctor or teardown.
+  `browser media --reduced-motion reduce|no-preference` uses Playwright media
+  emulation on the active page and returns its real `matchMedia` preference,
+  alongside the existing playback observations. Use `no-preference` for normal
+  streaming-motion checks; restore the prior preference afterwards.
+  `browser events --kinds websocket-created,websocket-open,websocket-close,websocket-error --last 100`
+  observes real subscriptions: redacted socket/page URLs preserve numeric
+  `after_seq`, with event timestamps and frame counts. No frame bodies or
+  headers are recorded. `websocket-created` is an attempt; `websocket-open`
+  marks the first observed frame, which proves communication rather than an
+  exact handshake time. Counts are snapshots at these lifecycle entries.
+  Navigate or reload after the daemon starts to capture fresh subscriptions;
+  healthy lifecycle entries are omitted from `browser errors`. While a service
   is stopped, a reload replaces the page with the backend-unavailable screen, so
   drive backend-down states on the page that was already loaded.
   `service pause automation` and `service resume automation` queue and release
   real requests for in-flight race checks. Resume before stopping the run. `browser
-  network` (with `--bodies`, what the page sent, credentials redacted),
+  network` (with `--bodies`, what the page sent, credentials redacted;
+  the display `body` is capped at 2000 characters. `bodyFields.plugins` retains
+  only the request's top-level `plugins` before that cap, using the same
+  recursive credential/env/header and URL redaction. Its complete JSON
+  projection is bounded to 16384 UTF-8 bytes; an oversized projection is omitted
+  with `bodyFieldsOmitted.plugins` explaining why. No projection of other
+  top-level fields is made, and neither body fields nor omission metadata appear
+  without `--bodies`),
   `browser toasts` and `browser media` observe requests by origin, toasts and
   sound without changing anything; `click --observe SEL` and `scroll
   --observe SEL` record the transient states SEL shows while the action's
@@ -152,7 +177,9 @@ control-openhands stop                         # stops only this run; evidence s
   still a leak.
 - **Cleanup** with `control-openhands stop` (add `--purge-private` to delete keys
   and state once you have checked the evidence). It only signals the process
-  group it launched and verifies the ports closed. Delete run-owned fixtures
+  group it launched and verifies the ports closed. On Linux, zombie-only process
+  groups count as stopped; private state and port claims are released only after
+  every run port is closed. Delete run-owned fixtures
   through the UI when deletion is the path under test.
 
 ## LLM budget
@@ -231,9 +258,13 @@ prerequisite; never substitute a mock and call it a pass.
   <date>, #<issue>)` note on the bullet that reproduces it, next to the
   expected result, or a `Known issue #<issue>` Gotchas entry when no recipe can
   drive it. Make the note executable with a `known-bug` block where a recipe
-  can drive it, so `control-openhands bug run <ID>` reports it as an expected
-  failure (`xfail`) and flags it (`xpass`) the day it stops reproducing.
-  Passes re-drive these notes once the issue closes.
+  can drive it, so `control-openhands bug run <ID>` reports an expected failure
+  (`xfail`) and flags it (`xpass`) when the symptom stops reproducing. The
+  [existing-bug backfill](references/backfills/2026-10-12-open-bugs.md) records its
+  frozen inventory; the [main refresh](references/backfills/2026-10-16-main-refresh.md)
+  reconciles later fixes and intake; [bug-backfill.md](references/bug-backfill.md) defines outcomes
+  and label reconciliation. Passes re-drive these notes once the issue closes.
+  `ready-for-dev` prioritizes checks without excluding older actionable reports.
 - **Blocked**: name the missing prerequisite (account, entitlement, OS, binary)
   and the route you attempted. Unreachable is never a pass.
 

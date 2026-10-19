@@ -498,6 +498,55 @@ describe("ManageBackendsModal", () => {
     expect(screen.getByTestId("manage-backends-modal")).toBeInTheDocument();
   });
 
+  it("keeps the edit form and its draft open on Escape", async () => {
+    vi.stubEnv("VITE_LOCK_TO_CLOUD", "");
+    delete (window as unknown as Record<string, unknown>)
+      .__AGENT_CANVAS_LOCK_TO_CLOUD__;
+
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+
+    renderWithProviders(
+      <TestSeed
+        onMount={(ctx) => {
+          ctx.addBackend({
+            name: "Acme Local",
+            host: "http://localhost:9000",
+            apiKey: "old-key",
+            kind: "local",
+          });
+        }}
+      >
+        <ManageBackendsModal onClose={onClose} />
+      </TestSeed>,
+    );
+
+    await user.click(
+      await screen.findByTestId("manage-backends-edit-Acme Local"),
+    );
+    const nameInput = await screen.findByTestId("edit-backend-name");
+    await user.clear(nameInput);
+    await user.type(nameInput, "Draft name");
+    await user.keyboard("{Escape}");
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByTestId("manage-backends-modal")).toBeInTheDocument();
+    expect(screen.getByTestId("edit-backend-name")).toHaveValue("Draft name");
+  });
+
+  it("keeps the add form open on Escape", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    renderWithProviders(<ManageBackendsModal onClose={onClose} />);
+
+    await user.click(screen.getByTestId("manage-backends-add"));
+    await screen.findByTestId("add-backend-modal");
+    await user.keyboard("{Escape}");
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByTestId("add-backend-modal")).toBeInTheDocument();
+  });
+
   it("shows each cloud backend's connected organization so same-named backends are distinguishable", async () => {
     // Two cloud backends share the same name and host; each API key is bound
     // to a different org, which is the only thing that tells them apart.
