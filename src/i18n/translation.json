@@ -52216,5 +52216,23 @@
     "tr": "Yalnızca bağlantıyı kes",
     "uk": "Лише від'єднати",
     "id": "Hanya putuskan"
+  },
+  "LAUNCH$PARAMETERS_UNSUPPORTED_LOCAL": {
+    "en": "This local backend does not support plugin parameters. Remove the parameters from the launch link before starting a conversation.",
+    "ja": "このローカルバックエンドはプラグインのパラメーターに対応していません。会話を開始する前に、起動リンクからパラメーターを削除してください。",
+    "zh-CN": "此本地后端不支持插件参数。请先从启动链接中移除参数，再开始对话。",
+    "zh-TW": "此本機後端不支援外掛參數。請先從啟動連結中移除參數，再開始對話。",
+    "ko-KR": "이 로컬 백엔드는 플러그인 매개변수를 지원하지 않습니다. 대화를 시작하기 전에 실행 링크에서 매개변수를 제거하세요.",
+    "no": "Denne lokale backend-en støtter ikke programtilleggsparametere. Fjern parameterne fra oppstartslenken før du starter en samtale.",
+    "ar": "لا تدعم هذه الواجهة الخلفية المحلية معلمات الإضافات. أزل المعلمات من رابط التشغيل قبل بدء المحادثة.",
+    "de": "Dieses lokale Backend unterstützt keine Plugin-Parameter. Entferne die Parameter aus dem Startlink, bevor du eine Unterhaltung startest.",
+    "fr": "Ce serveur local ne prend pas en charge les paramètres des extensions. Retirez les paramètres du lien de lancement avant de démarrer une conversation.",
+    "it": "Questo backend locale non supporta i parametri dei plugin. Rimuovi i parametri dal link di avvio prima di iniziare una conversazione.",
+    "pt": "Este backend local não suporta parâmetros de plugins. Remova os parâmetros do link de inicialização antes de iniciar uma conversa.",
+    "es": "Este backend local no admite parámetros de plugins. Elimina los parámetros del enlace de inicio antes de comenzar una conversación.",
+    "ca": "Aquest backend local no admet paràmetres de connectors. Elimina els paràmetres de l’enllaç d’inici abans de començar una conversa.",
+    "tr": "Bu yerel arka uç eklenti parametrelerini desteklemiyor. Sohbet başlatmadan önce parametreleri başlatma bağlantısından kaldırın.",
+    "uk": "Цей локальний сервер не підтримує параметри плагінів. Видаліть параметри з посилання запуску перед початком розмови.",
+    "id": "Backend lokal ini tidak mendukung parameter plugin. Hapus parameter dari tautan peluncuran sebelum memulai percakapan."
   }
 }

@@ -1,3 +1,6 @@
+import i18n, { OPENHANDS_I18N_NAMESPACE } from "#/i18n";
+import { I18nKey } from "#/i18n/declaration";
+import { hasPluginParameters } from "#/utils/plugin-parameters";
 import {
   ACP_SETTINGS_KEYS,
   HOOK_EVENT_FIELDS,
@@ -1136,6 +1139,13 @@ function buildConfiguredConversationSettings(options: {
     workingDir,
     executionRuntime,
   } = options;
+  if (hasPluginParameters(plugins)) {
+    throw new Error(
+      i18n.t(I18nKey.LAUNCH$PARAMETERS_UNSUPPORTED_LOCAL, {
+        ns: OPENHANDS_I18N_NAMESPACE,
+      }),
+    );
+  }
   const conversationSettings = toRecord(settings.conversation_settings);
   const initialMessage = buildInitialMessage(query, conversationInstructions);
 
