@@ -58,6 +58,7 @@ import { parseMcpConfig } from "#/utils/mcp-config";
 import {
   agentProfileSupportsSecretRefs,
   agentProfileSupportsInstructions,
+  agentProfileSupportsSkills,
   agentProfileSupportsTools,
 } from "#/api/agent-profiles-service/profile-field-support";
 import { useSearchSecrets } from "#/hooks/query/use-get-secrets";
@@ -474,7 +475,8 @@ export function AgentSettingsScreen({
   );
   // --- Skills (OpenHands; the selection a profile launch loads) ---
   // `default` launches with the Skills page selection instead.
-  const skillsEditable = !isDefaultProfile;
+  const skillsSupported = agentProfileSupportsSkills();
+  const skillsEditable = skillsSupported && !isDefaultProfile;
   const {
     data: skillCatalog,
     isError: skillCatalogFailed,
@@ -1273,7 +1275,7 @@ export function AgentSettingsScreen({
         </div>
       ) : null}
 
-      {agentType === "openhands" && backendKind !== "cloud" ? (
+      {agentType === "openhands" && skillsSupported ? (
         <div
           className="flex flex-col gap-2.5"
           data-testid="agent-settings-skills-section"

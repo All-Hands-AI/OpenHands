@@ -33,6 +33,7 @@ import { BackNavButton } from "#/components/shared/buttons/back-nav-button";
 import { Typography } from "#/ui/typography";
 import { useSettingsSectionHeader } from "#/contexts/settings-section-header-context";
 import { parseCommand } from "#/utils/acp-command";
+import { agentProfileSupportsSkills } from "#/api/agent-profiles-service/profile-field-support";
 import {
   defaultSkillEnablement,
   toProfileSkillFields,
@@ -136,7 +137,9 @@ export function AgentProfilesLocalView() {
     // A new profile starts from the skills selected on the Skills page.
     setOverride({
       agent_kind: "openhands",
-      ...toProfileSkillFields(defaultSkillEnablement(settings ?? {})),
+      ...(agentProfileSupportsSkills()
+        ? toProfileSkillFields(defaultSkillEnablement(settings ?? {}))
+        : {}),
     });
     setLlmProfileRef(defaultLlmProfileRef);
     setSaveControl(null);

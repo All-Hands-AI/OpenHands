@@ -54,9 +54,11 @@ const CLAUDE_MODELS = [
 
 const profileSupportsSecretRefsMock = vi.hoisted(() => vi.fn(() => true));
 const profileSupportsInstructionsMock = vi.hoisted(() => vi.fn(() => false));
+const profileSupportsSkillsMock = vi.hoisted(() => vi.fn(() => true));
 vi.mock("#/api/agent-profiles-service/profile-field-support", () => ({
   agentProfileSupportsSecretRefs: () => profileSupportsSecretRefsMock(),
   agentProfileSupportsInstructions: () => profileSupportsInstructionsMock(),
+  agentProfileSupportsSkills: () => profileSupportsSkillsMock(),
   agentProfileSupportsTools: () => true,
 }));
 
@@ -1424,6 +1426,7 @@ describe("AgentSettingsScreen — skills", () => {
     vi.spyOn(SettingsService, "getSettings").mockResolvedValue(buildSettings());
     vi.spyOn(SecretsService, "getSecrets").mockResolvedValue([]);
     vi.spyOn(SkillsService, "getSkillCatalog").mockResolvedValue(CATALOG);
+    profileSupportsSkillsMock.mockReturnValue(true);
     acpAuthStatusMock.mockReturnValue({
       status: "unknown",
       isChecking: false,
@@ -1478,6 +1481,31 @@ describe("AgentSettingsScreen — skills", () => {
       await screen.findByTestId("agent-settings-skills-beta"),
     ).toBeChecked();
     expect(control!.isDirty).toBe(false);
+    expect(control!.buildAgentProfileFields()).not.toHaveProperty(
+      "public_skills",
+    );
+  });
+
+  it("hides skills and leaves them out of the save on a cloud backend", async () => {
+    profileSupportsSkillsMock.mockReturnValue(false);
+    let control: AgentSettingsSaveControl | null = null;
+    renderAgentSettingsScreen({
+      agentSettingsOverride: {
+        agent_kind: "openhands",
+        public_skills: ["alpha"],
+        disabled_skills: [],
+      },
+      onSaveControlChange: (next) => {
+        control = next;
+      },
+    });
+
+    await screen.findByTestId("agent-settings-screen");
+    await waitFor(() => expect(control).not.toBeNull());
+    expect(
+      screen.queryByTestId("agent-settings-skills-section"),
+    ).not.toBeInTheDocument();
+    expect(SkillsService.getSkillCatalog).not.toHaveBeenCalled();
     expect(control!.buildAgentProfileFields()).not.toHaveProperty(
       "public_skills",
     );

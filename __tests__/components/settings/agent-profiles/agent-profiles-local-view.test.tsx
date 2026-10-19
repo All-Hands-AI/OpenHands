@@ -120,6 +120,11 @@ vi.mock("#/contexts/settings-section-header-context", () => ({
 
 vi.mock("#/utils/custom-toast-handlers");
 
+const profileSupportsSkillsMock = vi.hoisted(() => vi.fn(() => true));
+vi.mock("#/api/agent-profiles-service/profile-field-support", () => ({
+  agentProfileSupportsSkills: () => profileSupportsSkillsMock(),
+}));
+
 vi.mock("#/api/agent-profiles-service/agent-profiles-service.api", () => ({
   __esModule: true,
   default: { getProfile: vi.fn(), renameProfile: vi.fn() },
@@ -146,6 +151,7 @@ describe("AgentProfilesLocalView save mapping", () => {
       active_profile: "default",
     };
     settingsData = {};
+    profileSupportsSkillsMock.mockReturnValue(true);
   });
 
   it("opens a new profile on the skills selected on the Skills page", async () => {
@@ -164,6 +170,22 @@ describe("AgentProfilesLocalView save mapping", () => {
       public_skills: ["add-skill"],
       disabled_skills: ["mine"],
     });
+  });
+
+  it("opens a new profile without a skill list on a cloud backend", async () => {
+    profileSupportsSkillsMock.mockReturnValue(false);
+    settingsData = { enabled_skills: ["add-skill"], disabled_skills: ["mine"] };
+
+    render(<AgentProfilesLocalView />);
+    await openCreateAndName("my-agent");
+
+    expect(
+      JSON.parse(
+        screen
+          .getByTestId("mock-agent-settings")
+          .getAttribute("data-override") as string,
+      ),
+    ).toEqual({ agent_kind: "openhands" });
   });
 
   it("describes the add editor with agent copy, not the LLM-profile hint", async () => {
