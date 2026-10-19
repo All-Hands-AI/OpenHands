@@ -38,6 +38,7 @@ export function subscribeHomeRecommendedAutomationsDismissed(
   };
 }
 
+// @spec HL-002 — The Home X and the Application settings switch share this one writer.
 export function writeHomeRecommendedAutomationsDismissed(
   dismissed: boolean,
 ): void {

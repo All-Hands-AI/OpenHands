@@ -889,6 +889,7 @@ describe("HomeChatLauncher", () => {
     ).toBeInTheDocument();
   });
 
+  // @spec HL-002 — Dismissing Home's rail removes it and persists the choice.
   it("renders recommended automations rail by default and hides it when dismissed", async () => {
     const user = userEvent.setup();
     renderLauncher();
@@ -912,6 +913,7 @@ describe("HomeChatLauncher", () => {
     ).toBe("true");
   });
 
+  // @spec HL-002 — A stored dismissal keeps the rail off Home.
   it("does not render recommended automations rail when previously dismissed", () => {
     window.localStorage.setItem(
       HOME_RECOMMENDED_AUTOMATIONS_DISMISSED_STORAGE_KEY,

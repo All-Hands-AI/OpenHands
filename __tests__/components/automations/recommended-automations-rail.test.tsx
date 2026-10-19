@@ -328,6 +328,7 @@ describe("RecommendedAutomationsRail", () => {
   });
 
   describe("dismiss behavior", () => {
+    // @spec HL-002 — Rails that do not opt in (empty state, onboarding) get no X.
     it("does not render dismiss button by default", () => {
       render(
         <RecommendedAutomationsRail
@@ -341,6 +342,7 @@ describe("RecommendedAutomationsRail", () => {
       ).not.toBeInTheDocument();
     });
 
+    // @spec HL-002 — The opted-in rail exposes a named X that dismisses it.
     it("renders dismiss button when dismissible is true and calls onDismiss when clicked", async () => {
       const user = userEvent.setup();
       const onDismiss = vi.fn();

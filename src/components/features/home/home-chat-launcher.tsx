@@ -372,6 +372,7 @@ export function HomeChatLauncher() {
         </div>
 
         <div className="mt-8 flex w-full flex-col gap-8">
+          {/* @spec HL-002 — Only Home's rail is dismissible; dismissal unmounts it, inset included */}
           {!isRecommendedAutomationsDismissed && (
             <RecommendedAutomationsLauncher
               variant="rail"

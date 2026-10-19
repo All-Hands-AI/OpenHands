@@ -10,6 +10,7 @@ describe("RecommendedAutomationsSwitch", () => {
     window.localStorage.clear();
   });
 
+  // @spec HL-002 — The switch defaults to on and writes the shared preference.
   it("shows recommended automations by default and hides them when toggled off", async () => {
     const user = userEvent.setup();
     render(<RecommendedAutomationsSwitch />);
@@ -28,6 +29,7 @@ describe("RecommendedAutomationsSwitch", () => {
     ).toBe("true");
   });
 
+  // @spec HL-002 — Turning the switch back on clears the dismissal.
   it("re-enables recommended automations when toggled back on", async () => {
     window.localStorage.setItem(
       HOME_RECOMMENDED_AUTOMATIONS_DISMISSED_STORAGE_KEY,

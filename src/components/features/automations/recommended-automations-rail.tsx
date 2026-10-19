@@ -164,6 +164,7 @@ export function RecommendedAutomationsRail({
         <h2 className="text-sm font-medium text-foreground">
           {t(I18nKey.RECOMMENDED_AUTOMATIONS$SECTION_LABEL)}
         </h2>
+        {/* @spec HL-002 — Named X, revealed on hover or focus, always visible on touch */}
         {dismissible && onDismiss && (
           <button
             type="button"
