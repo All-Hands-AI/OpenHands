@@ -163,5 +163,38 @@ for (const theme of [
         expected.restingBorder,
       );
     }
+
+    await page
+      .getByTestId("focus-cascade-fixture")
+      .evaluate((el) => el.remove());
+    await page.getByRole("link", { name: "Agent", exact: true }).click();
+    await page.getByTestId("add-agent-profile").click();
+    await page.getByTestId("agent-type-selector").click();
+    await page
+      .getByRole("option", { name: "ACP (external subprocess)", exact: true })
+      .click();
+    const command = page.getByTestId("agent-command-input");
+    await expect(command).toBeVisible();
+    const commandBorders = await command.evaluate((el) => {
+      const reference = document.createElement("span");
+      el.parentElement!.append(reference);
+      reference.style.borderColor = "var(--oh-contrast)";
+      const focused = getComputedStyle(reference).borderTopColor;
+      const resting = getComputedStyle(el).borderTopColor;
+      reference.remove();
+      return { resting, focused };
+    });
+    expect(commandBorders.focused).not.toBe(commandBorders.resting);
+    // Enter via the keyboard so this protects the textarea's actual focus
+    // cascade, not just its class recipe or a synthetic CSS fixture.
+    await command.click();
+    // Native text fields participate in WebKit's plain Tab traversal too;
+    // Option+Tab is only needed above to include the button trigger.
+    await command.press("Shift+Tab");
+    await page.keyboard.press("Tab");
+    await expect(command).toBeFocused();
+    await expect(command).toHaveCSS("border-top-color", commandBorders.focused);
+    await command.press(nextControlKey);
+    await expect(command).toHaveCSS("border-top-color", commandBorders.resting);
   });
 }
