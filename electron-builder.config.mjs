@@ -30,8 +30,9 @@
  *   The fix is the `afterPack` hook below: after electron-builder has
  *   finished copying files, we rm -rf the bundled Resources/app/node_modules/
  *   directory, then copy back the dependency closure of RUNTIME_PACKAGES
- *   (~200 KB). The build wastes a few seconds copying files we immediately
- *   delete, but the final artifact is correctly tiny (~10 MB vs ~600 MB).
+ *   (~6 MB, nearly all @openhands/extensions). The build wastes a few seconds
+ *   copying files we immediately delete, but the final artifact stays small
+ *   (~16 MB vs ~600 MB).
  *
  * Packaged app layout (Resources/app/ = electron/ contents):
  *   main.mjs        ← Electron entry point
