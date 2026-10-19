@@ -5,6 +5,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtemp, readFile, writeFile, symlink, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, matchesGlob, resolve } from "node:path";
+import { compileFunction } from "node:vm";
 import { afterEach, describe, expect, it } from "vitest";
 
 afterEach(() => {
@@ -174,10 +175,6 @@ describe("vite library build", () => {
     const directory = await mkdtemp(join(tmpdir(), "canvas-lib-css-"));
     try {
       const config = await viteConfig({ mode: "production", command: "build" });
-      const outputs = config.build?.rollupOptions?.output;
-      const esOutput = (Array.isArray(outputs) ? outputs : [outputs]).find(
-        (output) => output?.format === "es",
-      );
       await build({
         ...config,
         configFile: false,
@@ -186,7 +183,6 @@ describe("vite library build", () => {
           ...config.build,
           sourcemap: false,
           outDir: join(directory, "dist"),
-          rollupOptions: { ...config.build?.rollupOptions, output: esOutput },
         },
       });
 
@@ -197,6 +193,22 @@ describe("vite library build", () => {
       expect(css).not.toMatch(/(^|[{},])\.flex\{/);
       // Component-level CSS (xterm) lands in the same stylesheet.
       expect(css).toContain("[data-agent-server-ui] .xterm");
+
+      // Stripping the CSS imports must leave the CommonJS entry that
+      // package.json routes `require` to parseable.
+      const cjsEntry = await readFile(
+        join(directory, "dist/index.cjs"),
+        "utf8",
+      );
+      expect(() =>
+        compileFunction(cjsEntry, [
+          "exports",
+          "require",
+          "module",
+          "__filename",
+          "__dirname",
+        ]),
+      ).not.toThrow();
     } finally {
       await rm(directory, { recursive: true, force: true });
     }
