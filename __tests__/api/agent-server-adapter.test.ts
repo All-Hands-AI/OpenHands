@@ -142,6 +142,7 @@ describe("buildStartConversationRequest", () => {
     (parameters) => {
       expect(() =>
         buildStartConversationRequest({
+          ...PROFILE,
           settings: DEFAULT_SETTINGS,
           plugins: [{ source: "local-plugin", parameters }],
         }),
@@ -161,7 +162,11 @@ describe("buildStartConversationRequest", () => {
         JSON.stringify([{ source: "local-plugin", parameters }]),
       );
       expect(() =>
-        buildStartConversationRequest({ settings: DEFAULT_SETTINGS, plugins }),
+        buildStartConversationRequest({
+          ...PROFILE,
+          settings: DEFAULT_SETTINGS,
+          plugins,
+        }),
       ).toThrow();
     },
   );
@@ -170,6 +175,7 @@ describe("buildStartConversationRequest", () => {
     "keeps coordinate-only plugins when parameters are %o",
     (parameters) => {
       const payload = buildStartConversationRequest({
+        ...PROFILE,
         settings: DEFAULT_SETTINGS,
         plugins: [
           {
