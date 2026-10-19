@@ -99,7 +99,7 @@ Preconditions:
   control-openhands assert --field value --equals false --bug-shows true -- browser eval 'document.body.innerText.includes("Meta-profile \"QA_KNOWN_ACP_ROUTER\" activated")'  # bug
   ```
 
-- **Unreadable settings refuse router activation (`F12.activate`).** Expected: a handled409 without a filesystem path and no store overwrite. Known failure (reproduced twice 2026-10-16, [OpenHands/software-agent-sdk#5922](https://github.com/OpenHands/software-agent-sdk/issues/5922)): the real Set active path showed the generic500 and the settings path. The corrupt bytes survived. Back up only this run's settings, and restore them in `EXIT` before the runner's health check.
+- **Unreadable settings refuse router activation (`F12.activate`).** Expected: a handled 409 without a filesystem path and no store overwrite. Known failure (reproduced twice 2026-10-16, [OpenHands/software-agent-sdk#5922](https://github.com/OpenHands/software-agent-sdk/issues/5922)): the real Set active path showed the generic 500 and the settings path. The corrupt bytes survived. Back up only this run's settings, and restore them in `EXIT` before the runner's health check.
 
   ```sh known-bug F12.activate corrupt-settings
   QA_ROUTER_SETTINGS="$OH_VERIFY_RUN/private/qa-known-router-settings.json"

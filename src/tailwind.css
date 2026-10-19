@@ -42,6 +42,7 @@
   --color-text-secondary: var(--oh-text-secondary);
   --color-text-tertiary: var(--oh-text-tertiary);
   --color-muted: var(--oh-muted);
+  --color-link: var(--oh-link);
   --color-text-dim: var(--oh-text-dim);
   --color-text-subtle: var(--oh-text-subtle);
   --color-modal-title: var(--oh-modal-title-foreground);
@@ -481,6 +482,19 @@ button.extension-module-card-interactive {
       -20px 0 var(--oh-color-primary);
     background: var(--oh-color-primary);
   }
+}
+
+/*
+ * Syntax-highlighter tokens are inline text runs. Prism names each span after
+ * its grammar type (`token table` for TOML section headers and Markdown
+ * tables, `token static`, ...), and Tailwind generates a utility for any of
+ * those words it finds in the sources (`.table` is `display: table`, which
+ * puts `[`, the section name and `]` on separate lines). Theme colors arrive
+ * as inline styles, so they still apply. Unlayered, so it outranks utilities.
+ */
+code .token {
+  display: inline;
+  position: static;
 }
 
 /* Custom styling for xterm */

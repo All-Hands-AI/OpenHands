@@ -5,7 +5,7 @@ of Agent Canvas. Read this index before driving the app, then open the matching
 feature file and run its recipe with `control-openhands`. The map is not a claim
 that every row passes today; the run's evidence ledger is.
 
-Maintenance baseline: main@1c75a05d587bcb502cd3f63d7e13eaa98ca84d53 (2026-10-15). The next maintenance pass starts from this commit; a pass proposes the next baseline in its PR, and merging that PR accepts it.
+Maintenance baseline: main@79abd32d856d86a551898ba14ce03f686d453663 (2026-10-19). The next maintenance pass starts from this commit; a pass proposes the next baseline in its PR, and merging that PR accepts it.
 
 ## Baseline preconditions
 
@@ -22,6 +22,16 @@ Maintenance baseline: main@1c75a05d587bcb502cd3f63d7e13eaa98ca84d53 (2026-10-15)
   rate limit), `llm preset deepseek --no-validate` still saves the profiles:
   recipes that only need a conversation to exist can run on, and every
   recipe that reads a model reply is `blocked`, never a pass.
+- Known issue [OpenHands/software-agent-sdk#6088](https://github.com/OpenHands/software-agent-sdk/issues/6088)
+  (reproduced 2026-10-19): a fresh install of the pinned Agent Server 1.55.1
+  resolves litellm 1.106.0 next to mcp 1.30.0. From then on every model call
+  fails with `cannot import name 'CacheableResult' from 'mcp.types'`, and the
+  conversation ends in `error`. `doctor` stays `ok`. To run model-backed recipes
+  meanwhile, write `$OH_VERIFY_RUN/private/home/.config/uv/uv.toml` containing
+  `[exclude-newer-package]` and `litellm = "2026-10-18T00:00:00Z"`, then run
+  `control-openhands restart`. That run's Agent Server then installs litellm
+  1.105.1.
+- For critic checks, use an available, authorized OpenHands (`openhands/…`) or compatible OpenHands LLM-proxy profile, regardless of the main profile used for the pass. Its LLM key is reused when Critic API Key is empty. For a non-default proxy deployment, use its compatible critic endpoint. Restore the previous profile afterwards; see [F06](F06-agent-activity.md). Do not declare the critic blocked merely because the main model uses another provider. This does not authorize new credentials, additional budget, or sending private test data to another service.
 - The browser is at the desktop viewport (1440×1000) unless a recipe says
   otherwise; `control-openhands browser viewport phone` is 390×844.
 - Never drive an instance that this verification run did not start.
@@ -234,7 +244,7 @@ How to write and prove new entries: [../mapping.md](../mapping.md).
 | F03 | [Home and starting work](F03-home.md) | home composer, workspace picker, plugin picker, recommended automations rail, no-LLM banner | `/`, **New Chat**, command menu | runs before and after `llm preset`; fixture repo | 42 |
 | F04 | [Conversation list and folders](F04-conversation-list.md) | sidebar list, View presets, workspace folders, tags, rename/pin/archive/delete, load more | sidebar on every page | several conversations; fixture repos | 41 |
 | F05 | [Composer, slash commands and plan mode](F05-composer.md) | send, drafts, attachments, model pill, slash commands, `/goal`, plan mode, dictation | home and conversation composer | LLM | 25 |
-| F06 | [Agent activity](F06-agent-activity.md) | messages, tool events, thinking, empty state, confirmation mode, stop/resume, errors, branching | `/conversations/<id>` | LLM | 35 |
+| F06 | [Agent activity](F06-agent-activity.md) | messages, tool events, thinking, empty state, confirmation mode, stop/resume, errors, branching | `/conversations/<id>` | LLM | 36 |
 | F07 | [Conversation page, header and menu](F07-conversation-page.md) | title rename, status menu, ⋯ menu (skills, hooks, tools, export, download, cost, stop, delete), git bar, overview | sidebar row, URL, `/panel` | LLM; fixture repo; Cloud items blocked | 25 |
 | F08 | [Workspace drawer: files and changes](F08-workspace-files-and-changes.md) | Files tab, Commits and uncommitted changes, diff viewer, file links in chat | panel toggle, file links | LLM; fixture repo | 34 |
 | F09 | [Settings shell and navigation](F09-settings-shell.md) | settings navigation, phone hub, deep links, update card, backend note | gear, command menu, URLs | baseline; deep links before `llm preset` | 26 |
@@ -258,7 +268,7 @@ How to write and prove new entries: [../mapping.md](../mapping.md).
 | F27 | [Workspace tools](F27-workspace-tools.md) | terminal, browser, planner, task list, usage, `canvas_ui_control` | drawer tabs | LLM | 30 |
 | F28 | [Automation setup page](F28-automation-setup-page.md) | blank form, kind toggle, schedule presets, event fields, timeout, draft save and validation, draft Test, Create | **Add Automation → Create Automation**, `/automations/setup`, draft Resume, kebab Edit | automation service; no LLM | 13 |
 
-28 families, 778 sub-features. `control-openhands map ids` lists every ID with its file.
+28 families, 779 sub-features. `control-openhands map ids` lists every ID with its file.
 
 ### Neighbouring families
 

@@ -2433,7 +2433,11 @@ describe("AgentServerConversationService", () => {
         request: {},
       });
       const plugins = [
-        { source: "github:OpenHands/example-plugin", ref: "v1" },
+        {
+          source: "github:OpenHands/example-plugin",
+          ref: "v1",
+          parameters: { city: "Tokyo", metric: false, days: 0 },
+        },
       ];
 
       await AgentServerConversationService.createConversation({

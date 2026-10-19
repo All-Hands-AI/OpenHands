@@ -115,7 +115,7 @@ export const LIGHT_PLUS_TOKENS: Partial<
   "--oh-focus": "#007ACC",
   "--oh-status-success": "#16825D",
   "--oh-status-error": "#D13438",
-  "--oh-link": "#006AB1",
+  "--oh-link": "#005A99",
   "--oh-bg-dark": "#FFFFFF",
   "--oh-bg-light": "#F3F3F3",
   "--oh-bg-input": "#FFFFFF",
