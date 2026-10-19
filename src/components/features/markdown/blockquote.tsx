@@ -91,7 +91,9 @@ export function blockquote({
           <Icon aria-hidden className="shrink-0" />
           <span>{config.label}</span>
         </p>
-        <div className="text-contrast">{children}</div>
+        <div className="text-contrast prose-strong:text-inherit prose-headings:text-contrast prose-code:text-contrast prose-kbd:text-contrast prose-figcaption:text-contrast marker:text-contrast">
+          {children}
+        </div>
       </div>
     );
   }
