@@ -92,10 +92,10 @@ you are running inside of — NOT the automation backend.
 - `scripts/dev-safe.mjs` uses `uvx` for temporary agent-server installation — no permanent `uv tool install` needed. Environment variables (highest precedence first):
   - `OH_AGENT_SERVER_LOCAL_PATH` — absolute path to a local `software-agent-sdk` checkout. Runs the local checkout via `uvx` with `--with-editable` for `openhands-sdk`/`openhands-tools`/`openhands-workspace` and `--reinstall` for `openhands-agent-server`, so SDK edits are picked up on restart. Highest precedence.
   - `OH_AGENT_SERVER_GIT_REF` — git commit SHA or branch name (takes precedence over version)
-  - `OH_AGENT_SERVER_VERSION` — specific PyPI version (e.g., "1.54.0")
+  - `OH_AGENT_SERVER_VERSION` — specific PyPI version (e.g., "1.55.1")
   - `OH_SECRET_KEY` — secret key for settings encryption; auto-generated and persisted to `~/.openhands/agent-canvas/secret-key.txt` on first run (same file Docker uses), ensuring dev mode and Docker share the same key when both mount the same `~/.openhands` directory. Override with the env var to pin a specific key.
   - `SESSION_API_KEY` / `OH_SESSION_API_KEYS_0` / `VITE_SESSION_API_KEY` — session API key for agent-server authentication; auto-generated using `crypto.randomBytes(32)` if not set, passed to both agent-server (`OH_SESSION_API_KEYS_0`) and frontend (`VITE_SESSION_API_KEY`)
-  - Default: released PyPI version `1.54.0` for agent-server SDK libraries
+  - Default: released PyPI version `1.55.1` for agent-server SDK libraries
 
 - Security: launchers generate and persist a 64-character session API key at `~/.openhands/agent-canvas/session-api-key.txt` unless overridden. The agent-server and automation backend share that session key. `OH_SECRET_KEY` protects settings encryption and is persisted separately at `~/.openhands/agent-canvas/secret-key.txt`.
 - `scripts/dev-safe.mjs` should fail fast if `uvx` cannot be spawned (for example missing PATH entries).
@@ -103,6 +103,7 @@ you are running inside of — NOT the automation backend.
 - `npm run dev` runs the full local stack via `uvx` (agent-server + automation backend + Vite dev server + ingress proxy) with no Docker dependency. `npm run dev:static` does the same but serves a production build of the frontend instead of the Vite dev server.
 - `scripts/dev-with-automation.mjs` runs the full stack: agent-server, automation backend (both via uvx), frontend server, and ingress proxy. It defaults to Vite when run directly, supports `--static` for an existing build, and supports `--dynamic` so wrappers that default static can opt back into Vite. Uses a standalone ingress proxy (`scripts/ingress.mjs`) to route traffic:
   - Keep `SIGINT`, `SIGTERM`, and `SIGHUP` wired through the coordinated shutdown handler. Services run in detached process groups on POSIX, so cleanup must use `signalProcessTree()` rather than signaling only the direct child; regression coverage lives in `__tests__/scripts/dev-with-automation.test.ts`.
+  - `main()` prints the banner without waiting for the automation backend, then watches `/api/automation/health` in the background. If automation exits before it is healthy (a failed database migration, #18299), the launcher stops every service it started and calls `onAutomationStartupFailure`: the CLI exits 1, and Electron replaces the splash or main window with its startup-failure screen. A slow start only logs a timeout. The Docker entrypoint still tolerates a dead automation backend.
   - `/api/automation/*` → automation backend (:18001)
   - `/api/*`, `/sockets`, etc. → agent server (:18000)
   - `/*` (default) → frontend server (:3001), either Vite or static depending on launcher mode
