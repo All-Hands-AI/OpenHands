@@ -42,6 +42,7 @@
   --color-text-secondary: var(--oh-text-secondary);
   --color-text-tertiary: var(--oh-text-tertiary);
   --color-muted: var(--oh-muted);
+  --color-link: var(--oh-link);
   --color-text-dim: var(--oh-text-dim);
   --color-text-subtle: var(--oh-text-subtle);
   --color-modal-title: var(--oh-modal-title-foreground);
