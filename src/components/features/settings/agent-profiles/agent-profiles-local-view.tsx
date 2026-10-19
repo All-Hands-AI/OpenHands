@@ -73,6 +73,8 @@ function toAgentSettingsOverride(
       (profile as { disabled_skills?: string[] }).disabled_skills ?? [],
     persona: profile.persona ?? null,
     system_message_suffix: profile.system_message_suffix ?? null,
+    condenser: (profile.condenser as SettingsValue) ?? null,
+    verification: (profile.verification as unknown as SettingsValue) ?? null,
   };
 }
 
@@ -209,7 +211,10 @@ export function AgentProfilesLocalView() {
           displayErrorToast(t(I18nKey.SETTINGS$AGENT_PROFILE_LLM_REQUIRED));
           return;
         }
-        input = { ...fields, llm_profile_ref: llmProfileRef };
+        input = {
+          ...fields,
+          llm_profile_ref: llmProfileRef,
+        } as AgentProfileSaveInput;
       } else {
         input = fields as AgentProfileSaveInput;
       }

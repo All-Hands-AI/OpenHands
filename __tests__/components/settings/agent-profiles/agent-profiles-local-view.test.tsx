@@ -316,6 +316,9 @@ describe("AgentProfilesLocalView save mapping", () => {
       // profile's scope back to every configured server.
       mcp_server_refs: ["github"],
       secret_refs: null,
+      // The editor's Condenser and Verification sections open on these.
+      condenser: { kind: "NoOpCondenserSettings" },
+      verification: { critic_enabled: true },
     });
 
     await user.click(screen.getByTestId("save-agent-profile-btn"));

@@ -686,13 +686,18 @@ describe("AgentSettingsScreen", () => {
       }),
     );
 
-    expect(control().buildAgentProfileFields()).toEqual({
+    const fields = control().buildAgentProfileFields();
+    expect(fields).not.toHaveProperty("acp_server");
+    expect(fields).toMatchObject({
       agent_kind: "openhands",
       mcp_server_refs: null,
       secret_refs: null,
       tools: null,
       tool_concurrency_limit: 1,
     });
+    // Like a new profile, the OpenHands variant starts from the global values.
+    expect(fields).toHaveProperty("condenser");
+    expect(fields).toHaveProperty("verification");
   });
 
   it.each(["", "   \t   "])(
@@ -1534,6 +1539,85 @@ describe("AgentSettingsScreen — skills", () => {
     expect(control!.buildAgentProfileFields()).not.toHaveProperty(
       "public_skills",
     );
+  });
+});
+
+describe("AgentSettingsScreen — condenser and verification", () => {
+  const STORED = {
+    agent_kind: "openhands",
+    mcp_server_refs: null,
+    condenser: { enable_default_condenser: true, condenser_max_size: 100 },
+    verification: {
+      critic_enabled: true,
+      critic_mode: "finish_and_message",
+      enable_iterative_refinement: false,
+      critic_threshold: 0.6,
+      max_refinement_iterations: 3,
+      critic_server_url: null,
+      critic_model_name: null,
+    },
+  };
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    vi.spyOn(SettingsService, "getSettings").mockResolvedValue(buildSettings());
+    vi.spyOn(SecretsService, "getSecrets").mockResolvedValue([]);
+    acpAuthStatusMock.mockReturnValue({
+      status: "unknown",
+      isChecking: false,
+      isSupported: true,
+    });
+    acpModelDiscoveryMock.mockReturnValue(NO_DISCOVERY);
+  });
+
+  it("opens on the profile's values and saves an edit to them", async () => {
+    const { control } = renderAgentSettingsScreen({
+      agentSettingsOverride: STORED,
+    });
+    const maxSize = await screen.findByTestId(
+      "sdk-settings-condenser.condenser_max_size",
+    );
+    expect(maxSize).toHaveValue(100);
+    expect(control().isDirty).toBe(false);
+    expect(control().buildAgentProfileFields()).not.toHaveProperty("condenser");
+
+    const user = userEvent.setup();
+    await user.clear(maxSize);
+    await user.type(maxSize, "120");
+
+    await waitFor(() => expect(control().isDirty).toBe(true));
+    expect(control().buildAgentProfileFields()).toMatchObject({
+      condenser: { enable_default_condenser: true, condenser_max_size: 120 },
+    });
+    expect(control().buildAgentProfileFields()).not.toHaveProperty(
+      "verification",
+    );
+  });
+
+  it("keeps the critic API key out of the profile", async () => {
+    renderAgentSettingsScreen({ agentSettingsOverride: STORED });
+
+    expect(
+      await screen.findByTestId("sdk-settings-verification.critic_enabled"),
+    ).toBeChecked();
+    expect(
+      screen.queryByTestId("sdk-settings-verification.critic_api_key"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("points the default profile to the global pages", async () => {
+    const { control } = renderAgentSettingsScreen({
+      agentSettingsOverride: STORED,
+      isDefaultProfile: true,
+    });
+
+    expect(
+      await screen.findByTestId("agent-settings-condenser-default-profile"),
+    ).toHaveTextContent("SETTINGS$AGENT_PROFILE_BEHAVIOR_DEFAULT_PROFILE");
+    expect(
+      screen.queryByTestId("sdk-settings-condenser.condenser_max_size"),
+    ).not.toBeInTheDocument();
+    expect(control().buildAgentProfileFields()).not.toHaveProperty("condenser");
   });
 });
 
