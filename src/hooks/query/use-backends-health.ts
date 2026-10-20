@@ -1,6 +1,6 @@
 import React from "react";
 import axios from "axios";
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { HttpError } from "@openhands/typescript-client";
 import {
   getCloudOrganizations,
@@ -8,9 +8,12 @@ import {
 } from "#/api/cloud/organization-service.api";
 import {
   isDefinitiveLocalBackendError,
-  validateLocalBackend,
   INVALID_BACKEND_API_KEY_ERROR,
+  probeLocalBackendServerInfo,
+  setCachedAgentServerInfo,
+  type AgentServerInfo,
 } from "#/api/agent-server-compatibility";
+import { backendVersionQueryKey } from "#/hooks/query/use-backend-server-info";
 import type { Backend } from "#/api/backend-registry/types";
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import {
@@ -87,8 +90,14 @@ export function isCloudBackendLoggedOutHealthError(
  *
  * Throws on failure so React Query marks the query as errored — the
  * dropdown reads `isSuccess` to flip the indicator green.
+ *
+ * For local backends it returns the raw `/server_info` so the caller can seed
+ * the shared version/execution-mode query, keeping the badge in sync with a
+ * restart without a second probe.
  */
-async function probeBackend(backend: Backend): Promise<true> {
+async function probeBackend(
+  backend: Backend,
+): Promise<{ serverInfo: AgentServerInfo | null }> {
   if (backend.kind === "cloud") {
     if (backend.authMode !== "cookie" && !backend.apiKey?.trim()) {
       throw new Error(MISSING_BACKEND_API_KEY_ERROR);
@@ -112,11 +121,14 @@ async function probeBackend(backend: Backend): Promise<true> {
       }
       throw error;
     }
-    return true;
+    return { serverInfo: null };
   }
 
-  await validateLocalBackend(backend, PROBE_TIMEOUT_MS);
-  return true;
+  const serverInfo = await probeLocalBackendServerInfo(
+    backend,
+    PROBE_TIMEOUT_MS,
+  );
+  return { serverInfo };
 }
 
 /**
@@ -157,7 +169,9 @@ function isRetryableProbeError(error: unknown): boolean {
   );
 }
 
-async function probeBackendWithQuickRetry(backend: Backend): Promise<true> {
+async function probeBackendWithQuickRetry(
+  backend: Backend,
+): Promise<{ serverInfo: AgentServerInfo | null }> {
   for (let attempt = 0; ; attempt += 1) {
     try {
       return await probeBackend(backend);
@@ -217,6 +231,7 @@ export function useBackendsHealth(
   options: UseBackendsHealthOptions = {},
 ): Record<string, BackendHealth> {
   const { probeDisabledOnce = false } = options;
+  const queryClient = useQueryClient();
   const healthMap = React.useSyncExternalStore(
     subscribeBackendHealth,
     getHealthSnapshot,
@@ -259,6 +274,21 @@ export function useBackendsHealth(
           try {
             const result = await probeBackendWithQuickRetry(b);
             recordBackendSuccess(b.id);
+            // Feed the same response to the shared version/execution-mode
+            // query so the badge reflects a server that restarted with a new
+            // mode while the Manage Backends modal stayed open (BM-005).
+            if (result.serverInfo) {
+              queryClient.setQueryData(
+                backendVersionQueryKey(b),
+                result.serverInfo,
+              );
+              // Also refresh the bootstrap cache conversation creation reads,
+              // so a restarted server's new mode drives the *next* workspace
+              // request instead of only the badge (BM-005).
+              if (b.kind === "local") {
+                setCachedAgentServerInfo(result.serverInfo, { host: b.host });
+              }
+            }
             return result;
           } catch (err) {
             recordBackendFailure(b.id, err);

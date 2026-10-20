@@ -1,12 +1,15 @@
 import i18n from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
 import { ServerClient } from "@openhands/typescript-client/clients";
-import type { ServerInfo } from "@openhands/typescript-client";
 import {
   getAgentServerClientOptions,
   type AgentServerClientOverrides,
 } from "./agent-server-client-options";
-import { getCachedAgentServerInfo } from "./agent-server-compatibility";
+import {
+  getBackendExecutionMode,
+  getCachedAgentServerInfo,
+  type AgentServerInfo,
+} from "./agent-server-compatibility";
 import {
   buildConversationWorkingDirForBackend,
   getWorkspaceRootForBackend,
@@ -16,14 +19,18 @@ import { resolveAbsoluteAgentServerPath } from "./agent-server-home";
 const ISOLATED_WORKSPACE_DIR = "/workspace";
 
 export function usesIsolatedWorkspace(
-  info: ServerInfo | null | undefined,
+  info: AgentServerInfo | null | undefined,
 ): boolean {
-  return info?.conversation_runtime === "docker";
+  // Route through the same display resolver as the execution-mode badge, so
+  // the workspace the row is labelled with matches the working directory the
+  // next conversation uses. The create request itself stays LocalWorkspace
+  // (see `getRequestedExecutionMode`); the server owns the isolation (BM-005).
+  return getBackendExecutionMode(info) === "docker";
 }
 
 export async function getConversationServerInfo(
   overrides: AgentServerClientOverrides = {},
-): Promise<ServerInfo | null> {
+): Promise<AgentServerInfo | null> {
   const options = getAgentServerClientOptions(overrides);
   const cached = getCachedAgentServerInfo({ host: options.host });
   if (cached) return cached;

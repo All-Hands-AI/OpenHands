@@ -24,6 +24,7 @@ import {
 } from "#/constants/acp-providers";
 import { getAgentServerClientOptions } from "./agent-server-client-options";
 import {
+  getRequestedExecutionMode,
   getCachedAgentServerInfo,
   type AgentServerInfo,
 } from "./agent-server-compatibility";
@@ -256,7 +257,11 @@ export async function fetchBackendExecutionRuntime(): Promise<
   AgentServerInfo["execution_runtime"]
 > {
   const serverInfo = await fetchBackendServerInfo();
-  return serverInfo?.execution_runtime;
+  // Request path: only the forward-looking `execution_runtime` may select a
+  // Docker workspace. The shipped server reports `conversation_runtime`, whose
+  // Docker router rejects any non-`LocalWorkspace` kind with 422, so reading it
+  // here would break conversation creation on a Docker server (BM-005).
+  return getRequestedExecutionMode(serverInfo) ?? undefined;
 }
 
 /**
@@ -1818,7 +1823,7 @@ export async function buildStartConversationRequestWithEncryptedSettings(options
   const runtimeServicesInfo = parseRuntimeServicesInfo(
     (serverInfo as { runtime_services?: unknown } | null)?.runtime_services,
   );
-  const executionRuntime = serverInfo?.execution_runtime;
+  const executionRuntime = getRequestedExecutionMode(serverInfo) ?? undefined;
   const hasActiveMetaProfile = !!metaProfiles?.active_meta_profile;
 
   // A profile launch resolves the LLM server-side, so the current-settings

@@ -28,7 +28,7 @@ export class NoBackendAvailableError extends Error {
   }
 }
 
-function normalizeHost(host: string): string {
+export function normalizeHost(host: string): string {
   return host.replace(/\/+$/, "");
 }
 
