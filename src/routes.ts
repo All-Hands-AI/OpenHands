@@ -6,6 +6,7 @@ import {
 } from "@react-router/dev/routes";
 
 export default [
+  route("pair", "routes/pair-device.tsx"),
   layout("routes/root-layout.tsx", [
     index("routes/index-home.tsx"),
     route("conversations", "routes/home.tsx"),
