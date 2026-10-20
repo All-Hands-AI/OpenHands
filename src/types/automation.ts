@@ -34,6 +34,16 @@ export interface AutomationRepository {
 
 export type AutomationState = "ACTIVE" | "INACTIVE" | "DRAFT";
 
+/** Definition returned by the automation service for a plugin-spec automation. */
+export interface AutomationPluginSpec {
+  plugin: {
+    source: string;
+    ref?: string | null;
+    repo_path?: string | null;
+  };
+  config?: Record<string, unknown> | null;
+}
+
 export interface Automation {
   id: string;
   name: string;
@@ -123,6 +133,8 @@ export interface Automation {
    * `#/utils/automation-preset-sources`.
    */
   preset_metadata?: Record<string, unknown> | null;
+  /** Existing, non-secret plugin definition; absent on older services. */
+  plugin_spec?: AutomationPluginSpec | null;
 }
 
 export type AutomationSpec = Omit<
@@ -132,6 +144,7 @@ export type AutomationSpec = Omit<
   | "updated_at"
   | "last_triggered_at"
   | "preset_metadata"
+  | "plugin_spec"
   | "repositories"
   | "entrypoint"
   | "disabled_reason"
