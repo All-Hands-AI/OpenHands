@@ -1,3 +1,4 @@
+import type { MarsSandboxSize } from "#/api/mars/mars-tunnel-backend";
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor, within } from "@testing-library/react";
@@ -614,7 +615,7 @@ describe("AddBackendModal – DigitalOcean", () => {
         sessions: configSessions.filter((s) => s.config_id === configId),
         nextPageToken: null,
       })),
-      listSandboxSizes: vi.fn(async () => []),
+      listSandboxSizes: vi.fn(async (): Promise<MarsSandboxSize[]> => []),
       createOpenHandsAgent: vi.fn(async ({ name }: { name: string }) => {
         const config = { id: "cfg_new", name, agent: "openhands" };
         configs.push(config);
@@ -744,6 +745,10 @@ describe("AddBackendModal – DigitalOcean", () => {
   it("New Agent creates an OpenHands agent and launches its first session", async () => {
     // Arrange
     const bridge = fakeMarsBridge({ signedIn: true });
+    bridge.listSandboxSizes.mockResolvedValue([
+      { slug: "mars-2vcpu-4gb", vcpus: 2, memory_mb: 4096 },
+      { slug: "mars-1vcpu-1gb", vcpus: 1, memory_mb: 1024 },
+    ]);
     const onClose = vi.fn();
     const user = userEvent.setup();
     renderWithProviders(<AddBackendModal onClose={onClose} />);
@@ -761,7 +766,7 @@ describe("AddBackendModal – DigitalOcean", () => {
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(bridge.createOpenHandsAgent).toHaveBeenCalledWith({
       name: "team-agent",
-      size: undefined,
+      size: "mars-1vcpu-1gb",
     });
     expect(bridge.createSession).toHaveBeenCalledWith(
       "cfg_new",
