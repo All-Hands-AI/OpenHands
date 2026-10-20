@@ -51,8 +51,13 @@
  * startup.
  */
 
-import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
-import { homedir } from "node:os";
+import {
+  createHash,
+  createHmac,
+  randomBytes,
+  timingSafeEqual,
+} from "node:crypto";
+import { homedir, networkInterfaces } from "node:os";
 import path from "node:path";
 
 import WebSocket, { WebSocketServer } from "ws";
@@ -69,6 +74,12 @@ import { createProxyHandlers, rewriteJsonResponse } from "./proxy-utils.mjs";
 
 export const MARS_WEB_PREFIX = "/mars";
 const HEALTH_PATH = `${MARS_WEB_PREFIX}/health`;
+/** Where a new device redeems a pairing link; needs no key, only the link. */
+const PAIR_PATH = `${MARS_WEB_PREFIX}/pair`;
+/** The page a pairing link opens; the secret rides in its fragment. */
+const PAIR_PAGE_PATH = "/pair";
+const PAIRING_TTL_MS = 5 * 60 * 1000;
+const PAIR_BODY_LIMIT_BYTES = 4 * 1024;
 const RPC_PREFIX = `${MARS_WEB_PREFIX}/rpc/`;
 const SESSIONS_PREFIX = `${MARS_WEB_PREFIX}/sessions/`;
 
@@ -109,6 +120,7 @@ const URL_FIELDS = new Set(["conversation_url"]);
  */
 export const RPC_METHODS = new Set([
   "getAuthState",
+  "createPairingLink",
   "beginSignIn",
   "awaitSignIn",
   "completeSignIn",
@@ -130,6 +142,9 @@ export const RPC_METHODS = new Set([
   "closeTunnel",
   "getTunnel",
 ]);
+
+/** RPC methods the web server answers itself; the bridge has no such method. */
+export const WEB_ONLY_RPC_METHODS = new Set(["createPairingLink"]);
 
 /** Request headers that belong to the canvas origin, never to the session host. */
 const CANVAS_ONLY_HEADERS = ["cookie", AUTH_HEADER, "origin", "referer"];
@@ -307,6 +322,47 @@ function returnAddress(req) {
     redirectUri: `http://127.0.0.1${port ? `:${port}` : ""}${OAUTH_CALLBACK_PATH}`,
     returnsHere: false,
   };
+}
+
+const ALL_INTERFACES = new Set(["", "0.0.0.0", "::"]);
+
+/** This machine's network addresses, the likeliest home or tailnet ones first. */
+function lanAddresses() {
+  const rank = (ip) => {
+    if (ip.startsWith("192.168.")) return 0;
+    if (ip.startsWith("10.")) return 1;
+    // Tailscale and other CGNAT tailnets.
+    if (/^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(ip)) return 2;
+    return 3;
+  };
+  return Object.values(networkInterfaces())
+    .flat()
+    .filter((entry) => entry && entry.family === "IPv4" && !entry.internal)
+    .map((entry) => entry.address)
+    .sort((a, b) => rank(a) - rank(b));
+}
+
+/**
+ * Origins another device could open this Canvas on. A page already opened
+ * from the network has one: its own. A page on loopback gets this
+ * machine's network addresses when Canvas listens on them, and none when
+ * Canvas listens only on this computer.
+ */
+function pairingOrigins(req, bindHost) {
+  if (!isLoopbackBind(requestHostname(req))) return [requestOrigin(req)];
+  if (isLoopbackBind(bindHost)) return [];
+  let port = "";
+  try {
+    port = new URL(`http://${req.headers.host ?? ""}`).port;
+  } catch {
+    // No usable Host header: the default port it is.
+  }
+  const proto =
+    req.headers["x-forwarded-proto"]?.split(",")[0].trim() || "http";
+  const hosts = ALL_INTERFACES.has(String(bindHost).trim())
+    ? lanAddresses()
+    : [bindHost];
+  return hosts.map((ip) => `${proto}://${ip}${port ? `:${port}` : ""}`);
 }
 
 /** `http://host[:port]` of the request as the browser sees it. */
@@ -513,7 +569,41 @@ export function createMarsWebBridge({
    * Methods that differ from the bridge's own, called with the request
    * first; every other RPC_METHODS entry is `bridge[method](...args)`.
    */
+  /** Unused pairing secrets, by hash, with when each stops working. */
+  const pairings = new Map();
+
+  function prunePairings(now = Date.now()) {
+    for (const [hash, expiresAt] of pairings) {
+      if (expiresAt <= now) pairings.delete(hash);
+    }
+  }
+
+  const hashSecret = (secret) =>
+    createHash("sha256").update(secret).digest("hex");
+
   const overrides = {
+    /**
+     * A one-time link that lets another device in, with the same access as
+     * typing the Canvas key. The secret goes in the fragment, which never
+     * reaches a server or proxy log.
+     */
+    createPairingLink(req) {
+      if (!key) {
+        const error = new Error("Pairing needs a Canvas session key.");
+        error.status = 400;
+        throw error;
+      }
+      prunePairings();
+      const secret = randomBytes(32).toString("base64url");
+      const expiresAt = Date.now() + PAIRING_TTL_MS;
+      pairings.set(hashSecret(secret), expiresAt);
+      return {
+        links: pairingOrigins(req, host).map(
+          (origin) => `${origin}${PAIR_PAGE_PATH}#${secret}`,
+        ),
+        expiresAt: new Date(expiresAt).toISOString(),
+      };
+    },
     beginSignIn(req) {
       const { redirectUri, returnsHere } = returnAddress(req);
       return { ...bridge.beginSignIn({ redirectUri }), returnsHere };
@@ -557,6 +647,38 @@ export function createMarsWebBridge({
         error: { message: error?.message ?? String(error), status },
       });
     }
+  }
+
+  /**
+   * Redeem a pairing link: once, before it expires. The new device gets the
+   * key (what typing it would have given) and the bridge cookie.
+   */
+  async function handlePair(req, res) {
+    if (req.method !== "POST") {
+      writeJson(res, 405, { error: { message: "use POST" } });
+      return;
+    }
+    let secret = "";
+    try {
+      const body = await readJsonBody(req, PAIR_BODY_LIMIT_BYTES);
+      if (typeof body?.secret === "string") secret = body.secret;
+    } catch {
+      // Treated as a link that does not work.
+    }
+    prunePairings();
+    const hash = secret ? hashSecret(secret) : null;
+    if (!key || !hash || !pairings.has(hash)) {
+      writeJson(res, 400, {
+        error: {
+          message:
+            "This link was already used or has expired. Make a new one on a device that is already in.",
+        },
+      });
+      return;
+    }
+    pairings.delete(hash);
+    res.setHeader("Set-Cookie", cookieHeader());
+    writeJson(res, 200, { result: { sessionApiKey: key } });
   }
 
   /**
@@ -721,6 +843,10 @@ export function createMarsWebBridge({
       }
       if (pathOnly === OAUTH_CALLBACK_PATH) {
         void handleOAuthReturn(req, res);
+        return true;
+      }
+      if (pathOnly === PAIR_PATH) {
+        void handlePair(req, res);
         return true;
       }
       const auth = authorize(req);

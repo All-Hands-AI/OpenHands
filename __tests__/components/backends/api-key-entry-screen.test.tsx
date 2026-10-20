@@ -92,6 +92,17 @@ afterEach(() => {
 // ── Tests ────────────────────────────────────────────────────────────
 
 describe("ApiKeyEntryScreen", () => {
+  it("says why the key is asked when a pairing link did not work", () => {
+    window.sessionStorage.setItem("openhands-pairing-failed", "1");
+
+    renderScreen();
+
+    expect(
+      screen.getByTestId("api-key-entry-pairing-failed"),
+    ).toHaveTextContent("AUTH$PAIRING_LINK_FAILED");
+    window.sessionStorage.clear();
+  });
+
   // @spec — UI: name + host (disabled) + api key + connect
   it("renders name, host (disabled), api key, and connect button", () => {
     renderScreen();

@@ -13,6 +13,7 @@ import {
 } from "#/components/shared/modals/modal-body";
 import { cn } from "#/utils/utils";
 import { BackendStatusDot } from "./backend-status-dot";
+import { PairingFailedNote } from "./pairing-failed-note";
 import {
   BackendForm,
   type BackendFormSubmitPayload,
@@ -99,6 +100,10 @@ export default function ApiKeyEntryScreen() {
         </div>
 
         <div className="px-6 pb-6 pt-2">
+          <PairingFailedNote
+            testId="api-key-entry-pairing-failed"
+            className="mb-3"
+          />
           <BackendForm
             mode="add"
             backend={{ ...active.backend, host, apiKey: "", name: "" }}
