@@ -109,11 +109,21 @@ vi.mock("#/hooks/query/use-llm-profiles", () => ({
   useLlmProfiles: () => ({ data: llmProfilesData }),
 }));
 
+let settingsData: { enabled_skills?: string[]; disabled_skills?: string[] };
+vi.mock("#/hooks/query/use-settings", () => ({
+  useSettings: () => ({ data: settingsData }),
+}));
+
 vi.mock("#/contexts/settings-section-header-context", () => ({
   useSettingsSectionHeader: () => ({ setHideSectionHeader: vi.fn() }),
 }));
 
 vi.mock("#/utils/custom-toast-handlers");
+
+const profileSupportsSkillsMock = vi.hoisted(() => vi.fn(() => true));
+vi.mock("#/api/agent-profiles-service/profile-field-support", () => ({
+  agentProfileSupportsSkills: () => profileSupportsSkillsMock(),
+}));
 
 vi.mock("#/api/agent-profiles-service/agent-profiles-service.api", () => ({
   __esModule: true,
@@ -140,6 +150,42 @@ describe("AgentProfilesLocalView save mapping", () => {
       profiles: [{ name: "default", model: "gpt-5" }],
       active_profile: "default",
     };
+    settingsData = {};
+    profileSupportsSkillsMock.mockReturnValue(true);
+  });
+
+  it("opens a new profile on the skills selected on the Skills page", async () => {
+    settingsData = { enabled_skills: ["add-skill"], disabled_skills: ["mine"] };
+
+    render(<AgentProfilesLocalView />);
+    await openCreateAndName("my-agent");
+
+    const override = JSON.parse(
+      screen
+        .getByTestId("mock-agent-settings")
+        .getAttribute("data-override") as string,
+    );
+    expect(override).toMatchObject({
+      agent_kind: "openhands",
+      public_skills: ["add-skill"],
+      disabled_skills: ["mine"],
+    });
+  });
+
+  it("opens a new profile without a skill list on a cloud backend", async () => {
+    profileSupportsSkillsMock.mockReturnValue(false);
+    settingsData = { enabled_skills: ["add-skill"], disabled_skills: ["mine"] };
+
+    render(<AgentProfilesLocalView />);
+    await openCreateAndName("my-agent");
+
+    expect(
+      JSON.parse(
+        screen
+          .getByTestId("mock-agent-settings")
+          .getAttribute("data-override") as string,
+      ),
+    ).toEqual({ agent_kind: "openhands" });
   });
 
   it("describes the add editor with agent copy, not the LLM-profile hint", async () => {
@@ -231,6 +277,8 @@ describe("AgentProfilesLocalView save mapping", () => {
       tool_concurrency_limit: 4,
       mcp_server_refs: ["github"],
       disabled_skills: ["deploy-checklist"],
+      enable_classify_and_switch_llm_tool: true,
+      meta_profile_ref: "fast-router",
     };
     vi.mocked(AgentProfilesService.getProfile).mockResolvedValue({
       name: "default",
@@ -270,6 +318,12 @@ describe("AgentProfilesLocalView save mapping", () => {
       // profile's scope back to every configured server.
       mcp_server_refs: ["github"],
       secret_refs: null,
+      // The editor's Condenser and Verification sections open on these.
+      condenser: { kind: "NoOpCondenserSettings" },
+      verification: { critic_enabled: true },
+      // The editor's Model Router section opens on these.
+      enable_classify_and_switch_llm_tool: true,
+      meta_profile_ref: "fast-router",
     });
 
     await user.click(screen.getByTestId("save-agent-profile-btn"));
@@ -292,6 +346,8 @@ describe("AgentProfilesLocalView save mapping", () => {
       tool_concurrency_limit: 4,
       mcp_server_refs: ["github"],
       disabled_skills: ["deploy-checklist"],
+      enable_classify_and_switch_llm_tool: true,
+      meta_profile_ref: "fast-router",
     });
     expect(profile).not.toHaveProperty("id");
     expect(profile).not.toHaveProperty("name");
