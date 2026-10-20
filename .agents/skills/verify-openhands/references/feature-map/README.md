@@ -296,3 +296,4 @@ Everything else a user can reach is mapped. These are left out on purpose:
 - Locked-to-Cloud deployments: `scripts/static-server.mjs --lock-to-cloud` exists, but `bin/agent-canvas.mjs` does not forward it, so `control-openhands launch` cannot start that mode.
 - Page-local load errors (for example the LLM profiles or apps list failing while the rest of the backend works) need fault injection; stopping a service with `service stop` replaces the whole app with the backend-unavailable screen instead. The pages' empty and error copy is mapped where reachable.
 - Real microphone dictation, native file dialogs outside the browser, and Electron window chrome beyond what F26 drives.
+- Code X Cyber Monitor (`/cyber-monitor`, `src/components/features/cyber-monitor`): a fully client-side simulated SOC dashboard with no backend state, so there is no live recipe to drive; its behavior is covered by unit/component tests instead.
