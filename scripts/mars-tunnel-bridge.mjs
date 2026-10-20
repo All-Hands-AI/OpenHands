@@ -255,14 +255,18 @@ export function createMarsTunnelBridge({
   async function saveVerified(connection) {
     const previousId = store.getActive()?.id ?? null;
     const saved = store.save(connection);
+    // Ask about this token, not whichever connection is active when
+    // DigitalOcean answers: another tab or agent may switch teams meanwhile.
+    const pinned = api ?? clientFor(() => connection.token);
     try {
-      await client.verifyAccess();
+      await pinned.verifyAccess();
     } catch (error) {
+      const stillActive = store.getActive()?.id === saved.id;
       if (!saved.reused) store.remove(saved.id);
-      if (previousId) store.setActive(previousId);
+      if (previousId && stillActive) store.setActive(previousId);
       throw error;
     }
-    const account = await client.getAccount?.().catch(() => null);
+    const account = await pinned.getAccount?.().catch(() => null);
     if (account) store.setTeam(saved.id, account);
     return authState();
   }
