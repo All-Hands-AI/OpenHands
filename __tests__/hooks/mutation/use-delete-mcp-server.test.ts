@@ -12,6 +12,24 @@ import { useDeleteMcpServer } from "#/hooks/mutation/use-delete-mcp-server";
 import type { MCPServerConfig } from "#/types/mcp-server";
 import { getMcpServerHealthKey } from "#/utils/mcp-server-health-key";
 
+const updateDefaultAgentProfileMock = vi.hoisted(() => vi.fn());
+vi.mock(
+  "#/hooks/mutation/update-default-agent-profile",
+  async (importOriginal) => ({
+    ...(await importOriginal<
+      typeof import("#/hooks/mutation/update-default-agent-profile")
+    >()),
+    updateDefaultAgentProfile: updateDefaultAgentProfileMock,
+  }),
+);
+
+/** The `mcp_server_refs` a sync would give a `default` restricted to these servers. */
+const syncedRefs = (refs: string[]) => {
+  expect(updateDefaultAgentProfileMock).toHaveBeenCalledOnce();
+  const [, change] = updateDefaultAgentProfileMock.mock.calls[0];
+  return change({ agent_kind: "openhands", mcp_server_refs: refs });
+};
+
 const createWrapper = () => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -52,6 +70,25 @@ describe("useDeleteMcpServer", () => {
     expect(deleteSpy).toHaveBeenCalledOnce();
     expect(deleteSpy).toHaveBeenCalledWith("github");
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("drops the deleted server from a restricted default agent profile too", async () => {
+    updateDefaultAgentProfileMock.mockClear();
+    vi.spyOn(SettingsService, "deleteMcpServer").mockResolvedValue(true);
+    const { result } = renderHook(() => useDeleteMcpServer(), {
+      wrapper: createWrapper(),
+    });
+
+    await result.current.mutateAsync({
+      id: "github",
+      type: "shttp",
+      name: "github",
+      url: "https://github.example/mcp",
+    });
+
+    expect(syncedRefs(["github", "docs"])).toEqual({
+      mcp_server_refs: ["docs"],
+    });
   });
 
   it("drops the deleted server's health verdict after success", async () => {

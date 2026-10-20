@@ -8,6 +8,10 @@ import {
   parseMcpConfig,
 } from "#/utils/mcp-config";
 import { SETTINGS_QUERY_KEYS } from "#/hooks/query/query-keys";
+import {
+  mcpServerRenamed,
+  updateDefaultAgentProfile,
+} from "#/hooks/mutation/update-default-agent-profile";
 import { clearMcpServerHealth } from "#/api/mcp-health/mcp-health-store";
 import { getMcpServerHealthKey } from "#/utils/mcp-server-health-key";
 import { toMcpServerName } from "#/utils/mcp-server-name";
@@ -63,6 +67,10 @@ export function useUpdateMcpServer() {
         }
         await SettingsService.patchMcpConfig(
           buildRenameMcpConfigPatch(serverId, nextKey, previous, server),
+        );
+        await updateDefaultAgentProfile(
+          queryClient,
+          mcpServerRenamed(serverId, nextKey),
         );
         return previousHealthKey;
       }

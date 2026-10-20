@@ -159,6 +159,16 @@ export function ensureDefaultAgentProfileMigrated(
   return queryClient.ensureQueryData(migrationQuery(queryClient, backendId));
 }
 
+/** Wait for a migration already in flight; never start one. */
+export async function settleRunningDefaultAgentProfileMigration(
+  queryClient: QueryClient,
+  backendId: string,
+): Promise<void> {
+  const { queryKey } = migrationQuery(queryClient, backendId);
+  if (queryClient.getQueryState(queryKey)?.fetchStatus !== "fetching") return;
+  await ensureDefaultAgentProfileMigrated(queryClient, backendId);
+}
+
 /**
  * Run the migration as soon as a local backend is active. Anything that edits
  * `default` waits for it, or the migration could overwrite the edit.

@@ -22,6 +22,16 @@ import { Settings, SkillInfo } from "#/types/settings";
 import { ActiveBackendProvider } from "#/contexts/active-backend-context";
 
 const navigateMock = vi.fn();
+const updateDefaultAgentProfileMock = vi.hoisted(() => vi.fn());
+vi.mock(
+  "#/hooks/mutation/update-default-agent-profile",
+  async (importOriginal) => ({
+    ...(await importOriginal<
+      typeof import("#/hooks/mutation/update-default-agent-profile")
+    >()),
+    updateDefaultAgentProfile: updateDefaultAgentProfileMock,
+  }),
+);
 
 vi.mock("#/context/navigation-context", () => ({
   useNavigation: () => ({
@@ -609,6 +619,37 @@ Full skill body.`,
         }),
       ),
     );
+  });
+
+  it("applies a toggle to the default agent profile, keeping its other picks", async () => {
+    const user = userEvent.setup();
+    updateDefaultAgentProfileMock.mockClear();
+    mockSkillList([buildSkill({ name: CATALOG_RECOMMENDED })]);
+    vi.spyOn(SettingsService, "getSettings").mockResolvedValue(
+      buildSettings({ enabled_skills: [CATALOG_RECOMMENDED] }),
+    );
+    vi.spyOn(SettingsService, "saveSettings").mockResolvedValue(true);
+
+    renderSkillsSettingsScreen();
+    const card = await screen.findByTestId(`skill-card-${CATALOG_RECOMMENDED}`);
+    await user.click(
+      within(card).getByTestId(`skill-toggle-${CATALOG_RECOMMENDED}`),
+    );
+
+    await waitFor(() =>
+      expect(updateDefaultAgentProfileMock).toHaveBeenCalledOnce(),
+    );
+    const [, change] = updateDefaultAgentProfileMock.mock.calls[0];
+    expect(
+      change({
+        agent_kind: "openhands",
+        public_skills: [CATALOG_RECOMMENDED, CATALOG_OPTIONAL],
+        disabled_skills: ["my-skill"],
+      }),
+    ).toEqual({
+      public_skills: [CATALOG_OPTIONAL],
+      disabled_skills: ["my-skill"],
+    });
   });
 
   it("drops a re-enabled catalog skill from an unmigrated deny-list", async () => {

@@ -7,6 +7,24 @@ import { SUPER_ADMIN_SETUP_STEP_EVENT } from "#/components/features/setup-guide/
 import { useAddMcpServer } from "#/hooks/mutation/use-add-mcp-server";
 import { SUPER_ADMIN_SETUP_QUERY_KEYS } from "#/hooks/query/query-keys";
 
+const updateDefaultAgentProfileMock = vi.hoisted(() => vi.fn());
+vi.mock(
+  "#/hooks/mutation/update-default-agent-profile",
+  async (importOriginal) => ({
+    ...(await importOriginal<
+      typeof import("#/hooks/mutation/update-default-agent-profile")
+    >()),
+    updateDefaultAgentProfile: updateDefaultAgentProfileMock,
+  }),
+);
+
+/** The `mcp_server_refs` a sync would give a `default` restricted to these servers. */
+const syncedRefs = (refs: string[]) => {
+  expect(updateDefaultAgentProfileMock).toHaveBeenCalledOnce();
+  const [, change] = updateDefaultAgentProfileMock.mock.calls[0];
+  return change({ agent_kind: "openhands", mcp_server_refs: refs });
+};
+
 const useSettingsMock = vi.fn();
 vi.mock("#/hooks/query/use-settings", () => ({
   useSettings: () => useSettingsMock(),
@@ -34,6 +52,25 @@ describe("useAddMcpServer", () => {
           },
         },
       },
+    });
+  });
+
+  it("adds the new server to a restricted default agent profile too", async () => {
+    updateDefaultAgentProfileMock.mockClear();
+    vi.spyOn(SettingsService, "createMcpServer").mockResolvedValue(true);
+    const { result } = renderHook(() => useAddMcpServer(), {
+      wrapper: createWrapper(),
+    });
+
+    await result.current.mutateAsync({
+      id: "",
+      type: "shttp",
+      name: "docs",
+      url: "https://docs.example/mcp",
+    });
+
+    expect(syncedRefs(["github"])).toEqual({
+      mcp_server_refs: ["github", "docs"],
     });
   });
 

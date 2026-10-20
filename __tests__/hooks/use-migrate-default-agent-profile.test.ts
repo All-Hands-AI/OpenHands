@@ -6,6 +6,7 @@ import SettingsService from "#/api/settings-service/settings-service.api";
 import {
   buildDefaultProfileMigration,
   ensureDefaultAgentProfileMigrated,
+  settleRunningDefaultAgentProfileMigration,
 } from "#/hooks/use-migrate-default-agent-profile";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import type { Settings } from "#/types/settings";
@@ -213,5 +214,40 @@ describe("ensureDefaultAgentProfileMigrated", () => {
 
     await ensureDefaultAgentProfileMigrated(queryClient, "local-1");
     expect(SettingsService.saveSettings).toHaveBeenCalledTimes(1);
+  });
+
+  it("never starts the migration when only waiting on it", async () => {
+    await settleRunningDefaultAgentProfileMigration(
+      new QueryClient(),
+      "local-1",
+    );
+
+    expect(SettingsService.getSettings).not.toHaveBeenCalled();
+  });
+
+  it("waits for a migration already running", async () => {
+    const queryClient = new QueryClient();
+    let release: (settings: Settings) => void = () => undefined;
+    vi.mocked(SettingsService.getSettings).mockReturnValueOnce(
+      new Promise((resolve) => {
+        release = resolve;
+      }),
+    );
+    const running = ensureDefaultAgentProfileMigrated(queryClient, "local-1");
+    let settled = false;
+    const waiting = settleRunningDefaultAgentProfileMigration(
+      queryClient,
+      "local-1",
+    ).then(() => {
+      settled = true;
+    });
+
+    await new Promise((resolve) => {
+      setTimeout(resolve, 10);
+    });
+    expect(settled).toBe(false);
+    release(settingsWith({ default_profile_migrated: true }));
+    await Promise.all([running, waiting]);
+    expect(settled).toBe(true);
   });
 });

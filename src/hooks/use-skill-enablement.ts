@@ -1,10 +1,13 @@
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AgentProfilesService from "#/api/agent-profiles-service/agent-profiles-service.api";
 import type { StoredOpenHandsProfile } from "#/api/agent-profiles-service/profile-behavior";
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
+import {
+  skillSelectionChanged,
+  updateDefaultAgentProfile,
+} from "#/hooks/mutation/update-default-agent-profile";
 import { useAgentProfiles } from "#/hooks/query/use-agent-profiles";
 import {
   AGENT_PROFILES_QUERY_KEYS,
@@ -12,6 +15,7 @@ import {
   CONFIG_CACHE_OPTIONS,
 } from "#/hooks/query/query-keys";
 import { useSettings } from "#/hooks/query/use-settings";
+import i18n from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
 import type { Settings, SkillInfo } from "#/types/settings";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
@@ -124,19 +128,21 @@ function withMembership(
  * surface cannot write a preference another cannot see.
  */
 export function useSkillEnablement(): SkillEnablementController {
-  const { t } = useTranslation("openhands");
   const { backend } = useActiveBackend();
   const usesCatalogAllowList = backend.kind !== "cloud";
+  const queryClient = useQueryClient();
   const { data: settings, isLoading: settingsLoading } = useSettings();
-  const { mutate: saveSettings } = useSaveSettings();
+  const { mutateAsync: saveSettings } = useSaveSettings();
 
   const [enablement, setEnablement] = React.useState<SkillEnablement>({});
   const savedRef = React.useRef<string | null>(null);
+  const savedEnablementRef = React.useRef<SkillEnablement>({});
 
   React.useEffect(() => {
     if (settingsLoading || !settings) return;
     const hydrated = readSkillEnablement(settings, usesCatalogAllowList);
     savedRef.current = snapshot(hydrated);
+    savedEnablementRef.current = hydrated;
     setEnablement(hydrated);
   }, [
     settingsLoading,
@@ -151,6 +157,8 @@ export function useSkillEnablement(): SkillEnablementController {
     const next = snapshot(enablement);
     if (savedRef.current === null || savedRef.current === next) return;
     savedRef.current = next;
+    const previous = savedEnablementRef.current;
+    savedEnablementRef.current = enablement;
 
     const disabledSkills = enablement.disabledSkills ?? [];
     saveSettings(
@@ -160,15 +168,21 @@ export function useSkillEnablement(): SkillEnablementController {
             disabled_skills: disabledSkills,
           }
         : { disabled_skills: disabledSkills },
-      {
-        onError: (error) => {
-          displayErrorToast(
-            retrieveAxiosErrorMessage(error) || t(I18nKey.ERROR$GENERIC),
+    )
+      .then(() => {
+        if (usesCatalogAllowList) {
+          updateDefaultAgentProfile(
+            queryClient,
+            skillSelectionChanged(previous, enablement),
           );
-        },
-      },
-    );
-  }, [enablement, usesCatalogAllowList, saveSettings, t]);
+        }
+      })
+      .catch((error) => {
+        displayErrorToast(
+          retrieveAxiosErrorMessage(error) || i18n.t(I18nKey.ERROR$GENERIC),
+        );
+      });
+  }, [enablement, usesCatalogAllowList, saveSettings, queryClient]);
 
   const isEnabled = React.useMemo(() => {
     const enabled = buildSkillEnablementFilter(enablement);

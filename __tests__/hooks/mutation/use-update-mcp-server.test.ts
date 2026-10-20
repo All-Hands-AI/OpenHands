@@ -13,6 +13,24 @@ import type { MCPServerConfig } from "#/types/mcp-server";
 import { REDACTED_MCP_SECRET_VALUE } from "#/utils/mcp-config";
 import { getMcpServerHealthKey } from "#/utils/mcp-server-health-key";
 
+const updateDefaultAgentProfileMock = vi.hoisted(() => vi.fn());
+vi.mock(
+  "#/hooks/mutation/update-default-agent-profile",
+  async (importOriginal) => ({
+    ...(await importOriginal<
+      typeof import("#/hooks/mutation/update-default-agent-profile")
+    >()),
+    updateDefaultAgentProfile: updateDefaultAgentProfileMock,
+  }),
+);
+
+/** The `mcp_server_refs` a sync would give a `default` restricted to these servers. */
+const syncedRefs = (refs: string[]) => {
+  expect(updateDefaultAgentProfileMock).toHaveBeenCalledOnce();
+  const [, change] = updateDefaultAgentProfileMock.mock.calls[0];
+  return change({ agent_kind: "openhands", mcp_server_refs: refs });
+};
+
 const useSettingsMock = vi.fn();
 vi.mock("#/hooks/query/use-settings", () => ({
   useSettings: () => useSettingsMock(),
@@ -152,6 +170,48 @@ describe("useUpdateMcpServer", () => {
       },
     });
     expect(serverSpy).not.toHaveBeenCalled();
+  });
+
+  it("renames the server in a restricted default agent profile too", async () => {
+    updateDefaultAgentProfileMock.mockClear();
+    vi.spyOn(SettingsService, "patchMcpConfig").mockResolvedValue(true);
+    const { result } = renderHook(() => useUpdateMcpServer(), {
+      wrapper: createWrapper(),
+    });
+
+    await result.current.mutateAsync({
+      serverId: "docs",
+      server: {
+        id: "docs",
+        type: "shttp",
+        name: "reference",
+        url: "https://docs.example/mcp",
+      },
+    });
+
+    expect(syncedRefs(["docs", "github"])).toEqual({
+      mcp_server_refs: ["reference", "github"],
+    });
+  });
+
+  it("leaves the default agent profile alone when the name stays", async () => {
+    updateDefaultAgentProfileMock.mockClear();
+    vi.spyOn(SettingsService, "patchMcpServer").mockResolvedValue(true);
+    const { result } = renderHook(() => useUpdateMcpServer(), {
+      wrapper: createWrapper(),
+    });
+
+    await result.current.mutateAsync({
+      serverId: "docs",
+      server: {
+        id: "docs",
+        type: "shttp",
+        name: "docs",
+        url: "https://docs.example/v2/mcp",
+      },
+    });
+
+    expect(updateDefaultAgentProfileMock).not.toHaveBeenCalled();
   });
 
   it("rejects a rename collision before issuing a request", async () => {

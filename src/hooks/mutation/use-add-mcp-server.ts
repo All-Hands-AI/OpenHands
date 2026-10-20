@@ -11,6 +11,10 @@ import {
   SETTINGS_QUERY_KEYS,
   SUPER_ADMIN_SETUP_QUERY_KEYS,
 } from "#/hooks/query/query-keys";
+import {
+  mcpServerAdded,
+  updateDefaultAgentProfile,
+} from "#/hooks/mutation/update-default-agent-profile";
 import { notifySuperAdminSetupStep } from "#/components/features/setup-guide/super-admin-setup-step-event";
 
 // @spec MCP-001 — Sparse mutations preserve sibling servers
@@ -38,6 +42,7 @@ export function useAddMcpServer() {
         settingsKey,
         toCanonicalMcpServer(server),
       );
+      await updateDefaultAgentProfile(queryClient, mcpServerAdded(settingsKey));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
