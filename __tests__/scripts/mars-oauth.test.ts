@@ -80,6 +80,14 @@ describe("readCallback", () => {
     });
   });
 
+  it("reads the path and query the return route receives", () => {
+    expect(readCallback("/mars/oauth/callback?code=c3&state=s3")).toEqual({
+      code: "c3",
+      state: "s3",
+      error: null,
+    });
+  });
+
   it("surfaces the reason when the user declines", () => {
     expect(
       readCallback(
