@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { setRegisteredBackends } from "#/api/backend-registry/active-store";
 
 import {
   MarsWebBridgeError,
@@ -8,7 +9,8 @@ import {
 } from "#/api/mars/mars-web-bridge";
 
 const sessionApiKey = vi.hoisted(() => ({ value: null as string | null }));
-vi.mock("#/api/agent-server-config", () => ({
+vi.mock("#/api/agent-server-config", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("#/api/agent-server-config")>()),
   getAgentServerHeaders: (): Record<string, string> =>
     sessionApiKey.value ? { "X-Session-API-Key": sessionApiKey.value } : {},
 }));
@@ -19,6 +21,8 @@ function jsonResponse(status: number, body: unknown): Response {
     headers: { "Content-Type": "application/json" },
   });
 }
+
+beforeEach(() => setRegisteredBackends([]));
 
 afterEach(() => {
   vi.unstubAllGlobals();

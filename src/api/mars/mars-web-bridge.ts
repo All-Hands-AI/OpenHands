@@ -19,7 +19,7 @@
  * itself on the proxied REST calls and the WebSocket upgrade.
  */
 
-import { getAgentServerHeaders } from "#/api/agent-server-config";
+import { getCanvasHostHeaders } from "./mars-device-pairing";
 import type { MarsBridge } from "./mars-tunnel-backend";
 
 export const MARS_WEB_HEALTH_PATH = "/mars/health";
@@ -52,7 +52,7 @@ async function rpc<T>(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...getAgentServerHeaders(),
+      ...getCanvasHostHeaders(),
     },
     body: JSON.stringify({ args }),
   });
