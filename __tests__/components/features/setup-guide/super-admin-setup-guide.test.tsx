@@ -206,7 +206,7 @@ describe("SuperAdminSetupGuide", () => {
     );
     expect(
       screen.getByTestId("super-admin-setup-guide-step-optional-saml"),
-    ).toHaveAttribute("href", `${CLOUD_HOST}/super-admin/instance`);
+    ).toHaveAttribute("href", `${CLOUD_HOST}/super-admin/auth-providers`);
     expect(
       screen.getByTestId("super-admin-setup-guide-step-first-automation"),
     ).toHaveAttribute("href", "/automations/templates");

@@ -42,6 +42,10 @@ them; changing the page background alone is not a complete theme.
   the built-in modal surface and leave the general danger/success/warning control
   colors unchanged. Embedded hosts can override `--oh-feedback-error`,
   `--oh-feedback-success`, and `--oh-feedback-warning` for their surfaces.
+- Use `focus` for keyboard outlines and rings on neutral controls. The default
+  role meets 3:1 against base, modal, raised, and interactive-hover surfaces;
+  retain the control's outline width/offset and preserve host `--oh-focus`
+  overrides. Check the settled color after a focus transition.
 - Literal white is reserved for fixed-color surfaces (for example the blue
   Plan control, an image-lightbox scrim, or a document preview). Do not globally
   redefine white or add theme-specific selectors that reinterpret utilities.

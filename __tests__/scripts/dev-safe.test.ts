@@ -33,9 +33,11 @@ import {
   findFreePorts,
   getOrCreatePersistedSessionApiKey,
   resetPersistedSessionApiKeyCache,
+  resolveExtensionsDir,
 } from "../../scripts/dev-safe.mjs";
 import {
   chmodSync,
+  existsSync,
   mkdtempSync,
   mkdirSync,
   readFileSync,
@@ -402,6 +404,7 @@ describe("buildAgentServerTelemetryEnv", () => {
     backendHost: "127.0.0.1:18000",
     workingDir: "/tmp/workspaces",
     canvasToolsDir: "/tmp/tools",
+    extensionsDir: "/tmp/node_modules/@openhands/extensions",
   };
 
   it("configures PostHog telemetry by default without seeding consent", () => {
@@ -497,6 +500,30 @@ describe("buildAgentServerTelemetryEnv", () => {
     ).not.toHaveProperty("OH_ENABLE_BROWSER");
   });
 
+  it("points the agent-server at the installed extensions package", () => {
+    expect(
+      buildAgentServerEnv(agentServerConfig, { env: {} }).EXTENSIONS_PATH,
+    ).toBe("/tmp/node_modules/@openhands/extensions");
+    expect(
+      buildAgentServerEnv(agentServerConfig, {
+        env: { EXTENSIONS_PATH: "/custom/extensions" },
+      }).EXTENSIONS_PATH,
+    ).toBe("/custom/extensions");
+    expect(
+      buildAgentServerEnv(
+        { ...agentServerConfig, extensionsDir: null },
+        { env: {} },
+      ),
+    ).not.toHaveProperty("EXTENSIONS_PATH");
+  });
+
+  it("resolves the extensions package that ships the public skills", () => {
+    const dir = resolveExtensionsDir();
+
+    expect(dir).not.toBeNull();
+    expect(existsSync(path.join(dir as string, "skills"))).toBe(true);
+  });
+
   it("keeps an explicit OH_ENABLE_BROWSER when browser tools are disabled", () => {
     expect(
       buildAgentServerEnv(agentServerConfig, {
@@ -514,20 +541,20 @@ describe("buildAgentServerCommand", () => {
     // Defaults to the released PyPI version with all SDK packages pinned to same version
     expect(cmd.args).toEqual([
       "--from",
-      "openhands-agent-server==1.54.0",
+      "openhands-agent-server==1.56.0",
       "--with",
-      "openhands-sdk==1.54.0",
+      "openhands-sdk==1.56.0",
       "--with",
-      "openhands-tools==1.54.0",
+      "openhands-tools==1.56.0",
       "--with",
-      "openhands-workspace==1.54.0",
+      "openhands-workspace==1.56.0",
       "--with",
       "posthog>=6,<7",
       "agent-server",
       "--import-modules",
       "canvas_ui_tool",
     ]);
-    expect(cmd.source).toBe("PyPI (1.54.0, default)");
+    expect(cmd.source).toBe("PyPI (1.56.0, default)");
   });
 
   it("uses specific PyPI version when OH_AGENT_SERVER_VERSION is set with all packages pinned", () => {

@@ -10,8 +10,10 @@ import {
 } from "#/routes/agent-settings";
 import SettingsService from "#/api/settings-service/settings-service.api";
 import { SecretsService } from "#/api/secrets-service";
+import SkillsService from "#/api/skills-service";
+import MetaProfilesService from "#/api/meta-profiles-service/meta-profiles-service.api";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
-import { Settings } from "#/types/settings";
+import { Settings, SkillInfo } from "#/types/settings";
 import {
   ACP_PROVIDERS,
   ACP_VERTEX_SAFE_MODEL,
@@ -53,10 +55,14 @@ const CLAUDE_MODELS = [
 
 const profileSupportsSecretRefsMock = vi.hoisted(() => vi.fn(() => true));
 const profileSupportsInstructionsMock = vi.hoisted(() => vi.fn(() => false));
+const profileSupportsSkillsMock = vi.hoisted(() => vi.fn(() => true));
+const profileSupportsRouterMock = vi.hoisted(() => vi.fn(() => true));
 vi.mock("#/api/agent-profiles-service/profile-field-support", () => ({
   agentProfileSupportsSecretRefs: () => profileSupportsSecretRefsMock(),
   agentProfileSupportsInstructions: () => profileSupportsInstructionsMock(),
+  agentProfileSupportsSkills: () => profileSupportsSkillsMock(),
   agentProfileSupportsTools: () => true,
+  agentProfileSupportsRouter: () => profileSupportsRouterMock(),
 }));
 
 // The secret picker lists the user's saved secrets; stub the query so these
@@ -683,13 +689,18 @@ describe("AgentSettingsScreen", () => {
       }),
     );
 
-    expect(control().buildAgentProfileFields()).toEqual({
+    const fields = control().buildAgentProfileFields();
+    expect(fields).not.toHaveProperty("acp_server");
+    expect(fields).toMatchObject({
       agent_kind: "openhands",
       mcp_server_refs: null,
       secret_refs: null,
       tools: null,
       tool_concurrency_limit: 1,
     });
+    // Like a new profile, the OpenHands variant starts from the global values.
+    expect(fields).toHaveProperty("condenser");
+    expect(fields).toHaveProperty("verification");
   });
 
   it.each(["", "   \t   "])(
@@ -1408,6 +1419,404 @@ describe("AgentSettingsScreen — MCP scope dirty tracking", () => {
         screen.getByTestId("agent-settings-secrets-mode"),
       ).toBeInTheDocument();
     });
+  });
+});
+
+describe("AgentSettingsScreen — skills", () => {
+  const CATALOG: SkillInfo[] = [
+    { name: "alpha", type: "knowledge", source: null, origin: "public" },
+    { name: "beta", type: "knowledge", source: null, origin: "public" },
+    { name: "mine", type: "knowledge", source: null, origin: "user" },
+  ];
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    vi.spyOn(SettingsService, "getSettings").mockResolvedValue(buildSettings());
+    vi.spyOn(SecretsService, "getSecrets").mockResolvedValue([]);
+    vi.spyOn(SkillsService, "getSkillCatalog").mockResolvedValue(CATALOG);
+    profileSupportsSkillsMock.mockReturnValue(true);
+    acpAuthStatusMock.mockReturnValue({
+      status: "unknown",
+      isChecking: false,
+      isSupported: true,
+    });
+    acpModelDiscoveryMock.mockReturnValue(NO_DISCOVERY);
+  });
+
+  it("opens on the stored list and saves an edit to it", async () => {
+    let control: AgentSettingsSaveControl | null = null;
+    renderAgentSettingsScreen({
+      agentSettingsOverride: {
+        agent_kind: "openhands",
+        public_skills: ["alpha"],
+        disabled_skills: [],
+      },
+      onSaveControlChange: (next) => {
+        control = next;
+      },
+    });
+    const beta = await screen.findByTestId("agent-settings-skills-beta");
+    expect(screen.getByTestId("agent-settings-skills-alpha")).toBeChecked();
+    expect(beta).not.toBeChecked();
+    expect(screen.getByTestId("agent-settings-skills-mine")).toBeChecked();
+
+    const user = userEvent.setup();
+    await user.click(beta);
+    await user.click(screen.getByTestId("agent-settings-skills-mine"));
+
+    await waitFor(() => expect(control!.isDirty).toBe(true));
+    expect(control!.buildAgentProfileFields()).toMatchObject({
+      public_skills: ["alpha", "beta"],
+      disabled_skills: ["mine"],
+    });
+  });
+
+  it("keeps a profile without a list unset until the user edits it", async () => {
+    let control: AgentSettingsSaveControl | null = null;
+    renderAgentSettingsScreen({
+      agentSettingsOverride: {
+        agent_kind: "openhands",
+        public_skills: null,
+        disabled_skills: [],
+      },
+      onSaveControlChange: (next) => {
+        control = next;
+      },
+    });
+
+    // No stored list loads every catalog skill.
+    expect(
+      await screen.findByTestId("agent-settings-skills-beta"),
+    ).toBeChecked();
+    expect(control!.isDirty).toBe(false);
+    expect(control!.buildAgentProfileFields()).not.toHaveProperty(
+      "public_skills",
+    );
+  });
+
+  it("hides skills and leaves them out of the save on a cloud backend", async () => {
+    profileSupportsSkillsMock.mockReturnValue(false);
+    let control: AgentSettingsSaveControl | null = null;
+    renderAgentSettingsScreen({
+      agentSettingsOverride: {
+        agent_kind: "openhands",
+        public_skills: ["alpha"],
+        disabled_skills: [],
+      },
+      onSaveControlChange: (next) => {
+        control = next;
+      },
+    });
+
+    await screen.findByTestId("agent-settings-screen");
+    await waitFor(() => expect(control).not.toBeNull());
+    expect(
+      screen.queryByTestId("agent-settings-skills-section"),
+    ).not.toBeInTheDocument();
+    expect(SkillsService.getSkillCatalog).not.toHaveBeenCalled();
+    expect(control!.buildAgentProfileFields()).not.toHaveProperty(
+      "public_skills",
+    );
+  });
+
+  it("points the default profile to the Skills page", async () => {
+    let control: AgentSettingsSaveControl | null = null;
+    renderAgentSettingsScreen({
+      agentSettingsOverride: {
+        agent_kind: "openhands",
+        public_skills: ["alpha"],
+        disabled_skills: [],
+      },
+      isDefaultProfile: true,
+      onSaveControlChange: (next) => {
+        control = next;
+      },
+    });
+
+    expect(
+      await screen.findByTestId("agent-settings-skills-default-profile"),
+    ).toHaveTextContent("SETTINGS$AGENT_PROFILE_SKILLS_DEFAULT_PROFILE");
+    expect(
+      screen.queryByTestId("agent-settings-skills-list"),
+    ).not.toBeInTheDocument();
+    expect(control!.buildAgentProfileFields()).not.toHaveProperty(
+      "public_skills",
+    );
+  });
+});
+
+describe("AgentSettingsScreen — condenser and verification", () => {
+  const STORED = {
+    agent_kind: "openhands",
+    mcp_server_refs: null,
+    condenser: { enable_default_condenser: true, condenser_max_size: 100 },
+    verification: {
+      critic_enabled: true,
+      critic_mode: "finish_and_message",
+      enable_iterative_refinement: false,
+      critic_threshold: 0.6,
+      max_refinement_iterations: 3,
+      critic_server_url: null,
+      critic_model_name: null,
+    },
+  };
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    vi.spyOn(SettingsService, "getSettings").mockResolvedValue(buildSettings());
+    vi.spyOn(SecretsService, "getSecrets").mockResolvedValue([]);
+    acpAuthStatusMock.mockReturnValue({
+      status: "unknown",
+      isChecking: false,
+      isSupported: true,
+    });
+    acpModelDiscoveryMock.mockReturnValue(NO_DISCOVERY);
+  });
+
+  it("opens on the profile's values and saves an edit to them", async () => {
+    const { control } = renderAgentSettingsScreen({
+      agentSettingsOverride: STORED,
+    });
+    const maxSize = await screen.findByTestId(
+      "sdk-settings-condenser.condenser_max_size",
+    );
+    expect(maxSize).toHaveValue(100);
+    expect(control().isDirty).toBe(false);
+    expect(control().buildAgentProfileFields()).not.toHaveProperty("condenser");
+
+    const user = userEvent.setup();
+    await user.clear(maxSize);
+    await user.type(maxSize, "120");
+
+    await waitFor(() => expect(control().isDirty).toBe(true));
+    expect(control().buildAgentProfileFields()).toMatchObject({
+      condenser: { enable_default_condenser: true, condenser_max_size: 120 },
+    });
+    expect(control().buildAgentProfileFields()).not.toHaveProperty(
+      "verification",
+    );
+  });
+
+  it("keeps the critic API key out of the profile", async () => {
+    renderAgentSettingsScreen({ agentSettingsOverride: STORED });
+
+    expect(
+      await screen.findByTestId("sdk-settings-verification.critic_enabled"),
+    ).toBeChecked();
+    expect(
+      screen.queryByTestId("sdk-settings-verification.critic_api_key"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("points the default profile to the global pages", async () => {
+    const { control } = renderAgentSettingsScreen({
+      agentSettingsOverride: STORED,
+      isDefaultProfile: true,
+    });
+
+    expect(
+      await screen.findByTestId("agent-settings-condenser-default-profile"),
+    ).toHaveTextContent("SETTINGS$AGENT_PROFILE_BEHAVIOR_DEFAULT_PROFILE");
+    expect(
+      screen.queryByTestId("sdk-settings-condenser.condenser_max_size"),
+    ).not.toBeInTheDocument();
+    expect(control().buildAgentProfileFields()).not.toHaveProperty("condenser");
+  });
+
+  it("lets the default profile edit its own values on a cloud backend", async () => {
+    __resetActiveStoreForTests();
+    setRegisteredBackends([
+      {
+        id: "cloud-1",
+        name: "Cloud",
+        host: "https://app.example.com",
+        apiKey: "key",
+        kind: "cloud",
+      },
+    ]);
+    setActiveSelection({ backendId: "cloud-1", orgId: null });
+    try {
+      render(
+        <AgentSettingsScreen
+          agentSettingsOverride={STORED}
+          isDefaultProfile
+          onSaveControlChange={() => {}}
+        />,
+        {
+          wrapper: ({ children }) => (
+            <MemoryRouter>
+              <QueryClientProvider
+                client={
+                  new QueryClient({
+                    defaultOptions: { queries: { retry: false } },
+                  })
+                }
+              >
+                <ActiveBackendProvider>{children}</ActiveBackendProvider>
+              </QueryClientProvider>
+            </MemoryRouter>
+          ),
+        },
+      );
+
+      expect(
+        await screen.findByTestId("sdk-settings-condenser.condenser_max_size"),
+      ).toHaveValue(100);
+      expect(
+        screen.queryByTestId("agent-settings-condenser-default-profile"),
+      ).not.toBeInTheDocument();
+    } finally {
+      window.localStorage.clear();
+      __resetActiveStoreForTests();
+    }
+  });
+});
+
+describe("AgentSettingsScreen — Model Router", () => {
+  const WITH_ROUTER = {
+    agent_kind: "openhands",
+    mcp_server_refs: null,
+    enable_classify_and_switch_llm_tool: true,
+    meta_profile_ref: "fast-router",
+  };
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    profileSupportsRouterMock.mockReturnValue(true);
+    vi.spyOn(SettingsService, "getSettings").mockResolvedValue(buildSettings());
+    vi.spyOn(SecretsService, "getSecrets").mockResolvedValue([]);
+    vi.spyOn(MetaProfilesService, "listMetaProfiles").mockResolvedValue({
+      meta_profiles: [
+        { name: "fast-router", classifier_model: null, num_classes: 2 },
+        { name: "pro-router", classifier_model: null, num_classes: 3 },
+      ],
+      active_meta_profile: null,
+    });
+    acpAuthStatusMock.mockReturnValue({
+      status: "unknown",
+      isChecking: false,
+      isSupported: true,
+    });
+    acpModelDiscoveryMock.mockReturnValue(NO_DISCOVERY);
+  });
+
+  async function choose(
+    user: ReturnType<typeof userEvent.setup>,
+    name: string,
+  ) {
+    const combo = screen.getByTestId("agent-settings-router-select");
+    combo.focus();
+    await user.keyboard("{ArrowDown}");
+    await user.click(await screen.findByRole("option", { name }));
+  }
+
+  it("opens on the profile's router and saves a change to it", async () => {
+    const { control } = renderAgentSettingsScreen({
+      agentSettingsOverride: WITH_ROUTER,
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId("agent-settings-router-select")).toHaveValue(
+        "fast-router",
+      ),
+    );
+    expect(control().isDirty).toBe(false);
+
+    const user = userEvent.setup();
+    await choose(user, "pro-router");
+    await waitFor(() => expect(control().isDirty).toBe(true));
+    expect(control().buildAgentProfileFields()).toMatchObject({
+      enable_classify_and_switch_llm_tool: true,
+      meta_profile_ref: "pro-router",
+    });
+
+    await choose(user, "SETTINGS$AGENT_PROFILE_ROUTER_OFF");
+    expect(control().buildAgentProfileFields()).toMatchObject({
+      enable_classify_and_switch_llm_tool: false,
+      meta_profile_ref: null,
+    });
+  });
+
+  it("leaves the stored router alone when saving other changes", async () => {
+    const { control } = renderAgentSettingsScreen({
+      agentSettingsOverride: WITH_ROUTER,
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId("agent-settings-router-select")).toHaveValue(
+        "fast-router",
+      ),
+    );
+
+    const fields = control().buildAgentProfileFields();
+    expect(fields).not.toHaveProperty("enable_classify_and_switch_llm_tool");
+    expect(fields).not.toHaveProperty("meta_profile_ref");
+  });
+
+  it("shows a router left on without a name as the first saved router and keeps it", async () => {
+    const { control } = renderAgentSettingsScreen({
+      agentSettingsOverride: { ...WITH_ROUTER, meta_profile_ref: null },
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId("agent-settings-router-select")).toHaveValue(
+        "SETTINGS$AGENT_PROFILE_ROUTER_FIRST",
+      ),
+    );
+    expect(
+      screen.queryByTestId("agent-settings-router-dangling"),
+    ).not.toBeInTheDocument();
+    expect(control().isDirty).toBe(false);
+    expect(control().buildAgentProfileFields()).not.toHaveProperty(
+      "enable_classify_and_switch_llm_tool",
+    );
+
+    const user = userEvent.setup();
+    await choose(user, "SETTINGS$AGENT_PROFILE_ROUTER_OFF");
+    await waitFor(() => expect(control().isDirty).toBe(true));
+    expect(control().buildAgentProfileFields()).toMatchObject({
+      enable_classify_and_switch_llm_tool: false,
+      meta_profile_ref: null,
+    });
+  });
+
+  it("is not offered on Cloud, which keeps routers per organization", async () => {
+    profileSupportsRouterMock.mockReturnValue(false);
+    const { control } = renderAgentSettingsScreen({
+      agentSettingsOverride: WITH_ROUTER,
+    });
+    await screen.findByTestId("agent-settings-screen");
+
+    expect(
+      screen.queryByTestId("agent-settings-router"),
+    ).not.toBeInTheDocument();
+    expect(control().buildAgentProfileFields()).not.toHaveProperty(
+      "meta_profile_ref",
+    );
+  });
+
+  it("warns about a router that no longer exists, which would fail the launch", async () => {
+    renderAgentSettingsScreen({
+      agentSettingsOverride: { ...WITH_ROUTER, meta_profile_ref: "gone" },
+    });
+
+    expect(
+      await screen.findByTestId("agent-settings-router-dangling"),
+    ).toHaveTextContent("SETTINGS$AGENT_PROFILE_ROUTER_DANGLING");
+  });
+
+  it("points the default profile to the Model Router page", async () => {
+    const { control } = renderAgentSettingsScreen({
+      agentSettingsOverride: WITH_ROUTER,
+      isDefaultProfile: true,
+    });
+
+    expect(
+      await screen.findByTestId("agent-settings-router-default-profile"),
+    ).toHaveTextContent("SETTINGS$AGENT_PROFILE_ROUTER_DEFAULT_PROFILE");
+    expect(
+      screen.queryByTestId("agent-settings-router-select"),
+    ).not.toBeInTheDocument();
+    expect(control().buildAgentProfileFields()).not.toHaveProperty(
+      "meta_profile_ref",
+    );
   });
 });
 
