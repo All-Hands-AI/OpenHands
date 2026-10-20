@@ -5,6 +5,7 @@ import { useClampDragSelection } from "./use-clamp-drag-selection";
 interface Fixture {
   feed: HTMLDivElement;
   message: HTMLParagraphElement;
+  code: HTMLElement;
   headerText: HTMLSpanElement;
   chromeText: HTMLSpanElement;
 }
@@ -21,6 +22,9 @@ function mountChatPane(): Fixture {
   const message = document.createElement("p");
   message.textContent = "Local pagination message 100";
   feed.append(message);
+  const code = document.createElement("pre");
+  code.textContent = "const answer = 42;";
+  feed.append(code);
   // jsdom reports a zero-size rect; give the feed real vertical bounds so the
   // pointer position maps to the top/bottom edge the way it does in the pane.
   feed.getBoundingClientRect = () =>
@@ -42,7 +46,7 @@ function mountChatPane(): Fixture {
   chrome.append(chromeText);
 
   document.body.append(header, feed, chrome);
-  return { feed, message, headerText, chromeText };
+  return { feed, message, code, headerText, chromeText };
 }
 
 /** Drag from `anchor` to `focus`, which is how a mouse drag builds a selection. */
@@ -188,6 +192,46 @@ describe("useClampDragSelection", () => {
     dragPointerTo(0);
 
     expect(feed.contains(selection.focusNode)).toBe(false);
+  });
+
+  it("leaves composer selection untouched when the drag starts and ends in the composer", () => {
+    const { feed, chromeText } = mountChatPane();
+    renderHook(() => useClampDragSelection({ current: feed }));
+
+    // A drag that begins in the composer must keep the composer text
+    // selectable, even while the pointer is dragged over the feed's edge.
+    mouseDownOn(chromeText, 500);
+    const selection = dragSelection(
+      chromeText.firstChild!,
+      chromeText.firstChild!,
+      12,
+    );
+    expect(selection.toString()).toBe("Disconnected");
+
+    dragPointerTo(900);
+    dragPointerTo(0);
+
+    expect(feed.contains(selection.focusNode)).toBe(false);
+    expect(selection.isCollapsed).toBe(false);
+    expect(selection.toString()).toBe("Disconnected");
+  });
+
+  it("leaves an in-feed code block selection untouched when the drag stays inside the feed", () => {
+    const { feed, code } = mountChatPane();
+    renderHook(() => useClampDragSelection({ current: feed }));
+
+    // Both ends are inside the feed with the pointer between the feed's
+    // vertical bounds, so a code block stays selectable and the range is not
+    // rewritten to the container boundary.
+    mouseDownOn(code, 250);
+    const selection = dragSelection(code.firstChild!, code.firstChild!, 18);
+    expect(selection.toString()).toBe("const answer = 42;");
+
+    dragPointerTo(250);
+
+    expect(feed.contains(selection.focusNode)).toBe(true);
+    expect(selection.isCollapsed).toBe(false);
+    expect(selection.toString()).toBe("const answer = 42;");
   });
 
   it("stops clamping once the drag ends", () => {
