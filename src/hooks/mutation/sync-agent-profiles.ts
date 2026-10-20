@@ -100,6 +100,20 @@ function enqueue(
   });
 }
 
+/** Change one local profile. */
+export function updateAgentProfile(
+  queryClient: QueryClient,
+  name: string,
+  change: ProfileChange,
+  options?: WriteOptions,
+): Promise<void> {
+  return enqueue(
+    queryClient,
+    async () => saveChange(name, await readProfile(name), change),
+    options,
+  );
+}
+
 /** Change the local `default` profile. */
 export function updateDefaultAgentProfile(
   queryClient: QueryClient,

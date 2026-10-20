@@ -714,7 +714,7 @@ describe("useCreateConversation", () => {
       return createConversationSpy.mock.lastCall?.[0];
     }
 
-    it("keeps the named profile and runs the home LLM selection (#16539)", async () => {
+    it("runs a named profile's own LLM over the active LLM profile", async () => {
       listAgentProfilesMock.mockResolvedValue({
         profiles: [luna],
         active_agent_profile_id: "profile-luna",
@@ -727,13 +727,13 @@ describe("useCreateConversation", () => {
       const call = await launch();
 
       expect(call?.agentProfileId).toBe("profile-luna");
-      expect(call?.agentLlmProfileOverride).toBe("selected-model");
-      expect(call?.agentLlmProfileRef).toBe("selected-model");
+      expect(call?.agentLlmProfileOverride).toBeUndefined();
+      expect(call?.agentLlmProfileRef).toBe("pinned-model");
       await waitFor(() =>
         expect(
           getStoredConversationMetadata("conv-dropdown-override")
             ?.active_profile,
-        ).toBe("selected-model"),
+        ).toBe("pinned-model"),
       );
     });
 

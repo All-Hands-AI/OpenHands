@@ -70,9 +70,9 @@ describe("useLlmConfigured (local, agent-profile-driven)", () => {
     },
   });
 
-  it("is configured when the active LLM profile, which a home launch runs, has a key", () => {
-    // Discriminating case: the agent profile references "sonnet", which has
-    // no key, but a local home launch runs the active LLM profile ("default").
+  it("is NOT configured when the agent profile's own LLM, which a home launch runs, has no key", () => {
+    // Discriminating case: the active LLM profile ("default") has a key, but
+    // the launch runs the agent profile's own ref ("sonnet"), which has none.
     useLlmProfilesMock.mockReturnValue(
       llmProfiles("default", [
         { name: "default", api_key_set: true },
@@ -88,9 +88,9 @@ describe("useLlmConfigured (local, agent-profile-driven)", () => {
     });
 
     const { result } = renderHook(() => useLlmConfigured(), { wrapper });
-    expect(result.current.isConfigured).toBe(true);
+    expect(result.current.isConfigured).toBe(false);
   });
-  it("is NOT configured when the active LLM profile has no key, even if the agent profile's ref has one", () => {
+  it("is configured when the agent profile's own LLM has a key, even if the active LLM profile has none", () => {
     useLlmProfilesMock.mockReturnValue(
       llmProfiles("default", [
         { name: "default", api_key_set: false },
@@ -106,7 +106,7 @@ describe("useLlmConfigured (local, agent-profile-driven)", () => {
     });
 
     const { result } = renderHook(() => useLlmConfigured(), { wrapper });
-    expect(result.current.isConfigured).toBe(false);
+    expect(result.current.isConfigured).toBe(true);
   });
   it("checks the active LLM profile when the agent profile's ref is stale", () => {
     // The agent profile references "ghost", which no longer exists; the launch

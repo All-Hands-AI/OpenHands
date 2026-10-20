@@ -120,11 +120,22 @@ describe("resolveConversationLaunch", () => {
     });
   });
 
-  it("runs the active LLM profile on an implicit launch", async () => {
+  it("runs the active agent profile's own LLM on an implicit launch", async () => {
     arrange({ activeId: "profile-1", activeLlm: "fast" });
 
-    await expect(launch()).resolves.toMatchObject({
+    const result = await launch();
+
+    expect(result).toMatchObject({
       agentProfileId: "profile-1",
+      llmProfile: "slow",
+    });
+    expect(result.llmProfileOverride).toBeUndefined();
+  });
+
+  it("runs default on the active LLM profile on an implicit launch", async () => {
+    arrange({ activeId: "profile-default", activeLlm: "fast" });
+
+    await expect(launch()).resolves.toMatchObject({
       llmProfileOverride: "fast",
       llmProfile: "fast",
     });

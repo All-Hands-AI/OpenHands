@@ -65,10 +65,8 @@ export function useLlmConfigured(): LlmConfiguredResult {
   } = useActiveAgentProfile();
   const isAcpAgent = activeAgentKind === "acp";
   const hasApiKey = settings?.llm_api_key_set === true;
-  // Check the LLM profile the next home launch runs. Locally that is the
-  // active LLM profile (the home pill), which overrides the agent profile's
-  // own `llm_profile_ref`; Cloud launches run the ref. Either falls back to
-  // the other when it names no saved profile.
+  // Check the LLM profile the next home launch runs: the agent profile's own
+  // `llm_profile_ref`, or the active LLM profile when it names no saved one.
   const findLlmProfile = (name: string | null | undefined) =>
     name
       ? profilesData?.profiles.find((profile) => profile.name === name)
@@ -79,9 +77,7 @@ export function useLlmConfigured(): LlmConfiguredResult {
       : undefined,
   );
   const selectedProfile = findLlmProfile(profilesData?.active_profile);
-  const activeProfile = isLocal
-    ? (selectedProfile ?? referencedProfile)
-    : (referencedProfile ?? selectedProfile);
+  const activeProfile = referencedProfile ?? selectedProfile;
   const hasActiveProfileApiKey = activeProfile?.api_key_set === true;
   const shouldLoadActiveProfileDetail =
     isLocal && !!activeProfile && !hasActiveProfileApiKey;

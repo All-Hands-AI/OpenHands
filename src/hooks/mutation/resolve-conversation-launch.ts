@@ -104,16 +104,11 @@ export async function resolveConversationLaunch(
       .catch(() => null);
     const llmProfileExists =
       llm?.profiles.some((p) => p.name === profile.llm_profile_ref) ?? false;
-    // The home LLM pill shows and activates the account-wide active LLM
-    // profile, never the pinned ref (#16539), so an implicit launch runs that
-    // selection. An explicit pick keeps its pinned ref unless the ref is gone;
-    // a dangling ref with nothing selected reaches the server, which rejects
-    // it with an error the user can act on.
-    // `default` always runs the active LLM profile.
+    // A profile runs its own LLM, which the home pill shows; `default`'s is the
+    // active LLM profile. A ref that's gone falls back to the active profile.
     const preferredLlmProfile =
       llmProfile ||
-      (!agentProfileId ||
-      !llmProfileExists ||
+      (!llmProfileExists ||
       profile.name === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME
         ? llm?.active_profile
         : null);
