@@ -871,7 +871,7 @@ export function AgentSettingsScreen({
   const { data: metaProfilesData } = useMetaProfiles({
     enabled: routerEditable,
   });
-  // On without a name means the server picks the first saved router.
+  // On without a name means the server picks the alphabetically first router.
   let initialRouter: string | null = null;
   if (agentSettingsOverride?.enable_classify_and_switch_llm_tool === true) {
     initialRouter =

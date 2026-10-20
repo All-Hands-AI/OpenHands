@@ -52434,21 +52434,21 @@
     "id": "Profil default selalu diluncurkan dengan router yang dipilih di halaman Model Router. Buat profil bernama untuk memilih router sendiri."
   },
   "SETTINGS$AGENT_PROFILE_ROUTER_FIRST": {
-    "en": "First saved router",
-    "ja": "最初に保存されたルーター",
-    "zh-CN": "第一个已保存的路由器",
-    "zh-TW": "第一個已儲存的路由器",
-    "ko-KR": "처음 저장된 라우터",
-    "no": "Første lagrede ruter",
-    "it": "Primo router salvato",
-    "pt": "Primeiro roteador salvo",
-    "es": "Primer enrutador guardado",
-    "ar": "أول موجّه محفوظ",
-    "fr": "Premier routeur enregistré",
-    "tr": "İlk kaydedilen yönlendirici",
-    "de": "Erster gespeicherter Router",
-    "uk": "Перший збережений маршрутизатор",
-    "ca": "Primer encaminador desat",
-    "id": "Router tersimpan pertama"
+    "en": "Alphabetically first router",
+    "ja": "名前順で最初のルーター",
+    "zh-CN": "按名称排序的第一个路由器",
+    "zh-TW": "依名稱排序的第一個路由器",
+    "ko-KR": "이름순 첫 번째 라우터",
+    "no": "Første ruter alfabetisk",
+    "it": "Primo router in ordine alfabetico",
+    "pt": "Primeiro roteador em ordem alfabética",
+    "es": "Primer enrutador por orden alfabético",
+    "ar": "أول موجّه أبجديًا",
+    "fr": "Premier routeur par ordre alphabétique",
+    "tr": "Alfabetik olarak ilk yönlendirici",
+    "de": "Alphabetisch erster Router",
+    "uk": "Перший маршрутизатор за алфавітом",
+    "ca": "Primer encaminador per ordre alfabètic",
+    "id": "Router pertama menurut abjad"
   }
 }
