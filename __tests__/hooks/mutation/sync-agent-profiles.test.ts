@@ -9,6 +9,7 @@ import SettingsService from "#/api/settings-service/settings-service.api";
 import {
   applyDefaultAgentProfileToGlobal,
   enabledMcpServerRefs,
+  sharedDefaultProfileFields,
   llmProfileMirrored,
   mcpServerRemoved,
   mcpServerRenamed,
@@ -293,14 +294,16 @@ describe("applyDefaultAgentProfileToGlobal", () => {
   });
 
   it("writes default's LLM and MCP servers to the global pages, not its skills", async () => {
-    const saved = await applyDefaultAgentProfileToGlobal(queryClient, {
+    const input = {
       agent_kind: "openhands",
       llm_profile_ref: "fast",
       public_skills: [OPTIONAL],
       disabled_skills: ["mine"],
       mcp_server_refs: ["slack"],
       secret_refs: ["GITHUB_TOKEN"],
-    } as never);
+    } as never;
+    await applyDefaultAgentProfileToGlobal(queryClient, input);
+    const saved = sharedDefaultProfileFields(input);
 
     expect(SettingsService.saveSettings).not.toHaveBeenCalled();
     expect(ProfilesService.activateProfile).toHaveBeenCalledWith("fast");
@@ -314,13 +317,15 @@ describe("applyDefaultAgentProfileToGlobal", () => {
   });
 
   it("writes nothing when default already matches the global pages", async () => {
-    const saved = await applyDefaultAgentProfileToGlobal(queryClient, {
+    const input = {
       agent_kind: "openhands",
       llm_profile_ref: "llm",
       public_skills: [...DEFAULT_ENABLED_SKILL_NAMES],
       disabled_skills: [],
       mcp_server_refs: ["github"],
-    } as never);
+    } as never;
+    await applyDefaultAgentProfileToGlobal(queryClient, input);
+    const saved = sharedDefaultProfileFields(input);
 
     expect(SettingsService.saveSettings).not.toHaveBeenCalled();
     expect(ProfilesService.activateProfile).not.toHaveBeenCalled();

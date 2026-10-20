@@ -185,15 +185,22 @@ export function enabledMcpServerRefs(
   return enabled.length === Object.keys(config).length ? null : enabled;
 }
 
-/**
- * Make the global pages match an edited OpenHands `default`: the active LLM
- * profile and which MCP servers are switched on. Returns the profile to
- * store, which loads every switched-on server and every secret.
- */
+/** What an OpenHands `default` stores: every switched-on MCP server and every secret. */
+export function sharedDefaultProfileFields(
+  input: AgentProfileSaveInput,
+): AgentProfileSaveInput {
+  return {
+    ...input,
+    mcp_server_refs: null,
+    ...("secret_refs" in input ? { secret_refs: null } : {}),
+  } as AgentProfileSaveInput;
+}
+
+/** Make the active LLM profile and the MCP page's switches match an edited OpenHands `default`. */
 export async function applyDefaultAgentProfileToGlobal(
   queryClient: QueryClient,
   input: AgentProfileSaveInput,
-): Promise<AgentProfileSaveInput> {
+): Promise<void> {
   const settings = await getSettingsQueryFn();
   const writes: Promise<unknown>[] = [];
 
@@ -221,10 +228,4 @@ export async function applyDefaultAgentProfileToGlobal(
       queryClient.invalidateQueries({ queryKey: LLM_PROFILES_QUERY_KEYS.all }),
     ]);
   }
-
-  return {
-    ...input,
-    mcp_server_refs: null,
-    ...("secret_refs" in input ? { secret_refs: null } : {}),
-  } as AgentProfileSaveInput;
 }

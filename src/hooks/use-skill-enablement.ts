@@ -1,5 +1,6 @@
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { HttpError } from "@openhands/typescript-client";
 import AgentProfilesService, {
   WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME,
 } from "#/api/agent-profiles-service/agent-profiles-service.api";
@@ -85,7 +86,7 @@ function useDefaultProfileSkills(): {
   const { backend, orgId } = useActiveBackend();
   const isLocal = backend.kind === "local" && !isNoBackend(backend);
   const migration = useMigrateDefaultAgentProfile();
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: AGENT_PROFILES_QUERY_KEYS.detail(
       backend.id,
       orgId,
@@ -107,8 +108,19 @@ function useDefaultProfileSkills(): {
     () => (profile ? profileSkillEnablement(profile) : null),
     [hasProfile, profile?.public_skills, profile?.disabled_skills],
   );
+  // Without `default`'s lists the page would show and write settings, which
+  // no launch reads; only a missing `default` falls back to them.
+  const failed =
+    !!error && !(error instanceof HttpError && error.status === 404);
+  React.useEffect(() => {
+    if (failed) {
+      displayErrorToast(
+        retrieveAxiosErrorMessage(error) || i18n.t(I18nKey.ERROR$GENERIC),
+      );
+    }
+  }, [failed]);
   return {
-    ready: !isLocal || (!migration.isFetching && !isLoading),
+    ready: !isLocal || (!migration.isFetching && !isLoading && !failed),
     selection,
   };
 }
@@ -184,9 +196,13 @@ export function useSkillEnablement(): SkillEnablementController {
 
   const [enablement, setEnablement] = React.useState<SkillEnablement>({});
   const savedRef = React.useRef<string | null>(null);
+  // While writes to `default` are queued, its refetched lists lag the page.
+  const pendingWrites = React.useRef(0);
+  const [writesSettled, setWritesSettled] = React.useState(0);
 
   React.useEffect(() => {
     if (settingsLoading || !settings || !defaultSkills.ready) return;
+    if (pendingWrites.current > 0) return;
     const hydrated =
       defaultSkills.selection ??
       readSkillEnablement(settings, usesCatalogAllowList);
@@ -199,6 +215,7 @@ export function useSkillEnablement(): SkillEnablementController {
     usesCatalogAllowList,
     defaultSkills.ready,
     defaultSkills.selection,
+    writesSettled,
   ]);
 
   React.useEffect(() => {
@@ -213,13 +230,12 @@ export function useSkillEnablement(): SkillEnablementController {
         retrieveAxiosErrorMessage(error) || i18n.t(I18nKey.ERROR$GENERIC),
       );
     if (ownedByDefaultRef.current) {
+      pendingWrites.current += 1;
       updateDefaultAgentProfile(queryClient, withSkillSelection(enablement), {
-        onError: (error) => {
-          reportFailure(error);
-          queryClient.invalidateQueries({
-            queryKey: AGENT_PROFILES_QUERY_KEYS.all,
-          });
-        },
+        onError: reportFailure,
+      }).finally(() => {
+        pendingWrites.current -= 1;
+        if (pendingWrites.current === 0) setWritesSettled((n) => n + 1);
       });
       return;
     }

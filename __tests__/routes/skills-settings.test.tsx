@@ -88,7 +88,12 @@ function buildSkill(overrides: Partial<SkillInfo> = {}): SkillInfo {
   };
 }
 
-function renderSkillsSettingsScreen(initialEntry = "/skills") {
+function renderSkillsSettingsScreen(
+  initialEntry = "/skills",
+  queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  }),
+) {
   const router = createMemoryRouter(
     [
       {
@@ -105,15 +110,7 @@ function renderSkillsSettingsScreen(initialEntry = "/skills") {
 
   render(<RouterProvider router={router} />, {
     wrapper: ({ children }) => (
-      <QueryClientProvider
-        client={
-          new QueryClient({
-            defaultOptions: { queries: { retry: false } },
-          })
-        }
-      >
-        {children}
-      </QueryClientProvider>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     ),
   });
 
@@ -635,7 +632,7 @@ Full skill body.`,
 
   it("shows and saves the default agent profile's own list", async () => {
     const user = userEvent.setup();
-    updateDefaultAgentProfileMock.mockClear();
+    updateDefaultAgentProfileMock.mockReset().mockResolvedValue(undefined);
     mockSkillList([
       buildSkill({ name: CATALOG_RECOMMENDED }),
       buildSkill({ name: CATALOG_OPTIONAL }),
@@ -688,6 +685,78 @@ Full skill body.`,
       }),
     ).toEqual({ public_skills: [], disabled_skills: [] });
     expect(saveSpy).not.toHaveBeenCalled();
+  });
+
+  it("keeps a second quick toggle while the first write's refetch lands", async () => {
+    const user = userEvent.setup();
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const releases: (() => void)[] = [];
+    updateDefaultAgentProfileMock.mockReset().mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          releases.push(resolve);
+        }),
+    );
+    mockSkillList([
+      buildSkill({ name: CATALOG_RECOMMENDED }),
+      buildSkill({ name: CATALOG_OPTIONAL }),
+    ]);
+    const stored = (publicSkills: string[]) =>
+      ({
+        name: "default",
+        profile: {
+          id: "p-default",
+          name: "default",
+          revision: 1,
+          agent_kind: "openhands",
+          llm_profile_ref: "llm",
+          public_skills: publicSkills,
+          disabled_skills: [],
+        },
+      }) as never;
+    const getProfile = vi
+      .spyOn(AgentProfilesService, "getProfile")
+      .mockResolvedValue(stored([]));
+
+    renderSkillsSettingsScreen("/skills", queryClient);
+    const first = await screen.findByTestId(
+      `skill-toggle-${CATALOG_RECOMMENDED}`,
+    );
+    await waitFor(() => expect(first).toHaveAttribute("aria-checked", "false"));
+    await user.click(first);
+    await user.click(screen.getByTestId(`skill-toggle-${CATALOG_OPTIONAL}`));
+
+    // The first write lands and its refetch returns only the first toggle.
+    getProfile.mockResolvedValue(stored([CATALOG_RECOMMENDED]));
+    await act(() => queryClient.invalidateQueries());
+
+    expect(
+      screen.getByTestId(`skill-toggle-${CATALOG_OPTIONAL}`),
+    ).toHaveAttribute("aria-checked", "true");
+    await act(async () => releases.forEach((release) => release()));
+  });
+
+  it("writes nowhere when the default profile cannot be read", async () => {
+    const user = userEvent.setup();
+    updateDefaultAgentProfileMock.mockReset().mockResolvedValue(undefined);
+    mockSkillList([buildSkill({ name: CATALOG_RECOMMENDED })]);
+    vi.spyOn(AgentProfilesService, "getProfile").mockRejectedValue(
+      new HttpError(500, "Server Error", {}, "boom"),
+    );
+    const saveSpy = vi
+      .spyOn(SettingsService, "saveSettings")
+      .mockResolvedValue(true);
+
+    renderSkillsSettingsScreen();
+    const toggle = await screen.findByTestId(
+      `skill-toggle-${CATALOG_RECOMMENDED}`,
+    );
+    await user.click(toggle);
+
+    expect(saveSpy).not.toHaveBeenCalled();
+    expect(updateDefaultAgentProfileMock).not.toHaveBeenCalled();
   });
 
   it("drops a re-enabled catalog skill from an unmigrated deny-list", async () => {

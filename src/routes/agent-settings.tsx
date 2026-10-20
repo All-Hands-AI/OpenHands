@@ -54,6 +54,7 @@ import {
 import { useAcpModelDiscovery } from "#/hooks/query/use-acp-model-discovery";
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import { parseCommand, formatCommand } from "#/utils/acp-command";
+import { enabledMcpServerRefs } from "#/hooks/mutation/sync-agent-profiles";
 import {
   readProfileScope,
   sameScopeSelection,
@@ -979,6 +980,18 @@ export function AgentSettingsScreen({
   const isAcp = agentType === "acp";
   // An OpenHands `default` shares its MCP servers, secrets and skills with the global pages.
   const sharesGlobalPages = isDefaultProfile && !isAcp;
+  // Switching `default`'s agent type moves its MCP servers onto or off the
+  // MCP page's switches.
+  const sharedRef = React.useRef(sharesGlobalPages);
+  React.useEffect(() => {
+    if (sharedRef.current === sharesGlobalPages) return;
+    sharedRef.current = sharesGlobalPages;
+    const scope = sharesGlobalPages
+      ? readProfileScope(enabledMcpServerRefs(settings))
+      : initialMcpRefs;
+    setMcpMode(scope.mode);
+    setSelectedMcpServers(scope.selected);
+  }, [sharesGlobalPages, settings, initialMcpRefs]);
   const commandTokens = parseCommand(commandText);
   const selectedPreset = detectPreset(commandText, acpProviders);
   const selectedProvider = getAcpProvider(selectedPreset);

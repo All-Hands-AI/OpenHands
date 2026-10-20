@@ -128,13 +128,7 @@ vi.mock("#/api/agent-profiles-service/profile-field-support", () => ({
   agentProfileSupportsSkills: () => profileSupportsSkillsMock(),
 }));
 
-const applyToGlobalMock = vi.hoisted(() =>
-  vi.fn(async (_queryClient: unknown, input: Record<string, unknown>) => ({
-    ...input,
-    mcp_server_refs: null,
-    secret_refs: null,
-  })),
-);
+const applyToGlobalMock = vi.hoisted(() => vi.fn(async () => undefined));
 vi.mock("#/hooks/mutation/sync-agent-profiles", async (importOriginal) => ({
   ...(await importOriginal<
     typeof import("#/hooks/mutation/sync-agent-profiles")
@@ -589,6 +583,63 @@ describe("AgentProfilesLocalView save mapping", () => {
         mcp_server_refs: null,
         secret_refs: null,
       });
+      // The profile saves first, so a rejected save changes no global page.
+      expect(saveMutate.mock.invocationCallOrder[0]).toBeLessThan(
+        applyToGlobalMock.mock.invocationCallOrder[0],
+      );
+    });
+
+    it("changes no global page when the profile save fails", async () => {
+      saveMutate.mockRejectedValueOnce(new Error("conflict"));
+      renderView();
+      const user = userEvent.setup();
+      await user.click(screen.getByTestId("edit-agent-profile"));
+      await screen.findByTestId("mock-agent-settings");
+      await user.click(screen.getByTestId("save-agent-profile-btn"));
+
+      await waitFor(() => expect(displayErrorToast).toHaveBeenCalled());
+      expect(applyToGlobalMock).not.toHaveBeenCalled();
+    });
+
+    it("treats an ACP default switched to OpenHands as the shared default", async () => {
+      vi.mocked(AgentProfilesService.getProfile).mockResolvedValue({
+        name: "default",
+        profile: {
+          ...storedDefault,
+          agent_kind: "acp",
+          acp_server: "claude-code",
+          acp_command: "claude",
+        },
+      } as never);
+      emitControl = {
+        agentType: "openhands",
+        isValid: true,
+        isDirty: true,
+        buildAgentProfileFields: () => ({
+          agent_kind: "openhands",
+          mcp_server_refs: ["github"],
+          secret_refs: ["GITHUB_TOKEN"],
+        }),
+        credentials: { isDirty: false, save: vi.fn(), reset: vi.fn() },
+      };
+
+      renderView();
+      const user = userEvent.setup();
+      await user.click(screen.getByTestId("edit-agent-profile"));
+      const form = await screen.findByTestId("mock-agent-settings");
+
+      expect(form).toHaveAttribute("data-default-profile", "true");
+      expect(
+        screen.getByTestId("agent-profile-llm-default-note"),
+      ).toBeInTheDocument();
+      await user.click(screen.getByTestId("save-agent-profile-btn"));
+      await waitFor(() => expect(applyToGlobalMock).toHaveBeenCalled());
+      expect(saveMutate.mock.calls[0][0].profile).toMatchObject({
+        agent_kind: "openhands",
+        llm_profile_ref: "fast",
+        mcp_server_refs: null,
+        secret_refs: null,
+      });
     });
 
     it("leaves an ACP default's own servers and secrets alone", async () => {
@@ -622,13 +673,17 @@ describe("AgentProfilesLocalView save mapping", () => {
       await user.click(screen.getByTestId("edit-agent-profile"));
       const form = await screen.findByTestId("mock-agent-settings");
 
-      expect(form).toHaveAttribute("data-default-profile", "false");
+      // The editor hides the shared controls only for an OpenHands agent.
+      expect(form).toHaveAttribute("data-default-profile", "true");
       expect(
         JSON.parse(form.getAttribute("data-override") as string),
       ).toMatchObject({
         mcp_server_refs: ["github"],
         secret_refs: ["GITHUB_TOKEN"],
       });
+      expect(
+        screen.queryByTestId("agent-profile-llm-default-note"),
+      ).not.toBeInTheDocument();
       await user.click(screen.getByTestId("save-agent-profile-btn"));
       await waitFor(() => expect(saveMutate).toHaveBeenCalledTimes(1));
       expect(applyToGlobalMock).not.toHaveBeenCalled();

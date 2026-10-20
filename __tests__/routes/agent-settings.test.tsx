@@ -1446,6 +1446,66 @@ describe("AgentSettingsScreen — MCP scope dirty tracking", () => {
       ).not.toBeInTheDocument();
     });
 
+    it("moves an ACP default switched to OpenHands onto the MCP page's switches", async () => {
+      vi.spyOn(SettingsService, "getSettings").mockResolvedValue(
+        buildSettings({
+          agent_settings: {
+            ...MOCK_DEFAULT_USER_SETTINGS.agent_settings,
+            agent_kind: "openhands",
+            mcp_config: {
+              github: { transport: "http", url: "https://github.example/mcp" },
+              slack: {
+                transport: "http",
+                url: "https://slack.example/mcp",
+                enabled: false,
+              },
+            },
+          },
+        }),
+      );
+      let control: AgentSettingsSaveControl | null = null;
+      renderAgentSettingsScreen({
+        agentSettingsOverride: {
+          agent_kind: "acp",
+          acp_server: "claude-code",
+          acp_command: [...CLAUDE_COMMAND],
+          acp_args: [],
+          acp_model: "",
+          mcp_server_refs: ["slack"],
+          secret_refs: ["PROD_DB_URL"],
+        },
+        isDefaultProfile: true,
+        onSaveControlChange: (next) => {
+          control = next;
+        },
+      });
+      await screen.findByTestId("agent-command-input");
+      expect(control!.buildAgentProfileFields()).toMatchObject({
+        mcp_server_refs: ["slack"],
+      });
+
+      const user = userEvent.setup();
+      await user.click(screen.getByTestId("agent-type-selector"));
+      await user.click(
+        await screen.findByRole("option", {
+          name: "SETTINGS$AGENT_TYPE_OPENHANDS",
+        }),
+      );
+
+      await waitFor(() =>
+        expect(control!.buildAgentProfileFields()).toMatchObject({
+          agent_kind: "openhands",
+          mcp_server_refs: ["github"],
+        }),
+      );
+      expect(
+        screen.queryByTestId("agent-settings-secrets-mode"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByTestId("agent-settings-mcp-default-note"),
+      ).toBeInTheDocument();
+    });
+
     it("gives the default profile every secret, with no picker", async () => {
       seedOpenHandsSettings();
       let control: AgentSettingsSaveControl | null = null;

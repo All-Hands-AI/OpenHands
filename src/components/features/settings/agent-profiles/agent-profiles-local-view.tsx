@@ -44,6 +44,7 @@ import {
 import {
   applyDefaultAgentProfileToGlobal,
   enabledMcpServerRefs,
+  sharedDefaultProfileFields,
 } from "#/hooks/mutation/sync-agent-profiles";
 import type { Settings } from "#/types/settings";
 
@@ -215,16 +216,20 @@ export function AgentProfilesLocalView() {
         );
         const profile = detail.profile;
         const isDefault =
-          profile.name === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME &&
-          profile.agent_kind === "openhands";
+          profile.name === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME;
         setEditingProfile(profile);
         setOverride(
-          isDefault
+          isDefault && profile.agent_kind === "openhands"
             ? defaultProfileOverride(profile, settings)
             : toAgentSettingsOverride(profile),
         );
         if (isDefault) {
-          setLlmProfileRef(defaultLlmProfileRef || profile.llm_profile_ref);
+          setLlmProfileRef(
+            defaultLlmProfileRef ||
+              (profile.agent_kind === "openhands"
+                ? profile.llm_profile_ref
+                : ""),
+          );
         } else if (profile.agent_kind === "openhands") {
           // A profile can reference an LLM profile that's since been deleted
           // (or renamed): the dropdown would render nothing selected while
@@ -330,11 +335,11 @@ export function AgentProfilesLocalView() {
       // edit (kind-aware — a kind switch stays a clean variant replacement).
       const profile = mergeAgentProfileSaveInput(
         viewMode === "edit" ? editingProfile : seedProfile,
-        savesDefault
-          ? await applyDefaultAgentProfileToGlobal(queryClient, input)
-          : input,
+        savesDefault ? sharedDefaultProfileFields(input) : input,
       );
       await saveProfile.mutateAsync({ name: trimmedName, profile });
+      if (savesDefault)
+        await applyDefaultAgentProfileToGlobal(queryClient, input);
 
       displaySuccessToast(
         viewMode === "create"
@@ -386,8 +391,7 @@ export function AgentProfilesLocalView() {
   const isOpenHands = saveControl?.agentType !== "acp";
   const isEditingDefault =
     viewMode === "edit" &&
-    editingProfile?.name === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME &&
-    editingProfile.agent_kind === "openhands";
+    editingProfile?.name === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME;
   const nameDirty = viewMode === "edit" && profileName !== editingProfile?.name;
   const loadedLlmRef =
     editingProfile?.agent_kind === "openhands"
