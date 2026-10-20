@@ -94,9 +94,9 @@ export function buildAuthorizeUrl({
 }
 
 /**
- * What DigitalOcean sent back, from the full return address or just its
- * query string: a code, or the error it redirects with when the user
- * declines.
+ * What DigitalOcean sent back, from the full return address, the path and
+ * query the return route receives, or just the query: a code, or the error
+ * it redirects with when the user declines.
  *
  * @param {string | null | undefined} returned
  * @returns {{ code: string | null, state: string | null, error: string | null }}
@@ -107,7 +107,8 @@ export function readCallback(returned) {
   try {
     params = new URL(text).searchParams;
   } catch {
-    params = new URLSearchParams(text.replace(/^[?#]/, ""));
+    const query = text.includes("?") ? text.slice(text.indexOf("?") + 1) : text;
+    params = new URLSearchParams(query.replace(/^#/, ""));
   }
   const error = params.get("error");
   return {
