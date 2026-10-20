@@ -1619,6 +1619,54 @@ describe("AgentSettingsScreen — condenser and verification", () => {
     ).not.toBeInTheDocument();
     expect(control().buildAgentProfileFields()).not.toHaveProperty("condenser");
   });
+
+  it("lets the default profile edit its own values on a cloud backend", async () => {
+    __resetActiveStoreForTests();
+    setRegisteredBackends([
+      {
+        id: "cloud-1",
+        name: "Cloud",
+        host: "https://app.example.com",
+        apiKey: "key",
+        kind: "cloud",
+      },
+    ]);
+    setActiveSelection({ backendId: "cloud-1", orgId: null });
+    try {
+      render(
+        <AgentSettingsScreen
+          agentSettingsOverride={STORED}
+          isDefaultProfile
+          onSaveControlChange={() => {}}
+        />,
+        {
+          wrapper: ({ children }) => (
+            <MemoryRouter>
+              <QueryClientProvider
+                client={
+                  new QueryClient({
+                    defaultOptions: { queries: { retry: false } },
+                  })
+                }
+              >
+                <ActiveBackendProvider>{children}</ActiveBackendProvider>
+              </QueryClientProvider>
+            </MemoryRouter>
+          ),
+        },
+      );
+
+      expect(
+        await screen.findByTestId("sdk-settings-condenser.condenser_max_size"),
+      ).toHaveValue(100);
+      expect(
+        screen.queryByTestId("agent-settings-condenser-default-profile"),
+      ).not.toBeInTheDocument();
+    } finally {
+      window.localStorage.clear();
+      __resetActiveStoreForTests();
+    }
+  });
 });
 
 describe("AgentSettingsScreen — system prompt", () => {
