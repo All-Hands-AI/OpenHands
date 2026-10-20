@@ -6,6 +6,16 @@ import { useAgentSettingsSchema } from "#/hooks/query/use-agent-settings-schema"
 import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { SchemaField } from "#/components/features/settings/sdk-settings/schema-field";
+import {
+  SdkSectionPage,
+  type SdkSectionSaveControl,
+} from "#/components/features/settings/sdk-settings/sdk-section-page";
+import {
+  fromBehaviorFormValues,
+  GLOBAL_BEHAVIOR_FIELD_KEYS,
+  toBehaviorFormValues,
+  type ProfileBehaviorSection,
+} from "#/components/features/settings/agent-profiles/profile-behavior-form";
 import { AcpCredentialsSection } from "#/components/features/settings/acp-credentials-section";
 import { useAcpCredentialForm } from "#/hooks/use-acp-credential-form";
 import { BrandButton } from "#/components/features/settings/brand-button";
@@ -19,10 +29,17 @@ import { Typography } from "#/ui/typography";
 import { I18nKey } from "#/i18n/declaration";
 import { formControlMultilineFieldClassName } from "#/utils/form-control-classes";
 import { cn } from "#/utils/utils";
-import { SettingsFieldSchema, SettingsValue } from "#/types/settings";
+import {
+  Settings,
+  SettingsFieldSchema,
+  SettingsSchema,
+  SettingsValue,
+} from "#/types/settings";
 import {
   coerceFieldValue,
+  inferInitialView,
   normalizeFieldValue,
+  type SettingsView,
 } from "#/utils/sdk-settings-schema";
 import {
   ACP_CUSTOM_PRESET_KEY,
@@ -64,6 +81,14 @@ import {
 import { useSearchSecrets } from "#/hooks/query/use-get-secrets";
 
 export const handle = { hideTitle: true };
+
+const PROFILE_BEHAVIOR_BLOCKS: ReadonlyArray<{
+  section: ProfileBehaviorSection;
+  titleKey: I18nKey;
+}> = [
+  { section: "condenser", titleKey: I18nKey.SETTINGS$NAV_CONDENSER },
+  { section: "verification", titleKey: I18nKey.SETTINGS$NAV_VERIFICATION },
+];
 
 type AgentType = "openhands" | "acp";
 
@@ -150,6 +175,8 @@ export type AgentProfileFieldsDraft =
       tools?: ProfileToolSpec[] | null;
       persona?: string | null;
       system_message_suffix?: string | null;
+      condenser?: Record<string, SettingsValue>;
+      verification?: Record<string, SettingsValue>;
     }
   | {
       agent_kind: "acp";
@@ -190,6 +217,9 @@ export interface AgentProfileFieldsInput {
   systemPromptText: string;
   /** False when the section is hidden, so neither prompt field is written. */
   systemPromptEditable: boolean;
+  /** Profile sections to store; an absent one keeps the stored value. */
+  condenser?: Record<string, SettingsValue>;
+  verification?: Record<string, SettingsValue>;
 }
 
 /**
@@ -234,6 +264,8 @@ export function buildAgentProfileFields(
     systemPromptMode,
     systemPromptText,
     systemPromptEditable,
+    condenser,
+    verification,
   } = input;
   // Both are base-model fields, so they ride both variants. `mcp_server_refs`
   // needs no version gate — it has existed since agent profiles shipped, below
@@ -272,6 +304,8 @@ export function buildAgentProfileFields(
     fields.system_message_suffix = systemPromptMode === "append" ? text : null;
     fields.persona = systemPromptMode === "custom" ? text : null;
   }
+  if (condenser) fields.condenser = condenser;
+  if (verification) fields.verification = verification;
   if (toolCatalogLoaded) {
     fields.tools = buildProfileToolsValue({
       mode: toolsMode,
@@ -725,6 +759,98 @@ export function AgentSettingsScreen({
     setSelectedSecrets(initialSecretRefs.selected);
   }, [initialSecretRefs]);
 
+  // --- Condenser and verification (OpenHands; stored on the profile) ---
+  // A local `default` launches from the global settings, so its own copy would be ignored.
+  const behaviorEditable = !isDefaultProfile || backendKind === "cloud";
+  const [behaviorControls, setBehaviorControls] = useState<
+    Partial<Record<ProfileBehaviorSection, SdkSectionSaveControl>>
+  >({});
+  const behaviorControlHandlers = React.useMemo(
+    () =>
+      Object.fromEntries(
+        PROFILE_BEHAVIOR_BLOCKS.map(({ section }) => [
+          section,
+          (control: SdkSectionSaveControl) =>
+            setBehaviorControls((previous) => ({
+              ...previous,
+              [section]: control,
+            })),
+        ]),
+      ) as Record<
+        ProfileBehaviorSection,
+        (control: SdkSectionSaveControl) => void
+      >,
+    [],
+  );
+  // A new profile has no stored sections and starts from the global values.
+  const storedBehavior = React.useMemo(() => {
+    const asRecord = (value: unknown) =>
+      value && typeof value === "object" && !Array.isArray(value)
+        ? (value as Record<string, unknown>)
+        : null;
+    return {
+      condenser: asRecord(agentSettingsOverride?.condenser),
+      verification: asRecord(agentSettingsOverride?.verification),
+    };
+  }, [agentSettingsOverride]);
+  const behaviorInitialValues = React.useMemo(
+    () => ({
+      condenser: storedBehavior.condenser
+        ? toBehaviorFormValues(schema, "condenser", storedBehavior.condenser)
+        : undefined,
+      verification: storedBehavior.verification
+        ? toBehaviorFormValues(
+            schema,
+            "verification",
+            storedBehavior.verification,
+          )
+        : undefined,
+    }),
+    [schema, storedBehavior],
+  );
+  // Open each section on the view its stored values need, not the global one.
+  const behaviorInitialView = React.useMemo(
+    () =>
+      Object.fromEntries(
+        PROFILE_BEHAVIOR_BLOCKS.map(({ section }) => {
+          const stored = storedBehavior[section];
+          return [
+            section,
+            stored
+              ? (current: Settings, filteredSchema: SettingsSchema) =>
+                  inferInitialView(
+                    {
+                      ...current,
+                      agent_settings: {
+                        ...current.agent_settings,
+                        [section]: stored as SettingsValue,
+                      },
+                    },
+                    filteredSchema,
+                  )
+              : undefined,
+          ];
+        }),
+      ) as Record<
+        ProfileBehaviorSection,
+        | ((current: Settings, filteredSchema: SettingsSchema) => SettingsView)
+        | undefined
+      >,
+    [storedBehavior],
+  );
+  const behaviorDirty =
+    behaviorEditable &&
+    Boolean(
+      behaviorControls.condenser?.isDirty ||
+      behaviorControls.verification?.isDirty,
+    );
+  const behaviorToSave = (section: ProfileBehaviorSection) => {
+    const control = behaviorControls[section];
+    if (!behaviorEditable || !control) return undefined;
+    if (!control.isDirty && storedBehavior[section]) return undefined;
+    return fromBehaviorFormValues(schema, section, control.values);
+  };
+
   // --- Save control ---
   // Ref-backed so the exposed builder/credential fns read the freshest state at
   // call time without re-emitting the control on every keystroke (mirrors
@@ -778,7 +904,9 @@ export function AgentSettingsScreen({
       ? commandText !== loadedSnapshot.commandText ||
         acpModel !== loadedSnapshot.acpModel ||
         isCustomAcpModel !== loadedSnapshot.isCustomAcpModel
-      : toolConcurrency !== initialToolConcurrency || systemPromptDirty);
+      : toolConcurrency !== initialToolConcurrency ||
+        systemPromptDirty ||
+        behaviorDirty);
   const credentialsDirty = acpCredentialForm.isDirty;
   const isAnyDirty =
     settingsDirty ||
@@ -901,6 +1029,8 @@ export function AgentSettingsScreen({
       systemPromptMode,
       systemPromptText,
       systemPromptEditable: showSystemPrompt,
+      condenser: behaviorToSave("condenser"),
+      verification: behaviorToSave("verification"),
     });
 
   const isSaving = acpCredentialForm.isSaving;
@@ -1212,6 +1342,45 @@ export function AgentSettingsScreen({
           )}
         </Typography.Text>
       </div>
+
+      {!isAcp
+        ? PROFILE_BEHAVIOR_BLOCKS.map(({ section, titleKey }) => (
+            <div
+              key={section}
+              className="flex flex-col gap-2.5"
+              data-testid={`agent-settings-${section}`}
+            >
+              <Typography.Text className="text-sm">
+                {t(titleKey)}
+              </Typography.Text>
+              {behaviorEditable ? (
+                <SdkSectionPage
+                  settingsSources={[
+                    {
+                      settingsSource: "agent_settings",
+                      sectionKeys: [section],
+                      excludeKeys: GLOBAL_BEHAVIOR_FIELD_KEYS,
+                    },
+                  ]}
+                  embedded
+                  hideSaveButton
+                  markInitialOverridesDirty={false}
+                  initialValueOverrides={behaviorInitialValues[section]}
+                  getInitialView={behaviorInitialView[section]}
+                  onSaveControlChange={behaviorControlHandlers[section]}
+                  testId={`agent-settings-${section}-fields`}
+                />
+              ) : (
+                <Typography.Text
+                  testId={`agent-settings-${section}-default-profile`}
+                  className="text-xs text-tertiary-alt"
+                >
+                  {t(I18nKey.SETTINGS$AGENT_PROFILE_BEHAVIOR_DEFAULT_PROFILE)}
+                </Typography.Text>
+              )}
+            </div>
+          ))
+        : null}
 
       {secretRefsSupportedOnProfile ? (
         <div className="flex flex-col gap-2.5">
