@@ -8,6 +8,10 @@
   "compatibility": {
     "minimumAgentServer": "1.55.0"
   },
+  "python": {
+    "_comment": "Interpreter request the npm and desktop launchers pass to uvx as --python for agent-server and automation. Without it uvx downloads the newest CPython when it finds no suitable interpreter, which breaks every autumn until the SDK's compiled dependencies (lmnr-claude-code-proxy, fastuuid) publish wheels for the new release (OpenHands/OpenHands#18654). Raise the upper bound once they do. UV_PYTHON in the environment replaces it.",
+    "uvxRequest": ">=3.12,<3.15"
+  },
   "images": {
     "agentServer": "ghcr.io/openhands/agent-server",
     "agentCanvas": "ghcr.io/openhands/agent-canvas"
