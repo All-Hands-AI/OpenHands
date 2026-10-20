@@ -38915,6 +38915,24 @@
     "uk": "Рекомендовані автоматизації",
     "id": "Otomatisasi yang disarankan"
   },
+  "RECOMMENDED_AUTOMATIONS$DISMISS_LABEL": {
+    "en": "Hide Recommended automations",
+    "ja": "おすすめの自動化を非表示",
+    "zh-CN": "隐藏推荐的自动化",
+    "zh-TW": "隱藏推薦的自動化",
+    "ko-KR": "추천 자동화 숨기기",
+    "no": "Skjul anbefalte automatiseringer",
+    "ar": "إخفاء الأتمتات الموصى بها",
+    "de": "Empfohlene Automatisierungen ausblenden",
+    "fr": "Masquer les automatisations recommandées",
+    "it": "Nascondi automazioni consigliate",
+    "pt": "Ocultar automações recomendadas",
+    "es": "Ocultar automatizaciones recomendadas",
+    "ca": "Amaga les automatitzacions recomanades",
+    "tr": "Önerilen otomasyonları gizle",
+    "uk": "Сховати рекомендовані автоматизації",
+    "id": "Sembunyikan otomatisasi yang disarankan"
+  },
   "RECOMMENDED_AUTOMATIONS$SECTION_TITLE": {
     "en": "Start from a proven workflow",
     "ja": "実績のあるワークフローから始める",
@@ -45917,6 +45935,24 @@
     "ca": "Mostra la llista Per començar",
     "id": "Tampilkan daftar periksa Memulai"
   },
+  "SETTINGS$SHOW_RECOMMENDED_AUTOMATIONS": {
+    "en": "Show Recommended automations",
+    "ja": "おすすめの自動化を表示",
+    "zh-CN": "显示推荐的自动化",
+    "zh-TW": "顯示推薦的自動化",
+    "ko-KR": "추천 자동화 표시",
+    "de": "Empfohlene Automatisierungen anzeigen",
+    "no": "Vis anbefalte automatiseringer",
+    "it": "Mostra automazioni consigliate",
+    "pt": "Mostrar automações recomendadas",
+    "es": "Mostrar automatizaciones recomendadas",
+    "ar": "إظهار الأتمتات الموصى بها",
+    "fr": "Afficher les automatisations recommandées",
+    "tr": "Önerilen otomasyonları göster",
+    "uk": "Показувати рекомендовані автоматизації",
+    "ca": "Mostra les automatitzacions recomanades",
+    "id": "Tampilkan otomatisasi yang disarankan"
+  },
   "ONBOARDING$SKIP_GETTING_STARTED_CHECKLIST": {
     "en": "Skip Getting Started checklist",
     "ja": "Getting Started チェックリストをスキップ",
@@ -46078,6 +46114,24 @@
     "tr": "Başla",
     "uk": "Почати",
     "id": "Mulai"
+  },
+  "ONBOARDING$SETUP_GUIDE_DISMISS_CONFIRM": {
+    "en": "Hide the Setup guide? You can turn it back on in Super Admin Instance Settings.",
+    "ja": "セットアップガイドを非表示にしますか？Super Admin の Instance Settings で再びオンにできます。",
+    "zh-CN": "要隐藏设置指南吗？你可以在 Super Admin 的 Instance Settings 中重新开启。",
+    "zh-TW": "要隱藏設定指南嗎？你可以在 Super Admin 的 Instance Settings 中重新開啟。",
+    "ko-KR": "설정 가이드를 숨길까요? Super Admin의 Instance Settings에서 다시 켤 수 있습니다.",
+    "no": "Skjule oppsettsveiledningen? Du kan slå den på igjen under Instance Settings i Super Admin.",
+    "ar": "هل تريد إخفاء دليل الإعداد؟ يمكنك إعادة تشغيله من Instance Settings في Super Admin.",
+    "de": "Einrichtungsleitfaden ausblenden? Sie können ihn in Super Admin unter Instance Settings wieder einschalten.",
+    "fr": "Masquer le guide de configuration ? Vous pouvez le réactiver dans Super Admin, sous Instance Settings.",
+    "it": "Nascondere la guida alla configurazione? Puoi riattivarla in Super Admin, in Instance Settings.",
+    "pt": "Ocultar o guia de configuração? Você pode ativá-lo novamente em Super Admin, em Instance Settings.",
+    "es": "¿Ocultar la guía de configuración? Puedes volver a activarla en Super Admin, en Instance Settings.",
+    "ca": "Vols amagar la guia de configuració? La pots tornar a activar a Super Admin, a Instance Settings.",
+    "tr": "Kurulum rehberi gizlensin mi? Super Admin'deki Instance Settings bölümünden yeniden açabilirsiniz.",
+    "uk": "Приховати посібник із налаштування? Його можна знову ввімкнути в Super Admin, у розділі Instance Settings.",
+    "id": "Sembunyikan panduan penyiapan? Anda dapat mengaktifkannya kembali di Super Admin, pada Instance Settings."
   },
   "ONBOARDING$SETUP_GUIDE_TOUR_TEMPLATE_TITLE": {
     "en": "Choose a template",
