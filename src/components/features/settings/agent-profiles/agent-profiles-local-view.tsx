@@ -20,6 +20,7 @@ import { useSaveAgentProfile } from "#/hooks/mutation/use-save-agent-profile";
 import { useRenameAgentProfile } from "#/hooks/mutation/use-rename-agent-profile";
 import { useAgentProfiles } from "#/hooks/query/use-agent-profiles";
 import { useLlmProfiles } from "#/hooks/query/use-llm-profiles";
+import { useSettings } from "#/hooks/query/use-settings";
 import {
   displayErrorToast,
   displaySuccessToast,
@@ -32,6 +33,11 @@ import { BackNavButton } from "#/components/shared/buttons/back-nav-button";
 import { Typography } from "#/ui/typography";
 import { useSettingsSectionHeader } from "#/contexts/settings-section-header-context";
 import { parseCommand } from "#/utils/acp-command";
+import { agentProfileSupportsSkills } from "#/api/agent-profiles-service/profile-field-support";
+import {
+  defaultSkillEnablement,
+  toProfileSkillFields,
+} from "#/utils/skill-enablement";
 
 type ViewMode = "list" | "create" | "edit";
 
@@ -55,14 +61,27 @@ function toAgentSettingsOverride(
       acp_model: profile.acp_model ?? "",
     };
   }
+  const stored = profile as typeof profile & {
+    enable_classify_and_switch_llm_tool?: boolean;
+    meta_profile_ref?: string | null;
+  };
   return {
     agent_kind: "openhands",
     mcp_server_refs: profile.mcp_server_refs ?? null,
+    enable_classify_and_switch_llm_tool:
+      stored.enable_classify_and_switch_llm_tool ?? false,
+    meta_profile_ref: stored.meta_profile_ref ?? null,
     tools: (profile.tools as SettingsValue) ?? null,
     tool_concurrency_limit: profile.tool_concurrency_limit,
     secret_refs: secretRefs,
+    public_skills:
+      (profile as { public_skills?: string[] | null }).public_skills ?? null,
+    disabled_skills:
+      (profile as { disabled_skills?: string[] }).disabled_skills ?? [],
     persona: profile.persona ?? null,
     system_message_suffix: profile.system_message_suffix ?? null,
+    condenser: (profile.condenser as SettingsValue) ?? null,
+    verification: (profile.verification as unknown as SettingsValue) ?? null,
   };
 }
 
@@ -80,6 +99,7 @@ export function AgentProfilesLocalView() {
   const { data: profilesData } = useAgentProfiles();
   const { data: llmProfilesData, isLoading: isLlmProfilesLoading } =
     useLlmProfiles();
+  const { data: settings } = useSettings();
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [profileName, setProfileName] = useState("");
@@ -123,11 +143,17 @@ export function AgentProfilesLocalView() {
   const handleAddProfile = useCallback(() => {
     setProfileName("");
     setEditingProfile(null);
-    setOverride({ agent_kind: "openhands" });
+    // A new profile starts from the skills selected on the Skills page.
+    setOverride({
+      agent_kind: "openhands",
+      ...(agentProfileSupportsSkills()
+        ? toProfileSkillFields(defaultSkillEnablement(settings ?? {}))
+        : {}),
+    });
     setLlmProfileRef(defaultLlmProfileRef);
     setSaveControl(null);
     setViewMode("create");
-  }, [defaultLlmProfileRef]);
+  }, [defaultLlmProfileRef, settings]);
 
   const handleEditProfile = useCallback(
     async (summary: AgentProfileSummary) => {
@@ -192,7 +218,10 @@ export function AgentProfilesLocalView() {
           displayErrorToast(t(I18nKey.SETTINGS$AGENT_PROFILE_LLM_REQUIRED));
           return;
         }
-        input = { ...fields, llm_profile_ref: llmProfileRef };
+        input = {
+          ...fields,
+          llm_profile_ref: llmProfileRef,
+        } as AgentProfileSaveInput;
       } else {
         input = fields as AgentProfileSaveInput;
       }
