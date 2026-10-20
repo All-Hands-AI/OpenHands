@@ -13,10 +13,13 @@ export interface OpenHandsProfileBehavior {
 export type StoredOpenHandsProfile = OpenHandsAgentProfile &
   OpenHandsProfileBehavior;
 
-/** Whether launching the profile attaches the Model Router's routing tool. */
+/**
+ * Whether launching the profile attaches the Model Router's routing tool. On
+ * without a name, the server picks the alphabetically first router.
+ */
 export function profileHasRouter(profile: OpenHandsAgentProfile): boolean {
-  const stored = profile as StoredOpenHandsProfile;
-  return Boolean(
-    stored.enable_classify_and_switch_llm_tool && stored.meta_profile_ref,
+  return (
+    (profile as StoredOpenHandsProfile).enable_classify_and_switch_llm_tool ===
+    true
   );
 }

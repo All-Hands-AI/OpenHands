@@ -152,9 +152,9 @@ describe("resolveConversationLaunch", () => {
       true,
     ],
     [
-      "enabled without a router",
+      "enabled without a name, so the first router",
       { enable_classify_and_switch_llm_tool: true, meta_profile_ref: null },
-      false,
+      true,
     ],
     [
       "disabled",

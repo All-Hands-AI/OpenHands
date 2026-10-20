@@ -1,4 +1,9 @@
+import React from "react";
 import { SdkSectionPage } from "#/components/features/settings/sdk-settings/sdk-section-page";
+import { profileBehaviorFieldKeys } from "#/components/features/settings/agent-profiles/profile-behavior-form";
+import { useActiveBackend } from "#/contexts/active-backend-context";
+import { useAgentSettingsSchema } from "#/hooks/query/use-agent-settings-schema";
+import { useSettings } from "#/hooks/query/use-settings";
 import { SettingsScope } from "#/types/settings";
 
 // Defensive de-dup: agent_settings.verification still carries
@@ -10,6 +15,9 @@ const CONVERSATION_OWNED_AGENT_VERIFICATION_FIELD_KEYS = new Set([
   "verification.confirmation_mode",
   "verification.security_analyzer",
 ]);
+
+// The critic API key depends on `critic_enabled`, which each profile sets.
+const SHOW_CRITIC_API_KEY = { "verification.critic_enabled": true };
 
 export function VerificationSettingsScreen({
   scope = "personal",
@@ -40,4 +48,50 @@ export function VerificationSettingsScreen({
   );
 }
 
-export default VerificationSettingsScreen;
+/** Locally each agent profile owns the critic's behavior; its API key stays here. */
+function GlobalVerificationSettingsScreen() {
+  const { data: settings } = useSettings();
+  const { data: schema } = useAgentSettingsSchema(
+    settings?.agent_settings_schema,
+  );
+  const settingsSources = React.useMemo(
+    () =>
+      schema
+        ? [
+            {
+              settingsSource: "agent_settings" as const,
+              sectionKeys: ["verification"],
+              excludeKeys: new Set([
+                ...CONVERSATION_OWNED_AGENT_VERIFICATION_FIELD_KEYS,
+                ...profileBehaviorFieldKeys(schema, "verification"),
+              ]),
+            },
+            {
+              settingsSource: "conversation_settings" as const,
+              sectionKeys: ["verification"],
+            },
+          ]
+        : null,
+    [schema],
+  );
+  if (!settingsSources) return null;
+  return (
+    <SdkSectionPage
+      settingsSources={settingsSources}
+      initialValueOverrides={SHOW_CRITIC_API_KEY}
+      markInitialOverridesDirty={false}
+      testId="verification-settings-screen"
+    />
+  );
+}
+
+function VerificationSettingsRoute() {
+  const { backend } = useActiveBackend();
+  return backend.kind === "cloud" ? (
+    <VerificationSettingsScreen />
+  ) : (
+    <GlobalVerificationSettingsScreen />
+  );
+}
+
+export default VerificationSettingsRoute;

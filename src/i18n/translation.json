@@ -7253,6 +7253,24 @@
     "ca": "Encamina el primer missatge de cada nova conversa a través de l'encaminador de models actiu abans que l'agent continú.",
     "id": "Rutekan pesan pertama setiap percakapan baru melalui Model Router aktif sebelum agen melanjutkan."
   },
+  "SETTINGS$META_PROFILE_RUN_AT_CONVERSATION_START_HELP_PROFILE": {
+    "en": "Route the first message of every new conversation through its agent profile's Model Router before the agent proceeds. Each agent profile picks its router in Settings → Agent.",
+    "ja": "エージェントが処理を始める前に、新しい会話の最初のメッセージをそのエージェントプロファイルのモデルルーターに振り分けます。ルーターは設定 → エージェントでエージェントプロファイルごとに選択します。",
+    "zh-CN": "在代理继续之前，将每个新对话的第一条消息通过其代理配置文件的模型路由器进行路由。每个代理配置文件在“设置 → 代理”中选择自己的路由器。",
+    "zh-TW": "在代理繼續之前，將每個新對話的第一則訊息透過其代理設定檔的模型路由器進行路由。每個代理設定檔在「設定 → 代理」中選擇自己的路由器。",
+    "ko-KR": "에이전트가 진행하기 전에 모든 새 대화의 첫 메시지를 해당 에이전트 프로필의 모델 라우터로 라우팅합니다. 각 에이전트 프로필의 라우터는 설정 → 에이전트에서 선택합니다.",
+    "no": "Ruter den første meldingen i hver ny samtale gjennom agentprofilens modellruter før agenten fortsetter. Hver agentprofil velger sin ruter under Innstillinger → Agent.",
+    "it": "Instrada il primo messaggio di ogni nuova conversazione attraverso il router dei modelli del suo profilo agente prima che l'agente proceda. Ogni profilo agente sceglie il proprio router in Impostazioni → Agente.",
+    "pt": "Encaminha a primeira mensagem de cada nova conversa pelo roteador de modelos do seu perfil de agente antes que o agente prossiga. Cada perfil de agente escolhe o seu roteador em Configurações → Agente.",
+    "es": "Enruta el primer mensaje de cada nueva conversación a través del enrutador de modelos de su perfil de agente antes de que el agente continúe. Cada perfil de agente elige su enrutador en Configuración → Agente.",
+    "ar": "وجّه أول رسالة من كل محادثة جديدة عبر موجّه النماذج الخاص بملف تعريف الوكيل قبل أن يكمل الوكيل. يختار كل ملف تعريف وكيل موجّهه من الإعدادات ← الوكيل.",
+    "fr": "Achemine le premier message de chaque nouvelle conversation via le routeur de modèles de son profil d'agent avant que l'agent ne continue. Chaque profil d'agent choisit son routeur dans Paramètres → Agent.",
+    "tr": "Aracı devam etmeden önce her yeni konuşmanın ilk mesajını ajan profilinin model yönlendiricisi üzerinden yönlendirir. Her ajan profili yönlendiricisini Ayarlar → Ajan bölümünden seçer.",
+    "de": "Leitet die erste Nachricht jeder neuen Konversation über den Modell-Router ihres Agentenprofils, bevor der Agent fortfährt. Jedes Agentenprofil wählt seinen Router unter Einstellungen → Agent.",
+    "uk": "Спрямовує перше повідомлення кожної нової розмови через маршрутизатор моделей її профілю агента, перш ніж агент продовжить. Кожен профіль агента вибирає свій маршрутизатор у Налаштування → Агент.",
+    "ca": "Encamina el primer missatge de cada nova conversa a través de l'encaminador de models del seu perfil d'agent abans que l'agent continuï. Cada perfil d'agent tria el seu encaminador a Configuració → Agent.",
+    "id": "Rutekan pesan pertama setiap percakapan baru melalui Model Router dari profil agennya sebelum agen melanjutkan. Setiap profil agen memilih router-nya di Pengaturan → Agen."
+  },
   "SETTINGS$AGENT_PAGE_DESCRIPTION": {
     "en": "Choose between the built-in OpenHands agent and an external ACP (Agent Client Protocol) subprocess such as Claude Code, Codex, or Gemini CLI.",
     "ja": "組み込みのOpenHandsエージェントと、Claude Code、Codex、Gemini CLIなどの外部ACP（Agent Client Protocol）サブプロセスのどちらかを選択します。",
