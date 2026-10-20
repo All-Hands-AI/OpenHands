@@ -52900,5 +52900,23 @@
     "uk": "Перший маршрутизатор за алфавітом",
     "ca": "Primer encaminador per ordre alfabètic",
     "id": "Router pertama menurut abjad"
+  },
+  "SETTINGS$RUNTIME_DOCKER_UNAVAILABLE": {
+    "en": "This server cannot run Docker conversations, so new conversations start locally. Pick another default runtime.",
+    "ja": "このサーバーは Docker 会話を実行できないため、新しい会話はローカルで開始されます。別のデフォルトランタイムを選択してください。",
+    "zh-CN": "此服务器无法运行 Docker 对话，因此新对话将在本地启动。请选择其他默认运行时。",
+    "zh-TW": "此伺服器無法執行 Docker 對話，因此新對話會在本機啟動。請選擇其他預設執行環境。",
+    "ko-KR": "이 서버는 Docker 대화를 실행할 수 없으므로 새 대화는 로컬에서 시작됩니다. 다른 기본 런타임을 선택하세요.",
+    "no": "Denne serveren kan ikke kjøre Docker-samtaler, så nye samtaler starter lokalt. Velg et annet standard kjøremiljø.",
+    "it": "Questo server non può eseguire conversazioni Docker, quindi le nuove conversazioni partono in locale. Scegli un altro runtime predefinito.",
+    "pt": "Este servidor não pode executar conversas Docker, então novas conversas começam localmente. Escolha outro runtime padrão.",
+    "es": "Este servidor no puede ejecutar conversaciones en Docker, así que las nuevas conversaciones empiezan en local. Elige otro entorno de ejecución predeterminado.",
+    "ar": "لا يمكن لهذا الخادم تشغيل محادثات Docker، لذا تبدأ المحادثات الجديدة محليًا. اختر بيئة تشغيل افتراضية أخرى.",
+    "fr": "Ce serveur ne peut pas exécuter de conversations Docker, les nouvelles conversations démarrent donc en local. Choisissez un autre environnement d'exécution par défaut.",
+    "tr": "Bu sunucu Docker konuşmalarını çalıştıramaz, bu yüzden yeni konuşmalar yerel olarak başlar. Başka bir varsayılan çalışma ortamı seçin.",
+    "de": "Dieser Server kann keine Docker-Unterhaltungen ausführen, daher starten neue Unterhaltungen lokal. Wähle eine andere Standard-Laufzeitumgebung.",
+    "uk": "Цей сервер не може запускати розмови в Docker, тому нові розмови починаються локально. Виберіть інше середовище виконання за замовчуванням.",
+    "ca": "Aquest servidor no pot executar converses de Docker, així que les converses noves comencen en local. Tria un altre entorn d'execució per defecte.",
+    "id": "Server ini tidak dapat menjalankan percakapan Docker, jadi percakapan baru dimulai secara lokal. Pilih runtime default lain."
   }
 }
