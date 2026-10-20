@@ -34,6 +34,21 @@ vi.mock("#/hooks/use-can-manage-org-profiles", () => ({
   useCanManageOrgProfiles: () => useCanManageOrgProfilesMock(),
 }));
 
+const useAgentProfilesMock = vi.fn();
+vi.mock("#/hooks/query/use-agent-profiles", () => ({
+  useAgentProfiles: () => useAgentProfilesMock(),
+}));
+vi.mock("#/contexts/active-backend-context", () => ({
+  useActiveBackend: () => ({ backend: { id: "b1", kind: "local" } }),
+}));
+const updateAgentProfileMock = vi.hoisted(() => vi.fn());
+vi.mock("#/hooks/mutation/sync-agent-profiles", async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import("#/hooks/mutation/sync-agent-profiles")
+  >()),
+  updateAgentProfile: updateAgentProfileMock,
+}));
+
 // eslint-disable-next-line import/first
 import { useChatInputLlmProfileState } from "#/hooks/use-chat-input-llm-profile-state";
 
@@ -68,6 +83,58 @@ describe("useChatInputLlmProfileState", () => {
     useCanManageOrgProfilesMock.mockReset();
     // Local backends always own their profiles.
     useCanManageOrgProfilesMock.mockReturnValue(true);
+    useAgentProfilesMock.mockReturnValue({ data: undefined });
+    updateAgentProfileMock.mockReset();
+  });
+
+  const activeAgent = (name: string, llmProfileRef: string) =>
+    useAgentProfilesMock.mockReturnValue({
+      data: {
+        profiles: [
+          {
+            id: `id-${name}`,
+            name,
+            agent_kind: "openhands",
+            llm_profile_ref: llmProfileRef,
+          },
+        ],
+        active_agent_profile_id: `id-${name}`,
+      },
+    });
+
+  it("shows the active agent profile's own LLM on the home page", () => {
+    useOptionalConversationIdMock.mockReturnValue({ conversationId: null });
+    activeAgent("reviewer", "Smart");
+
+    const { result } = renderState();
+
+    expect(result.current.currentProfileName).toBe("Smart");
+  });
+
+  it("saves a home pick as a named agent profile's own LLM", () => {
+    useOptionalConversationIdMock.mockReturnValue({ conversationId: null });
+    activeAgent("reviewer", "Smart");
+
+    const { result } = renderState();
+    result.current.selectProfile("Fast");
+
+    expect(switchAndLog).not.toHaveBeenCalled();
+    const [, name, change] = updateAgentProfileMock.mock.calls[0];
+    expect(name).toBe("reviewer");
+    expect(
+      change({ agent_kind: "openhands", llm_profile_ref: "Smart" }),
+    ).toEqual({ llm_profile_ref: "Fast" });
+  });
+
+  it("activates a home pick account-wide while default is active", () => {
+    useOptionalConversationIdMock.mockReturnValue({ conversationId: null });
+    activeAgent("default", "Fast");
+
+    const { result } = renderState();
+    result.current.selectProfile("Smart");
+
+    expect(updateAgentProfileMock).not.toHaveBeenCalled();
+    expect(switchAndLog).toHaveBeenCalledWith(null, "Smart");
   });
 
   it("prefers the profile stamped on the conversation over a model match", () => {

@@ -1,5 +1,12 @@
 import { useCallback } from "react";
-import { useIsMutating } from "@tanstack/react-query";
+import { useIsMutating, useQueryClient } from "@tanstack/react-query";
+import { WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME } from "#/api/agent-profiles-service/agent-profiles-service.api";
+import { useActiveBackend } from "#/contexts/active-backend-context";
+import {
+  llmProfileMirrored,
+  updateAgentProfile,
+} from "#/hooks/mutation/sync-agent-profiles";
+import { useAgentProfiles } from "#/hooks/query/use-agent-profiles";
 import type { ProfileInfo } from "@openhands/typescript-client";
 import { useOptionalConversationId } from "#/hooks/use-conversation-id";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
@@ -24,17 +31,17 @@ export interface ChatInputLlmProfileState {
    */
   canSwitchProfile: boolean;
   /**
-   * Switch the LLM profile: live via `/switch_profile` when inside a
-   * conversation, or activate it globally when on the home page (no
-   * conversation) — see {@link useSwitchLlmProfile}.
+   * Switch the LLM profile: live via `/switch_profile` inside a conversation.
+   * On the home page it becomes the active agent profile's LLM, which for
+   * `default` means activating it (see {@link useSwitchLlmProfile}).
    */
   selectProfile: (profileName: string) => void;
 }
 
 /**
  * Backs the OpenHands LLM-profile switcher pill, both on the home page (where
- * a pick activates the profile globally so the next conversation launches
- * with it) and inside a conversation (live swap). The ACP analog is
+ * it shows and sets the LLM the active agent profile launches with) and
+ * inside a conversation (live swap). The ACP analog is
  * {@link useChatInputModelState}. Mirrors the former SwitchProfileButton's
  * resolution priority so a switch is reflected instantly.
  */
@@ -42,6 +49,11 @@ export function useChatInputLlmProfileState(): ChatInputLlmProfileState {
   const { conversationId } = useOptionalConversationId();
   const { data: conversation } = useActiveConversation();
   const { data, isLoading } = useLlmProfiles();
+  const queryClient = useQueryClient();
+  const { backend } = useActiveBackend();
+  const { data: agentProfiles } = useAgentProfiles({
+    enabled: !conversationId && backend.kind === "local",
+  });
   const canManageOrgProfiles = useCanManageOrgProfiles();
   const { switchAndLog } = useSwitchLlmProfileAndLog();
   // Read the switch's pending state globally by mutation key: the pill button
@@ -64,18 +76,35 @@ export function useChatInputLlmProfileState(): ChatInputLlmProfileState {
   //   2. Profile stamped on the conversation, validated against the live list
   //      so a since-deleted/renamed profile falls through.
   //   3. Profile whose model matches the running llm_model.
-  //   4. User-level active_profile (fallback before the first message).
+  //   4. Before the first message, the active agent profile's own LLM, which
+  //      the launch runs, else the user-level active_profile.
   const stampedProfile = conversation?.active_profile ?? null;
   const conversationProfile =
     stampedProfile && profiles.some((p) => p.name === stampedProfile)
       ? stampedProfile
       : null;
+  const activeAgentProfile = agentProfiles?.profiles?.find(
+    (profile) =>
+      profile.id != null &&
+      profile.id === agentProfiles.active_agent_profile_id,
+  );
+  const agentLlmProfile =
+    activeAgentProfile?.agent_kind === "openhands" &&
+    profiles.some((p) => p.name === activeAgentProfile.llm_profile_ref)
+      ? activeAgentProfile.llm_profile_ref
+      : null;
+  // `default` runs the active LLM profile, so a home pick activates it; any
+  // other profile keeps the pick as its own LLM.
+  const ownsHomeLlm =
+    !conversationId &&
+    agentLlmProfile !== null &&
+    activeAgentProfile?.name !== WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME;
   const currentProfileName =
     optimisticActiveProfile ??
     conversationProfile ??
     (conversationModel
       ? (profiles.find((p) => p.model === conversationModel)?.name ?? null)
-      : (data?.active_profile ?? null));
+      : (agentLlmProfile ?? data?.active_profile ?? null));
   const currentProfileModel =
     profiles.find((p) => p.name === currentProfileName)?.model ??
     conversationModel ??
@@ -93,9 +122,25 @@ export function useChatInputLlmProfileState(): ChatInputLlmProfileState {
   const selectProfile = useCallback(
     (profileName: string) => {
       if (!canSwitchProfile || profileName === currentProfileName) return;
+      if (ownsHomeLlm && activeAgentProfile) {
+        updateAgentProfile(
+          queryClient,
+          activeAgentProfile.name,
+          llmProfileMirrored(profileName),
+        );
+        return;
+      }
       switchAndLog(conversationId, profileName);
     },
-    [canSwitchProfile, conversationId, currentProfileName, switchAndLog],
+    [
+      canSwitchProfile,
+      conversationId,
+      currentProfileName,
+      switchAndLog,
+      ownsHomeLlm,
+      activeAgentProfile,
+      queryClient,
+    ],
   );
 
   return {
