@@ -111,6 +111,10 @@ describe("static-server.mjs", () => {
   }
 
   describe("parseArgs", () => {
+    it("defaults host to IPv4 loopback", () => {
+      expect(parseArgs([]).host).toBe("127.0.0.1");
+    });
+
     it("defaults sessionApiKey to null", () => {
       const config = parseArgs([]);
       expect(config.sessionApiKey).toBeNull();
@@ -207,7 +211,9 @@ describe("static-server.mjs", () => {
       const result = serializeForInlineScript(input);
       expect(result).not.toContain("<");
       expect(result).not.toContain(">");
-      expect(result).toBe('"\\u003c/script\\u003e\\u003cscript\\u003ealert(1)\\u003c/script\\u003e"');
+      expect(result).toBe(
+        '"\\u003c/script\\u003e\\u003cscript\\u003ealert(1)\\u003c/script\\u003e"',
+      );
     });
 
     it("escapes line and paragraph separators U+2028 and U+2029", () => {
@@ -410,7 +416,7 @@ describe("static-server.mjs", () => {
       const upstreamOrigin = await startHttpServer(
         createServer((_req, res) => {
           res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ version: "1.28.0" }));
+          res.end(JSON.stringify({ version: "1.48.0" }));
         }),
       );
       const runtimeServicesInfo = JSON.stringify({
@@ -439,7 +445,7 @@ describe("static-server.mjs", () => {
       };
 
       expect(response.status).toBe(200);
-      expect(body.version).toBe("1.28.0");
+      expect(body.version).toBe("1.48.0");
       expect(body.runtime_services).toEqual(JSON.parse(runtimeServicesInfo));
     });
 
@@ -723,6 +729,68 @@ describe("static-server.mjs", () => {
       expect(response.headers.get("cache-control")).toBe("no-cache");
     });
 
+    it("does not inject the session key when bound off-loopback", async () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const buildDir = mkdtempSync(path.join(tmpdir(), "agent-canvas-build-"));
+      tempDirs.push(buildDir);
+      writeFileSync(
+        path.join(buildDir, "index.html"),
+        "<html><head></head><body>app</body></html>",
+      );
+
+      try {
+        const server = await startStaticServer({
+          port: 0,
+          host: "0.0.0.0",
+          dir: buildDir,
+          routes: {},
+          sessionApiKey: "lan-secret",
+        });
+        servers.push(server);
+        const address = server.address();
+        if (!address || typeof address === "string") {
+          throw new Error("Static server did not bind to a TCP port");
+        }
+        const origin = `http://127.0.0.1:${address.port}`;
+        const body = await (await fetch(`${origin}/`)).text();
+
+        expect(body).not.toContain("lan-secret");
+        expect(body).not.toContain("__AGENT_CANVAS_SESSION_API_KEY__");
+        expect(body).toContain("__AGENT_CANVAS_AUTH_REQUIRED__");
+        expect(warn).toHaveBeenCalled();
+      } finally {
+        warn.mockRestore();
+      }
+    });
+
+    it("injects the session key off-loopback only with --allow-lan-session-key", async () => {
+      const buildDir = mkdtempSync(path.join(tmpdir(), "agent-canvas-build-"));
+      tempDirs.push(buildDir);
+      writeFileSync(
+        path.join(buildDir, "index.html"),
+        "<html><head></head><body>app</body></html>",
+      );
+
+      const server = await startStaticServer({
+        port: 0,
+        host: "0.0.0.0",
+        dir: buildDir,
+        routes: {},
+        sessionApiKey: "container-key",
+        allowLanSessionKey: true,
+      });
+      servers.push(server);
+      const address = server.address();
+      if (!address || typeof address === "string") {
+        throw new Error("Static server did not bind to a TCP port");
+      }
+      const origin = `http://127.0.0.1:${address.port}`;
+      const body = await (await fetch(`${origin}/`)).text();
+
+      expect(body).toContain("container-key");
+      expect(body).toContain("__AGENT_CANVAS_SESSION_API_KEY__");
+    });
+
     it("escapes HTML special characters and script closing tags in injected values", async () => {
       const buildDir = mkdtempSync(path.join(tmpdir(), "agent-canvas-build-"));
       tempDirs.push(buildDir);
@@ -967,5 +1035,84 @@ describe("static-server.mjs", () => {
     expect(response.body).toContain("Bad Gateway");
     expect(response.body).toContain("Invalid URL");
     expect(server.listening).toBe(true);
+  });
+});
+
+describe("static-server.mjs MARS web bridge (Docker arguments)", () => {
+  const servers: Server[] = [];
+  const tempDirs: string[] = [];
+
+  afterEach(async () => {
+    await Promise.all(
+      servers.splice(0).map(
+        (server) =>
+          new Promise<void>((resolve) => {
+            server.close(() => resolve());
+          }),
+      ),
+    );
+    for (const dir of tempDirs.splice(0)) {
+      rmSync(dir, { recursive: true, force: true });
+    }
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  function makeBuildDir() {
+    const buildDir = mkdtempSync(path.join(tmpdir(), "agent-canvas-build-"));
+    tempDirs.push(buildDir);
+    writeFileSync(
+      path.join(buildDir, "index.html"),
+      "<html><head></head><body>app</body></html>",
+    );
+    return buildDir;
+  }
+
+  async function start(
+    overrides: Partial<Parameters<typeof startStaticServer>[0]>,
+  ) {
+    const server = await startStaticServer({
+      port: 0,
+      dir: makeBuildDir(),
+      routes: {},
+      ...overrides,
+    });
+    servers.push(server);
+    const address = server.address();
+    if (!address || typeof address === "string") {
+      throw new Error("Static server did not bind to a TCP port");
+    }
+    return `http://127.0.0.1:${address.port}`;
+  }
+
+  // docker/entrypoint.sh runs `--host :: --session-api-key <key>` with no
+  // `--allow-lan-session-key`: the key is stripped from the HTML, but the
+  // bridge must still mount behind it.
+  it("mounts with the entrypoint's `--host :: --session-api-key` arguments", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const origin = await start({ host: "::", sessionApiKey: "docker-key" });
+    expect(await (await fetch(`${origin}/mars/health`)).json()).toEqual({
+      ok: true,
+      authRequired: true,
+    });
+    const page = await (await fetch(`${origin}/`)).text();
+    expect(page).not.toContain("docker-key");
+    expect(
+      warn.mock.calls.some((c) => String(c[0]).includes("[mars-web]")),
+    ).toBe(false);
+  });
+
+  it("does not mount on a LAN bind with no key (public mode)", async () => {
+    vi.spyOn(console, "debug").mockImplementation(() => {});
+    const origin = await start({ host: "::", authRequired: true });
+    const response = await fetch(`${origin}/mars/health`);
+    expect(response.headers.get("content-type")).toMatch(/text\/html/);
+  });
+
+  it("honours MARS_WEB=0", async () => {
+    vi.stubEnv("MARS_WEB", "0");
+    const origin = await start({ host: "127.0.0.1", sessionApiKey: "k" });
+    const response = await fetch(`${origin}/mars/health`);
+    expect(response.headers.get("content-type")).toMatch(/text\/html/);
   });
 });

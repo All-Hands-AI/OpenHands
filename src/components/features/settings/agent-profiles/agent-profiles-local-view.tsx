@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentProfilesManager } from "./agent-profiles-manager";
+import { GlobalToolsNotice } from "./global-tools-notice";
 import { mergeAgentProfileSaveInput } from "./merge-agent-profile-save-input";
 import { ProfileNameInput } from "#/components/features/settings/llm-profiles/profile-name-input";
 import { BrandButton } from "#/components/features/settings/brand-button";
@@ -10,6 +11,7 @@ import {
   type AgentSettingsSaveControl,
 } from "#/routes/agent-settings";
 import AgentProfilesService, {
+  WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME,
   type AgentProfile,
   type AgentProfileSummary,
   type AgentProfileSaveInput,
@@ -18,6 +20,7 @@ import { useSaveAgentProfile } from "#/hooks/mutation/use-save-agent-profile";
 import { useRenameAgentProfile } from "#/hooks/mutation/use-rename-agent-profile";
 import { useAgentProfiles } from "#/hooks/query/use-agent-profiles";
 import { useLlmProfiles } from "#/hooks/query/use-llm-profiles";
+import { useSettings } from "#/hooks/query/use-settings";
 import {
   displayErrorToast,
   displaySuccessToast,
@@ -30,6 +33,11 @@ import { BackNavButton } from "#/components/shared/buttons/back-nav-button";
 import { Typography } from "#/ui/typography";
 import { useSettingsSectionHeader } from "#/contexts/settings-section-header-context";
 import { parseCommand } from "#/utils/acp-command";
+import { agentProfileSupportsSkills } from "#/api/agent-profiles-service/profile-field-support";
+import {
+  defaultSkillEnablement,
+  toProfileSkillFields,
+} from "#/utils/skill-enablement";
 
 type ViewMode = "list" | "create" | "edit";
 
@@ -41,9 +49,7 @@ type ViewMode = "list" | "create" | "edit";
 function toAgentSettingsOverride(
   profile: AgentProfile,
 ): Record<string, SettingsValue> {
-  const secretRefs =
-    ((profile as { secret_refs?: unknown }).secret_refs as SettingsValue) ??
-    null;
+  const secretRefs = profile.secret_refs ?? null;
   if (profile.agent_kind === "acp") {
     return {
       agent_kind: "acp",
@@ -55,20 +61,27 @@ function toAgentSettingsOverride(
       acp_model: profile.acp_model ?? "",
     };
   }
-  // `enable_switch_llm_tool` rides untyped — the pinned ts-client predates it
-  // on the profile model (same pattern as `disabled_skills` in the merge
-  // fixtures). Fall back to the SDK default (true) when a stored profile
-  // predates the field.
-  const switchLlmToolEnabled =
-    (profile as { enable_switch_llm_tool?: boolean }).enable_switch_llm_tool ??
-    true;
+  const stored = profile as typeof profile & {
+    enable_classify_and_switch_llm_tool?: boolean;
+    meta_profile_ref?: string | null;
+  };
   return {
     agent_kind: "openhands",
     mcp_server_refs: profile.mcp_server_refs ?? null,
-    enable_sub_agents: profile.enable_sub_agents,
-    enable_switch_llm_tool: switchLlmToolEnabled,
+    enable_classify_and_switch_llm_tool:
+      stored.enable_classify_and_switch_llm_tool ?? false,
+    meta_profile_ref: stored.meta_profile_ref ?? null,
+    tools: (profile.tools as SettingsValue) ?? null,
     tool_concurrency_limit: profile.tool_concurrency_limit,
     secret_refs: secretRefs,
+    public_skills:
+      (profile as { public_skills?: string[] | null }).public_skills ?? null,
+    disabled_skills:
+      (profile as { disabled_skills?: string[] }).disabled_skills ?? [],
+    persona: profile.persona ?? null,
+    system_message_suffix: profile.system_message_suffix ?? null,
+    condenser: (profile.condenser as SettingsValue) ?? null,
+    verification: (profile.verification as unknown as SettingsValue) ?? null,
   };
 }
 
@@ -86,6 +99,7 @@ export function AgentProfilesLocalView() {
   const { data: profilesData } = useAgentProfiles();
   const { data: llmProfilesData, isLoading: isLlmProfilesLoading } =
     useLlmProfiles();
+  const { data: settings } = useSettings();
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [profileName, setProfileName] = useState("");
@@ -115,28 +129,31 @@ export function AgentProfilesLocalView() {
     [profilesData],
   );
 
-  // The shared validator rejects whitespace, so duplicate checks compare raw.
-  const isNameValid = useMemo(() => {
-    if (!isProfileNameValid(profileName, { isRequired: true })) return false;
-    if (viewMode === "create" && existingNames.has(profileName)) return false;
-    if (
-      viewMode === "edit" &&
-      profileName !== editingProfile?.name &&
-      existingNames.has(profileName)
-    ) {
-      return false;
-    }
-    return true;
-  }, [profileName, viewMode, existingNames, editingProfile?.name]);
+  // The shared validator rejects whitespace, so the duplicate check compares raw.
+  const isNameFormatValid = isProfileNameValid(profileName, {
+    isRequired: true,
+  });
+  const isDuplicateName =
+    isNameFormatValid &&
+    existingNames.has(profileName) &&
+    (viewMode === "create" ||
+      (viewMode === "edit" && profileName !== editingProfile?.name));
+  const isNameValid = isNameFormatValid && !isDuplicateName;
 
   const handleAddProfile = useCallback(() => {
     setProfileName("");
     setEditingProfile(null);
-    setOverride({ agent_kind: "openhands" });
+    // A new profile starts from the skills selected on the Skills page.
+    setOverride({
+      agent_kind: "openhands",
+      ...(agentProfileSupportsSkills()
+        ? toProfileSkillFields(defaultSkillEnablement(settings ?? {}))
+        : {}),
+    });
     setLlmProfileRef(defaultLlmProfileRef);
     setSaveControl(null);
     setViewMode("create");
-  }, [defaultLlmProfileRef]);
+  }, [defaultLlmProfileRef, settings]);
 
   const handleEditProfile = useCallback(
     async (summary: AgentProfileSummary) => {
@@ -201,7 +218,10 @@ export function AgentProfilesLocalView() {
           displayErrorToast(t(I18nKey.SETTINGS$AGENT_PROFILE_LLM_REQUIRED));
           return;
         }
-        input = { ...fields, llm_profile_ref: llmProfileRef };
+        input = {
+          ...fields,
+          llm_profile_ref: llmProfileRef,
+        } as AgentProfileSaveInput;
       } else {
         input = fields as AgentProfileSaveInput;
       }
@@ -271,10 +291,13 @@ export function AgentProfilesLocalView() {
 
   if (viewMode === "list") {
     return (
-      <AgentProfilesManager
-        onAddProfile={handleAddProfile}
-        onEditProfile={handleEditProfile}
-      />
+      <div className="flex flex-col gap-4">
+        <GlobalToolsNotice />
+        <AgentProfilesManager
+          onAddProfile={handleAddProfile}
+          onEditProfile={handleEditProfile}
+        />
+      </div>
     );
   }
 
@@ -285,7 +308,7 @@ export function AgentProfilesLocalView() {
   const editorDescription =
     viewMode === "edit" && editingProfile
       ? t(I18nKey.SETTINGS$PROFILE_LOADED, { name: editingProfile.name })
-      : t(I18nKey.SETTINGS$PROFILE_SAVE_HINT);
+      : t(I18nKey.SETTINGS$AGENT_PROFILE_SAVE_HINT);
   const isOpenHands = saveControl?.agentType !== "acp";
   const nameDirty = viewMode === "edit" && profileName !== editingProfile?.name;
   const loadedLlmRef =
@@ -325,16 +348,24 @@ export function AgentProfilesLocalView() {
         value={profileName}
         onChange={setProfileName}
         isRequired
+        error={
+          isDuplicateName
+            ? t(I18nKey.SETTINGS$AGENT_PROFILE_NAME_TAKEN)
+            : undefined
+        }
       />
 
       {/* Reuse the existing Agent settings form to define the agent. */}
       <AgentSettingsScreen
         key={viewMode === "edit" ? `edit-${editingProfile?.id}` : "new-profile"}
-        embedded
         agentSettingsOverride={override}
         onSaveControlChange={setSaveControl}
+        isDefaultProfile={
+          profileName.trim() === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME
+        }
       />
 
+      {/* @spec FF-001 — Profile validation feedback follows the host error role */}
       {/* OpenHands profiles reference an LLM profile (required). */}
       {isOpenHands &&
         (llmProfiles.length > 0 ? (
@@ -352,7 +383,7 @@ export function AgentProfilesLocalView() {
         ) : (
           <p
             data-testid="agent-profile-no-llm"
-            className="text-sm text-red-400"
+            className="text-sm text-feedback-error"
           >
             {t(I18nKey.SETTINGS$AGENT_PROFILE_NO_LLM)}
           </p>

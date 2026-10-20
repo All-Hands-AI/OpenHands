@@ -34,6 +34,8 @@ import {
 
 interface RecommendedAutomationsRailProps {
   installedAutomations: readonly Pick<Automation, "name">[];
+  /** Catalog entries the active backend's deployment does not offer. */
+  hiddenAutomationIds?: ReadonlySet<string>;
   onSelect: (automation: RecommendedAutomation) => void;
   className?: string;
 }
@@ -92,11 +94,7 @@ function RailIntegrationIcons({
             key={entry.id}
             entry={entry}
             size="base"
-            className={
-              isOverlap
-                ? "ring-2 ring-[var(--oh-color-base-secondary)]"
-                : undefined
-            }
+            className={isOverlap ? "ring-2 ring-base-secondary" : undefined}
           />
         ))
       )}
@@ -106,12 +104,13 @@ function RailIntegrationIcons({
 
 export function RecommendedAutomationsRail({
   installedAutomations,
+  hiddenAutomationIds,
   onSelect,
   className,
 }: RecommendedAutomationsRailProps) {
   const { t } = useTranslation("openhands");
   const items = flattenRecommendedRailGroups(
-    getRecommendedRailGroups(installedAutomations),
+    getRecommendedRailGroups(installedAutomations, hiddenAutomationIds),
   );
   const scrollRef = useRef<HTMLDivElement>(null);
   const { handleMouseDown, handleClickCapture, handleDragStart } =
@@ -154,7 +153,7 @@ export function RecommendedAutomationsRail({
       aria-label={t(I18nKey.RECOMMENDED_AUTOMATIONS$SECTION_LABEL)}
       className={cn("w-full", AUTOMATION_STACK_SECTION_BOTTOM_CLASS, className)}
     >
-      <h2 className="mb-2 text-sm font-medium text-[var(--oh-foreground)]">
+      <h2 className="mb-2 text-sm font-medium text-foreground">
         {t(I18nKey.RECOMMENDED_AUTOMATIONS$SECTION_LABEL)}
       </h2>
 
@@ -177,7 +176,7 @@ export function RecommendedAutomationsRail({
                 data-testid={`recommended-automation-rail-card-${automation.id}`}
                 onClick={() => onSelect(automation)}
                 className={cn(
-                  "flex w-[220px] shrink-0 flex-col gap-3 p-3 text-left",
+                  "flex w-55 shrink-0 flex-col gap-3 p-3 text-left",
                   extensionModuleCardSurfaceClassName,
                   extensionModuleCardInteractiveClassName,
                 )}
@@ -188,7 +187,7 @@ export function RecommendedAutomationsRail({
                   testId={`recommended-automation-rail-icon-${automation.id}`}
                 />
                 <div className="min-w-0">
-                  <h3 className="truncate text-sm font-semibold text-white">
+                  <h3 className="truncate text-sm font-semibold text-contrast">
                     {automation.name}
                   </h3>
                   <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-tertiary-light">

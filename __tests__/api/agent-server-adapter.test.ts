@@ -3,6 +3,8 @@ import type { MockInstance } from "vitest";
 import { getAcpProvider as getClientAcpProvider } from "@openhands/typescript-client";
 import { CANVAS_UI_CLIENT_TOOL_NAME } from "#/constants/canvas-ui";
 import { LAUNCH_CHILD_CONVERSATION_TOOL_NAME } from "#/constants/child-conversation";
+import { REQUEST_SECRET_TOOL_NAME } from "#/constants/secret-request";
+import { AUTOMATION_FORM_UPDATE_TOOL_NAME } from "#/constants/automation-form";
 
 import {
   ACP_SERVER_TAG_KEY,
@@ -11,10 +13,12 @@ import {
   buildRuntimeServicesSystemSuffix,
   buildStartConversationRequest,
   buildStartConversationRequestWithEncryptedSettings,
-  fetchBackendRuntimeServicesInfo,
+  fetchBackendExecutionRuntime,
+  backendSupportsLaunchLlmOverride,
   getDefaultConversationTitle,
   parseRuntimeServicesInfo,
   toAppConversation,
+  toHooksResponse,
   type DirectConversationInfo,
 } from "#/api/agent-server-adapter";
 import SettingsService from "#/api/settings-service/settings-service.api";
@@ -35,15 +39,14 @@ import {
 
 const {
   mockGetAgentServerWorkingDir,
-  mockIsAgentServerToolAvailable,
   mockGetEffectiveLocalBackend,
   mockGetCachedAgentServerInfo,
   mockGetServerInfo,
   mockGetActiveBackend,
   mockLoadHooks,
+  mockListMetaProfiles,
 } = vi.hoisted(() => ({
   mockGetAgentServerWorkingDir: vi.fn(() => "/workspace/project/agent-canvas"),
-  mockIsAgentServerToolAvailable: vi.fn((_toolName: string) => true),
   mockGetEffectiveLocalBackend: vi.fn(() => ({
     id: "default-local",
     name: "Local backend",
@@ -63,6 +66,7 @@ const {
     },
   })),
   mockLoadHooks: vi.fn(),
+  mockListMetaProfiles: vi.fn(),
 }));
 
 vi.mock("@openhands/typescript-client/clients", () => ({
@@ -73,6 +77,9 @@ vi.mock("@openhands/typescript-client/clients", () => ({
   }),
   HooksClient: vi.fn(function HooksClientMock() {
     return { loadHooks: mockLoadHooks };
+  }),
+  MetaProfilesClient: vi.fn(function MetaProfilesClientMock() {
+    return { listMetaProfiles: mockListMetaProfiles };
   }),
 }));
 
@@ -85,7 +92,6 @@ vi.mock("#/api/agent-server-config", () => ({
 }));
 
 vi.mock("#/api/agent-server-compatibility", () => ({
-  isAgentServerToolAvailable: mockIsAgentServerToolAvailable,
   getCachedAgentServerInfo: mockGetCachedAgentServerInfo,
 }));
 
@@ -125,7 +131,6 @@ const EXPLICIT_HOOK_CONFIG = makeHookConfig({
 });
 
 beforeEach(() => {
-  mockIsAgentServerToolAvailable.mockReturnValue(true);
   mockGetCachedAgentServerInfo.mockReturnValue(null);
   mockGetServerInfo.mockReset();
   mockGetEffectiveLocalBackend.mockReturnValue({
@@ -138,6 +143,55 @@ beforeEach(() => {
 });
 
 describe("buildStartConversationRequest", () => {
+  it.each([{ city: "Tokyo" }, { metric: false }, { days: 0 }])(
+    "rejects unsupported plugin parameters instead of silently stripping %o",
+    (parameters) => {
+      expect(() =>
+        buildStartConversationRequest({
+          settings: DEFAULT_SETTINGS,
+          plugins: [{ source: "local-plugin", parameters }],
+        }),
+      ).toThrow();
+    },
+  );
+
+  it.each(
+    [5, 0, true, false, "", "Tokyo", [], [false]].map((parameters) => ({
+      parameters,
+    })),
+  )(
+    "rejects malformed plugin parameters instead of silently stripping $parameters",
+    ({ parameters }) => {
+      // Launch links can carry JSON values outside PluginSpec's static type.
+      const plugins = JSON.parse(
+        JSON.stringify([{ source: "local-plugin", parameters }]),
+      );
+      expect(() =>
+        buildStartConversationRequest({ settings: DEFAULT_SETTINGS, plugins }),
+      ).toThrow();
+    },
+  );
+
+  it.each([undefined, null, {}])(
+    "keeps coordinate-only plugins when parameters are %o",
+    (parameters) => {
+      const payload = buildStartConversationRequest({
+        settings: DEFAULT_SETTINGS,
+        plugins: [
+          {
+            source: "local-plugin",
+            ref: "main",
+            repo_path: "plugin",
+            parameters,
+          },
+        ],
+      });
+      expect(payload.plugins).toEqual([
+        { source: "local-plugin", ref: "main", repo_path: "plugin" },
+      ]);
+    },
+  );
+
   it("includes the resolved title LLM profile when configured", () => {
     const payload = buildStartConversationRequest({
       settings: DEFAULT_SETTINGS,
@@ -163,7 +217,6 @@ describe("buildStartConversationRequest", () => {
         agent_settings: {
           ...DEFAULT_SETTINGS.agent_settings,
           agent: "CodeActAgent",
-          enable_sub_agents: true,
           llm: {
             model: "nested-model",
             api_key: "  nested-key  ",
@@ -173,7 +226,6 @@ describe("buildStartConversationRequest", () => {
             enabled: true,
             max_size: 120,
           },
-          enable_switch_llm_tool: true,
         },
         conversation_settings: {
           ...DEFAULT_SETTINGS.conversation_settings,
@@ -205,13 +257,9 @@ describe("buildStartConversationRequest", () => {
       enabled: true,
       max_size: 120,
     });
-    expect(payload.agent_settings.tools).toEqual([
-      { name: "terminal", params: {} },
-      { name: "file_editor", params: {} },
-      { name: "task_tracker", params: {} },
-      { name: "browser_tool_set", params: {} },
-      { name: "task_tool_set", params: {} },
-    ]);
+    expect(
+      JSON.parse(JSON.stringify(payload.agent_settings)),
+    ).not.toHaveProperty("tools");
     expect(payload.agent_settings.agent_context).toMatchObject({
       load_public_skills: false,
       load_user_skills: true,
@@ -254,7 +302,6 @@ describe("buildStartConversationRequest", () => {
       }
     }
     expect(payload.agent_settings.agent).toBe("CodeActAgent");
-    expect(payload.agent_settings.enable_switch_llm_tool).toBe(true);
     expect(payload.workspace.working_dir).toBe(
       "/workspace/project/agent-canvas",
     );
@@ -306,37 +353,16 @@ describe("buildStartConversationRequest", () => {
     expect(payload.agent_settings.llm.model).toBe("openai/gpt-4o");
   });
 
-  it("forwards the switch-LLM setting to SDK agent settings", () => {
+  it("sends configured tools as given", () => {
     const payload = buildStartConversationRequest({
       settings: {
         ...DEFAULT_SETTINGS,
         agent_settings: {
           ...DEFAULT_SETTINGS.agent_settings,
-          enable_switch_llm_tool: true,
-          llm: { model: "nested-model" },
-        },
-      },
-    }) as {
-      agent?: unknown;
-      agent_settings: {
-        enable_switch_llm_tool?: boolean;
-        include_default_tools?: unknown;
-      };
-    };
-
-    expect(payload.agent).toBeUndefined();
-    expect(payload.agent_settings.enable_switch_llm_tool).toBe(true);
-    expect(payload.agent_settings.include_default_tools).toBeUndefined();
-  });
-
-  it("omits browser_tool_set and task_tool_set when the server does not advertise them", () => {
-    mockIsAgentServerToolAvailable.mockReturnValue(false);
-
-    const payload = buildStartConversationRequest({
-      settings: {
-        ...DEFAULT_SETTINGS,
-        agent_settings: {
-          ...DEFAULT_SETTINGS.agent_settings,
+          tools: [
+            { name: "glob", params: {} },
+            { name: "task_tool_set", params: { x: 1 } },
+          ],
           llm: { model: "nested-model" },
         },
       },
@@ -347,58 +373,41 @@ describe("buildStartConversationRequest", () => {
     };
 
     expect(payload.agent_settings.tools).toEqual([
-      { name: "terminal", params: {} },
-      { name: "file_editor", params: {} },
-      { name: "task_tracker", params: {} },
+      { name: "glob", params: {} },
+      { name: "task_tool_set", params: { x: 1 } },
     ]);
   });
 
-  it("includes task_tool_set when sub-agents are enabled and the server advertises it but not browser tools", () => {
-    mockIsAgentServerToolAvailable.mockImplementation(
-      (toolName: string) => toolName === "task_tool_set",
-    );
-
+  it("leaves a null tool list to the server", () => {
     const payload = buildStartConversationRequest({
       settings: {
         ...DEFAULT_SETTINGS,
         agent_settings: {
           ...DEFAULT_SETTINGS.agent_settings,
-          enable_sub_agents: true,
+          tools: null,
           llm: { model: "nested-model" },
         },
       },
-    }) as {
-      agent_settings: {
-        tools: Array<{ name: string; params: Record<string, unknown> }>;
-      };
-    };
+    }) as { agent_settings: Record<string, unknown> };
 
-    expect(payload.agent_settings.tools).toEqual([
-      { name: "terminal", params: {} },
-      { name: "file_editor", params: {} },
-      { name: "task_tracker", params: {} },
-      { name: "task_tool_set", params: {} },
-    ]);
+    expect(
+      JSON.parse(JSON.stringify(payload.agent_settings)),
+    ).not.toHaveProperty("tools");
   });
 
-  it("omits task_tool_set when sub-agents are disabled even if the server advertises it", () => {
+  it("keeps an explicitly empty tool list bare", () => {
     const payload = buildStartConversationRequest({
       settings: {
         ...DEFAULT_SETTINGS,
         agent_settings: {
           ...DEFAULT_SETTINGS.agent_settings,
-          enable_sub_agents: false,
+          tools: [],
           llm: { model: "nested-model" },
         },
       },
-    }) as {
-      agent_settings: {
-        tools: Array<{ name: string; params: Record<string, unknown> }>;
-      };
-    };
+    }) as { agent_settings: { tools: unknown[] } };
 
-    const toolNames = payload.agent_settings.tools.map((t) => t.name);
-    expect(toolNames).not.toContain("task_tool_set");
+    expect(payload.agent_settings.tools).toEqual([]);
   });
 
   it("derives confirmation and security settings the same way as OpenHands", () => {
@@ -699,6 +708,77 @@ describe("buildStartConversationRequest", () => {
     expect(payload.agent_settings.agent_context?.secrets).toBeUndefined();
   });
 
+  it("appends the route-at-conversation-start suffix when the toggle is on and a meta-profile is active (OpenHands agent)", () => {
+    const payload = buildStartConversationRequest({
+      settings: {
+        ...DEFAULT_SETTINGS,
+        run_router_at_conversation_start: true,
+      },
+      hasActiveMetaProfile: true,
+    }) as {
+      agent_settings: { agent_context?: { system_message_suffix?: string } };
+    };
+
+    const suffix = payload.agent_settings.agent_context?.system_message_suffix;
+    expect(suffix).toContain("ROUTE_AT_CONVERSATION_START");
+    expect(suffix).toContain("route_task_to_model");
+  });
+
+  it("appends the route-at-conversation-start suffix for an inline ACP launch when the toggle is on and a meta-profile is active", () => {
+    const payload = buildStartConversationRequest({
+      settings: {
+        ...DEFAULT_SETTINGS,
+        agent_settings: {
+          ...DEFAULT_SETTINGS.agent_settings,
+          agent_kind: "acp",
+          acp_server: "claude-code",
+          acp_command: ["npx", "-y", "@agentclientprotocol/claude-agent-acp"],
+        },
+        run_router_at_conversation_start: true,
+      },
+      hasActiveMetaProfile: true,
+    }) as {
+      agent_settings: { agent_context?: { system_message_suffix?: string } };
+    };
+
+    expect(
+      payload.agent_settings.agent_context?.system_message_suffix,
+    ).toContain("ROUTE_AT_CONVERSATION_START");
+  });
+
+  it("does not add the router suffix when the toggle is on but no meta-profile is active", () => {
+    // With no active meta-profile the agent-server does not attach
+    // `route_task_to_model`, so the instruction must not be emitted even if
+    // the toggle was left on (e.g. the active profile was just deleted).
+    const payload = buildStartConversationRequest({
+      settings: {
+        ...DEFAULT_SETTINGS,
+        run_router_at_conversation_start: true,
+      },
+      hasActiveMetaProfile: false,
+    }) as {
+      agent_settings: { agent_context?: { system_message_suffix?: string } };
+    };
+
+    const suffix =
+      payload.agent_settings.agent_context?.system_message_suffix ?? "";
+    expect(suffix).not.toContain("ROUTE_AT_CONVERSATION_START");
+  });
+
+  it("does not add a system_message_suffix for the router when the toggle is off (default)", () => {
+    const payload = buildStartConversationRequest({
+      settings: DEFAULT_SETTINGS,
+    }) as {
+      agent_settings: { agent_context?: { system_message_suffix?: string } };
+    };
+
+    // The suffix may be undefined (no runtime-services block either); assert
+    // specifically that the router sentinel is absent when present.
+    const suffix =
+      payload.agent_settings.agent_context?.system_message_suffix ?? "";
+    expect(suffix).not.toContain("ROUTE_AT_CONVERSATION_START");
+  });
+
   describe("ACP secret delivery", () => {
     // Settings factory for a containerized ACP conversation.
     const acpSettings = (overrides: Record<string, unknown> = {}) => ({
@@ -789,24 +869,6 @@ describe("buildStartConversationRequest", () => {
       expect(payload.tool_module_qualnames).toBeUndefined();
     });
 
-    it("omits canvas_ui and its module qualname when the backend does not advertise canvas_ui", () => {
-      mockIsAgentServerToolAvailable.mockImplementation(
-        (toolName: string) => toolName !== "canvas_ui",
-      );
-
-      const payload = buildStartConversationRequest({
-        settings: DEFAULT_SETTINGS,
-      }) as {
-        agent_settings: { tools: Array<{ name: string }> };
-        tool_module_qualnames?: Record<string, string>;
-      };
-
-      expect(
-        payload.agent_settings.tools.map((tool) => tool.name),
-      ).not.toContain("canvas_ui");
-      expect(payload.tool_module_qualnames).toBeUndefined();
-    });
-
     it("omits the client tool for an inline ACP agent", () => {
       const payload = buildStartConversationRequest({
         settings: {
@@ -843,8 +905,61 @@ describe("buildStartConversationRequest", () => {
       expect(payload.client_tools.map((tool) => tool.name)).toEqual([
         CANVAS_UI_CLIENT_TOOL_NAME,
         LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
+        REQUEST_SECRET_TOOL_NAME,
       ]);
     });
+
+    it("adds automation setup tags to local conversation requests", () => {
+      const payload = buildStartConversationRequest({
+        settings: DEFAULT_SETTINGS,
+        automationSetup: true,
+        automationSetupTags: {
+          automationdraftid: "draft-1",
+          automationmaterializeddraftid: "auto-1",
+        },
+      });
+
+      expect(payload.tags).toEqual(
+        expect.objectContaining({
+          automationsetup: "draft",
+          automationdraftid: "draft-1",
+          automationmaterializeddraftid: "auto-1",
+          clientsource: "agentcanvas",
+        }),
+      );
+    });
+
+    it.each([
+      {
+        automationSetup: false,
+        expectedTools: [
+          CANVAS_UI_CLIENT_TOOL_NAME,
+          LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
+          REQUEST_SECRET_TOOL_NAME,
+        ],
+      },
+      {
+        automationSetup: true,
+        expectedTools: [
+          CANVAS_UI_CLIENT_TOOL_NAME,
+          LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
+          REQUEST_SECRET_TOOL_NAME,
+          AUTOMATION_FORM_UPDATE_TOOL_NAME,
+        ],
+      },
+    ])(
+      "builds client tools for automationSetup=$automationSetup",
+      ({ automationSetup, expectedTools }) => {
+        const payload = buildStartConversationRequest({
+          settings: DEFAULT_SETTINGS,
+          automationSetup,
+        });
+
+        expect(payload.client_tools.map((tool) => tool.name)).toEqual(
+          expectedTools,
+        );
+      },
+    );
 
     it("sends the client tool when resuming a conversation", () => {
       const payload = buildStartConversationRequest({
@@ -856,6 +971,7 @@ describe("buildStartConversationRequest", () => {
       expect(payload.client_tools.map((tool) => tool.name)).toEqual([
         CANVAS_UI_CLIENT_TOOL_NAME,
         LAUNCH_CHILD_CONVERSATION_TOOL_NAME,
+        REQUEST_SECRET_TOOL_NAME,
       ]);
     });
 
@@ -1425,46 +1541,42 @@ describe("buildRuntimeServicesSystemSuffix", () => {
     expect(suffix).toContain("Automation backend: not running");
   });
 
-  it("fetches runtime services from cached server_info when available", async () => {
+  it("reads server_info from the cached probe when available", async () => {
     mockGetCachedAgentServerInfo.mockReturnValue({
-      version: "1.28.0",
-      runtime_services: {
-        mode: "docker",
-        services: {
-          agent_server: { url_from_agent: "http://127.0.0.1:18000" },
-          automation: {
-            url_from_agent: "http://127.0.0.1:8000",
-            api_prefix: "/api/automation",
-            auth_env_var: "OPENHANDS_AUTOMATION_API_KEY",
-          },
-        },
-      },
+      version: "1.48.0",
+      execution_runtime: "docker",
     });
 
-    const info = await fetchBackendRuntimeServicesInfo();
+    const runtime = await fetchBackendExecutionRuntime();
 
-    expect(info?.mode).toBe("docker");
-    expect(info?.services?.automation?.url_from_agent).toBe(
-      "http://127.0.0.1:8000",
-    );
+    expect(runtime).toBe("docker");
     expect(mockGetServerInfo).not.toHaveBeenCalled();
   });
 
-  it("fetches runtime services from /server_info when there is no cached probe", async () => {
+  it("fetches /server_info when there is no cached probe", async () => {
     mockGetServerInfo.mockResolvedValue({
-      version: "1.28.0",
-      runtime_services: {
-        mode: "dev:automation",
-        services: {
-          agent_server: { url_from_agent: "http://localhost:18000" },
-        },
-      },
+      version: "1.48.0",
+      execution_runtime: "local",
     });
 
-    const info = await fetchBackendRuntimeServicesInfo();
+    const runtime = await fetchBackendExecutionRuntime();
 
-    expect(info?.mode).toBe("dev:automation");
+    expect(runtime).toBe("local");
     expect(mockGetServerInfo).toHaveBeenCalledOnce();
+  });
+
+  it("reports the per-launch LLM override from server capabilities", async () => {
+    mockGetCachedAgentServerInfo.mockReturnValue({
+      version: "1.54.0",
+      capabilities: ["tool_catalog_v1"],
+    });
+    await expect(backendSupportsLaunchLlmOverride()).resolves.toBe(false);
+
+    mockGetCachedAgentServerInfo.mockReturnValue({
+      version: "1.54.0",
+      capabilities: ["tool_catalog_v1", "agent_launch_pipeline_v1"],
+    });
+    await expect(backendSupportsLaunchLlmOverride()).resolves.toBe(true);
   });
 });
 
@@ -1509,6 +1621,184 @@ describe("agent_settings runtime services suffix", () => {
     expect(
       payload.agent_settings.agent_context.system_message_suffix as string,
     ).toContain("<RUNTIME_SERVICES>");
+  });
+
+  it("preserves a saved system_message_suffix when runtime services are advertised", () => {
+    const payload = buildStartConversationRequest({
+      settings: {
+        ...DEFAULT_SETTINGS,
+        agent_settings: {
+          ...DEFAULT_SETTINGS.agent_settings,
+          agent_context: {
+            system_message_suffix: "MARKER-GLOBAL-RULES",
+          },
+        },
+      },
+      query: "hello",
+      runtimeServicesInfo: {
+        mode: "dev:automation",
+        services: {
+          agent_server: { url_from_agent: "http://localhost:18000" },
+          automation: {
+            url_from_agent: "http://localhost:18001",
+          },
+        },
+      },
+    }) as {
+      agent_settings: { agent_context: Record<string, unknown> };
+    };
+    const suffix = payload.agent_settings.agent_context
+      .system_message_suffix as string;
+    expect(suffix).toMatch(/^MARKER-GLOBAL-RULES\n\n<RUNTIME_SERVICES>/);
+  });
+
+  it("keeps a saved suffix when no runtime services are advertised", () => {
+    const payload = buildStartConversationRequest({
+      settings: {
+        ...DEFAULT_SETTINGS,
+        agent_settings: {
+          ...DEFAULT_SETTINGS.agent_settings,
+          agent_context: { system_message_suffix: "MARKER-GLOBAL-RULES" },
+        },
+      },
+      query: "hello",
+    }) as { agent_settings: { agent_context: Record<string, unknown> } };
+
+    expect(payload.agent_settings.agent_context.system_message_suffix).toBe(
+      "MARKER-GLOBAL-RULES",
+    );
+  });
+
+  it("omits the suffix when neither a saved suffix nor runtime services exist", () => {
+    const payload = buildStartConversationRequest({
+      settings: DEFAULT_SETTINGS,
+      query: "hello",
+    }) as { agent_settings: { agent_context: Record<string, unknown> } };
+
+    expect(payload.agent_settings.agent_context).not.toHaveProperty(
+      "system_message_suffix",
+    );
+  });
+
+  it("combines saved and runtime suffixes on the profile path", () => {
+    const payload = buildStartConversationRequest({
+      settings: {
+        ...DEFAULT_SETTINGS,
+        agent_settings: {
+          ...DEFAULT_SETTINGS.agent_settings,
+          agent_context: { system_message_suffix: "MARKER-GLOBAL-RULES" },
+        },
+      },
+      query: "hello",
+      agentProfileId: "profile-openhands",
+      agentProfileKind: "openhands",
+      runtimeServicesInfo: {
+        mode: "dev:automation",
+        services: {
+          agent_server: { url_from_agent: "http://localhost:18000" },
+          automation: { url_from_agent: "http://localhost:18001" },
+        },
+      },
+    }) as {
+      agent_profile_id?: string;
+      agent_settings?: unknown;
+      agent_launch_additions?: { system_message_suffix_append?: string };
+    };
+
+    expect(payload.agent_profile_id).toBe("profile-openhands");
+    expect(payload.agent_settings).toBeUndefined();
+    expect(
+      payload.agent_launch_additions?.system_message_suffix_append,
+    ).toMatch(/^MARKER-GLOBAL-RULES\n\n<RUNTIME_SERVICES>/);
+    expect(
+      payload.agent_launch_additions?.system_message_suffix_append,
+    ).toContain("http://localhost:18001");
+  });
+
+  it("carries runtime services on the profile path", () => {
+    const payload = buildStartConversationRequest({
+      settings: DEFAULT_SETTINGS,
+      query: "hello",
+      agentProfileId: "profile-openhands",
+      agentProfileKind: "openhands",
+      runtimeServicesInfo: {
+        mode: "dev:automation",
+        services: {
+          agent_server: { url_from_agent: "http://localhost:18000" },
+          automation: { url_from_agent: "http://localhost:18001" },
+        },
+      },
+    }) as {
+      agent_profile_id?: string;
+      agent_settings?: unknown;
+      agent_launch_additions?: { system_message_suffix_append?: string };
+    };
+
+    expect(payload.agent_profile_id).toBe("profile-openhands");
+    expect(payload.agent_settings).toBeUndefined();
+    expect(
+      payload.agent_launch_additions?.system_message_suffix_append,
+    ).toContain("<RUNTIME_SERVICES>");
+    expect(
+      payload.agent_launch_additions?.system_message_suffix_append,
+    ).toContain("http://localhost:18001");
+  });
+
+  it("keeps the route-at-conversation-start suffix off the profile path", () => {
+    const payload = buildStartConversationRequest({
+      settings: { ...DEFAULT_SETTINGS, run_router_at_conversation_start: true },
+      hasActiveMetaProfile: true,
+      query: "hello",
+      agentProfileId: "profile-openhands",
+      agentProfileKind: "openhands",
+      runtimeServicesInfo: {
+        mode: "dev:automation",
+        services: {
+          automation: { url_from_agent: "http://localhost:18001" },
+        },
+      },
+    }) as {
+      agent_launch_additions?: { system_message_suffix_append?: string };
+    };
+
+    const appended =
+      payload.agent_launch_additions?.system_message_suffix_append;
+    expect(appended).toContain("<RUNTIME_SERVICES>");
+    expect(appended).not.toContain("ROUTE_AT_CONVERSATION_START");
+  });
+
+  it("carries runtime services on an ACP profile launch too", () => {
+    const payload = buildStartConversationRequest({
+      settings: DEFAULT_SETTINGS,
+      query: "hello",
+      agentProfileId: "profile-acp",
+      agentProfileKind: "acp",
+      runtimeServicesInfo: {
+        mode: "dev:automation",
+        services: {
+          automation: { url_from_agent: "http://localhost:18001" },
+        },
+      },
+    }) as {
+      agent_profile_id?: string;
+      agent_launch_additions?: { system_message_suffix_append?: string };
+    };
+
+    expect(payload.agent_profile_id).toBe("profile-acp");
+    expect(
+      payload.agent_launch_additions?.system_message_suffix_append,
+    ).toContain("<RUNTIME_SERVICES>");
+  });
+
+  it("omits profile additions without a saved suffix or runtime services", () => {
+    const payload = buildStartConversationRequest({
+      settings: DEFAULT_SETTINGS,
+      query: "hello",
+      agentProfileId: "profile-openhands",
+      agentProfileKind: "openhands",
+    }) as { agent_launch_additions?: unknown };
+
+    expect(payload.agent_launch_additions).toBeUndefined();
   });
 });
 
@@ -1756,37 +2046,32 @@ describe("buildStartConversationRequest — ACP discriminator", () => {
     expect(payload.agent_settings.acp_command).toEqual([]);
   });
 
-  it("seeds the provider default when settings contains an empty acp_model", () => {
-    // The form may carry an empty string after a user clears the model
-    // input. Older behavior left ``acp_model`` absent and relied on the
-    // agent-server's own default; the registry-default path
-    // (resolveEffectiveAcpModel) is now authoritative on Canvas's side,
-    // so an empty string resolves to the provider's ``default_model``
-    // before the request leaves the client. Keeps the displayed Settings
-    // → Agent default in sync with what the runtime actually starts.
-    const payload = buildStartConversationRequest({
-      settings: {
-        ...DEFAULT_SETTINGS,
-        agent_settings: {
-          schema_version: 1,
-          agent_kind: "acp",
-          acp_server: "claude-code",
-          acp_command: [],
-          acp_model: "",
+  it.each([
+    ["claude-code", undefined],
+    ["gemini-cli", ACP_VERTEX_SAFE_MODEL],
+  ])(
+    "leaves an empty %s acp_model to the agent unless Canvas prefers one",
+    (acpServer, expected) => {
+      const payload = buildStartConversationRequest({
+        settings: {
+          ...DEFAULT_SETTINGS,
+          agent_settings: {
+            schema_version: 1,
+            agent_kind: "acp",
+            acp_server: acpServer,
+            acp_command: [],
+            acp_model: "",
+          },
         },
-      },
-    }) as {
-      agent_settings: Record<string, unknown> & { acp_model?: unknown };
-    };
+      }) as {
+        agent_settings: Record<string, unknown> & { acp_model?: unknown };
+      };
 
-    expect(payload.agent_settings.acp_model).toBe("opus[1m]");
-  });
+      expect(payload.agent_settings.acp_model).toBe(expected);
+    },
+  );
 
   it("omits acp_model for the custom preset when none is configured", () => {
-    // The Custom preset has no registered ``default_model``, so an empty
-    // ``acp_model`` falls through to ``undefined`` — the agent-server then
-    // applies its own default. Distinct from the built-in providers
-    // which substitute their registry default.
     const payload = buildStartConversationRequest({
       settings: {
         ...DEFAULT_SETTINGS,
@@ -1890,6 +2175,12 @@ describe("buildStartConversationRequestWithEncryptedSettings", () => {
         skillEnablement: { disabledSkills: [] },
       });
     secretsSpy = vi.spyOn(SecretsService, "getSecrets").mockResolvedValue([]);
+    // Default: no active meta-profile so the route-at-start suffix is off.
+    mockListMetaProfiles.mockReset();
+    mockListMetaProfiles.mockResolvedValue({
+      meta_profiles: [],
+      active_meta_profile: null,
+    });
   });
 
   // vitest is not configured with `restoreMocks`, so restore explicitly.
@@ -1947,5 +2238,195 @@ describe("buildStartConversationRequestWithEncryptedSettings", () => {
 
     expect(payload.hook_config).toBeUndefined();
     expect(payload.agent_settings).toBeDefined();
+  });
+
+  it("stamps the route-at-start suffix when the toggle is on and a meta-profile is active", async () => {
+    mockListMetaProfiles.mockResolvedValue({
+      meta_profiles: [],
+      active_meta_profile: {
+        llm_router_profile_id: "router-1",
+        name: "Model Router",
+        routing_strategy: "classification",
+        routing_models: [],
+        router_model: null,
+        fallback_model: null,
+      },
+    });
+
+    const payload = (await buildStartConversationRequestWithEncryptedSettings({
+      settings: {
+        ...DEFAULT_SETTINGS,
+        run_router_at_conversation_start: true,
+      },
+      hooksProjectDir: "/workspace/my-project",
+    })) as {
+      agent_settings: {
+        agent_context?: { system_message_suffix?: string };
+      };
+    };
+
+    expect(
+      payload.agent_settings?.agent_context?.system_message_suffix,
+    ).toContain("ROUTE_AT_CONVERSATION_START");
+  });
+
+  it("omits the route-at-start suffix when the toggle is on but no meta-profile is active", async () => {
+    // active_meta_profile is null by default (see beforeEach). Even with the
+    // toggle on, no suffix should be emitted since the agent-server won't
+    // attach `route_task_to_model` without an active profile.
+    const payload = (await buildStartConversationRequestWithEncryptedSettings({
+      settings: {
+        ...DEFAULT_SETTINGS,
+        run_router_at_conversation_start: true,
+      },
+      hooksProjectDir: "/workspace/my-project",
+    })) as {
+      agent_settings: {
+        agent_context?: { system_message_suffix?: string };
+      };
+    };
+
+    expect(
+      payload.agent_settings?.agent_context?.system_message_suffix ?? "",
+    ).not.toContain("ROUTE_AT_CONVERSATION_START");
+  });
+
+  it("omits the route-at-start suffix when the meta-profiles endpoint fails (fails closed)", async () => {
+    mockListMetaProfiles.mockRejectedValue(
+      new Error("503 Service Unavailable"),
+    );
+
+    const payload = (await buildStartConversationRequestWithEncryptedSettings({
+      settings: {
+        ...DEFAULT_SETTINGS,
+        run_router_at_conversation_start: true,
+      },
+      hooksProjectDir: "/workspace/my-project",
+    })) as {
+      agent_settings: {
+        agent_context?: { system_message_suffix?: string };
+      };
+    };
+
+    // If we can't confirm a router is active, fail closed: no instruction.
+    expect(
+      payload.agent_settings?.agent_context?.system_message_suffix ?? "",
+    ).not.toContain("ROUTE_AT_CONVERSATION_START");
+  });
+});
+
+describe("toHooksResponse", () => {
+  // Prompt and agent hooks reach Canvas over the wire with `prompt`/`system_prompt`,
+  // which the typed client's `HookDefinition` does not declare yet.
+  const wireHook = (hook: Record<string, unknown>) =>
+    hook as unknown as HookConfig["stop"][number]["hooks"][number];
+
+  it("carries a prompt hook's prompt through", () => {
+    const response = toHooksResponse(
+      makeHookConfig({
+        stop: [
+          {
+            matcher: "*",
+            hooks: [
+              wireHook({
+                type: "prompt",
+                command: "",
+                prompt: "QA_F07 prompt hook",
+                system_prompt: null,
+                timeout: 60,
+                async: false,
+              }),
+            ],
+          },
+        ],
+      }),
+    );
+
+    expect(response.hooks).toEqual([
+      {
+        event_type: "stop",
+        matchers: [
+          {
+            matcher: "*",
+            hooks: [
+              {
+                type: "prompt",
+                command: "",
+                prompt: "QA_F07 prompt hook",
+                timeout: 60,
+                async: false,
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+  });
+
+  it("carries an agent hook's system_prompt through", () => {
+    const response = toHooksResponse(
+      makeHookConfig({
+        session_start: [
+          {
+            matcher: "*",
+            hooks: [
+              wireHook({
+                type: "agent",
+                command: "",
+                prompt: null,
+                system_prompt: "QA_F07 agent hook",
+                timeout: 60,
+                async: false,
+              }),
+            ],
+          },
+        ],
+      }),
+    );
+
+    expect(response.hooks).toEqual([
+      {
+        event_type: "session_start",
+        matchers: [
+          {
+            matcher: "*",
+            hooks: [
+              {
+                type: "agent",
+                command: "",
+                system_prompt: "QA_F07 agent hook",
+                timeout: 60,
+                async: false,
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+  });
+
+  it("keeps command hooks unchanged", () => {
+    const response = toHooksResponse(
+      makeHookConfig({
+        pre_tool_use: [
+          {
+            matcher: "terminal",
+            hooks: [{ type: HookType.COMMAND, command: "true", timeout: 10 }],
+          },
+        ],
+      }),
+    );
+
+    expect(response.hooks).toEqual([
+      {
+        event_type: "pre_tool_use",
+        matchers: [
+          {
+            matcher: "terminal",
+            hooks: [{ type: HookType.COMMAND, command: "true", timeout: 10 }],
+          },
+        ],
+      },
+    ]);
   });
 });

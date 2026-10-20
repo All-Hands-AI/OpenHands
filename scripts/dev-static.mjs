@@ -69,6 +69,7 @@ import {
   getNoReferrerPrefixArgs,
   getVSCodeAdvertiseArgs,
 } from "./dev-with-automation.mjs";
+import { applySessionKeyPolicy, bindHostArgs } from "./bind-host.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, "..");
@@ -117,6 +118,7 @@ export function parseArgs(argv = process.argv.slice(2)) {
     automationRepo: null,
     skipBuild: false,
     verbose: false,
+    host: null,
   };
 
   for (let i = 0; i < argv.length; i++) {
@@ -124,6 +126,10 @@ export function parseArgs(argv = process.argv.slice(2)) {
       case "-p":
       case "--port":
         config.port = parseInt(argv[++i], 10);
+        break;
+      case "-H":
+      case "--host":
+        config.host = argv[++i];
         break;
       case "--automation-ref":
         config.automationGitRef = argv[++i];
@@ -161,6 +167,7 @@ USAGE:
 
 OPTIONS:
   -p, --port <port>           Ingress port (default: 8000)
+  -H, --host <host>           Bind address for ingress/static (default: 127.0.0.1)
   --automation-ref <ref>      Git ref for automation backend (default: main)
   --automation-repo <url>     Git repo URL for automation
   --skip-build                Reuse existing build/ directory (faster restart)
@@ -401,6 +408,22 @@ function startAutomationBackend(config) {
   );
 }
 
+/**
+ * One MARS web bridge per stack, on the server the browser reaches: the
+ * ingress, guarded by the stack's session key (the same one the page holds).
+ * The static child behind it gets `MARS_WEB=0`: a second bridge there would
+ * answer /mars/* with its own, separate sign-in state for anyone who opens
+ * that port directly. Without the key the ingress bridge would take
+ * destroySession and savePat from any local process, the agent's shell
+ * included, so a stack with no session key mounts nothing.
+ */
+export function buildMarsWebEnv(role, config) {
+  if (role === "static") return { MARS_WEB: "0" };
+  return config.sessionApiKey
+    ? { MARS_WEB_KEY: config.sessionApiKey }
+    : { MARS_WEB: "0" };
+}
+
 function startStaticServer(config) {
   // Reuse `vitePort` as the upstream port name so the ingress route table
   // below stays identical to dev-with-automation.mjs.
@@ -426,14 +449,25 @@ function startStaticServer(config) {
       join(config.canvasPath, "build"),
       "--port",
       String(config.vitePort),
+      ...bindHostArgs(config.bindHost),
       ...(process.env.VITE_BASE_PATH
         ? ["--base-path", process.env.VITE_BASE_PATH]
         : []),
-      // Inject the API key so the pre-built frontend can authenticate
-      // to the agent-server without a baked-in VITE_SESSION_API_KEY.
-      ...(config.sessionApiKey
-        ? ["--session-api-key", config.sessionApiKey]
-        : []),
+      ...(() => {
+        const policy = applySessionKeyPolicy({
+          host: config.bindHost,
+          sessionApiKey: config.sessionApiKey,
+          warn: (msg) => logService("static", msg, c.yellow),
+        });
+        const flags = [];
+        if (policy.sessionApiKey) {
+          flags.push("--session-api-key", policy.sessionApiKey);
+        }
+        if (policy.authRequired) {
+          flags.push("--auth-required");
+        }
+        return flags;
+      })(),
       "--runtime-services-info",
       runtimeServicesInfo,
       ...buildLocalServiceRouteArgs(config),
@@ -446,6 +480,7 @@ function startStaticServer(config) {
     {
       cwd: config.canvasPath,
       color: c.magenta,
+      env: buildMarsWebEnv("static", config),
     },
   );
 }
@@ -468,6 +503,7 @@ function startIngress(config) {
       ingressScript,
       "--port",
       config.ingressPort.toString(),
+      ...bindHostArgs(config.bindHost),
       "--runtime-services-info",
       runtimeServicesInfo,
       ...buildLocalServiceRouteArgs(config),
@@ -478,6 +514,7 @@ function startIngress(config) {
     {
       cwd: projectRoot,
       color: c.yellow,
+      env: buildMarsWebEnv("ingress", config),
     },
   );
 }
@@ -579,6 +616,7 @@ async function main() {
     join(config.stateDir, "workspaces"),
     join(config.stateDir, "bash_events"),
     join(config.stateDir, "storage"),
+    config.tmuxTmpDir,
   ]) {
     mkdirSync(dir, { recursive: true });
   }

@@ -18,6 +18,7 @@ import {
 } from "#/components/features/skills/skill-card-pill-row";
 import { CirclePlusBadge } from "#/components/shared/buttons/circle-plus-check-toggle";
 import { MCPServerConfig } from "#/types/mcp-server";
+import type { NativeGitIntegration } from "#/hooks/query/use-native-git-integrations";
 import {
   findInstalledEntryMatch,
   getMarketplaceEntryById,
@@ -40,9 +41,15 @@ import {
 } from "#/utils/extension-module-card-classes";
 import { StatusBadge } from "./status-badge";
 
+type GetNativeIntegration = (entryId: string) => NativeGitIntegration | null;
+
 interface RecommendedAutomationsSectionProps {
   backendKind: "local" | "cloud";
   installedServers: MCPServerConfig[];
+  /** Catalog entries the active backend's deployment does not offer. */
+  hiddenAutomationIds?: ReadonlySet<string>;
+  /** Resolves an integration's native (cloud) connection; none by default. */
+  getNativeIntegration?: GetNativeIntegration;
   query?: string;
   onSelect: (automation: RecommendedAutomation) => void;
   /** When true, title, description, and cards share one scroll area. */
@@ -114,13 +121,16 @@ function automationMatchesQuery(
 function buildRecommendedAutomationPills(
   integrations: AutomationIntegration[],
   installedServers: MCPServerConfig[],
+  getNativeIntegration: GetNativeIntegration,
   missingCount: number,
   translate: TFunction,
 ): SkillCardPill[] {
   const pills: SkillCardPill[] = integrations.map(
     ({ id, entry, mcpInstallable }) => {
+      const native = getNativeIntegration(id);
       const installed =
-        !!entry && findInstalledEntryMatch(entry, installedServers);
+        !!native?.isConnected ||
+        (!!entry && findInstalledEntryMatch(entry, installedServers));
       const name = entry?.name ?? id;
 
       return {
@@ -130,7 +140,7 @@ function buildRecommendedAutomationPills(
             <McpLogoBadge entry={entry} size="xs" />
             {name}
             {installed ? (
-              <span className="text-white">
+              <span className="text-contrast">
                 {translate(I18nKey.RECOMMENDED_AUTOMATIONS$CONNECTED)}
               </span>
             ) : !entry ? (
@@ -140,7 +150,7 @@ function buildRecommendedAutomationPills(
               >
                 {translate(I18nKey.RECOMMENDED_AUTOMATIONS$UNKNOWN_SETUP)}
               </span>
-            ) : !mcpInstallable ? (
+            ) : !mcpInstallable && !native ? (
               <span
                 className="text-tertiary-alt"
                 data-testid={`automation-integration-external-${id}`}
@@ -211,6 +221,7 @@ function AutomationCardIcon({
 interface AutomationCardGridProps {
   automations: RecommendedAutomation[];
   installedServers: MCPServerConfig[];
+  getNativeIntegration: GetNativeIntegration;
   onSelect: (automation: RecommendedAutomation) => void;
   translate: TFunction;
 }
@@ -218,6 +229,7 @@ interface AutomationCardGridProps {
 function AutomationCardGrid({
   automations,
   installedServers,
+  getNativeIntegration,
   onSelect,
   translate,
 }: AutomationCardGridProps) {
@@ -226,13 +238,16 @@ function AutomationCardGrid({
       {automations.map((automation) => {
         const integrations = getIntegrationEntries(automation);
         // "N MCPs to connect" only counts entries the install flow can
-        // actually connect; an external-setup integration is surfaced on its
-        // own pill instead.
+        // actually connect (as MCP or natively); an external-setup
+        // integration is surfaced on its own pill instead.
         const missingCount = integrations.filter(
-          ({ entry, mcpInstallable }) =>
-            !!entry &&
-            mcpInstallable &&
-            !findInstalledEntryMatch(entry, installedServers),
+          ({ id, entry, mcpInstallable }) => {
+            if (!entry || findInstalledEntryMatch(entry, installedServers)) {
+              return false;
+            }
+            const native = getNativeIntegration(id);
+            return native ? !native.isConnected : mcpInstallable;
+          },
         ).length;
 
         return (
@@ -257,7 +272,7 @@ function AutomationCardGrid({
               <div className="flex min-w-0 flex-1 flex-col gap-3">
                 <header className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-sm font-semibold text-white">
+                    <h3 className="truncate text-sm font-semibold text-contrast">
                       {automation.name}
                     </h3>
                     <p className="mt-0.5 truncate text-xs text-tertiary-alt">
@@ -276,6 +291,7 @@ function AutomationCardGrid({
                   pills={buildRecommendedAutomationPills(
                     integrations,
                     installedServers,
+                    getNativeIntegration,
                     missingCount,
                     translate,
                   )}
@@ -293,22 +309,26 @@ function AutomationCardGrid({
 export function RecommendedAutomationsSection({
   backendKind: _backendKind,
   installedServers,
+  hiddenAutomationIds,
+  getNativeIntegration = () => null,
   query = "",
   onSelect,
   scrollableGrid = false,
 }: RecommendedAutomationsSectionProps) {
   const { t } = useTranslation("openhands");
 
-  // Only the query narrows the grid. An automation that declares no
-  // integration needs nothing connected, and one naming an integration this
-  // host cannot resolve is shown with that gap on its pill, so neither is a
-  // reason to hide a card the catalog ships.
-  const visibleAutomations = RECOMMENDED_AUTOMATIONS.filter((automation) =>
-    automationMatchesQuery(
-      automation,
-      getIntegrationEntries(automation),
-      query,
-    ),
+  // Only the deployment's hide list and the query narrow the grid. An
+  // automation that declares no integration needs nothing connected, and one
+  // naming an integration this host cannot resolve is shown with that gap on
+  // its pill, so neither is a reason to hide a card the catalog ships.
+  const visibleAutomations = RECOMMENDED_AUTOMATIONS.filter(
+    (automation) =>
+      !hiddenAutomationIds?.has(automation.id) &&
+      automationMatchesQuery(
+        automation,
+        getIntegrationEntries(automation),
+        query,
+      ),
   );
 
   if (visibleAutomations.length === 0) return null;
@@ -349,6 +369,7 @@ export function RecommendedAutomationsSection({
             <AutomationCardGrid
               automations={provenAutomations}
               installedServers={installedServers}
+              getNativeIntegration={getNativeIntegration}
               onSelect={onSelect}
               translate={t}
             />
@@ -373,6 +394,7 @@ export function RecommendedAutomationsSection({
             <AutomationCardGrid
               automations={betaAutomations}
               installedServers={installedServers}
+              getNativeIntegration={getNativeIntegration}
               onSelect={onSelect}
               translate={t}
             />

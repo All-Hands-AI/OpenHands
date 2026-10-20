@@ -228,3 +228,40 @@ export async function fetchCloudConversationSettingsSchema(): Promise<unknown> {
     path: "/api/v1/settings/conversation-schema",
   });
 }
+
+/** What this cloud instance's Settings > Integrations page offers to connect. */
+export interface CloudIntegrationsConfig {
+  /** The git providers whose native (OAuth) integration is enabled. */
+  providersConfigured: Provider[];
+  /** Whether the built-in Jira Cloud integration is enabled. */
+  isJiraEnabled: boolean;
+  /** Whether the built-in Linear integration is enabled. */
+  isLinearEnabled: boolean;
+  /**
+   * How the instance is deployed: `cloud` for OpenHands Cloud, `self_hosted`
+   * for an OpenHands Enterprise install, or null when it reports neither.
+   */
+  deploymentMode: string | null;
+}
+
+export async function fetchCloudIntegrationsConfig(): Promise<CloudIntegrationsConfig> {
+  const backend = getActiveCloudBackend();
+  const config = await callCloudProxy<{
+    providers_configured?: Provider[];
+    feature_flags?: {
+      enable_jira?: boolean;
+      enable_linear?: boolean;
+      deployment_mode?: string;
+    };
+  }>({
+    backend,
+    method: "GET",
+    path: "/api/v1/web-client/config",
+  });
+  return {
+    providersConfigured: config.providers_configured ?? [],
+    isJiraEnabled: config.feature_flags?.enable_jira === true,
+    isLinearEnabled: config.feature_flags?.enable_linear === true,
+    deploymentMode: config.feature_flags?.deployment_mode ?? null,
+  };
+}
