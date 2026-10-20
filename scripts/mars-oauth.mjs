@@ -416,12 +416,14 @@ export function renderReturnPage({ ok, teamName = null, message = null }) {
 <style>${RETURN_PAGE_STYLE}</style>
 </head>
 <body><div class="card"><h1>${escapeHtml(title)}</h1><p>${escapeHtml(detail)}</p></div>
-${
-  // A tab Canvas opened may close itself; any other stays with its message.
-  ok
-    ? "<script>setTimeout(function () { window.close(); }, 1500);</script>"
-    : ""
-}</body>
+<script>
+  // The code is spent either way; it leaves the address bar and history.
+  history.replaceState(null, "", location.pathname);
+  ${
+    // A tab Canvas opened may close itself; any other stays with its message.
+    ok ? "setTimeout(function () { window.close(); }, 1500);" : ""
+  }
+</script></body>
 </html>`;
 }
 

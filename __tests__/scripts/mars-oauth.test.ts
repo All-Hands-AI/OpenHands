@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { createHash } from "node:crypto";
+import { JSDOM } from "jsdom";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -202,6 +203,18 @@ describe("renderReturnPage", () => {
 
     expect(page).toContain("&lt;b&gt;Team&lt;/b&gt;");
     expect(page).not.toContain("<b>Team</b>");
+  });
+
+  it("takes the spent code out of the address bar, whatever the outcome", () => {
+    for (const ok of [true, false]) {
+      const dom = new JSDOM(renderReturnPage({ ok }), {
+        url: `${REDIRECT}?code=c1&state=s1`,
+        runScripts: "dangerously",
+      });
+
+      expect(dom.window.location.href).toBe(REDIRECT);
+      dom.window.close();
+    }
   });
 });
 
