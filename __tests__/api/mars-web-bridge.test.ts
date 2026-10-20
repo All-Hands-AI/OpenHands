@@ -10,18 +10,16 @@ import {
 import type { Backend } from "#/api/backend-registry/types";
 
 const bakedSessionApiKey = vi.hoisted(() => ({ value: null as string | null }));
+/** `VITE_BACKEND_BASE_URL`; unset means the page's own origin. */
+const configuredBackendUrl = vi.hoisted(() => ({
+  value: null as string | null,
+}));
 const storedBackends = vi.hoisted(() => ({ value: [] as Backend[] }));
 
 vi.mock("#/api/agent-server-config", () => ({
   getBakedSessionApiKey: () => bakedSessionApiKey.value,
-  isServedOriginHost: (host?: string | null) =>
-    !host ||
-    host === "http://localhost:3000" ||
-    host === "http://127.0.0.1:18960",
-  getAgentServerHeaders: (): Record<string, string> =>
-    bakedSessionApiKey.value
-      ? { "X-Session-API-Key": bakedSessionApiKey.value }
-      : {},
+  getAgentServerBaseUrl: () =>
+    configuredBackendUrl.value ?? window.location.origin,
 }));
 
 vi.mock("#/api/backend-registry/storage", () => ({
@@ -39,6 +37,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   delete window.marsBridge;
   bakedSessionApiKey.value = null;
+  configuredBackendUrl.value = null;
   storedBackends.value = [];
 });
 
@@ -121,7 +120,7 @@ describe("createMarsWebBridge", () => {
       {
         id: "default-local",
         name: "Local",
-        host: "http://127.0.0.1:18960",
+        host: window.location.origin,
         apiKey: "qa-typed-session-key",
         kind: "local",
       },
@@ -162,9 +161,10 @@ describe("createMarsWebBridge", () => {
       {
         id: "mars-1",
         name: "MARS Session",
-        host: "http://127.0.0.1:18960/mars/sessions/s1",
+        host: `${window.location.origin}/mars/sessions/s1`,
         apiKey: "session-token",
-        kind: "cloud",
+        kind: "local",
+        marsSessionId: "s1",
       },
     ];
     const fetchImpl = vi.fn(async () => jsonResponse(200, { result: null }));
@@ -198,6 +198,36 @@ describe("createMarsWebBridge", () => {
         body: JSON.stringify({ args: ["s2"] }),
       },
     );
+  });
+
+  it("keeps the key of a backend the build points elsewhere off the page's own bridge", () => {
+    configuredBackendUrl.value = "https://remote.openhands.dev";
+    bakedSessionApiKey.value = "remote-baked-key";
+    storedBackends.value = [
+      {
+        id: "default-local",
+        name: "Local",
+        host: "https://remote.openhands.dev",
+        apiKey: "remote-key",
+        kind: "local",
+      },
+    ];
+
+    expect(getMarsBridgeHeaders()).toEqual({});
+
+    storedBackends.value = [
+      ...storedBackends.value,
+      {
+        id: "canvas",
+        name: "Canvas",
+        host: `${window.location.origin}/`,
+        apiKey: "canvas-key",
+        kind: "local",
+      },
+    ];
+    expect(getMarsBridgeHeaders()).toEqual({
+      "X-Session-API-Key": "canvas-key",
+    });
   });
 
   it("never offers OAuth", async () => {

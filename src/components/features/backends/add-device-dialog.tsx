@@ -89,8 +89,11 @@ export default function AddDeviceDialog({ onClose }: AddDeviceDialogProps) {
   const { t } = useTranslation("openhands");
   const [attempt, setAttempt] = React.useState(0);
   const [selected, setSelected] = React.useState(0);
-  const [copied, setCopied] = React.useState(false);
+  const [copyState, setCopyState] = React.useState<
+    "idle" | "copied" | "failed"
+  >("idle");
   const [isExpired, setIsExpired] = React.useState(false);
+  const linkField = React.useRef<HTMLInputElement>(null);
   const pairing = useQuery({
     queryKey: MARS_QUERY_KEYS.pairingLink(attempt),
     queryFn: () => requireMarsBridge().createPairingLink!(),
@@ -115,17 +118,21 @@ export default function AddDeviceDialog({ onClose }: AddDeviceDialogProps) {
 
   const newLink = () => {
     setIsExpired(false);
-    setCopied(false);
+    setCopyState("idle");
     setAttempt((value) => value + 1);
   };
 
   const copy = async () => {
     if (!link) return;
     try {
+      // Browsers keep the clipboard to HTTPS and localhost, so on a plain
+      // HTTP address `navigator.clipboard` is missing and this throws.
       await navigator.clipboard.writeText(link);
-      setCopied(true);
+      setCopyState("copied");
     } catch {
-      setCopied(false);
+      linkField.current?.focus();
+      linkField.current?.select();
+      setCopyState("failed");
     }
   };
 
@@ -178,7 +185,10 @@ export default function AddDeviceDialog({ onClose }: AddDeviceDialogProps) {
             <span className="shrink-0">{t(I18nKey.DEVICES$ADDRESS)}</span>
             <select
               value={Math.min(selected, links.length - 1)}
-              onChange={(event) => setSelected(Number(event.target.value))}
+              onChange={(event) => {
+                setSelected(Number(event.target.value));
+                setCopyState("idle");
+              }}
               data-testid="add-device-address"
               className="min-w-0 flex-1 cursor-pointer rounded border border-border bg-transparent px-1.5 py-0.5 text-white"
             >
@@ -190,6 +200,15 @@ export default function AddDeviceDialog({ onClose }: AddDeviceDialogProps) {
             </select>
           </label>
         ) : null}
+        <input
+          ref={linkField}
+          readOnly
+          value={link}
+          aria-label={t(I18nKey.DEVICES$LINK_LABEL)}
+          data-testid="add-device-link"
+          onFocus={(event) => event.currentTarget.select()}
+          className="w-full rounded border border-border bg-transparent px-2 py-1 font-mono text-xs text-white"
+        />
         <BrandButton
           type="button"
           variant="secondary"
@@ -197,15 +216,28 @@ export default function AddDeviceDialog({ onClose }: AddDeviceDialogProps) {
           onClick={() => void copy()}
           className="w-full"
           startContent={
-            copied ? (
+            copyState === "copied" ? (
               <Check className="size-4" aria-hidden />
             ) : (
               <Copy className="size-4" aria-hidden />
             )
           }
         >
-          {t(copied ? I18nKey.DEVICES$COPIED : I18nKey.DEVICES$COPY_LINK)}
+          {t(
+            copyState === "copied"
+              ? I18nKey.DEVICES$COPIED
+              : I18nKey.DEVICES$COPY_LINK,
+          )}
         </BrandButton>
+        {copyState === "failed" ? (
+          <p
+            role="alert"
+            data-testid="add-device-copy-failed"
+            className="text-pretty text-center text-xs text-status-error"
+          >
+            {t(I18nKey.DEVICES$COPY_FAILED)}
+          </p>
+        ) : null}
         <p className="text-center text-xs text-muted">
           {t(I18nKey.DEVICES$WORKS_ONCE)}
         </p>

@@ -17,6 +17,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  delete (window as unknown as Record<string, unknown>)
+    .__AGENT_CANVAS_BASE_PATH__;
   window.history.replaceState(null, "", "/");
 });
 
@@ -73,6 +75,76 @@ describe("redeemPairingLink", () => {
     expect(storedBackends()).toEqual([
       expect.objectContaining({ id: "mac", apiKey: "canvas-key" }),
     ]);
+  });
+
+  it("works under the base path Canvas is mounted at", async () => {
+    (window as unknown as Record<string, unknown>).__AGENT_CANVAS_BASE_PATH__ =
+      "/canvas";
+    window.history.replaceState(null, "", "/canvas/pair#s3cret");
+    const fetchImpl = redeemed();
+
+    expect(await redeemPairingLink(fetchImpl)).toBe(true);
+    expect(fetchImpl).toHaveBeenCalledWith("/mars/pair", expect.anything());
+    expect(`${window.location.pathname}${window.location.hash}`).toBe(
+      "/canvas/",
+    );
+  });
+
+  it("leaves a DigitalOcean session's backend on this address alone", async () => {
+    const session = {
+      id: "do-session",
+      name: "Agent",
+      host: `${window.location.origin}/mars/sessions/s1`,
+      apiKey: "guest-key",
+      kind: "local",
+      marsSessionId: "s1",
+    };
+    window.localStorage.setItem(
+      BACKENDS_STORAGE_KEY,
+      JSON.stringify([session]),
+    );
+    window.history.replaceState(null, "", "/pair#s3cret");
+
+    await redeemPairingLink(redeemed());
+
+    expect(storedBackends()).toEqual([
+      session,
+      expect.objectContaining({
+        host: window.location.origin,
+        apiKey: "canvas-key",
+      }),
+    ]);
+  });
+
+  it("names a new backend on a plain HTTP address, which has no crypto.randomUUID", async () => {
+    window.localStorage.setItem(
+      BACKENDS_STORAGE_KEY,
+      JSON.stringify([
+        {
+          id: "default-local",
+          name: "Remote",
+          host: "https://remote.openhands.dev",
+          apiKey: "remote-key",
+          kind: "local",
+        },
+      ]),
+    );
+    window.history.replaceState(null, "", "/pair#s3cret");
+    Object.defineProperty(crypto, "randomUUID", {
+      value: undefined,
+      configurable: true,
+    });
+    try {
+      expect(await redeemPairingLink(redeemed())).toBe(true);
+    } finally {
+      delete (crypto as unknown as Record<string, unknown>).randomUUID;
+    }
+
+    const added = storedBackends().find(
+      (backend) => backend.host === window.location.origin,
+    );
+    expect(added?.id).toMatch(/^backend-/);
+    expect(typeof crypto.randomUUID).toBe("function");
   });
 
   it("notes a link that did not work, for the key screen", async () => {

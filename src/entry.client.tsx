@@ -13,14 +13,16 @@ import {
 } from "./components/providers";
 import { installMarsWebBridge } from "./api/mars/mars-web-bridge";
 import { redeemPairingLink } from "./api/mars/pairing";
+import { buildAgentCanvasPath } from "./utils/base-path";
 import { waitForI18n } from "./i18n";
 import { shouldStartMockWorker } from "./mocks/should-start-mock-worker";
 
 async function prepareApp() {
-  // A pairing link (`/pair#…`) from a device that is already in: redeem it,
-  // then start over so everything reads the saved key from the beginning.
+  // A pairing link (`<base path>/pair#…`) from a device that is already in:
+  // redeem it, then start over so everything reads the saved key from the
+  // beginning.
   if (await redeemPairingLink()) {
-    window.location.replace("/");
+    window.location.replace(buildAgentCanvasPath("/"));
     await new Promise<never>(() => {});
   }
 

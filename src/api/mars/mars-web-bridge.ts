@@ -20,10 +20,11 @@
  */
 
 import {
+  getAgentServerBaseUrl,
   getBakedSessionApiKey,
-  isServedOriginHost,
 } from "#/api/agent-server-config";
 import { readStoredBackends } from "#/api/backend-registry/storage";
+import { isCanvasRootBackend, isPageOrigin } from "./canvas-root-backend";
 import type { MarsBridge } from "./mars-tunnel-backend";
 
 export const MARS_WEB_HEALTH_PATH = "/mars/health";
@@ -47,35 +48,32 @@ export class MarsWebBridgeError extends Error {
 }
 
 /**
- * Return headers required to authenticate with the Agent Canvas MARS web bridge.
+ * The Canvas key for a bridge call, which goes to this page's own origin.
  *
- * Attaches the session API key configured for the page's served origin:
- * 1. Uses the baked session API key if present (e.g. default launcher).
- * 2. Otherwise falls back to the key the user typed for the page's origin on the API key screen
- *    (stored on the local backend in the backend registry).
- * 3. Never attaches a key if baseUrl points to a different host (foreign backend), or if
- *    the stored key belongs to a different host.
+ * 1. The key baked into the page (the launcher's), when it is the key for
+ *    this origin.
+ * 2. Otherwise the key typed on the API key screen or redeemed by a pairing
+ *    link, which is saved on this origin's backend.
+ *
+ * No key goes to a bridge on another origin, and a key saved for another
+ * backend (one the build points elsewhere, or a DigitalOcean session) is
+ * never sent.
  */
 export function getMarsBridgeHeaders(baseUrl = ""): Record<string, string> {
-  if (baseUrl && !isServedOriginHost(baseUrl)) {
+  if (baseUrl && !isPageOrigin(baseUrl)) {
     return {};
   }
 
   const bakedKey = getBakedSessionApiKey();
-  if (bakedKey) {
+  if (bakedKey && isPageOrigin(getAgentServerBaseUrl())) {
     return { "X-Session-API-Key": bakedKey };
   }
 
-  const backends = readStoredBackends();
-  const servedBackend = backends.find(
-    (b) =>
-      b.kind === "local" &&
-      isServedOriginHost(b.host) &&
-      b.apiKey.trim().length > 0,
+  const rootBackend = readStoredBackends().find(
+    (b) => isCanvasRootBackend(b) && b.apiKey.trim().length > 0,
   );
-
-  if (servedBackend) {
-    return { "X-Session-API-Key": servedBackend.apiKey.trim() };
+  if (rootBackend) {
+    return { "X-Session-API-Key": rootBackend.apiKey.trim() };
   }
 
   return {};

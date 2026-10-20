@@ -44,6 +44,35 @@ describe("AddDeviceDialog", () => {
     );
   });
 
+  it("selects the link and says so when this page cannot copy, as on plain HTTP", async () => {
+    const user = userEvent.setup();
+    // Browsers leave `navigator.clipboard` out on an insecure page.
+    const clipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+    Object.defineProperty(navigator, "clipboard", {
+      value: undefined,
+      configurable: true,
+    });
+    try {
+      withPairing({
+        links: ["http://192.168.1.20:8000/pair#s1"],
+        expiresAt: inMinutes(5),
+      });
+      renderWithProviders(<AddDeviceDialog onClose={vi.fn()} />);
+
+      const field =
+        await screen.findByTestId<HTMLInputElement>("add-device-link");
+      expect(field.value).toBe("http://192.168.1.20:8000/pair#s1");
+      await user.click(screen.getByTestId("add-device-copy"));
+
+      expect(screen.getByTestId("add-device-copy-failed")).toBeInTheDocument();
+      expect(document.activeElement).toBe(field);
+      expect(field.selectionStart).toBe(0);
+      expect(field.selectionEnd).toBe(field.value.length);
+    } finally {
+      if (clipboard) Object.defineProperty(navigator, "clipboard", clipboard);
+    }
+  });
+
   it("does not warn when the link is HTTPS", async () => {
     withPairing({
       links: ["https://studio.tailnet.ts.net/pair#s1"],
