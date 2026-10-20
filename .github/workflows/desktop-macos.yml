@@ -201,15 +201,10 @@ jobs:
         run: gh release upload "$RELEASE_TAG" dist-electron/*.dmg --clobber
 
       - name: Add macOS install note to release
-        # The DMG is only ad-hoc signed (no Apple Developer ID / notarization —
-        # see electron-builder.config.mjs `mac`), so on a downloaded, quarantined
-        # app macOS reports "damaged" with no in-UI way forward. Until the build
-        # is signed + notarized (needs an Apple Developer ID cert in CI; tracked
-        # in OpenHands/OpenHands#16774), surface the one-line unquarantine fix on
-        # the release page where users download the DMG. Best-effort and
-        # idempotent: never fail the release, and never duplicate the note. The
-        # note body (with its idempotency marker) lives in
-        # .github/macos-install-note.md.
+        # The DMG is only ad-hoc signed, so macOS flags a downloaded app as
+        # "damaged" until signing + notarization lands (#16774). Until then,
+        # append the unquarantine fix (.github/macos-install-note.md) to the
+        # release. Best-effort and idempotent (marker-guarded).
         if: github.event_name == 'release'
         continue-on-error: true
         env:
