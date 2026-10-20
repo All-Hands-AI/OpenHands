@@ -33,7 +33,10 @@ const STATUS_DISPLAY: Record<
   draft: {
     testId: "active-status-badge-draft",
     label: I18nKey.AUTOMATIONS$DETAIL$DRAFT,
-    className: "bg-[var(--oh-warning)]/15 text-[var(--oh-warning)]",
+    className: cn(
+      statusToneBadgeClassName.warning,
+      "dark:bg-[var(--oh-warning)]/15 dark:text-[var(--oh-warning)]",
+    ),
   },
 };
 

@@ -175,7 +175,10 @@ export function utilityColor(theme: ColorThemeKey, className: string): Rgba {
     /^(?:[\w-]+:)*(?:bg|text|border)-(.+?)(?:\/(\d+))?$/,
   );
   if (!match) throw new Error(`Not a color utility: ${className}`);
-  const alias = TAILWIND_THEME[`--color-${match[1]}`];
+  const variable = /^\[var\((--[\w-]+)\)\]$/.exec(match[1]);
+  const alias = variable
+    ? `var(${variable[1]})`
+    : TAILWIND_THEME[`--color-${match[1]}`];
   if (!alias) throw new Error(`No Tailwind color alias for ${className}`);
   const color = parseColor(substitute(theme, alias));
   const opacity = match[2] === undefined ? 1 : Number(match[2]) / 100;

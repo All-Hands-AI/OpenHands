@@ -77,25 +77,57 @@ function sourceFiles(dir: string): string[] {
   });
 }
 
+function hasTranslucentTonePair(classList: string): boolean {
+  const tone =
+    "(success|warning|danger|info|semantic-success|semantic-danger|status-success|status-error)";
+  const fill = new RegExp(`^bg-(?:${tone}|\\[var\\(--oh-${tone}\\)\\])/\\d+$`);
+  const classes = classList.split(/\s+/);
+  return classes.some((className) => {
+    const match = fill.exec(className);
+    if (!match) return false;
+    const bare = (match[1] ?? match[2]).replace(/^(semantic|status)-/, "");
+    const ink = new RegExp(
+      `^text-(?:(?:[\\w-]+-)?${bare}|\\[var\\(--oh-(?:[\\w-]+-)?${bare}\\)\\])$`,
+    );
+    return classes.some((candidate) => ink.test(candidate));
+  });
+}
+
 describe("status tone usage", () => {
+  it.each([
+    "bg-warning/15 text-warning",
+    "bg-status-success/10 text-feedback-success",
+    "bg-[var(--oh-warning)]/15 text-[var(--oh-warning)]",
+    "bg-warning/15 text-[var(--oh-warning)]",
+    "bg-[var(--oh-warning)]/15 text-warning",
+  ])("detects an unprefixed translucent tone pair: %s", (classes) => {
+    expect(hasTranslucentTonePair(classes)).toBe(true);
+  });
+
+  it.each([
+    "bg-warning-soft text-warning-soft-foreground",
+    "dark:bg-warning/15 dark:text-warning",
+    "dark:bg-[var(--oh-warning)]/15 dark:text-[var(--oh-warning)]",
+    "hover:bg-warning/15 hover:text-warning",
+    "bg-warning/15 dark:text-warning",
+    "bg-warning/15 text-info",
+  ])(
+    "allows semantic fills and variant-only compatibility styles: %s",
+    (classes) => {
+      expect(hasTranslucentTonePair(classes)).toBe(false);
+    },
+  );
+
   it("does not hand-roll translucent tone fills for the light-theme defaults", () => {
-    const tone =
-      "(success|warning|danger|info|semantic-success|semantic-danger|status-success|status-error)";
-    // The established Neutral appearance is a compatibility contract, so a
-    // `dark:` override may retain its previous translucent pair. Unprefixed
-    // utilities are what Light+ and Solarized Light render and must use the
-    // surface-independent semantic status tokens.
-    const fill = new RegExp(`(?<!:)\\bbg-${tone}/\\d+`, "g");
+    // Variant-only overrides preserve the established dark appearance. Both
+    // named utilities and arbitrary var() utilities must obey the light rule.
     const offenders = new Set<string>();
     for (const file of sourceFiles(SRC_ROOT)) {
       for (const [literal] of readFileSync(file, "utf8").matchAll(
         /"[^"\n]*"/g,
       )) {
-        for (const [, fillTone] of literal.matchAll(fill)) {
-          const bare = fillTone.replace(/^(semantic|status)-/, "");
-          if (new RegExp(`(?<!:)\\btext-(\\w+-)?${bare}\\b`).test(literal)) {
-            offenders.add(`${relative(SRC_ROOT, file)}: ${literal}`);
-          }
+        if (hasTranslucentTonePair(literal.slice(1, -1))) {
+          offenders.add(`${relative(SRC_ROOT, file)}: ${literal}`);
         }
       }
     }

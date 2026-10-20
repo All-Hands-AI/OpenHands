@@ -167,6 +167,76 @@ for (const theme of [
     await page
       .getByTestId("focus-cascade-fixture")
       .evaluate((el) => el.remove());
+    const fixtureModule = "/tests/e2e/support/theme-consumer-fixture.tsx";
+    await page.evaluate(async (modulePath) => {
+      const { mountThemeConsumerFixture } = await import(
+        /* @vite-ignore */ modulePath
+      );
+      const scope = document.querySelector(
+        "[data-agent-server-ui] [data-theme]",
+      );
+      if (!scope) throw new Error("The themed app scope was not mounted");
+      const cleanup = mountThemeConsumerFixture(scope);
+      (
+        window as typeof window & { cleanupThemeFixture?: () => void }
+      ).cleanupThemeFixture = cleanup;
+    }, fixtureModule);
+    const fixture = page.getByTestId("theme-consumer-fixture");
+    const draft = fixture.getByTestId("active-status-badge-draft");
+    await expect(draft).toBeVisible();
+    if (theme === "light-plus" || theme === "solarized-light") {
+      const ratio = await draft.evaluate((el) => {
+        const style = getComputedStyle(el);
+        const canvas = document.createElement("canvas");
+        canvas.width = canvas.height = 1;
+        const context = canvas.getContext("2d")!;
+        const luminance = (color: string) => {
+          context.clearRect(0, 0, 1, 1);
+          context.fillStyle = color;
+          context.fillRect(0, 0, 1, 1);
+          const [r, g, b] = context.getImageData(0, 0, 1, 1).data;
+          const channels = [r, g, b].map((value) => {
+            const c = value / 255;
+            return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+          });
+          return (
+            channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722
+          );
+        };
+        const ink = luminance(style.color);
+        const fill = luminance(style.backgroundColor);
+        return (Math.max(ink, fill) + 0.05) / (Math.min(ink, fill) + 0.05);
+      });
+      expect(ratio).toBeGreaterThanOrEqual(4.5);
+    }
+    for (const override of [null, "rgb(97, 43, 151)"]) {
+      const expectedInk = await fixture.evaluate((el, color) => {
+        if (color)
+          (el as HTMLElement).style.setProperty("--oh-contrast", color);
+        const reference = document.createElement("span");
+        reference.style.color = "var(--oh-contrast)";
+        el.append(reference);
+        const ink = getComputedStyle(reference).color;
+        reference.remove();
+        return ink;
+      }, override);
+      for (const selector of [
+        '[data-testid="theme-branch-icon"] svg path',
+        '[data-testid="theme-repo-icon"] svg path',
+        '[data-testid="workspace-mode-selector"] svg path',
+        ".git-external-link-icon svg path",
+      ]) {
+        await expect(fixture.locator(selector).first()).toHaveCSS(
+          "fill",
+          expectedInk,
+        );
+      }
+    }
+    await page.evaluate(() => {
+      (
+        window as typeof window & { cleanupThemeFixture?: () => void }
+      ).cleanupThemeFixture?.();
+    });
     await page.getByRole("link", { name: "Agent", exact: true }).click();
     await page.getByTestId("add-agent-profile").click();
     await page.getByTestId("agent-type-selector").click();
