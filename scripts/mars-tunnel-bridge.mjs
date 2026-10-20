@@ -22,6 +22,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createTunnelRegistry } from "./tunnel-registry.mjs";
 import { ensureSessionAwake } from "./mars-session.mjs";
+import { prepareSandbox } from "./mars-sandbox-prep.mjs";
 import {
   AGENT_SERVER_GUEST_PORT,
   DEFAULT_MARS_API_BASE_URL,
@@ -138,6 +139,7 @@ export function readMarsConfig(
  *   Where the Agent Canvas server keeps tokens (keychain, encrypted file, memory)
  * @param {(url: string) => Promise<void>} [options.openExternal] Opens the OAuth page
  * @param {typeof ensureSessionAwake} [options.ensureAwake] Override for tests
+ * @param {typeof prepareSandbox} [options.prepare] Override for tests
  * @param {Record<string, string | undefined>} [options.env]
  */
 export function createMarsTunnelBridge({
@@ -149,6 +151,7 @@ export function createMarsTunnelBridge({
   secrets = null,
   openExternal = async () => {},
   ensureAwake = ensureSessionAwake,
+  prepare = prepareSandbox,
   env = process.env,
 } = {}) {
   const config = readMarsConfig(env);
@@ -241,6 +244,28 @@ export function createMarsTunnelBridge({
       },
     });
 
+  /**
+   * Sandbox preparation per session, run once per process: the fixes it
+   * makes persist with the sandbox, and concurrent connects share one run.
+   */
+  const prepared = new Map();
+
+  function prepareOnce(sessionId, localPort) {
+    let run = prepared.get(sessionId);
+    if (!run) {
+      run = prepare({
+        baseUrl: buildTunnelHost(localPort),
+        readFailure: () => registry.get(sessionId)?.upstreamFailure,
+      }).then((result) => {
+        // An unreachable guest may answer next time; try again then.
+        if (result === "unreachable") prepared.delete(sessionId);
+        return result;
+      });
+      prepared.set(sessionId, run);
+    }
+    return run;
+  }
+
   /** Configs are immutable, so a config's agent never needs re-reading. */
   const agentByConfigId = new Map();
 
@@ -267,6 +292,10 @@ export function createMarsTunnelBridge({
       // A failed dial may mean the session is no longer READY; ask again.
       readyAt.delete(sessionId);
       throw error;
+    }
+    // Every caller gets a prepared sandbox, not just the Canvas page.
+    if (tunnel.status === "connected" && tunnel.localPort !== undefined) {
+      await prepareOnce(sessionId, tunnel.localPort);
     }
     return {
       ...tunnel,

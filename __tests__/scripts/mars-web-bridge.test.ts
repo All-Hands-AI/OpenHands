@@ -21,6 +21,10 @@ import {
 } from "vitest";
 import WebSocket, { WebSocketServer } from "ws";
 
+import {
+  ConversationEventStream,
+  buildConversationEventStreamUrl,
+} from "@openhands/typescript-client/clients";
 import { server as mswServer } from "#/mocks/node";
 
 import { createMarsTunnelBridge } from "../../scripts/mars-tunnel-bridge.mjs";
@@ -151,6 +155,19 @@ function fakeBridge(upstreamOrigin: string) {
     signOut: vi.fn(async () => {
       tunnels.clear();
     }),
+    listAgentConfigs: vi.fn(async () => ({
+      configs: [{ id: "cfg_1", name: "Web agent", agent: "openhands" }],
+      nextPageToken: null,
+    })),
+    listConfigSessions: vi.fn(async () => ({
+      sessions: [{ session_id: SESSION_ID, status: "SESSION_STATUS_PAUSED" }],
+      nextPageToken: null,
+    })),
+    createSession: vi.fn(async () => ({
+      session_id: SESSION_ID,
+      status: "SESSION_STATUS_READY",
+    })),
+    pauseSession: vi.fn(async () => {}),
     openTunnel: vi.fn(async ({ sessionId }: { sessionId: string }) => {
       tunnels.set(sessionId, { status: "connected", localPort });
       return {
@@ -677,21 +694,137 @@ describe("createMarsWebBridge with a session key", () => {
     const cookiePair = (first.headers.get("set-cookie") ?? "").split(";")[0];
     const wsUrl = `${web.origin.replace("http", "ws")}/mars/sessions/${SESSION_ID}/mars-upstream/socket`;
 
-    const refused = new WebSocket(wsUrl);
-    const refusedStatus = await new Promise<number>((resolve) => {
-      refused.on("unexpected-response", (_r, res) =>
-        resolve(res.statusCode ?? 0),
-      );
-      refused.on("error", () => {});
-    });
-    expect(refusedStatus).toBe(401);
-
     const ws = new WebSocket(wsUrl, { headers: { Cookie: cookiePair } });
     await new Promise<void>((resolve, reject) => {
       ws.on("open", () => resolve());
       ws.on("error", reject);
     });
     ws.close();
+  });
+
+  it("serves the five calls an agent uses, as docs/DIGITALOCEAN_AGENTS.md shows them", async () => {
+    const asAgent = (method: string, args: unknown[]) =>
+      rpc(web.origin, method, args, { headers: { "X-Session-API-Key": KEY } });
+
+    const configs = await asAgent("listAgentConfigs", []);
+    const sessions = await asAgent("listConfigSessions", ["cfg_1"]);
+    const created = await asAgent("createSession", ["cfg_1", "my-task"]);
+    const tunnel = await asAgent("openTunnel", [{ sessionId: SESSION_ID }]);
+    const paused = await asAgent("pauseSession", [SESSION_ID]);
+
+    expect(
+      [configs, sessions, created, tunnel, paused].map((r) => r.status),
+    ).toEqual([200, 200, 200, 200, 200]);
+    expect(configs.body.result.configs[0]).toMatchObject({
+      id: "cfg_1",
+      agent: "openhands",
+    });
+    expect(bridge.listConfigSessions).toHaveBeenCalledWith("cfg_1");
+    expect(bridge.createSession).toHaveBeenCalledWith("cfg_1", "my-task");
+    expect(tunnel.body.result.host).toBe(
+      `${web.origin}/mars/sessions/${SESSION_ID}`,
+    );
+    expect(bridge.pauseSession).toHaveBeenCalledWith(SESSION_ID);
+    expect((await rpc(web.origin, "listAgentConfigs")).status).toBe(401);
+  });
+
+  /** Opens a socket with no key or cookie, as an agent's SDK client does. */
+  async function openBare() {
+    await rpc(web.origin, "openTunnel", [{ sessionId: SESSION_ID }], {
+      headers: { "X-Session-API-Key": KEY },
+    });
+    const ws = new WebSocket(
+      `${web.origin.replace("http", "ws")}/mars/sessions/${SESSION_ID}/mars-upstream/socket`,
+    );
+    const received: string[] = [];
+    ws.on("message", (data) => received.push(data.toString()));
+    const closed = new Promise<number>((resolve) =>
+      ws.on("close", (code) => resolve(code)),
+    );
+    await new Promise<void>((resolve, reject) => {
+      ws.on("open", () => resolve());
+      ws.on("error", reject);
+    });
+    return { ws, received, closed };
+  }
+
+  it("lets an agent's socket in by its first message, and dials the session only then", async () => {
+    const { ws, received } = await openBare();
+    expect(upstream.seen.ws).toHaveLength(0);
+
+    ws.send(JSON.stringify({ type: "auth", session_api_key: KEY }));
+    ws.send("hello");
+
+    await vi.waitFor(() => expect(received).toEqual(["echo:hello"]));
+    expect(upstream.seen.ws).toHaveLength(1);
+    expect(upstream.seen.ws[0].url).toBe("/mars-upstream/socket");
+    ws.close();
+  });
+
+  it("lets the TypeScript client's own event stream in with the session key", async () => {
+    await rpc(web.origin, "openTunnel", [{ sessionId: SESSION_ID }], {
+      headers: { "X-Session-API-Key": KEY },
+    });
+    const received: string[] = [];
+    const stream = new ConversationEventStream({
+      url: buildConversationEventStreamUrl(
+        `${web.origin}/mars/sessions/${SESSION_ID}`,
+        "c1",
+      ),
+      sessionApiKey: KEY,
+      createWebSocket: (url) =>
+        new WebSocket(url) as unknown as globalThis.WebSocket,
+      onMessage: (event) => received.push(String(event.data)),
+      reconnect: { enabled: false },
+    });
+
+    stream.start();
+    await vi.waitFor(() => expect(upstream.seen.ws).toHaveLength(1));
+    stream.send("ping");
+
+    await vi.waitFor(() => expect(received).toEqual(["echo:ping"]));
+    expect(upstream.seen.ws[0].url).toBe("/sockets/events/c1");
+    stream.stop();
+  });
+
+  it("closes a socket whose first message is not the key, without touching the session", async () => {
+    const { ws, closed } = await openBare();
+
+    ws.send(JSON.stringify({ type: "auth", session_api_key: "wrong" }));
+
+    expect(await closed).toBe(1008);
+    expect(upstream.seen.ws).toHaveLength(0);
+  });
+});
+
+describe("createMarsWebBridge first-message login window", () => {
+  it("closes a socket that never sends the key", async () => {
+    const upstream = await startFakeAgentServer();
+    const bridge = fakeBridge(upstream.origin);
+    const marsWeb = createMarsWebBridge({
+      bridge: bridge as never,
+      env: {},
+      key: "k",
+      authTimeoutMs: 20,
+      log: () => {},
+    });
+    const web = await startWebServer(marsWeb);
+    await rpc(web.origin, "openTunnel", [{ sessionId: SESSION_ID }], {
+      headers: { "X-Session-API-Key": "k" },
+    });
+
+    const ws = new WebSocket(
+      `${web.origin.replace("http", "ws")}/mars/sessions/${SESSION_ID}/x`,
+    );
+    const code = await new Promise<number>((resolve) =>
+      ws.on("close", (closeCode) => resolve(closeCode)),
+    );
+
+    expect(code).toBe(1008);
+    expect(upstream.seen.ws).toHaveLength(0);
+    await marsWeb.dispose();
+    web.close();
+    upstream.close();
   });
 });
 

@@ -33,7 +33,9 @@
  * already sends the agent-server), and a request that presents it gets an
  * `HttpOnly; SameSite=Strict; Path=/mars` cookie back, which the browser then
  * attaches on its own to the proxied REST calls and to the WebSocket upgrade
- * — the one request a browser cannot put a header on. The key is
+ * — the one request a browser cannot put a header on. An agent's SDK client
+ * sends neither on the upgrade; it sends the key as its first message, which
+ * the proxy checks before it dials the session. The key is
  * `MARS_WEB_KEY`, else the server's `--session-api-key`; with neither, the
  * bridge mounts only on a loopback bind (dev), where a `Host` check keeps a
  * DNS-rebound page from reaching it (cookies are host-scoped, so with a key in
@@ -52,6 +54,8 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { homedir } from "node:os";
 import path from "node:path";
+
+import WebSocket, { WebSocketServer } from "ws";
 
 import { DEFAULT_BIND_HOST, isLoopbackBind } from "./bind-host.mjs";
 import { readRequestBody } from "./http-body.mjs";
@@ -75,6 +79,21 @@ const JSON_REWRITE_LIMIT_BYTES = 8 * 1024 * 1024;
 const AUTH_HEADER = "x-session-api-key";
 /** Issued to a request that presented the key; carries auth to WebSocket upgrades. */
 const AUTH_COOKIE = "mars_web_auth";
+/**
+ * An upgrade with neither key nor cookie (an agent's SDK client) may send the
+ * key as its first message, `{"type":"auth","session_api_key":…}`, the way
+ * the Agent Server itself takes it. Nothing reaches the session before that.
+ */
+const FIRST_MESSAGE_AUTH_TIMEOUT_MS = 10_000;
+const CLOSE_POLICY = 1008;
+const CLOSE_UNREACHABLE = 1011;
+/** Close codes a peer may not send itself; relayed as their nearest cousin. */
+const RESERVED_CLOSE_CODES = new Map([
+  [1005, 1000],
+  [1006, CLOSE_UNREACHABLE],
+  [1015, CLOSE_UNREACHABLE],
+]);
+
 /** Domain separator for the cookie value derived from the session key. */
 const AUTH_COOKIE_CONTEXT = "mars-web-cookie/v1";
 /** Under the Canvas state directory: credential descriptions and secrets file. */
@@ -220,6 +239,21 @@ function safeEqual(a, b) {
   const x = Buffer.from(a);
   const y = Buffer.from(b);
   return x.length === y.length && timingSafeEqual(x, y);
+}
+
+/** Whether a socket's first message is the Agent Server login with the key. */
+function isAuthFrame(text, key) {
+  let message;
+  try {
+    message = JSON.parse(text);
+  } catch {
+    return false;
+  }
+  return (
+    message?.type === "auth" &&
+    typeof message.session_api_key === "string" &&
+    safeEqual(message.session_api_key, key)
+  );
 }
 
 function readCookie(req, name) {
@@ -399,6 +433,7 @@ function toUpstreamRequest(req, path) {
  * @param {string} [options.host] The server's bind host; loopback gets the Host check
  * @param {string | null} [options.key] Session key every request must present; null = open (loopback dev only — see mountMarsWebBridge)
  * @param {string | null} [options.stateDir] Canvas state directory; null keeps credentials in memory
+ * @param {number} [options.authTimeoutMs] How long a socket may take to send the key
  * @param {(message: string, error?: unknown) => void} [options.log]
  */
 export function createMarsWebBridge({
@@ -407,6 +442,7 @@ export function createMarsWebBridge({
   host = DEFAULT_BIND_HOST,
   key = null,
   stateDir = null,
+  authTimeoutMs = FIRST_MESSAGE_AUTH_TIMEOUT_MS,
   log = (message, error) => console.warn(`[mars-web] ${message}`, error ?? ""),
 } = {}) {
   const dir = stateDir ? path.join(stateDir, STATE_SUBDIR) : null;
@@ -585,6 +621,73 @@ export function createMarsWebBridge({
     });
   }
 
+  /** Accepts upgrades that log in by their first message. */
+  const firstMessageAuth = new WebSocketServer({ noServer: true });
+
+  /**
+   * Take the upgrade, wait for the key as the first message, and only then
+   * dial the session and relay both ways. The login frame stays here: the
+   * guest agent-server takes no key.
+   */
+  function acceptFirstMessageAuth(req, socket, head, session) {
+    track(socket);
+    firstMessageAuth.handleUpgrade(req, socket, head, (client) => {
+      client.on("error", () => {});
+      const timer = setTimeout(
+        () => client.close(CLOSE_POLICY, "session key required"),
+        authTimeoutMs,
+      );
+      client.once("message", (data, isBinary) => {
+        clearTimeout(timer);
+        if (isBinary || !isAuthFrame(data.toString("utf8"), key)) {
+          client.close(CLOSE_POLICY, "session key required");
+          return;
+        }
+        relayWebSocket(client, session);
+      });
+      client.once("close", () => clearTimeout(timer));
+    });
+  }
+
+  function relayWebSocket(client, { sessionId, path }) {
+    const target = upstreamFor(sessionId);
+    if (!target) {
+      client.close(CLOSE_UNREACHABLE, `session ${sessionId} is not connected`);
+      return;
+    }
+    const upstream = new WebSocket(`${target.replace(/^http/, "ws")}${path}`);
+    track(upstream);
+    upstream.on("error", () => {});
+    /** What the client sent while the session was still being dialed. */
+    const queued = [];
+    client.on("message", (data, isBinary) => {
+      if (upstream.readyState === WebSocket.OPEN) {
+        upstream.send(data, { binary: isBinary });
+      } else {
+        queued.push([data, isBinary]);
+      }
+    });
+    upstream.on("open", () => {
+      for (const [data, isBinary] of queued.splice(0)) {
+        upstream.send(data, { binary: isBinary });
+      }
+    });
+    upstream.on("message", (data, isBinary) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(data, { binary: isBinary });
+      }
+    });
+    upstream.on("close", (code, reason) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.close(RESERVED_CLOSE_CODES.get(code) ?? code, reason);
+      }
+    });
+    client.on("close", () => {
+      if (upstream.readyState === WebSocket.CONNECTING) upstream.terminate();
+      else upstream.close();
+    });
+  }
+
   function proxyWebSocket(req, socket, head, { sessionId, path }) {
     const target = upstreamFor(sessionId);
     if (!target) {
@@ -654,10 +757,7 @@ export function createMarsWebBridge({
         socket.end("HTTP/1.1 403 Forbidden\r\n\r\n");
         return true;
       }
-      if (authorize(req) === "deny") {
-        socket.end("HTTP/1.1 401 Unauthorized\r\n\r\n");
-        return true;
-      }
+      const allowed = authorize(req) !== "deny";
       let session;
       try {
         session = parseSessionPath(url);
@@ -667,15 +767,23 @@ export function createMarsWebBridge({
         return true;
       }
       if (!session) {
-        socket.end("HTTP/1.1 404 Not Found\r\n\r\n");
+        socket.end(
+          allowed
+            ? "HTTP/1.1 404 Not Found\r\n\r\n"
+            : "HTTP/1.1 401 Unauthorized\r\n\r\n",
+        );
         return true;
       }
-      proxyWebSocket(req, socket, head, session);
+      if (allowed) proxyWebSocket(req, socket, head, session);
+      else acceptFirstMessageAuth(req, socket, head, session);
       return true;
     },
 
     async dispose() {
-      for (const socket of sockets) socket.destroy();
+      for (const socket of sockets) {
+        if (socket instanceof WebSocket) socket.terminate();
+        else socket.destroy();
+      }
       sockets.clear();
       await bridge.dispose();
     },
