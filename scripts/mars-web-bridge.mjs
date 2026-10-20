@@ -96,7 +96,8 @@ const AUTH_COOKIE = "mars_web_auth";
  * the Agent Server itself takes it. Nothing reaches the session before that.
  */
 const FIRST_MESSAGE_AUTH_TIMEOUT_MS = 10_000;
-const CLOSE_POLICY = 1008;
+/** What the Agent Server closes a socket with when its key is wrong. */
+const CLOSE_AUTH_FAILED = 4001;
 const CLOSE_UNREACHABLE = 1011;
 /** Close codes a peer may not send itself; relayed as their nearest cousin. */
 const RESERVED_CLOSE_CODES = new Map([
@@ -173,7 +174,14 @@ export function resolveMarsWebKey({
 export function resolveMarsStateDir(env = process.env) {
   const configured =
     env.MARS_STATE_DIR?.trim() || env.OH_CANVAS_SAFE_STATE_DIR?.trim();
-  return configured || path.join(homedir(), ".openhands", "agent-canvas");
+  if (configured) return configured;
+  try {
+    return path.join(homedir(), ".openhands", "agent-canvas");
+  } catch {
+    // No home folder (HOME unset and no passwd entry, as with `docker run
+    // --user <uid>`): sign-ins stay in memory rather than Canvas not starting.
+    return null;
+  }
 }
 
 /**
@@ -756,13 +764,13 @@ export function createMarsWebBridge({
     firstMessageAuth.handleUpgrade(req, socket, head, (client) => {
       client.on("error", () => {});
       const timer = setTimeout(
-        () => client.close(CLOSE_POLICY, "session key required"),
+        () => client.close(CLOSE_AUTH_FAILED, "Authentication failed"),
         authTimeoutMs,
       );
       client.once("message", (data, isBinary) => {
         clearTimeout(timer);
         if (isBinary || !isAuthFrame(data.toString("utf8"), key)) {
-          client.close(CLOSE_POLICY, "session key required");
+          client.close(CLOSE_AUTH_FAILED, "Authentication failed");
           return;
         }
         relayWebSocket(client, session);

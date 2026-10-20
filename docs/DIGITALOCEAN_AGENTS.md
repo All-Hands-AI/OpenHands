@@ -76,4 +76,5 @@ in that session's Agent Server settings.
 `X-Session-API-Key` header, the Canvas cookie, or (what the SDK and the
 TypeScript client do) a first message `{"type":"auth","session_api_key":"..."}`
 sent within 10 seconds. Canvas does not connect to the session until the key
-checks out.
+checks out; a wrong or missing key closes the socket with 4001, as the Agent
+Server does.
