@@ -613,7 +613,17 @@ test.describe("UI regressions", () => {
     await page.mouse.move(start.x, start.y);
     await page.mouse.down();
     await page.mouse.move(start.x, targetY, { steps: 30 });
-    await page.waitForTimeout(300);
+    // Wait for the auto-scroll to run and the clamp to engage rather than a
+    // fixed delay, so the assertion does not race the feed's scroll.
+    await expect
+      .poll(
+        () =>
+          scroller.evaluate((el) =>
+            el.contains(window.getSelection()?.focusNode ?? null),
+          ),
+        { timeout: 5_000 },
+      )
+      .toBe(true);
 
     const result = await scroller.evaluate((el) => {
       const feed = el;
@@ -628,17 +638,19 @@ test.describe("UI regressions", () => {
     return result;
   }
 
-  /** A point inside the first or last fully visible message text node. */
+  /** A point inside the first or last fully visible message text node, with the
+   *  message number that text belongs to. */
   async function pickVisibleMessage(page: Page, position: "first" | "last") {
     const scroller = await waitForScrollableConversation(page);
     return scroller.evaluate((el, pos) => {
       const feed = el;
       const bounds = feed.getBoundingClientRect();
       const walker = document.createTreeWalker(feed, NodeFilter.SHOW_TEXT);
-      const candidates: { x: number; y: number }[] = [];
+      const candidates: { x: number; y: number; number: number }[] = [];
       let node: Node | null;
       while ((node = walker.nextNode())) {
-        if (!node.textContent || node.textContent.trim().length < 8) continue;
+        const match = node.textContent?.match(/Pagination message (\d+)/);
+        if (!match) continue;
         const range = document.createRange();
         range.selectNodeContents(node);
         const rect = range.getBoundingClientRect();
@@ -646,6 +658,7 @@ test.describe("UI regressions", () => {
           candidates.push({
             x: Math.round(rect.left + 8),
             y: Math.round(rect.top + rect.height / 2),
+            number: Number(match[1]),
           });
         }
       }
@@ -723,16 +736,30 @@ test.describe("UI regressions", () => {
       const numbers = [...text.matchAll(/Pagination message (\d+)/g)].map((m) =>
         Number(m[1]),
       );
+      // The message the browser anchor sits in. `anchorNode` is a text node, so
+      // resolve the enclosing message element and read its number.
+      const anchorText = s?.anchorNode?.textContent ?? "";
+      const anchorNumber = Number(
+        anchorText.match(/Pagination message (\d+)/)?.[1],
+      );
       return {
-        focusInFeed: el.contains(s?.focusNode ?? null),
         anchorInFeed: el.contains(s?.anchorNode ?? null),
+        anchorIsFeedElement: s?.anchorNode === el,
+        anchorNumber: Number.isNaN(anchorNumber) ? null : anchorNumber,
+        focusInFeed: el.contains(s?.focusNode ?? null),
         minNumber: numbers.length ? Math.min(...numbers) : null,
       };
     });
     await page.mouse.up();
 
     expect(selection.anchorInFeed).toBe(true);
+    // A regression that resets the anchor to the feed element must fail.
+    expect(selection.anchorIsFeedElement).toBe(false);
     expect(selection.focusInFeed).toBe(true);
+    // The browser anchor must still be the message the drag started on. With the
+    // anchor reset to the feed element this is null; with it reset to the feed
+    // start the anchor message would be 1.
+    expect(selection.anchorNumber).toBe(start.number);
     // Re-entering near the bottom must not restart the range at message 1.
     expect(selection.minNumber).toBeGreaterThan(1);
   });
