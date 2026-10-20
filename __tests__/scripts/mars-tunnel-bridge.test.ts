@@ -110,6 +110,7 @@ function fakeApi() {
     destroySession: vi.fn(async () => {}),
     deleteAgentConfig: vi.fn(async () => {}),
     getSession: vi.fn(async () => null),
+    getAccount: vi.fn(async () => null),
   };
 }
 
