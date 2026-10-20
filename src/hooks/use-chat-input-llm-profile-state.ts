@@ -19,14 +19,15 @@ export interface ChatInputLlmProfileState {
   isSwitching: boolean;
   /**
    * Whether picking a profile here would actually land. False on a cloud
-   * start-task route and for a cloud member on the home page; the surfaces
-   * still name the active profile, they just drop the selectable rows.
+   * start-task route; the surfaces still name the active profile, they just
+   * drop the selectable rows.
    */
   canSwitchProfile: boolean;
   /**
    * Switch the LLM profile: live via `/switch_profile` when inside a
    * conversation, or activate it globally when on the home page (no
-   * conversation) — see {@link useSwitchLlmProfile}.
+   * conversation) — see {@link useSwitchLlmProfile}. A cloud member's home
+   * pick is held for the next home launch instead.
    */
   selectProfile: (profileName: string) => void;
 }
@@ -55,16 +56,30 @@ export function useChatInputLlmProfileState(): ChatInputLlmProfileState {
   const optimisticActiveProfile = useModelStore((s) =>
     conversationId ? s.activeProfileByConversation[conversationId] : undefined,
   );
+  const homeLlmProfile = useModelStore((s) => s.homeLlmProfile);
+  const setHomeLlmProfile = useModelStore((s) => s.setHomeLlmProfile);
 
   const profiles = data?.profiles ?? [];
   const conversationModel = conversation?.llm_model ?? null;
+  // A cloud `task-…` route has no real conversation id yet, so the
+  // per-conversation /switch_profile would 404.
+  const isTaskRoute = conversationId?.startsWith("task-") ?? false;
+  // A cloud member's home pick names the profile the home launch (and its
+  // start-task route) runs, until that profile is gone.
+  const homePick =
+    (!conversationId || isTaskRoute) &&
+    homeLlmProfile &&
+    profiles.some((p) => p.name === homeLlmProfile)
+      ? homeLlmProfile
+      : null;
 
   // Resolution priority (mirrors the former SwitchProfileButton):
   //   1. Optimistic (just-clicked) — instant feedback before the refetch.
   //   2. Profile stamped on the conversation, validated against the live list
   //      so a since-deleted/renamed profile falls through.
   //   3. Profile whose model matches the running llm_model.
-  //   4. User-level active_profile (fallback before the first message).
+  //   4. A cloud member's home pick, else the user-level active_profile
+  //      (fallback before the first message).
   const stampedProfile = conversation?.active_profile ?? null;
   const conversationProfile =
     stampedProfile && profiles.some((p) => p.name === stampedProfile)
@@ -75,27 +90,39 @@ export function useChatInputLlmProfileState(): ChatInputLlmProfileState {
     conversationProfile ??
     (conversationModel
       ? (profiles.find((p) => p.model === conversationModel)?.name ?? null)
-      : (data?.active_profile ?? null));
+      : (homePick ?? data?.active_profile ?? null));
   const currentProfileModel =
     profiles.find((p) => p.name === currentProfileName)?.model ??
     conversationModel ??
     null;
 
-  // A home pick activates the profile account-wide — on cloud that's the
-  // org-gated activate endpoint a member can only 403 on. A cloud `task-…`
-  // route has no real conversation id yet, so the per-conversation
-  // /switch_profile would 404. Either way the pill still names the active
-  // profile; only the selectable rows drop out.
-  const isTaskRoute = conversationId?.startsWith("task-") ?? false;
-  const canSwitchProfile =
-    !isTaskRoute && (!!conversationId || canManageOrgProfiles);
+  // On a start-task route the pill still names the active profile; only the
+  // selectable rows drop out.
+  const canSwitchProfile = !isTaskRoute;
 
   const selectProfile = useCallback(
     (profileName: string) => {
       if (!canSwitchProfile || profileName === currentProfileName) return;
+      if (!conversationId) {
+        // A home pick activates the profile account-wide — on cloud that's the
+        // org-gated activate endpoint a member can only 403 on. Hold a
+        // member's pick for the next home launch (sent as `llm_profile`).
+        if (!canManageOrgProfiles) {
+          setHomeLlmProfile(profileName);
+          return;
+        }
+        setHomeLlmProfile(null);
+      }
       switchAndLog(conversationId, profileName);
     },
-    [canSwitchProfile, conversationId, currentProfileName, switchAndLog],
+    [
+      canManageOrgProfiles,
+      canSwitchProfile,
+      conversationId,
+      currentProfileName,
+      setHomeLlmProfile,
+      switchAndLog,
+    ],
   );
 
   return {

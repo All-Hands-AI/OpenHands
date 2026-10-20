@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -8,6 +8,8 @@ import { HomeChatLauncher } from "#/components/features/home/home-chat-launcher"
 import AgentServerConversationService from "#/api/conversation-service/agent-server-conversation-service.api";
 import AutomationService from "#/api/automation-service/automation-service.api";
 import WorkspacesService from "#/api/workspaces-service/workspaces-service.api";
+import ProfilesService from "#/api/profiles-service/profiles-service.api";
+import { useModelStore } from "#/stores/model-store";
 import {
   LAST_LOCAL_WORKSPACE_MODE_STORAGE_KEY,
   writeStoredLocalWorkspaceMode,
@@ -386,6 +388,7 @@ describe("HomeChatLauncher", () => {
   afterEach(() => {
     toast.remove();
     window.localStorage.removeItem(LAST_LOCAL_WORKSPACE_MODE_STORAGE_KEY);
+    useModelStore.setState({ homeLlmProfile: null });
   });
 
   it("defaults to Code mode and switches to Automate mode", async () => {
@@ -686,6 +689,47 @@ describe("HomeChatLauncher", () => {
     await waitFor(() =>
       expect(mockNavigate).toHaveBeenCalledWith("/conversations/conv-repo"),
     );
+  });
+
+  it.each([
+    {
+      description: "forwards a member's home LLM pick",
+      pick: "ops55",
+      expected: "ops55",
+    },
+    {
+      description: "drops a home LLM pick whose profile is gone",
+      pick: "Deleted",
+      expected: undefined,
+    },
+  ])("$description on a cloud launch", async ({ pick, expected }) => {
+    mockUseActiveBackend.mockReturnValue(cloudBackend);
+    const listProfilesSpy = vi
+      .spyOn(ProfilesService, "listProfiles")
+      .mockResolvedValue({
+        profiles: [
+          {
+            name: "ops55",
+            model: "anthropic/claude-opus-5-5",
+            base_url: null,
+            api_key_set: true,
+          },
+        ],
+        active_profile: null,
+      });
+    useModelStore.setState({ homeLlmProfile: pick });
+    const createSpy = vi
+      .spyOn(AgentServerConversationService, "createConversation")
+      .mockResolvedValue(makeConversationResponse());
+    renderLauncher();
+    await waitFor(() => expect(listProfilesSpy).toHaveBeenCalled());
+    // Let the resolved profile list reach the launcher before submitting.
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)));
+
+    await userEvent.click(screen.getByTestId("stub-chat-submit"));
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalledTimes(1));
+    expect(createSpy.mock.lastCall?.[0]?.llmProfile).toBe(expected);
   });
 
   it("does not pass query to createConversation when attachments are present", async () => {

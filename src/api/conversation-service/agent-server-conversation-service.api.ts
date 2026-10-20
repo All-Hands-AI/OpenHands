@@ -470,6 +470,8 @@ export interface CreateConversationOptions {
   agentLlmProfileRef?: string | null;
   /** Local only: run the agent profile with this LLM profile instead of its own. */
   agentLlmProfileOverride?: string;
+  /** Cloud only: run this conversation on the named LLM profile (`llm_profile`). */
+  llmProfile?: string;
 }
 
 class AgentServerConversationService {
@@ -529,6 +531,7 @@ class AgentServerConversationService {
       agentProfileKind,
       agentLlmProfileRef,
       agentLlmProfileOverride,
+      llmProfile,
     } = options;
 
     if (getActiveBackend().backend.kind === "cloud") {
@@ -562,6 +565,7 @@ class AgentServerConversationService {
         agent_type: agentType,
         sandbox_id: sandboxId ?? null,
         agent_profile_id: agentProfileId ?? null,
+        ...(llmProfile ? { llm_profile: llmProfile } : {}),
         ...(routerAtStartSuffix
           ? {
               agent_launch_additions: {
