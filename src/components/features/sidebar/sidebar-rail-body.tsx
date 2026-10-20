@@ -6,6 +6,7 @@ import {
   Plus,
   Server,
   Settings,
+  Shield,
 } from "lucide-react";
 import { OpenHandsLogoButton } from "#/components/shared/buttons/openhands-logo-button";
 import { NavigationLink } from "#/components/shared/navigation-link";
@@ -210,6 +211,13 @@ export function SidebarRailBody({
           testId="sidebar-conversations-link"
           collapsed={collapsed}
           icon={<Plus width={ICON_SIZE} height={ICON_SIZE} />}
+        />
+        <SidebarNavLink
+          to="/cyber-monitor"
+          label={t(I18nKey.CYBER_MONITOR$TITLE)}
+          testId="sidebar-cyber-monitor-link"
+          collapsed={collapsed}
+          icon={<Shield width={ICON_SIZE} height={ICON_SIZE} />}
         />
         <SidebarNavLink
           to={CUSTOMIZE_PATH}

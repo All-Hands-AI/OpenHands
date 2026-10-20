@@ -37,6 +37,16 @@ export type OnboardingLinkDestinationType =
 /** Onboarding surface that presented the link. */
 export type OnboardingLinkSurface = "landing_checklist" | "onboarding_modal";
 
+/** Controlled actions for the simulated Cyber Monitor (no IPs or raw data). */
+export type CyberMonitorAction =
+  | "viewed"
+  | "paused"
+  | "resumed"
+  | "surge_triggered"
+  | "exported_csv"
+  | "ip_blocked"
+  | "threat_opened";
+
 /**
  * Hook that provides tracking functions with automatic data collection
  * from available hooks (settings, etc.)
@@ -461,7 +471,18 @@ export const useTracking = () => {
     });
   };
 
+  const trackCyberMonitorAction = ({
+    action,
+    severity,
+  }: {
+    action: CyberMonitorAction;
+    severity?: "critical" | "high" | "medium" | "low";
+  }) => {
+    track("cyber_monitor_action", { action, severity });
+  };
+
   return {
+    trackCyberMonitorAction,
     trackLoginButtonClick,
     trackConversationCreated,
     trackPushButtonClick,
