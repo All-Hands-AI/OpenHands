@@ -41,10 +41,10 @@ import {
 import {
   DirectConversationInfo,
   assertSubscriptionAuthReady,
-  buildConversationMetadataTags,
   buildRouterAtStartSystemSuffix,
   buildStartConversationRequestWithEncryptedSettings,
   buildStartPlanningConversationRequestWithEncryptedSettings,
+  buildWorkspaceTags,
   emptyHooksResponse,
   fetchBackendExecutionRuntime,
   getDefaultConversationTitle,
@@ -630,22 +630,17 @@ class AgentServerConversationService {
       titleLlmProfile,
     });
 
-    // Persist the workspace/repo selection as server-side conversation tags so
-    // sidebar grouping and the repo/branch badges survive on another browser,
-    // device, or after cleared localStorage (#17386). localStorage below stays
-    // the warm cache for the creating client.
-    const metadataTags = buildConversationMetadataTags({
-      selectedRepository: metadata?.selected_repository,
-      selectedBranch: metadata?.selected_branch,
-      gitProvider: metadata?.git_provider,
-      selectedWorkspace: workingDirOverride,
-    });
-    if (Object.keys(metadataTags).length > 0) {
+    // Persist the selected workspace as a server-side conversation tag so local
+    // sidebar grouping survives on another browser, device, or after cleared
+    // localStorage (#17386). localStorage below stays the warm cache for the
+    // creating client.
+    const workspaceTags = buildWorkspaceTags(workingDirOverride);
+    if (Object.keys(workspaceTags).length > 0) {
       const existingTags =
         payload.tags && typeof payload.tags === "object"
           ? (payload.tags as Record<string, string>)
           : {};
-      payload.tags = { ...existingTags, ...metadataTags };
+      payload.tags = { ...existingTags, ...workspaceTags };
     }
 
     const telemetryDistinctId = await getTelemetryDistinctId();
