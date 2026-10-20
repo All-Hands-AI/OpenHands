@@ -7,7 +7,7 @@ import {
 } from "node:http";
 import { mkdtempSync } from "node:fs";
 import net from "node:net";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   afterAll,
@@ -31,6 +31,12 @@ import {
   mountMarsWebBridge,
   rewriteAgentServerUrls,
 } from "../../scripts/mars-web-bridge.mjs";
+
+// Lets a test take the home folder away; every other call is the real one.
+vi.mock("node:os", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:os")>();
+  return { ...actual, homedir: vi.fn(actual.homedir) };
+});
 
 const SESSION_ID = "sess_a";
 
@@ -712,6 +718,28 @@ describe("mountMarsWebBridge", () => {
     expect(warnings).toEqual([]);
     expect(debugs[0]).toMatch(/local callers only/);
     await mounted!.dispose();
+  });
+
+  it("still starts without a home folder, keeping sign-ins off disk", async () => {
+    // HOME unset and no passwd entry, as with `docker run --user <uid>`.
+    const realHomedir = vi.mocked(homedir).getMockImplementation()!;
+    vi.mocked(homedir).mockImplementation(() => {
+      throw new Error("uv_os_homedir returned ENOENT");
+    });
+    try {
+      const mounted = mountMarsWebBridge({
+        env: {},
+        host: "127.0.0.1",
+        log: () => {},
+        debug: () => {},
+      });
+
+      expect(mounted).not.toBeNull();
+      expect(mounted!.bridge.getAuthState().storage.kind).not.toBe("file");
+      await mounted!.dispose();
+    } finally {
+      vi.mocked(homedir).mockImplementation(realHomedir);
+    }
   });
 
   it("is off with MARS_WEB=0 and its synonyms, silently", () => {

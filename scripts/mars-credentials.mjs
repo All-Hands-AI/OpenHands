@@ -445,7 +445,11 @@ export function createCredentialStore({
         state.connections = state.connections.filter(
           (other) => other.id !== id,
         );
-        state.activeConnectionId = older.id;
+        // Follow the merge only if this connection was the active one; a
+        // switch made meanwhile stands.
+        if (state.activeConnectionId === id) {
+          state.activeConnectionId = older.id;
+        }
       }
       Object.assign(target, {
         teamUuid: uuid ?? target.teamUuid ?? null,

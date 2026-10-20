@@ -267,6 +267,33 @@ describe("createCredentialStore with a SecretStore (the Agent Canvas server)", (
     expect(store.getActiveToken()).toBe("oauth-access-token");
   });
 
+  it("leaves a team switch made while a new sign-in was being checked", () => {
+    const { store } = serverStore();
+    const teamOne = store.save({
+      kind: CREDENTIAL_KIND_PAT,
+      token: TOKEN,
+      label: "A",
+    });
+    store.setTeam(teamOne.id, { uuid: "team-1", name: "Team One" });
+    const teamTwo = store.save({
+      kind: CREDENTIAL_KIND_PAT,
+      token: "token-two",
+      label: "B",
+    });
+    store.setTeam(teamTwo.id, { uuid: "team-2", name: "Team Two" });
+    const again = store.save({
+      kind: CREDENTIAL_KIND_OAUTH,
+      token: "oauth-access-token",
+      label: "DigitalOcean",
+    });
+    store.setActive(teamTwo.id);
+
+    store.setTeam(again.id, { uuid: "team-1", name: "Team One" });
+
+    expect(store.getActive()?.id).toBe(teamTwo.id);
+    expect(store.getToken(teamOne.id)).toBe("oauth-access-token");
+  });
+
   it("keeps a versioned record in the store, not a bare token", () => {
     const { store, secrets } = serverStore();
     const saved = store.save({

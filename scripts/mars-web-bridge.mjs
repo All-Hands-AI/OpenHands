@@ -139,7 +139,14 @@ export function resolveMarsWebKey({
 export function resolveMarsStateDir(env = process.env) {
   const configured =
     env.MARS_STATE_DIR?.trim() || env.OH_CANVAS_SAFE_STATE_DIR?.trim();
-  return configured || path.join(homedir(), ".openhands", "agent-canvas");
+  if (configured) return configured;
+  try {
+    return path.join(homedir(), ".openhands", "agent-canvas");
+  } catch {
+    // No home folder (HOME unset and no passwd entry, as with `docker run
+    // --user <uid>`): sign-ins stay in memory rather than Canvas not starting.
+    return null;
+  }
 }
 
 /**
