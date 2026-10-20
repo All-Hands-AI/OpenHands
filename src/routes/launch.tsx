@@ -12,7 +12,11 @@ import {
   hasAutomationInterface,
 } from "#/manifests/automation-interface";
 
-type ErrorType = "no_plugins" | "invalid_format" | "creation_failed";
+type ErrorType =
+  | "no_plugins"
+  | "invalid_format"
+  | "creation_failed"
+  | "install_failed";
 
 interface ParseResult {
   plugins: PluginSpec[];
@@ -90,10 +94,12 @@ function parsePluginsFromUrl(searchParams: URLSearchParams): ParseResult {
 
 function ErrorDisplay({
   errorType,
+  detail,
   onGoHome,
   onTryAgain,
 }: {
   errorType: ErrorType;
+  detail?: string | null;
   onGoHome: () => void;
   onTryAgain?: () => void;
 }) {
@@ -103,6 +109,7 @@ function ErrorDisplay({
     no_plugins: t(I18nKey.LAUNCH$ERROR_NO_PLUGINS),
     invalid_format: t(I18nKey.LAUNCH$ERROR_INVALID_FORMAT),
     creation_failed: t(I18nKey.LAUNCH$ERROR_CREATION_FAILED),
+    install_failed: t(I18nKey.LAUNCH$ERROR_INSTALL_UNKNOWN),
   };
 
   return (
@@ -115,6 +122,11 @@ function ErrorDisplay({
           {t(I18nKey.LAUNCH$ERROR_TITLE)}
         </h2>
         <p className="mb-6 text-text-tertiary">{errorMessages[errorType]}</p>
+        {detail && (
+          <p className="mb-6 break-words text-sm text-text-tertiary">
+            {detail}
+          </p>
+        )}
         <div className="flex justify-center gap-3">
           <button
             type="button"
@@ -148,6 +160,9 @@ export default function LaunchRoute() {
   const createConversation = useCreateConversation();
 
   const [creationError, setCreationError] = React.useState<string | null>(null);
+  const [creationErrorKind, setCreationErrorKind] = React.useState<
+    "conversation" | "automation"
+  >("conversation");
   const [isInstalling, setIsInstalling] = React.useState(false);
 
   const parseResult = React.useMemo(
@@ -177,6 +192,7 @@ export default function LaunchRoute() {
       });
       navigate(`/conversations/${result.conversation_id}`);
     } catch {
+      setCreationErrorKind("conversation");
       setCreationError(t(I18nKey.LAUNCH$ERROR_CREATION_UNKNOWN));
     }
   };
@@ -215,6 +231,7 @@ export default function LaunchRoute() {
       });
       navigate(automationDetailPath(created.id));
     } catch (error) {
+      setCreationErrorKind("automation");
       setCreationError(
         error instanceof Error
           ? error.message
@@ -241,11 +258,16 @@ export default function LaunchRoute() {
     );
   }
 
-  // Show error if conversation creation failed
+  // Show error if conversation creation or automation install failed
   if (creationError) {
     return (
       <ErrorDisplay
-        errorType="creation_failed"
+        errorType={
+          creationErrorKind === "automation"
+            ? "install_failed"
+            : "creation_failed"
+        }
+        detail={creationError}
         onGoHome={handleGoHome}
         onTryAgain={handleTryAgain}
       />
