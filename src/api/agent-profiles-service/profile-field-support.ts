@@ -14,3 +14,8 @@ export function agentProfileSupportsInstructions(): boolean {
 export function agentProfileSupportsTools(): boolean {
   return getActiveBackend().backend.kind !== "cloud";
 }
+
+/** Local only: cloud loads skills from its own catalog. */
+export function agentProfileSupportsSkills(): boolean {
+  return getActiveBackend().backend.kind !== "cloud";
+}
