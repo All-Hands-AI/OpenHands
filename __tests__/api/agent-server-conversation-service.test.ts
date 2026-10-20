@@ -601,6 +601,7 @@ describe("AgentServerConversationService", () => {
       });
 
       await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
         agentLlmProfileRef: "powerful",
       });
 
@@ -647,6 +648,7 @@ describe("AgentServerConversationService", () => {
       });
 
       await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
         agentLlmProfileRef: "powerful",
       });
 
@@ -690,6 +692,7 @@ describe("AgentServerConversationService", () => {
       // must degrade to the account-wide active profile instead of sending an
       // unresolvable name.
       await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
         agentLlmProfileRef: "powerful",
       });
 
@@ -717,8 +720,12 @@ describe("AgentServerConversationService", () => {
         },
       });
 
-      await AgentServerConversationService.createConversation();
-      await AgentServerConversationService.createConversation();
+      await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
+      });
+      await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
+      });
 
       // The first conversation on a cold agent-server can exceed the client's
       // default timeout, so createConversation constructs its ConversationClient
@@ -790,7 +797,9 @@ describe("AgentServerConversationService", () => {
         },
       });
 
-      await AgentServerConversationService.createConversation();
+      await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
+      });
 
       const [payloadCall] = mockHttpPost.mock.calls;
       const payload = payloadCall[1] as {
@@ -824,6 +833,7 @@ describe("AgentServerConversationService", () => {
       });
 
       await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
         workingDirOverride: "/Users/jane/projects/foo",
       });
 
@@ -914,6 +924,7 @@ describe("AgentServerConversationService", () => {
       });
 
       await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
         workingDirOverride: "/Users/jane/projects/foo",
         workspaceMode: "new_worktree",
       });
@@ -2504,6 +2515,7 @@ describe("AgentServerConversationService", () => {
       });
 
       await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
         initialUserMsg: "Inspect the repository",
         metadata: {
           selected_repository: "OpenHands/agent-canvas",
@@ -2543,7 +2555,9 @@ describe("AgentServerConversationService", () => {
       });
 
       await expect(
-        AgentServerConversationService.createConversation(),
+        AgentServerConversationService.createConversation({
+          agentProfileId: "profile-1",
+        }),
       ).rejects.toThrow("No backend is configured");
     });
 
@@ -3173,6 +3187,7 @@ describe("AgentServerConversationService", () => {
       ];
 
       const result = await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
         initialUserMsg: "Inspect the repository",
         plugins,
         workingDirOverride: "/Users/jane/projects/canvas",
@@ -3208,7 +3223,9 @@ describe("AgentServerConversationService", () => {
     it("does not persist empty metadata for a conversation without a selected source", async () => {
       arrangeLocalCreate("conv-unselected");
 
-      await AgentServerConversationService.createConversation();
+      await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
+      });
 
       expect(getStoredConversationMetadata("conv-unselected")).toBeNull();
       expect(window.localStorage.getItem(metadataStorageKey)).toBeNull();
