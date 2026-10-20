@@ -138,11 +138,13 @@ function setup({
     session_id: sessionId,
     status: "SESSION_STATUS_READY",
   }));
+  const prepare = vi.fn(async () => "prepared" as const);
   const bridge = createMarsTunnelBridge({
     registry: realRegistry ? undefined : registry,
     api,
     credentials,
     ensureAwake,
+    prepare,
     env: { MARS_API_BASE_URL: API_URL, ...env },
   });
   const ipcMain = fakeIpcMain();
@@ -152,6 +154,7 @@ function setup({
     api,
     credentials,
     ensureAwake,
+    prepare,
     bridge,
     ipcMain,
   };
@@ -254,6 +257,35 @@ describe("createMarsTunnelBridge", () => {
 
     // Assert
     expect(revokeToken).toHaveBeenCalledWith("oauth-token");
+  });
+
+  it("prepares a session's sandbox on connect, once, for every caller", async () => {
+    const { bridge, prepare, ipcMain } = setup();
+    await ipcMain.invoke(MARS_TUNNEL_IPC.savePat, { token: VALID_PAT });
+
+    await Promise.all([
+      bridge.openTunnel({ sessionId: "sess_a" }),
+      bridge.openTunnel({ sessionId: "sess_a" }),
+    ]);
+    await bridge.openTunnel({ sessionId: "sess_a" });
+    await bridge.openTunnel({ sessionId: "sess_b" });
+
+    expect(prepare).toHaveBeenCalledTimes(2);
+    expect(prepare).toHaveBeenCalledWith({
+      baseUrl: "http://127.0.0.1:51000",
+      readFailure: expect.any(Function),
+    });
+  });
+
+  it("tries the preparation again when the sandbox could not be reached", async () => {
+    const { bridge, prepare, ipcMain } = setup();
+    await ipcMain.invoke(MARS_TUNNEL_IPC.savePat, { token: VALID_PAT });
+    prepare.mockResolvedValueOnce("unreachable" as never);
+
+    await bridge.openTunnel({ sessionId: "sess_a" });
+    await bridge.openTunnel({ sessionId: "sess_a" });
+
+    expect(prepare).toHaveBeenCalledTimes(2);
   });
 
   it("openTunnel refuses to connect while signed out", async () => {
