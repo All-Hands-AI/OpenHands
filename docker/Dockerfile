@@ -122,9 +122,11 @@ RUN if command -v apt-get >/dev/null 2>&1; then \
 
 # Install automation server and the tool models its SDK clients deserialize.
 # Match openhands-tools to the SDK already provided by the agent-server image,
-# just as the local Canvas launcher does.
-RUN uv pip install --system "openhands-automation==${AUTOMATION_VERSION}" "openhands-tools==${AGENT_SERVER_VERSION}" 2>/dev/null \
-    || pip install --no-cache-dir "openhands-automation==${AUTOMATION_VERSION}" "openhands-tools==${AGENT_SERVER_VERSION}"
+# just as the local Canvas launcher does. Pin openhands-agent-server too: it
+# arrives via openhands-workspace, and left unpinned the resolver downgraded it
+# to dodge an openai conflict (#17531).
+RUN uv pip install --system "openhands-automation==${AUTOMATION_VERSION}" "openhands-tools==${AGENT_SERVER_VERSION}" "openhands-agent-server==${AGENT_SERVER_VERSION}" 2>/dev/null \
+    || pip install --no-cache-dir "openhands-automation==${AUTOMATION_VERSION}" "openhands-tools==${AGENT_SERVER_VERSION}" "openhands-agent-server==${AGENT_SERVER_VERSION}"
 
 RUN if [ -n "${AGENT_SERVER_SDK_GIT_REF}" ]; then \
       BASE_GIT_URL="git+https://github.com/OpenHands/software-agent-sdk@${AGENT_SERVER_SDK_GIT_REF}" && \

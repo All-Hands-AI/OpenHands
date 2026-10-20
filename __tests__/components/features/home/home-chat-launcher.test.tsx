@@ -871,7 +871,12 @@ describe("HomeChatLauncher", () => {
         }),
       );
       if (marksAutomationSetup) {
-        expect(mockMarkAutomationSetupHandoff).toHaveBeenCalledWith("conv-abc");
+        // Marked once the create mutation settles, after the call above.
+        await waitFor(() =>
+          expect(mockMarkAutomationSetupHandoff).toHaveBeenCalledWith(
+            "conv-abc",
+          ),
+        );
       } else {
         expect(mockMarkAutomationSetupHandoff).not.toHaveBeenCalled();
       }
