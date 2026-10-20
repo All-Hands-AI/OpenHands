@@ -45,6 +45,7 @@ const {
   mockGetActiveBackend,
   mockLoadHooks,
   mockListMetaProfiles,
+  mockGetToolCatalog,
 } = vi.hoisted(() => ({
   mockGetAgentServerWorkingDir: vi.fn(() => "/workspace/project/agent-canvas"),
   mockGetEffectiveLocalBackend: vi.fn(() => ({
@@ -67,6 +68,7 @@ const {
   })),
   mockLoadHooks: vi.fn(),
   mockListMetaProfiles: vi.fn(),
+  mockGetToolCatalog: vi.fn(),
 }));
 
 vi.mock("@openhands/typescript-client/clients", () => ({
@@ -80,6 +82,9 @@ vi.mock("@openhands/typescript-client/clients", () => ({
   }),
   MetaProfilesClient: vi.fn(function MetaProfilesClientMock() {
     return { listMetaProfiles: mockListMetaProfiles };
+  }),
+  ToolClient: vi.fn(function ToolClientMock() {
+    return { getToolCatalog: mockGetToolCatalog };
   }),
 }));
 
@@ -2181,12 +2186,60 @@ describe("buildStartConversationRequestWithEncryptedSettings", () => {
       meta_profiles: [],
       active_meta_profile: null,
     });
+    mockGetToolCatalog.mockReset();
   });
 
   // vitest is not configured with `restoreMocks`, so restore explicitly.
   afterEach(() => {
     settingsSpy.mockRestore();
     secretsSpy.mockRestore();
+  });
+
+  it("resolves default tools from the launch settings when cached settings had an explicit list", async () => {
+    settingsSpy.mockResolvedValue({
+      agentSettings: { agent_kind: "openhands", tools: null },
+      conversationSettings: {},
+      secretsEncrypted: true,
+      skillEnablement: { disabledSkills: [] },
+    });
+    mockGetToolCatalog.mockResolvedValue({
+      tools: [
+        { name: "terminal", in_default_set: true, usable: true },
+        { name: "file_editor", in_default_set: true, usable: true },
+        { name: "browser_tool_set", in_default_set: true, usable: false },
+        { name: "custom_tool", in_default_set: false, usable: true },
+      ].map((tool) => ({ ...tool, user_selectable: true, description: "" })),
+    });
+
+    const payload = await buildStartConversationRequestWithEncryptedSettings({
+      settings: {
+        ...DEFAULT_SETTINGS,
+        git_user_name: "QA Tester",
+        git_user_email: "qa-tester@example.com",
+        agent_settings: {
+          agent_kind: "openhands",
+          tools: [{ name: "terminal", params: {} }],
+        },
+      },
+      hooksProjectDir: null,
+    });
+
+    expect(payload.agent_settings).toMatchObject({
+      tools: [
+        {
+          name: "terminal",
+          params: {
+            env: {
+              GIT_AUTHOR_NAME: "QA Tester",
+              GIT_COMMITTER_NAME: "QA Tester",
+              GIT_AUTHOR_EMAIL: "qa-tester@example.com",
+              GIT_COMMITTER_EMAIL: "qa-tester@example.com",
+            },
+          },
+        },
+        { name: "file_editor", params: {} },
+      ],
+    });
   });
 
   it("looks hooks up in hooksProjectDir, not the conversation working dir", async () => {
