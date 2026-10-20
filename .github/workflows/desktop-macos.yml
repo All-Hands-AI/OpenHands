@@ -199,3 +199,30 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: gh release upload "$RELEASE_TAG" dist-electron/*.dmg --clobber
+
+      - name: Add macOS install note to release
+        # The DMG is only ad-hoc signed (no Apple Developer ID / notarization —
+        # see electron-builder.config.mjs `mac`), so on a downloaded, quarantined
+        # app macOS reports "damaged" with no in-UI way forward. Until the build
+        # is signed + notarized (needs an Apple Developer ID cert in CI; tracked
+        # in OpenHands/OpenHands#16774), surface the one-line unquarantine fix on
+        # the release page where users download the DMG. Best-effort and
+        # idempotent: never fail the release, and never duplicate the note. The
+        # note body (with its idempotency marker) lives in
+        # .github/macos-install-note.md.
+        if: github.event_name == 'release'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          note_file=.github/macos-install-note.md
+          marker=$(head -n 1 "$note_file")
+          body=$(gh release view "$RELEASE_TAG" --json body --jq .body)
+          if printf '%s' "$body" | grep -qF "$marker"; then
+            echo "macOS install note already present; skipping."
+            exit 0
+          fi
+          printf '%s\n\n%s\n' "$body" "$(cat "$note_file")" \
+            | gh release edit "$RELEASE_TAG" --notes-file -
+          echo "Appended macOS install note to $RELEASE_TAG."
