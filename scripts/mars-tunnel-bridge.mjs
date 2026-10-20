@@ -481,10 +481,14 @@ export function createMarsTunnelBridge({
       readyAt.clear();
       const kind = store.list().find((c) => c.id === target)?.kind;
       if (kind === CREDENTIAL_KIND_OAUTH) {
-        // Revoking the refresh token ends the grant, not just this hour's token.
-        const grant = store.getGrant(target);
-        const token = grant?.refreshToken ?? grant?.token;
-        if (token) await revokeToken(token);
+        // DigitalOcean revokes access tokens only, so revoke a current one:
+        // an hour-old token is refreshed first rather than left unrevoked.
+        const token = await tokenFor(target).catch(() => null);
+        if (token && !(await revokeToken(token))) {
+          console.warn(
+            "[mars] DigitalOcean did not confirm the sign-out; the sign-in is removed here anyway.",
+          );
+        }
       }
       store.remove(target);
       return authState();

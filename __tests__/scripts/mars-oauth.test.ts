@@ -11,6 +11,7 @@ import {
   readCallback,
   refreshGrant,
   renderReturnPage,
+  revokeToken,
   signInWithDigitalOcean,
 } from "../../scripts/mars-oauth.mjs";
 
@@ -131,6 +132,48 @@ describe("exchangeCode and refreshGrant", () => {
     await expect(refused).rejects.toBeInstanceOf(OAuthError);
     await expect(refused).rejects.toMatchObject({ isRevoked: true });
     expect(endpoint.requests[0].get("grant_type")).toBe("refresh_token");
+  });
+
+  it("treats DigitalOcean's answer to a reused refresh token as signed out, and a lost connection as not", async () => {
+    // What cloud.digitalocean.com returned for a spent refresh token (20 Oct).
+    const reused = fakeTokenEndpoint({
+      status: 400,
+      body: { error: "invalid_request" },
+    });
+    const offline = vi.fn(async () => {
+      throw new TypeError("fetch failed");
+    }) as unknown as typeof fetch;
+
+    await expect(
+      refreshGrant({
+        clientId: "c",
+        refreshToken: "spent",
+        fetchImpl: reused.fetchImpl,
+      }),
+    ).rejects.toMatchObject({ isRevoked: true });
+    await expect(
+      refreshGrant({ clientId: "c", refreshToken: "r", fetchImpl: offline }),
+    ).rejects.toMatchObject({ isRevoked: false });
+  });
+});
+
+describe("revokeToken", () => {
+  it("revokes an access token and says whether DigitalOcean confirmed it", async () => {
+    const calls: RequestInit[] = [];
+    const answer = (status: number) =>
+      vi.fn(async (_url: string, init: RequestInit) => {
+        calls.push(init);
+        return new Response("{}", { status });
+      }) as unknown as typeof fetch;
+
+    expect(await revokeToken("access-1", answer(200))).toBe(true);
+    expect(await revokeToken("access-1", answer(401))).toBe(false);
+    expect(calls[0].headers).toMatchObject({
+      Authorization: "Bearer access-1",
+    });
+    expect(new URLSearchParams(String(calls[0].body)).get("token")).toBe(
+      "access-1",
+    );
   });
 });
 

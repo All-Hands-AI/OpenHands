@@ -23,7 +23,7 @@ import {
 
 vi.mock("../../scripts/mars-oauth.mjs", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../scripts/mars-oauth.mjs")>()),
-  revokeToken: vi.fn(async () => {}),
+  revokeToken: vi.fn(async () => true),
   exchangeCode: vi.fn(),
   refreshGrant: vi.fn(),
 }));
@@ -662,6 +662,27 @@ describe("signing in with DigitalOcean (code + PKCE)", () => {
       token: "new-access",
       refreshToken: "refresh-2",
     });
+  });
+
+  it("signs out by revoking a current access token, refreshing an expired one first", async () => {
+    const { bridge, credentials } = setup(WITH_CLIENT);
+    const saved = credentials.save({
+      kind: CREDENTIAL_KIND_OAUTH,
+      token: "old-access",
+      refreshToken: "refresh-1",
+      accessExpiresAt: inMinutes(-5),
+      clientId: "client-1",
+      label: "DigitalOcean",
+    });
+    vi.mocked(refreshGrant).mockResolvedValueOnce({
+      ...GRANT,
+      accessToken: "fresh-access",
+    });
+
+    await bridge.signOut(saved.id);
+
+    expect(revokeToken).toHaveBeenCalledWith("fresh-access");
+    expect(bridge.getAuthState().connections).toEqual([]);
   });
 
   it("asks for sign-in again when DigitalOcean no longer honours the refresh token", async () => {

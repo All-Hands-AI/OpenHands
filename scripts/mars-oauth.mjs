@@ -48,9 +48,14 @@ export class OAuthError extends Error {
     this.code = code;
   }
 
-  /** The grant is gone (used, revoked or expired): only a new sign-in helps. */
+  /**
+   * The grant is gone (used, revoked or expired): only a new sign-in helps.
+   * DigitalOcean answers a spent refresh token with `invalid_request`, so
+   * any refusal counts, not just `invalid_grant`; only a failure to reach
+   * DigitalOcean (no status) is worth retrying.
+   */
   get isRevoked() {
-    return this.code === "invalid_grant";
+    return this.status === 400 || this.status === 401;
   }
 }
 
@@ -538,21 +543,29 @@ export async function signInWithDigitalOcean({
 }
 
 /**
- * Invalidate a token server-side. Best-effort: a failed revoke must not
- * prevent the local credential from being forgotten.
+ * Invalidate an access token at DigitalOcean, which takes only access
+ * tokens here. Best-effort: resolves false when DigitalOcean did not
+ * confirm, and a failed revoke must not stop the local sign-in from being
+ * forgotten.
+ *
+ * @param {string} accessToken
+ * @param {typeof fetch} [fetchImpl]
+ * @returns {Promise<boolean>}
  */
-export async function revokeToken(token, fetchImpl = globalThis.fetch) {
+export async function revokeToken(accessToken, fetchImpl = globalThis.fetch) {
   try {
-    await fetchImpl(REVOKE_URL, {
+    const response = await fetchImpl(REVOKE_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: new URLSearchParams({ token }).toString(),
+      body: new URLSearchParams({ token: accessToken }).toString(),
       signal: AbortSignal.timeout(TOKEN_TIMEOUT_MS),
     });
+    return response.ok;
   } catch {
     // Network failure on sign-out; the local record is still removed.
+    return false;
   }
 }
