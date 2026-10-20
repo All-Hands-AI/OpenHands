@@ -1,6 +1,5 @@
 // @vitest-environment node
 import { createHash } from "node:crypto";
-import { JSDOM } from "jsdom";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -207,13 +206,24 @@ describe("renderReturnPage", () => {
 
   it("takes the spent code out of the address bar, whatever the outcome", () => {
     for (const ok of [true, false]) {
-      const dom = new JSDOM(renderReturnPage({ ok }), {
-        url: `${REDIRECT}?code=c1&state=s1`,
-        runScripts: "dangerously",
-      });
+      // The page's own script, run against a browser at the return address.
+      const script = /<script>([\s\S]*?)<\/script>/.exec(
+        renderReturnPage({ ok }),
+      )![1];
+      const history = { replaceState: vi.fn() };
+      const location = { pathname: new URL(REDIRECT).pathname };
 
-      expect(dom.window.location.href).toBe(REDIRECT);
-      dom.window.close();
+      new Function("history", "location", "setTimeout", script)(
+        history,
+        location,
+        vi.fn(),
+      );
+
+      expect(history.replaceState).toHaveBeenCalledWith(
+        null,
+        "",
+        "/mars/oauth/callback",
+      );
     }
   });
 });
