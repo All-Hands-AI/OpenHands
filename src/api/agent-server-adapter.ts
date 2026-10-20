@@ -15,7 +15,13 @@ import { ServerClient } from "@openhands/typescript-client/clients";
 import { SKILLS_CATALOG } from "@openhands/extensions/skills";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { ExecutionStatus } from "#/types/agent-server/core";
-import { AgentKind, Settings, SettingsValue } from "#/types/settings";
+import {
+  AgentKind,
+  isProvider,
+  type Provider,
+  Settings,
+  SettingsValue,
+} from "#/types/settings";
 import {
   getAcpPreferredDefaultModel,
   getAcpProvider,
@@ -436,10 +442,18 @@ export function toAppConversation(
   return {
     id: info.id,
     created_by_user_id: null,
-    selected_repository: metadata?.selected_repository ?? null,
-    selected_branch: metadata?.selected_branch ?? null,
-    git_provider: metadata?.git_provider ?? null,
-    selected_workspace: metadata?.selected_workspace ?? null,
+    // Prefer the creating client's localStorage metadata; fall back to the
+    // server-side tags so grouping and badges survive on another browser,
+    // device, or after cleared site data (#17386). The git_provider tag is
+    // untrusted wire data, so narrow it to a known Provider or drop it.
+    selected_repository:
+      metadata?.selected_repository ?? info.tags?.[REPOSITORY_TAG_KEY] ?? null,
+    selected_branch:
+      metadata?.selected_branch ?? info.tags?.[SELECTED_BRANCH_TAG_KEY] ?? null,
+    git_provider:
+      metadata?.git_provider ?? gitProviderFromTag(info.tags) ?? null,
+    selected_workspace:
+      metadata?.selected_workspace ?? info.tags?.[WORKSPACE_TAG_KEY] ?? null,
     active_profile: metadata?.active_profile ?? null,
     title: info.title?.trim()
       ? info.title
@@ -561,6 +575,55 @@ type ConversationSettingsPayload = SettingsRecord & {
 export const ACP_SERVER_TAG_KEY = "acpserver";
 export const CLIENT_SOURCE_TAG_KEY = "clientsource";
 export const AGENT_CANVAS_SOURCE = "agentcanvas";
+
+/**
+ * Server-side conversation tags that persist the home-page workspace/repo
+ * selection on the agent-server, so sidebar grouping and the repo/branch
+ * badges survive a different browser, device, or cleared localStorage (the
+ * localStorage metadata store remains the warm cache for the creating
+ * client). These keys are already in {@link RESERVED_CONVERSATION_TAG_KEYS},
+ * so they never appear as editable chips. See #17386.
+ */
+export const REPOSITORY_TAG_KEY = "repository";
+export const SELECTED_BRANCH_TAG_KEY = "selected_branch";
+export const GIT_PROVIDER_TAG_KEY = "git_provider";
+export const WORKSPACE_TAG_KEY = "workspace";
+
+/** Read the git-provider tag and narrow it to a known {@link Provider}. */
+export function gitProviderFromTag(
+  tags: Record<string, string> | null | undefined,
+): Provider | null {
+  const value = tags?.[GIT_PROVIDER_TAG_KEY];
+  return isProvider(value) ? value : null;
+}
+
+/**
+ * Build the workspace/repo tag map to stamp at conversation creation, keeping
+ * only the fields that have a value. Returns an empty object when nothing is
+ * set, so callers can skip adding a `tags` payload entirely.
+ */
+export function buildConversationMetadataTags(options: {
+  selectedRepository?: string | null;
+  selectedBranch?: string | null;
+  gitProvider?: string | null;
+  selectedWorkspace?: string | null;
+}): Record<string, string> {
+  const tags: Record<string, string> = {};
+  if (options.selectedRepository) {
+    tags[REPOSITORY_TAG_KEY] = options.selectedRepository;
+  }
+  if (options.selectedBranch) {
+    tags[SELECTED_BRANCH_TAG_KEY] = options.selectedBranch;
+  }
+  if (options.gitProvider) {
+    tags[GIT_PROVIDER_TAG_KEY] = options.gitProvider;
+  }
+  const workspace = options.selectedWorkspace?.trim().replace(/\/+$/, "");
+  if (workspace) {
+    tags[WORKSPACE_TAG_KEY] = workspace;
+  }
+  return tags;
+}
 
 export const AUTOMATION_TRIGGER_TAG_KEY = "automationtrigger";
 export const AUTOMATION_ID_TAG_KEY = "automationid";

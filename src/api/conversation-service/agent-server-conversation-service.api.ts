@@ -41,6 +41,7 @@ import {
 import {
   DirectConversationInfo,
   assertSubscriptionAuthReady,
+  buildConversationMetadataTags,
   buildRouterAtStartSystemSuffix,
   buildStartConversationRequestWithEncryptedSettings,
   buildStartPlanningConversationRequestWithEncryptedSettings,
@@ -628,6 +629,24 @@ class AgentServerConversationService {
       llmProfileOverride: agentLlmProfileOverride,
       titleLlmProfile,
     });
+
+    // Persist the workspace/repo selection as server-side conversation tags so
+    // sidebar grouping and the repo/branch badges survive on another browser,
+    // device, or after cleared localStorage (#17386). localStorage below stays
+    // the warm cache for the creating client.
+    const metadataTags = buildConversationMetadataTags({
+      selectedRepository: metadata?.selected_repository,
+      selectedBranch: metadata?.selected_branch,
+      gitProvider: metadata?.git_provider,
+      selectedWorkspace: workingDirOverride,
+    });
+    if (Object.keys(metadataTags).length > 0) {
+      const existingTags =
+        payload.tags && typeof payload.tags === "object"
+          ? (payload.tags as Record<string, string>)
+          : {};
+      payload.tags = { ...existingTags, ...metadataTags };
+    }
 
     const telemetryDistinctId = await getTelemetryDistinctId();
     const data = await new ConversationClient(
