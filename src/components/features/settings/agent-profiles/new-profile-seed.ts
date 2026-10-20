@@ -1,10 +1,8 @@
 import type { AgentProfile } from "#/api/agent-profiles-service/agent-profiles-service.api";
 
-/** Lists a new profile takes from their global pages, and the LLM picker's pick. */
+/** A new profile starts with every MCP server and secret, on the LLM picker's pick. */
 const NOT_COPIED_FROM_DEFAULT = [
   "llm_profile_ref",
-  "public_skills",
-  "disabled_skills",
   "mcp_server_refs",
   "secret_refs",
 ] as const;

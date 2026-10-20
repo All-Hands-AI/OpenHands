@@ -1,13 +1,17 @@
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import AgentProfilesService from "#/api/agent-profiles-service/agent-profiles-service.api";
+import AgentProfilesService, {
+  WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME,
+} from "#/api/agent-profiles-service/agent-profiles-service.api";
 import type { StoredOpenHandsProfile } from "#/api/agent-profiles-service/profile-behavior";
+import { isNoBackend } from "#/api/backend-registry/active-store";
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import {
-  skillsMirrored,
   updateDefaultAgentProfile,
+  withSkillSelection,
 } from "#/hooks/mutation/sync-agent-profiles";
+import { useMigrateDefaultAgentProfile } from "#/hooks/use-migrate-default-agent-profile";
 import { useAgentProfiles } from "#/hooks/query/use-agent-profiles";
 import {
   AGENT_PROFILES_QUERY_KEYS,
@@ -68,6 +72,45 @@ function useLocalOpenHandsProfile(
   return detail?.profile.agent_kind === "openhands"
     ? (detail.profile as StoredOpenHandsProfile)
     : null;
+}
+
+/**
+ * A local OpenHands `default`'s lists, which the Skills page edits; `null`
+ * where there is none and the page keeps the lists in settings.
+ */
+function useDefaultProfileSkills(): {
+  ready: boolean;
+  selection: SkillEnablement | null;
+} {
+  const { backend, orgId } = useActiveBackend();
+  const isLocal = backend.kind === "local" && !isNoBackend(backend);
+  const migration = useMigrateDefaultAgentProfile();
+  const { data, isLoading } = useQuery({
+    queryKey: AGENT_PROFILES_QUERY_KEYS.detail(
+      backend.id,
+      orgId,
+      WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME,
+    ),
+    queryFn: () =>
+      AgentProfilesService.getProfile(WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME),
+    enabled: isLocal && !migration.isFetching,
+    ...CONFIG_CACHE_OPTIONS,
+    ...AGENT_PROFILES_RETRY_OPTIONS,
+    meta: { disableToast: true },
+  });
+  const profile =
+    data?.profile.agent_kind === "openhands"
+      ? (data.profile as StoredOpenHandsProfile)
+      : null;
+  const hasProfile = profile !== null;
+  const selection = React.useMemo(
+    () => (profile ? profileSkillEnablement(profile) : null),
+    [hasProfile, profile?.public_skills, profile?.disabled_skills],
+  );
+  return {
+    ready: !isLocal || (!migration.isFetching && !isLoading),
+    selection,
+  };
 }
 
 /**
@@ -133,13 +176,20 @@ export function useSkillEnablement(): SkillEnablementController {
   const queryClient = useQueryClient();
   const { data: settings, isLoading: settingsLoading } = useSettings();
   const { mutateAsync: saveSettings } = useSaveSettings();
+  const defaultSkills = useDefaultProfileSkills();
+  // Read at save time: a dependency would re-run the save with the
+  // pre-hydration selection when `default` finishes loading.
+  const ownedByDefaultRef = React.useRef(false);
+  ownedByDefaultRef.current = defaultSkills.selection !== null;
 
   const [enablement, setEnablement] = React.useState<SkillEnablement>({});
   const savedRef = React.useRef<string | null>(null);
 
   React.useEffect(() => {
-    if (settingsLoading || !settings) return;
-    const hydrated = readSkillEnablement(settings, usesCatalogAllowList);
+    if (settingsLoading || !settings || !defaultSkills.ready) return;
+    const hydrated =
+      defaultSkills.selection ??
+      readSkillEnablement(settings, usesCatalogAllowList);
     savedRef.current = snapshot(hydrated);
     setEnablement(hydrated);
   }, [
@@ -147,6 +197,8 @@ export function useSkillEnablement(): SkillEnablementController {
     settings?.enabled_skills,
     settings?.disabled_skills,
     usesCatalogAllowList,
+    defaultSkills.ready,
+    defaultSkills.selection,
   ]);
 
   React.useEffect(() => {
@@ -156,6 +208,21 @@ export function useSkillEnablement(): SkillEnablementController {
     if (savedRef.current === null || savedRef.current === next) return;
     savedRef.current = next;
 
+    const reportFailure = (error: unknown) =>
+      displayErrorToast(
+        retrieveAxiosErrorMessage(error) || i18n.t(I18nKey.ERROR$GENERIC),
+      );
+    if (ownedByDefaultRef.current) {
+      updateDefaultAgentProfile(queryClient, withSkillSelection(enablement), {
+        onError: (error) => {
+          reportFailure(error);
+          queryClient.invalidateQueries({
+            queryKey: AGENT_PROFILES_QUERY_KEYS.all,
+          });
+        },
+      });
+      return;
+    }
     const disabledSkills = enablement.disabledSkills ?? [];
     saveSettings(
       usesCatalogAllowList
@@ -164,17 +231,7 @@ export function useSkillEnablement(): SkillEnablementController {
             disabled_skills: disabledSkills,
           }
         : { disabled_skills: disabledSkills },
-    )
-      .then(() => {
-        if (usesCatalogAllowList) {
-          updateDefaultAgentProfile(queryClient, skillsMirrored(enablement));
-        }
-      })
-      .catch((error) => {
-        displayErrorToast(
-          retrieveAxiosErrorMessage(error) || i18n.t(I18nKey.ERROR$GENERIC),
-        );
-      });
+    ).catch(reportFailure);
   }, [enablement, usesCatalogAllowList, saveSettings, queryClient]);
 
   const isEnabled = React.useMemo(() => {

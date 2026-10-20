@@ -196,32 +196,15 @@ describe("ensureDefaultAgentProfileMigrated", () => {
     expect(AgentProfilesService.saveProfile).not.toHaveBeenCalled();
   });
 
-  it("gives an ACP `default` every MCP server and secret, and nothing else", async () => {
-    const acpDefault = {
-      ...STORED_DEFAULT,
-      agent_kind: "acp",
-      acp_server: "claude-code",
-    };
+  it("leaves an ACP `default`, which already launched as stored, alone", async () => {
     vi.mocked(AgentProfilesService.listProfiles).mockResolvedValue({
-      profiles: [acpDefault],
+      profiles: [{ ...STORED_DEFAULT, agent_kind: "acp" }],
       active_agent_profile_id: STORED_DEFAULT.id,
-    } as never);
-    vi.mocked(AgentProfilesService.getProfile).mockResolvedValue({
-      name: "default",
-      profile: acpDefault,
     } as never);
 
     await ensureDefaultAgentProfileMigrated(new QueryClient(), "local-1");
 
-    const [, saved] = vi.mocked(AgentProfilesService.saveProfile).mock.calls[0];
-    expect(saved).toMatchObject({
-      agent_kind: "acp",
-      acp_server: "claude-code",
-      mcp_server_refs: null,
-      secret_refs: null,
-    });
-    expect(saved).not.toHaveProperty("public_skills");
-    expect(ProfilesService.listProfiles).not.toHaveBeenCalled();
+    expect(AgentProfilesService.saveProfile).not.toHaveBeenCalled();
     expect(SettingsService.saveSettings).toHaveBeenCalledWith({
       default_profile_migrated: true,
     });

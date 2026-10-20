@@ -12,7 +12,7 @@ import {
   llmProfileMirrored,
   mcpServerRemoved,
   mcpServerRenamed,
-  skillsMirrored,
+  withSkillSelection,
   updateDefaultAgentProfile,
   updateEveryAgentProfile,
 } from "#/hooks/mutation/sync-agent-profiles";
@@ -112,14 +112,16 @@ describe("profile changes", () => {
     expect(mcpServerRemoved("github")(openHands("all") as never)).toBeNull();
   });
 
-  it("gives default the whole Skills page list", () => {
+  it("sets default's whole skill list", () => {
     const selection = { enabledSkills: [OPTIONAL], disabledSkills: ["mine"] };
-    expect(skillsMirrored(selection)(openHands("default") as never)).toEqual({
+    expect(
+      withSkillSelection(selection)(openHands("default") as never),
+    ).toEqual({
       public_skills: [OPTIONAL],
       disabled_skills: ["mine"],
     });
     expect(
-      skillsMirrored(selection)(
+      withSkillSelection(selection)(
         openHands("default", {
           public_skills: [OPTIONAL],
           disabled_skills: ["mine"],
@@ -127,7 +129,7 @@ describe("profile changes", () => {
       ),
     ).toBeNull();
     expect(
-      skillsMirrored(selection)({
+      withSkillSelection(selection)({
         ...openHands("default"),
         agent_kind: "acp",
       } as never),
@@ -253,6 +255,22 @@ describe("profile writes", () => {
     expect(displayErrorToast).toHaveBeenCalledTimes(1);
     expect(AgentProfilesService.saveProfile).toHaveBeenCalledTimes(2);
   });
+
+  it("lets the caller report a failure instead of the default toast", async () => {
+    storeProfiles(openHands("default"));
+    vi.mocked(AgentProfilesService.saveProfile).mockRejectedValueOnce(
+      new Error("boom"),
+    );
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const onError = vi.fn();
+
+    await updateDefaultAgentProfile(queryClient, llmProfileMirrored("fast"), {
+      onError,
+    });
+
+    expect(onError).toHaveBeenCalledWith(new Error("boom"));
+    expect(displayErrorToast).not.toHaveBeenCalled();
+  });
 });
 
 describe("applyDefaultAgentProfileToGlobal", () => {
@@ -274,7 +292,7 @@ describe("applyDefaultAgentProfileToGlobal", () => {
     } as never);
   });
 
-  it("writes default's skills, LLM and MCP servers to the global pages", async () => {
+  it("writes default's LLM and MCP servers to the global pages, not its skills", async () => {
     const saved = await applyDefaultAgentProfileToGlobal(queryClient, {
       agent_kind: "openhands",
       llm_profile_ref: "fast",
@@ -284,10 +302,7 @@ describe("applyDefaultAgentProfileToGlobal", () => {
       secret_refs: ["GITHUB_TOKEN"],
     } as never);
 
-    expect(SettingsService.saveSettings).toHaveBeenCalledWith({
-      enabled_skills: [OPTIONAL],
-      disabled_skills: ["mine"],
-    });
+    expect(SettingsService.saveSettings).not.toHaveBeenCalled();
     expect(ProfilesService.activateProfile).toHaveBeenCalledWith("fast");
     expect(SettingsService.patchMcpServer).toHaveBeenCalledWith("github", {
       enabled: false,

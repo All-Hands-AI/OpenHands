@@ -1,6 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { AgentKind } from "@openhands/typescript-client";
 import AgentProfilesService, {
+  WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME,
   type AgentProfileListResponse,
   type AgentProfileSummary,
 } from "#/api/agent-profiles-service/agent-profiles-service.api";
@@ -54,11 +55,8 @@ export async function resolveConversationLaunch(
     options;
   if (!isCloud) {
     // `default` must carry the global settings it used to launch from before
-    // it launches by id. A failed migration retries on the next launch; this
-    // one still runs the profile as stored.
-    await ensureDefaultAgentProfileMigrated(queryClient, backendId).catch(
-      (error) => console.warn("Could not migrate the default profile", error),
-    );
+    // it launches by id; a failed migration fails the launch and retries next time.
+    await ensureDefaultAgentProfileMigrated(queryClient, backendId);
   }
   // Await the list from the shared query cache: a send fired before the home
   // query resolves must still launch from the active profile.
@@ -111,9 +109,14 @@ export async function resolveConversationLaunch(
     // selection. An explicit pick keeps its pinned ref unless the ref is gone;
     // a dangling ref with nothing selected reaches the server, which rejects
     // it with an error the user can act on.
+    // `default` always runs the active LLM profile.
     const preferredLlmProfile =
       llmProfile ||
-      (!agentProfileId || !llmProfileExists ? llm?.active_profile : null);
+      (!agentProfileId ||
+      !llmProfileExists ||
+      profile.name === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME
+        ? llm?.active_profile
+        : null);
     if (
       preferredLlmProfile &&
       preferredLlmProfile !== profile.llm_profile_ref

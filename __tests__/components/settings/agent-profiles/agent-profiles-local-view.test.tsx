@@ -187,7 +187,7 @@ describe("AgentProfilesLocalView save mapping", () => {
     profileSupportsSkillsMock.mockReturnValue(true);
   });
 
-  it("opens a new profile on the skills selected on the Skills page", async () => {
+  it("opens a new profile on the settings lists when there is no OpenHands default", async () => {
     settingsData = { enabled_skills: ["add-skill"], disabled_skills: ["mine"] };
 
     renderView();
@@ -221,7 +221,7 @@ describe("AgentProfilesLocalView save mapping", () => {
     ).toEqual({ agent_kind: "openhands" });
   });
 
-  it("starts a new profile from default's settings and the global lists", async () => {
+  it("starts a new profile from default, skills included, with every server and secret", async () => {
     settingsData = { enabled_skills: ["add-skill"], disabled_skills: [] };
     vi.mocked(AgentProfilesService.getProfile).mockResolvedValue({
       name: "default",
@@ -251,8 +251,8 @@ describe("AgentProfilesLocalView save mapping", () => {
       buildAgentProfileFields: () => ({
         agent_kind: "openhands",
         mcp_server_refs: null,
-        public_skills: ["add-skill"],
-        disabled_skills: [],
+        public_skills: ["only-in-default"],
+        disabled_skills: ["off-in-default"],
       }),
       credentials: { isDirty: false, save: vi.fn(), reset: vi.fn() },
     };
@@ -277,8 +277,8 @@ describe("AgentProfilesLocalView save mapping", () => {
       meta_profile_ref: "fast-router",
       mcp_server_refs: null,
       secret_refs: null,
-      public_skills: ["add-skill"],
-      disabled_skills: [],
+      public_skills: ["only-in-default"],
+      disabled_skills: ["off-in-default"],
     });
 
     await user.click(screen.getByTestId("save-agent-profile-btn"));
@@ -295,8 +295,8 @@ describe("AgentProfilesLocalView save mapping", () => {
       enable_classify_and_switch_llm_tool: true,
       meta_profile_ref: "fast-router",
       mcp_server_refs: null,
-      public_skills: ["add-skill"],
-      disabled_skills: [],
+      public_skills: ["only-in-default"],
+      disabled_skills: ["off-in-default"],
     });
   });
 
@@ -546,7 +546,7 @@ describe("AgentProfilesLocalView save mapping", () => {
       };
     });
 
-    it("opens on the global pages: MCP servers on, every secret, the Skills list", async () => {
+    it("opens on the MCP servers switched on, every secret, and its own skills", async () => {
       renderView();
       const user = userEvent.setup();
       await user.click(screen.getByTestId("edit-agent-profile"));
@@ -558,8 +558,8 @@ describe("AgentProfilesLocalView save mapping", () => {
       ).toMatchObject({
         mcp_server_refs: ["github"],
         secret_refs: null,
-        public_skills: [OPTIONAL],
-        disabled_skills: ["mine"],
+        public_skills: ["github"],
+        disabled_skills: [],
       });
       expect(
         screen.getByTestId("agent-profile-llm-default-note"),
@@ -588,6 +588,52 @@ describe("AgentProfilesLocalView save mapping", () => {
         llm_profile_ref: "fast",
         mcp_server_refs: null,
         secret_refs: null,
+      });
+    });
+
+    it("leaves an ACP default's own servers and secrets alone", async () => {
+      vi.mocked(AgentProfilesService.getProfile).mockResolvedValue({
+        name: "default",
+        profile: {
+          ...storedDefault,
+          agent_kind: "acp",
+          acp_server: "claude-code",
+          acp_command: "claude",
+        },
+      } as never);
+      emitControl = {
+        agentType: "acp",
+        isValid: true,
+        isDirty: true,
+        buildAgentProfileFields: () => ({
+          agent_kind: "acp",
+          mcp_server_refs: ["github"],
+          secret_refs: ["GITHUB_TOKEN"],
+          acp_server: "claude-code",
+          acp_model: null,
+          acp_command: "claude",
+          acp_args: null,
+        }),
+        credentials: { isDirty: false, save: vi.fn(), reset: vi.fn() },
+      };
+
+      renderView();
+      const user = userEvent.setup();
+      await user.click(screen.getByTestId("edit-agent-profile"));
+      const form = await screen.findByTestId("mock-agent-settings");
+
+      expect(form).toHaveAttribute("data-default-profile", "false");
+      expect(
+        JSON.parse(form.getAttribute("data-override") as string),
+      ).toMatchObject({
+        mcp_server_refs: ["github"],
+        secret_refs: ["GITHUB_TOKEN"],
+      });
+      await user.click(screen.getByTestId("save-agent-profile-btn"));
+      await waitFor(() => expect(saveMutate).toHaveBeenCalledTimes(1));
+      expect(applyToGlobalMock).not.toHaveBeenCalled();
+      expect(saveMutate.mock.calls[0][0].profile).toMatchObject({
+        secret_refs: ["GITHUB_TOKEN"],
       });
     });
 

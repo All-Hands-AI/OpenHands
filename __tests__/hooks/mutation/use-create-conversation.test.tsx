@@ -83,6 +83,16 @@ getAgentProfileMock.mockResolvedValue({
   profile: DEFAULT_PROFILE,
 });
 
+vi.mock(
+  "#/hooks/use-migrate-default-agent-profile",
+  async (importOriginal) => ({
+    ...(await importOriginal<
+      typeof import("#/hooks/use-migrate-default-agent-profile")
+    >()),
+    ensureDefaultAgentProfileMigrated: vi.fn().mockResolvedValue(true),
+  }),
+);
+
 // LLM-profile service: real listProfiles calls (the llmProfileExists
 // validation — see use-create-conversation.ts) so it can be asserted per-test.
 const listLlmProfilesMock = vi.fn();

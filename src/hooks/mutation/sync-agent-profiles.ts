@@ -25,9 +25,7 @@ import type { Settings } from "#/types/settings";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { getMcpServerEnabled, parseMcpConfig } from "#/utils/mcp-config";
 import {
-  defaultSkillEnablement,
   profileSkillEnablement,
-  resolveEnabledCatalogSkills,
   sameSkillSelection,
   toProfileSkillFields,
   type SkillEnablement,
@@ -66,14 +64,16 @@ async function saveChange(
   return true;
 }
 
-/**
- * Run profile writes one at a time on a local backend, so each reads the
- * previous one's result. A failure is toasted, since the global edit that
- * caused it already saved.
- */
+interface WriteOptions {
+  /** Replaces the default failure toast, which says the global edit saved. */
+  onError?: (error: unknown) => void;
+}
+
+/** Run profile writes one at a time on a local backend, so each reads the previous one's result. */
 function enqueue(
   queryClient: QueryClient,
   write: () => Promise<boolean>,
+  { onError }: WriteOptions = {},
 ): Promise<void> {
   queue = queue
     .then(async () => {
@@ -91,22 +91,28 @@ function enqueue(
     })
     .catch((error: unknown) => {
       console.error("Failed to update agent profiles:", error);
-      displayErrorToast(i18n.t(I18nKey.SETTINGS$DEFAULT_PROFILE_NOT_UPDATED));
+      if (onError) onError(error);
+      else
+        displayErrorToast(i18n.t(I18nKey.SETTINGS$DEFAULT_PROFILE_NOT_UPDATED));
     });
   return queue;
 }
 
-/** Apply a global page edit to the local `default` profile. */
+/** Change the local `default` profile. */
 export function updateDefaultAgentProfile(
   queryClient: QueryClient,
   change: ProfileChange,
+  options?: WriteOptions,
 ): Promise<void> {
-  return enqueue(queryClient, async () =>
-    saveChange(
-      WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME,
-      await readProfile(WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME),
-      change,
-    ),
+  return enqueue(
+    queryClient,
+    async () =>
+      saveChange(
+        WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME,
+        await readProfile(WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME),
+        change,
+      ),
+    options,
   );
 }
 
@@ -146,7 +152,7 @@ export const mcpServerRemoved =
       : null;
   };
 
-export const skillsMirrored =
+export const withSkillSelection =
   (selection: SkillEnablement): ProfileChange =>
   (profile) => {
     if (profile.agent_kind !== "openhands") return null;
@@ -180,9 +186,9 @@ export function enabledMcpServerRefs(
 }
 
 /**
- * Make the global pages match an edited `default`: the Skills page list, the
- * active LLM profile, and which MCP servers are switched on. Returns the
- * profile to store, which loads every switched-on server and every secret.
+ * Make the global pages match an edited OpenHands `default`: the active LLM
+ * profile and which MCP servers are switched on. Returns the profile to
+ * store, which loads every switched-on server and every secret.
  */
 export async function applyDefaultAgentProfileToGlobal(
   queryClient: QueryClient,
@@ -191,21 +197,10 @@ export async function applyDefaultAgentProfileToGlobal(
   const settings = await getSettingsQueryFn();
   const writes: Promise<unknown>[] = [];
 
-  if (input.agent_kind === "openhands") {
-    const selection = profileSkillEnablement(input);
-    if (!sameSkillSelection(selection, defaultSkillEnablement(settings))) {
-      writes.push(
-        SettingsService.saveSettings({
-          enabled_skills: resolveEnabledCatalogSkills(selection),
-          disabled_skills: selection.disabledSkills ?? [],
-        }),
-      );
-    }
-    if (input.llm_profile_ref) {
-      const { active_profile: active } = await ProfilesService.listProfiles();
-      if (active !== input.llm_profile_ref) {
-        writes.push(ProfilesService.activateProfile(input.llm_profile_ref));
-      }
+  if (input.agent_kind === "openhands" && input.llm_profile_ref) {
+    const { active_profile: active } = await ProfilesService.listProfiles();
+    if (active !== input.llm_profile_ref) {
+      writes.push(ProfilesService.activateProfile(input.llm_profile_ref));
     }
   }
 

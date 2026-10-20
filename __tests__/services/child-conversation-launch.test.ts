@@ -51,6 +51,16 @@ const {
 }));
 
 vi.mock(
+  "#/hooks/use-migrate-default-agent-profile",
+  async (importOriginal) => ({
+    ...(await importOriginal<
+      typeof import("#/hooks/use-migrate-default-agent-profile")
+    >()),
+    ensureDefaultAgentProfileMigrated: vi.fn().mockResolvedValue(true),
+  }),
+);
+
+vi.mock(
   "#/api/conversation-service/agent-server-conversation-service.api",
   () => ({
     default: {

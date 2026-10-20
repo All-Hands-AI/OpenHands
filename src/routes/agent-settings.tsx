@@ -977,6 +977,8 @@ export function AgentSettingsScreen({
   ]);
 
   const isAcp = agentType === "acp";
+  // An OpenHands `default` shares its MCP servers, secrets and skills with the global pages.
+  const sharesGlobalPages = isDefaultProfile && !isAcp;
   const commandTokens = parseCommand(commandText);
   const selectedPreset = detectPreset(commandText, acpProviders);
   const selectedProvider = getAcpProvider(selectedPreset);
@@ -1393,12 +1395,12 @@ export function AgentSettingsScreen({
         ) : null}
         <Typography.Text
           testId={
-            isDefaultProfile ? "agent-settings-mcp-default-note" : undefined
+            sharesGlobalPages ? "agent-settings-mcp-default-note" : undefined
           }
           className="text-xs text-tertiary-alt"
         >
           {t(
-            isDefaultProfile
+            sharesGlobalPages
               ? I18nKey.SETTINGS$AGENT_PROFILE_DEFAULT_MCP_NOTE
               : mcpMode === "custom"
                 ? I18nKey.SETTINGS$AGENT_PROFILE_MCP_CHOOSE_HINT
@@ -1437,7 +1439,7 @@ export function AgentSettingsScreen({
           ))
         : null}
 
-      {secretRefsSupportedOnProfile && isDefaultProfile ? (
+      {secretRefsSupportedOnProfile && sharesGlobalPages ? (
         <div className="flex flex-col gap-2.5">
           <Typography.Text className="text-sm">
             {t(I18nKey.SETTINGS$AGENT_PROFILE_SECRETS)}
@@ -1451,7 +1453,7 @@ export function AgentSettingsScreen({
         </div>
       ) : null}
 
-      {secretRefsSupportedOnProfile && !isDefaultProfile ? (
+      {secretRefsSupportedOnProfile && !sharesGlobalPages ? (
         <div className="flex flex-col gap-2.5">
           <Typography.Text className="text-sm">
             {t(I18nKey.SETTINGS$AGENT_PROFILE_SECRETS)}
@@ -1559,14 +1561,14 @@ export function AgentSettingsScreen({
           ) : null}
           <Typography.Text
             testId={
-              isDefaultProfile
+              sharesGlobalPages
                 ? "agent-settings-skills-default-note"
                 : undefined
             }
             className="text-xs text-tertiary-alt"
           >
             {t(
-              isDefaultProfile
+              sharesGlobalPages
                 ? I18nKey.SETTINGS$AGENT_PROFILE_DEFAULT_SKILLS_NOTE
                 : I18nKey.SETTINGS$AGENT_PROFILE_SKILLS_HINT,
             )}

@@ -1420,6 +1420,32 @@ describe("AgentSettingsScreen — MCP scope dirty tracking", () => {
       ).toBeInTheDocument();
     });
 
+    it("keeps the secrets picker on an ACP default", async () => {
+      seedOpenHandsSettings();
+      renderAgentSettingsScreen({
+        agentSettingsOverride: {
+          agent_kind: "acp",
+          acp_server: "claude-code",
+          acp_command: [...CLAUDE_COMMAND],
+          acp_args: [],
+          acp_model: "",
+          secret_refs: ["PROD_DB_URL"],
+        },
+        isDefaultProfile: true,
+      });
+      await screen.findByTestId("agent-settings-screen");
+
+      expect(
+        screen.getByTestId("agent-settings-secrets-mode"),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByTestId("agent-settings-secrets-default-note"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("agent-settings-mcp-default-note"),
+      ).not.toBeInTheDocument();
+    });
+
     it("gives the default profile every secret, with no picker", async () => {
       seedOpenHandsSettings();
       let control: AgentSettingsSaveControl | null = null;

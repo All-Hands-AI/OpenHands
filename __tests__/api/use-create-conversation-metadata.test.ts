@@ -30,6 +30,16 @@ const {
   mockGetTelemetryDistinctId: vi.fn(),
 }));
 
+vi.mock(
+  "#/hooks/use-migrate-default-agent-profile",
+  async (importOriginal) => ({
+    ...(await importOriginal<
+      typeof import("#/hooks/use-migrate-default-agent-profile")
+    >()),
+    ensureDefaultAgentProfileMigrated: vi.fn().mockResolvedValue(true),
+  }),
+);
+
 vi.mock("@openhands/typescript-client/clients", async () => {
   const actual = await vi.importActual<
     typeof import("@openhands/typescript-client/clients")

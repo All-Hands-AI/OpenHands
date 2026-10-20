@@ -30,6 +30,7 @@ vi.mock("#/hooks/use-migrate-default-agent-profile", () => ({
 vi.mock("#/api/agent-profiles-service/agent-profiles-service.api", () => ({
   __esModule: true,
   default: { listProfiles: listAgentProfiles, getProfile: getAgentProfile },
+  WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME: "default",
 }));
 vi.mock("#/api/profiles-service/profiles-service.api", () => ({
   __esModule: true,
@@ -43,6 +44,14 @@ vi.mock("#/api/llm-subscription-service", () => ({
 const REVIEWER = {
   id: "profile-1",
   name: "reviewer",
+  agent_kind: "openhands",
+  revision: 1,
+  llm_profile_ref: "slow",
+  mcp_server_refs: null,
+};
+const DEFAULT = {
+  id: "profile-default",
+  name: "default",
   agent_kind: "openhands",
   revision: 1,
   llm_profile_ref: "slow",
@@ -63,7 +72,7 @@ function arrange({
   detail = {} as Record<string, unknown>,
 } = {}) {
   listAgentProfiles.mockResolvedValue({
-    profiles: [REVIEWER, CLAUDE],
+    profiles: [REVIEWER, CLAUDE, DEFAULT],
     active_agent_profile_id: activeId,
   });
   listLlmProfiles.mockResolvedValue({
@@ -74,7 +83,7 @@ function arrange({
   getAgentProfile.mockImplementation(async (name: string) => ({
     name,
     profile: {
-      ...[REVIEWER, CLAUDE].find((p) => p.name === name),
+      ...[REVIEWER, CLAUDE, DEFAULT].find((p) => p.name === name),
       ...detail,
     },
   }));
@@ -128,6 +137,17 @@ describe("resolveConversationLaunch", () => {
 
     expect(result).toMatchObject({ llmProfile: "slow" });
     expect(result.llmProfileOverride).toBeUndefined();
+  });
+
+  it("runs default on the active LLM profile even when picked", async () => {
+    arrange({ activeLlm: "fast" });
+
+    await expect(
+      launch({ agentProfileId: "profile-default" }),
+    ).resolves.toMatchObject({
+      llmProfileOverride: "fast",
+      llmProfile: "fast",
+    });
   });
 
   it("refuses a local launch when no profile is active", async () => {
@@ -205,14 +225,12 @@ describe("resolveConversationLaunch", () => {
     });
   });
 
-  it("still launches when the migration fails, and skips it on Cloud", async () => {
+  it("fails a local launch when the migration fails, and skips it on Cloud", async () => {
     arrange({ activeId: "profile-1" });
     migrate.mockRejectedValue(new Error("offline"));
-    vi.spyOn(console, "warn").mockImplementation(() => {});
 
-    await expect(launch()).resolves.toMatchObject({
-      agentProfileId: "profile-1",
-    });
+    await expect(launch()).rejects.toThrow("offline");
+    expect(listAgentProfiles).not.toHaveBeenCalled();
 
     migrate.mockClear();
     await launch({ isCloud: true });

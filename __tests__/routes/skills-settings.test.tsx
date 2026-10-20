@@ -13,6 +13,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import SkillsSettingsScreen from "#/routes/skills-settings";
 import SettingsService from "#/api/settings-service/settings-service.api";
 import SkillsService from "#/api/skills-service";
+import AgentProfilesService from "#/api/agent-profiles-service/agent-profiles-service.api";
+import { HttpError } from "@openhands/typescript-client";
 import {
   ADD_SKILL_DOCS_URL,
   ADD_SKILL_EXAMPLE_COMMAND,
@@ -22,16 +24,22 @@ import { Settings, SkillInfo } from "#/types/settings";
 import { ActiveBackendProvider } from "#/contexts/active-backend-context";
 
 const navigateMock = vi.fn();
-const updateDefaultAgentProfileMock = vi.hoisted(() => vi.fn());
 vi.mock(
-  "#/hooks/mutation/sync-agent-profiles",
+  "#/hooks/use-migrate-default-agent-profile",
   async (importOriginal) => ({
     ...(await importOriginal<
-      typeof import("#/hooks/mutation/sync-agent-profiles")
+      typeof import("#/hooks/use-migrate-default-agent-profile")
     >()),
-    updateDefaultAgentProfile: updateDefaultAgentProfileMock,
+    useMigrateDefaultAgentProfile: () => ({ isFetching: false }),
   }),
 );
+const updateDefaultAgentProfileMock = vi.hoisted(() => vi.fn());
+vi.mock("#/hooks/mutation/sync-agent-profiles", async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import("#/hooks/mutation/sync-agent-profiles")
+  >()),
+  updateDefaultAgentProfile: updateDefaultAgentProfileMock,
+}));
 
 vi.mock("#/context/navigation-context", () => ({
   useNavigation: () => ({
@@ -117,6 +125,10 @@ describe("SkillsSettingsScreen", () => {
     vi.restoreAllMocks();
     navigateMock.mockReset();
     vi.spyOn(SettingsService, "getSettings").mockResolvedValue(buildSettings());
+    // No OpenHands `default`: the page keeps its lists in settings.
+    vi.spyOn(AgentProfilesService, "getProfile").mockRejectedValue(
+      new HttpError(404, "Not Found", {}, "missing"),
+    );
   });
 
   it("renders the description text inside the description badge", async () => {
@@ -621,19 +633,47 @@ Full skill body.`,
     );
   });
 
-  it("gives the default agent profile the whole list after a toggle", async () => {
+  it("shows and saves the default agent profile's own list", async () => {
     const user = userEvent.setup();
     updateDefaultAgentProfileMock.mockClear();
-    mockSkillList([buildSkill({ name: CATALOG_RECOMMENDED })]);
+    mockSkillList([
+      buildSkill({ name: CATALOG_RECOMMENDED }),
+      buildSkill({ name: CATALOG_OPTIONAL }),
+    ]);
     vi.spyOn(SettingsService, "getSettings").mockResolvedValue(
       buildSettings({ enabled_skills: [CATALOG_RECOMMENDED] }),
     );
-    vi.spyOn(SettingsService, "saveSettings").mockResolvedValue(true);
+    vi.spyOn(AgentProfilesService, "getProfile").mockResolvedValue({
+      name: "default",
+      profile: {
+        id: "p-default",
+        name: "default",
+        revision: 1,
+        agent_kind: "openhands",
+        llm_profile_ref: "llm",
+        public_skills: [CATALOG_OPTIONAL],
+        disabled_skills: [],
+      },
+    } as never);
+    const saveSpy = vi
+      .spyOn(SettingsService, "saveSettings")
+      .mockResolvedValue(true);
 
     renderSkillsSettingsScreen();
-    const card = await screen.findByTestId(`skill-card-${CATALOG_RECOMMENDED}`);
+    const optional = await screen.findByTestId(
+      `skill-card-${CATALOG_OPTIONAL}`,
+    );
+    await waitFor(() =>
+      expect(
+        within(optional).getByTestId(`skill-toggle-${CATALOG_OPTIONAL}`),
+      ).toHaveAttribute("aria-checked", "true"),
+    );
+    expect(
+      screen.getByTestId(`skill-toggle-${CATALOG_RECOMMENDED}`),
+    ).toHaveAttribute("aria-checked", "false");
+
     await user.click(
-      within(card).getByTestId(`skill-toggle-${CATALOG_RECOMMENDED}`),
+      within(optional).getByTestId(`skill-toggle-${CATALOG_OPTIONAL}`),
     );
 
     await waitFor(() =>
@@ -643,10 +683,11 @@ Full skill body.`,
     expect(
       change({
         agent_kind: "openhands",
-        public_skills: [CATALOG_RECOMMENDED, CATALOG_OPTIONAL],
-        disabled_skills: ["my-skill"],
+        public_skills: [CATALOG_OPTIONAL],
+        disabled_skills: [],
       }),
     ).toEqual({ public_skills: [], disabled_skills: [] });
+    expect(saveSpy).not.toHaveBeenCalled();
   });
 
   it("drops a re-enabled catalog skill from an unmigrated deny-list", async () => {

@@ -93,7 +93,7 @@ function toAgentSettingsOverride(
   };
 }
 
-/** `default` opens on the global pages it shares: MCP servers switched on, every secret, the Skills page list. */
+/** An OpenHands `default` opens on the MCP servers switched on and every secret. */
 function defaultProfileOverride(
   profile: AgentProfile,
   settings: Settings | undefined,
@@ -102,9 +102,6 @@ function defaultProfileOverride(
     ...toAgentSettingsOverride(profile),
     mcp_server_refs: enabledMcpServerRefs(settings),
     secret_refs: null,
-    ...(profile.agent_kind === "openhands" && agentProfileSupportsSkills()
-      ? toProfileSkillFields(defaultSkillEnablement(settings ?? {}))
-      : {}),
   };
 }
 
@@ -190,13 +187,14 @@ export function AgentProfilesLocalView() {
     setProfileName("");
     setEditingProfile(null);
     setSeedProfile(seed);
-    // A new profile copies `default` and the skills selected on the Skills page.
+    // A new profile copies an OpenHands `default`, skills included.
     setOverride({
-      ...(seed ? toAgentSettingsOverride(seed) : {}),
+      ...(seed
+        ? toAgentSettingsOverride(seed)
+        : agentProfileSupportsSkills()
+          ? toProfileSkillFields(defaultSkillEnablement(settings ?? {}))
+          : {}),
       agent_kind: "openhands",
-      ...(agentProfileSupportsSkills()
-        ? toProfileSkillFields(defaultSkillEnablement(settings ?? {}))
-        : {}),
     });
     setLlmProfileRef(defaultLlmProfileRef);
     setSaveControl(null);
@@ -217,14 +215,15 @@ export function AgentProfilesLocalView() {
         );
         const profile = detail.profile;
         const isDefault =
-          profile.name === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME;
+          profile.name === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME &&
+          profile.agent_kind === "openhands";
         setEditingProfile(profile);
         setOverride(
           isDefault
             ? defaultProfileOverride(profile, settings)
             : toAgentSettingsOverride(profile),
         );
-        if (profile.agent_kind === "openhands" && isDefault) {
+        if (isDefault) {
           setLlmProfileRef(defaultLlmProfileRef || profile.llm_profile_ref);
         } else if (profile.agent_kind === "openhands") {
           // A profile can reference an LLM profile that's since been deleted
@@ -304,7 +303,8 @@ export function AgentProfilesLocalView() {
     const savesDefault =
       viewMode === "edit" &&
       originalName === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME &&
-      trimmedName === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME;
+      trimmedName === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME &&
+      input.agent_kind === "openhands";
 
     setIsSaving(true);
     try {
@@ -386,7 +386,8 @@ export function AgentProfilesLocalView() {
   const isOpenHands = saveControl?.agentType !== "acp";
   const isEditingDefault =
     viewMode === "edit" &&
-    editingProfile?.name === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME;
+    editingProfile?.name === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME &&
+    editingProfile.agent_kind === "openhands";
   const nameDirty = viewMode === "edit" && profileName !== editingProfile?.name;
   const loadedLlmRef =
     editingProfile?.agent_kind === "openhands"

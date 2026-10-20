@@ -19,6 +19,16 @@ import type {
 
 // The restart mutation resolves the launch profile through these services
 // before creating the conversation; stub them with the seeded `default`.
+vi.mock(
+  "#/hooks/use-migrate-default-agent-profile",
+  async (importOriginal) => ({
+    ...(await importOriginal<
+      typeof import("#/hooks/use-migrate-default-agent-profile")
+    >()),
+    ensureDefaultAgentProfileMigrated: vi.fn().mockResolvedValue(true),
+  }),
+);
+
 vi.mock("#/api/agent-profiles-service/agent-profiles-service.api", () => ({
   __esModule: true,
   default: {
