@@ -250,4 +250,47 @@ describe("useClampDragSelection", () => {
 
     expect(feed.contains(selection.focusNode)).toBe(false);
   });
+
+  it("clamps on the next animation frame even without a selectionchange event", async () => {
+    const { feed, message, chromeText } = mountChatPane();
+    renderHook(() => useClampDragSelection({ current: feed }));
+
+    mouseDownOn(feed, 10);
+    const selection = dragSelection(
+      message.firstChild!,
+      chromeText.firstChild!,
+      5,
+    );
+    // Move the pointer past the bottom edge but emit no `selectionchange`: the
+    // browser can repaint an escaped focus without firing one, so the clamp
+    // must also run from the frame loop.
+    document.dispatchEvent(
+      new MouseEvent("mousemove", { bubbles: true, clientY: 900 }),
+    );
+    expect(feed.contains(selection.focusNode)).toBe(false);
+
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+
+    expect(feed.contains(selection.focusNode)).toBe(true);
+    expect(selection.toString()).not.toContain("Disconnected");
+  });
+
+  it("does not start a frame loop before the drag begins", async () => {
+    const { feed, message, chromeText } = mountChatPane();
+    renderHook(() => useClampDragSelection({ current: feed }));
+
+    const selection = dragSelection(
+      message.firstChild!,
+      chromeText.firstChild!,
+      5,
+    );
+    document.dispatchEvent(
+      new MouseEvent("mousemove", { bubbles: true, clientY: 900 }),
+    );
+
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+
+    // No primary-button drag started inside the feed, so nothing is clamped.
+    expect(feed.contains(selection.focusNode)).toBe(false);
+  });
 });

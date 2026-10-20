@@ -22,6 +22,13 @@ import React from "react";
  * between the vertical bounds, so the native selection is left untouched rather
  * than being treated as an upward one. Selection elsewhere is untouched because
  * the clamp only engages for drags that begin inside the feed.
+ *
+ * The clamp runs once per animation frame for the whole drag, before paint,
+ * rather than only on `selectionchange`. The browser can repaint an escaped
+ * focus (the pane header while dragging up, the composer while dragging down)
+ * between a `selectionchange` event and the next frame, so clamping only on
+ * `selectionchange` leaves a visible flash of out-of-feed selection. Correcting
+ * every frame keeps the painted selection inside the feed.
  */
 export function useClampDragSelection(
   containerRef: React.RefObject<HTMLElement | null>,
@@ -36,23 +43,15 @@ export function useClampDragSelection(
     // kept, because clamping the selection rewrites it and re-reading the
     // rewritten value would collapse the range on the next update.
     let dragAnchor: { node: Node; offset: number } | null = null;
+    // Guards the synchronous `selectionchange` fired by our own collapse/extend.
+    let clamping = false;
+    let frame = 0;
 
-    const onMouseDown = (event: MouseEvent) => {
-      if (event.button !== 0) return;
-      if (!container.contains(event.target as Node)) return;
-      dragging = true;
-      pointerY = event.clientY;
-      dragAnchor = null;
-    };
-
-    const onMouseMove = (event: MouseEvent) => {
-      if (dragging) pointerY = event.clientY;
-    };
-
-    const end = () => {
-      dragging = false;
-      pointerY = null;
-      dragAnchor = null;
+    const stopFrames = () => {
+      if (frame) {
+        cancelAnimationFrame(frame);
+        frame = 0;
+      }
     };
 
     const clampSelection = () => {
@@ -80,12 +79,50 @@ export function useClampDragSelection(
 
       // Rebuild from the original anchor with collapse() + extend() so the
       // browser keeps the drag anchor and native movement can resume from it.
-      selection.collapse(dragAnchor.node, dragAnchor.offset);
-      if (below) {
-        selection.extend(container, container.childNodes.length);
-      } else {
-        selection.extend(container, 0);
+      clamping = true;
+      try {
+        selection.collapse(dragAnchor.node, dragAnchor.offset);
+        if (below) {
+          selection.extend(container, container.childNodes.length);
+        } else {
+          selection.extend(container, 0);
+        }
+      } finally {
+        clamping = false;
       }
+    };
+
+    const onSelectionChange = () => {
+      if (clamping) return;
+      clampSelection();
+    };
+
+    // Each frame runs before the browser paints, so an escaped focus never
+    // reaches the screen even when no `selectionchange` fires for it.
+    const onFrame = () => {
+      clampSelection();
+      frame = requestAnimationFrame(onFrame);
+    };
+
+    const onMouseDown = (event: MouseEvent) => {
+      if (event.button !== 0) return;
+      if (!container.contains(event.target as Node)) return;
+      dragging = true;
+      pointerY = event.clientY;
+      dragAnchor = null;
+      stopFrames();
+      frame = requestAnimationFrame(onFrame);
+    };
+
+    const onMouseMove = (event: MouseEvent) => {
+      if (dragging) pointerY = event.clientY;
+    };
+
+    const end = () => {
+      dragging = false;
+      pointerY = null;
+      dragAnchor = null;
+      stopFrames();
     };
 
     // Capture phase so the drag is tracked before any handler stops propagation.
@@ -94,15 +131,16 @@ export function useClampDragSelection(
     document.addEventListener("mouseup", end, true);
     document.addEventListener("pointerup", end, true);
     document.addEventListener("pointercancel", end, true);
-    document.addEventListener("selectionchange", clampSelection);
+    document.addEventListener("selectionchange", onSelectionChange);
     window.addEventListener("blur", end);
     return () => {
+      stopFrames();
       document.removeEventListener("mousedown", onMouseDown, true);
       document.removeEventListener("mousemove", onMouseMove, true);
       document.removeEventListener("mouseup", end, true);
       document.removeEventListener("pointerup", end, true);
       document.removeEventListener("pointercancel", end, true);
-      document.removeEventListener("selectionchange", clampSelection);
+      document.removeEventListener("selectionchange", onSelectionChange);
       window.removeEventListener("blur", end);
     };
   }, [containerRef]);
