@@ -18,9 +18,17 @@
  */
 
 import { createHash, randomUUID } from "node:crypto";
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { hostname, platform } from "node:os";
 import path from "node:path";
+import { setTimeout as sleep } from "node:timers/promises";
 
 const STORE_FILENAME = "mars-credentials.json";
 const STORE_VERSION = 1;
@@ -110,6 +118,59 @@ export function isValidPatFormat(token) {
  */
 function fingerprintOf(token) {
   return createHash("sha256").update(token).digest("hex").slice(0, 16);
+}
+
+/** Longer than any refresh takes; a lock this old was abandoned. */
+const GRANT_LOCK_STALE_MS = 120_000;
+const GRANT_LOCK_WAIT_MS = 30_000;
+const GRANT_LOCK_POLL_MS = 50;
+
+/** Whether a lock file was left by a process that is gone, or long ago. */
+function isStaleLock(lockPath) {
+  try {
+    if (Date.now() - statSync(lockPath).mtimeMs > GRANT_LOCK_STALE_MS) {
+      return true;
+    }
+    const pid = Number(readFileSync(lockPath, "utf8"));
+    if (!pid) return false; // Just created; its owner writes the pid next.
+    process.kill(pid, 0);
+    return false;
+  } catch (error) {
+    return error?.code === "ESRCH";
+  }
+}
+
+/**
+ * Run `fn` holding a lock file that every Canvas process on this machine
+ * respects. A lock whose process is gone, or that is far older than any
+ * refresh, is taken over.
+ */
+async function withLockFile(lockPath, fn) {
+  mkdirSync(path.dirname(lockPath), { recursive: true });
+  const deadline = Date.now() + GRANT_LOCK_WAIT_MS;
+  for (;;) {
+    try {
+      writeFileSync(lockPath, String(process.pid), { flag: "wx", mode: 0o600 });
+      break;
+    } catch (error) {
+      if (error?.code !== "EEXIST") throw error;
+      if (isStaleLock(lockPath)) {
+        rmSync(lockPath, { force: true });
+        continue;
+      }
+      if (Date.now() >= deadline) {
+        throw new Error(
+          "Another Canvas process is still renewing this DigitalOcean sign-in. Try again.",
+        );
+      }
+      await sleep(GRANT_LOCK_POLL_MS);
+    }
+  }
+  try {
+    return await fn();
+  } finally {
+    rmSync(lockPath, { force: true });
+  }
 }
 
 function emptyState() {
@@ -351,6 +412,46 @@ export function createCredentialStore({
       const connection = find(id);
       if (!connection || isExpired(connection)) return null;
       return decrypt(connection);
+    },
+
+    /**
+     * The grant as the store holds it now, read past this process's cache:
+     * another Canvas process sharing the store may have renewed or removed
+     * it. Without a SecretStore, this process is the only writer.
+     *
+     * @returns {Grant | null}
+     */
+    readGrant(id) {
+      const connection = find(id);
+      if (!connection || isExpired(connection)) return null;
+      if (!secrets) return decrypt(connection);
+      let grant;
+      try {
+        grant = grantFromSecret(secrets.read(secretAccountFor(id)));
+      } catch (error) {
+        log(error instanceof Error ? error.message : String(error));
+        return decrypt(connection);
+      }
+      if (grant) memoryGrants.set(id, grant);
+      else memoryGrants.delete(id);
+      return grant;
+    },
+
+    /**
+     * Run `fn` holding this connection's grant lock, which every Canvas
+     * process sharing the store respects: a refresh token works only once.
+     *
+     * @template T
+     * @param {string} id
+     * @param {() => Promise<T>} fn
+     * @returns {Promise<T>}
+     */
+    withGrantLock(id, fn) {
+      if (!filePath) return fn();
+      return withLockFile(
+        path.join(path.dirname(filePath), `grant-${id}.lock`),
+        fn,
+      );
     },
 
     /**

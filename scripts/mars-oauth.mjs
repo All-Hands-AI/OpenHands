@@ -239,7 +239,7 @@ export function createSignInAttempts({
   now = Date.now,
 } = {}) {
   /**
-   * @type {Map<string, { id: string, state: string, verifier: string, clientId: string, redirectUri: string, createdAt: number, status: "pending" | "working" | "done" | "failed", message: string | null, waiters: Set<() => void> }>}
+   * @type {Map<string, { id: string, state: string, verifier: string, clientId: string, redirectUri: string, createdAt: number, status: "pending" | "working" | "done" | "failed", message: string | null, cancelled?: boolean, waiters: Set<() => void> }>}
    */
   const attempts = new Map();
 
@@ -368,11 +368,17 @@ export function createSignInAttempts({
       return view(attempts.get(id));
     },
 
-    /** @param {string} id */
+    /**
+     * A return already being finished checks `cancelled` before it commits
+     * anything. A finished sign-in stays finished.
+     *
+     * @param {string} id
+     */
     cancel(id) {
       const attempt = attempts.get(id);
-      if (!attempt) return;
-      if (attempt.status === "pending") {
+      if (!attempt || attempt.status === "done") return;
+      attempt.cancelled = true;
+      if (attempt.status === "pending" || attempt.status === "working") {
         settle(attempt, "failed", "Sign-in was cancelled.");
       }
       attempts.delete(id);

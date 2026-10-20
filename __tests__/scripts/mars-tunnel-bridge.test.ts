@@ -2,7 +2,7 @@
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   MARS_TUNNEL_IPC,
@@ -20,6 +20,7 @@ import {
   refreshGrant,
   revokeToken,
 } from "../../scripts/mars-oauth.mjs";
+import { createEncryptedFileStore } from "../../scripts/mars-secret-store.mjs";
 
 vi.mock("../../scripts/mars-oauth.mjs", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../scripts/mars-oauth.mjs")>()),
@@ -618,6 +619,11 @@ describe("createMarsTunnelBridge", () => {
 });
 
 describe("signing in with DigitalOcean (code + PKCE)", () => {
+  // The OAuth calls are module mocks: start each case with no calls seen.
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   const REDIRECT = "http://127.0.0.1:3000/mars/oauth/callback";
   const WITH_CLIENT = { env: { DO_OAUTH_CLIENT_ID: "client-1" } };
   const inMinutes = (minutes: number) =>
@@ -737,6 +743,201 @@ describe("signing in with DigitalOcean (code + PKCE)", () => {
       refreshToken: "refresh-2",
     });
   });
+
+  /** The tunnel registry's token getter for the first session opened. */
+  async function dialToken(
+    bridge: ReturnType<typeof setup>["bridge"],
+    registry: ReturnType<typeof setup>["registry"],
+  ) {
+    await bridge.openTunnel({ sessionId: "sess_a" });
+    const { getAccessToken } = registry.attach.mock.calls[0][0] as unknown as {
+      getAccessToken: () => Promise<string | null>;
+    };
+    return getAccessToken;
+  }
+
+  const expiring = {
+    kind: CREDENTIAL_KIND_OAUTH,
+    token: "old-access",
+    refreshToken: "refresh-1",
+    clientId: "client-1",
+    label: "DigitalOcean",
+  };
+
+  it("uses a refresh another Canvas process already made instead of spending the old refresh token", async () => {
+    // Two processes sharing one store: each has its own cache and its own
+    // refresh in flight, only the files in common.
+    const dir = mkdtempSync(join(tmpdir(), "mars-shared-"));
+    const storeFor = () =>
+      createCredentialStore({
+        userDataPath: dir,
+        secrets: createEncryptedFileStore({ dir, secretKey: "k".repeat(64) }),
+      });
+    const first = storeFor();
+    const saved = first.save({ ...expiring, accessExpiresAt: inMinutes(0.5) });
+    const second = storeFor();
+    const bridgeFor = (credentials: ReturnType<typeof storeFor>) => {
+      const registry = fakeRegistry();
+      const bridge = createMarsTunnelBridge({
+        registry,
+        api: fakeApi(),
+        credentials,
+        env: { ...WITH_CLIENT.env, MARS_API_BASE_URL: API_URL },
+      });
+      return { bridge, registry };
+    };
+    const a = bridgeFor(first);
+    const b = bridgeFor(second);
+    // One answer only: spending refresh-1 a second time is the bug.
+    vi.mocked(refreshGrant).mockResolvedValueOnce({
+      ...GRANT,
+      accessToken: "new-access",
+      refreshToken: "refresh-2",
+    });
+
+    expect(await (await dialToken(a.bridge, a.registry))()).toBe("new-access");
+    expect(await (await dialToken(b.bridge, b.registry))()).toBe("new-access");
+
+    expect(refreshGrant).toHaveBeenCalledTimes(1);
+    expect(second.getGrant(saved.id)).toMatchObject({
+      token: "new-access",
+      refreshToken: "refresh-2",
+    });
+  });
+
+  it.each([
+    {
+      late: "fails",
+      answer: () =>
+        Promise.reject(
+          new OAuthError("revoked", { status: 400, code: "invalid_grant" }),
+        ),
+    },
+    {
+      late: "succeeds",
+      answer: async () => ({
+        ...GRANT,
+        accessToken: "refreshed-access",
+        refreshToken: "refresh-2",
+      }),
+    },
+  ])(
+    "keeps a new sign-in for the team when a refresh already out $late",
+    async ({ answer }) => {
+      const { bridge, registry, credentials } = setup(WITH_CLIENT);
+      const saved = credentials.save({
+        ...expiring,
+        accessExpiresAt: inMinutes(-1),
+      });
+      credentials.setTeam(saved.id, { uuid: "team-1", name: "My Team" });
+      let release = () => {};
+      vi.mocked(refreshGrant).mockImplementationOnce(
+        () =>
+          new Promise((resolve, reject) => {
+            release = () => answer().then(resolve, reject);
+          }),
+      );
+      const getAccessToken = await dialToken(bridge, registry);
+      const dialing = getAccessToken();
+      await vi.waitFor(() => expect(refreshGrant).toHaveBeenCalled());
+
+      vi.mocked(exchangeCode).mockResolvedValueOnce({
+        ...GRANT,
+        accessToken: "signed-in-again",
+        refreshToken: "refresh-new",
+      });
+      const { authorizeUrl } = bridge.beginSignIn({ redirectUri: REDIRECT });
+      await bridge.completeSignIn(
+        `${REDIRECT}?code=c&state=${stateOf(authorizeUrl)}`,
+      );
+      release();
+
+      expect(await dialing).toBe("signed-in-again");
+      expect(credentials.getGrant(saved.id)).toMatchObject({
+        token: "signed-in-again",
+        refreshToken: "refresh-new",
+      });
+    },
+  );
+
+  it("ends the grant a refresh got when a new sign-in replaced it meanwhile", async () => {
+    const { bridge, registry, credentials } = setup(WITH_CLIENT);
+    const saved = credentials.save({
+      ...expiring,
+      accessExpiresAt: inMinutes(-1),
+    });
+    credentials.setTeam(saved.id, { uuid: "team-1", name: "My Team" });
+    let release = () => {};
+    vi.mocked(refreshGrant).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = () =>
+            resolve({
+              ...GRANT,
+              accessToken: "refreshed-access",
+              refreshToken: "refresh-2",
+            });
+        }),
+    );
+    const dialing = (await dialToken(bridge, registry))();
+    await vi.waitFor(() => expect(refreshGrant).toHaveBeenCalled());
+    vi.mocked(exchangeCode).mockResolvedValueOnce({
+      ...GRANT,
+      accessToken: "signed-in-again",
+      refreshToken: "refresh-new",
+    });
+    const { authorizeUrl } = bridge.beginSignIn({ redirectUri: REDIRECT });
+    await bridge.completeSignIn(
+      `${REDIRECT}?code=c&state=${stateOf(authorizeUrl)}`,
+    );
+
+    release();
+    await dialing;
+
+    expect(revokeToken).toHaveBeenCalledWith("refreshed-access");
+  });
+
+  it.each([
+    { during: "while its code is exchanged", step: "exchange" },
+    { during: "while its token is checked", step: "verify" },
+  ])(
+    "leaves everything as it was when a sign-in is cancelled $during, and ends the grant it got",
+    async ({ step }) => {
+      const { bridge, api, credentials } = setup(WITH_CLIENT);
+      await bridge.savePat({ token: VALID_PAT });
+      const before = bridge.getAuthState();
+      let release = () => {};
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      vi.mocked(exchangeCode).mockImplementationOnce(async () => {
+        if (step === "exchange") await held;
+        return { ...GRANT, accessToken: "cancelled-access" };
+      });
+      if (step === "verify") {
+        vi.mocked(api.verifyAccess).mockImplementationOnce(() => held);
+      }
+      const { attemptId, authorizeUrl } = bridge.beginSignIn({
+        redirectUri: REDIRECT,
+      });
+      const completing = bridge.completeSignIn(
+        `${REDIRECT}?code=c&state=${stateOf(authorizeUrl)}`,
+      );
+      await vi.waitFor(() =>
+        expect(
+          step === "exchange" ? exchangeCode : api.verifyAccess,
+        ).toHaveBeenCalled(),
+      );
+
+      bridge.cancelSignIn(attemptId);
+      release();
+
+      await expect(completing).rejects.toThrow(/cancelled/);
+      expect(bridge.getAuthState()).toEqual(before);
+      expect(credentials.list()).toHaveLength(1);
+      expect(revokeToken).toHaveBeenCalledWith("cancelled-access");
+    },
+  );
 
   it("signs out by revoking a current access token, refreshing an expired one first", async () => {
     const { bridge, credentials } = setup(WITH_CLIENT);

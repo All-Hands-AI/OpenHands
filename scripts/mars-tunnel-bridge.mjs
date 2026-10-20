@@ -166,6 +166,15 @@ export function createMarsTunnelBridge({
   /** One refresh per connection at a time: a refresh token works only once. */
   const refreshing = new Map();
 
+  /** Whether a grant's access token is close enough to expiry to renew. */
+  function refreshDue(grant) {
+    if (!grant?.refreshToken || !grant.accessExpiresAt) return false;
+    const expiresAt = Date.parse(grant.accessExpiresAt);
+    return (
+      !Number.isNaN(expiresAt) && expiresAt - Date.now() <= REFRESH_EARLY_MS
+    );
+  }
+
   /**
    * A connection's bearer token, refreshed first when it is about to expire.
    * A grant DigitalOcean no longer honours is forgotten, so the UI asks for
@@ -178,44 +187,54 @@ export function createMarsTunnelBridge({
     if (!id) return null;
     const grant = store.getGrant(id);
     if (!grant) return null;
-    const expiresAt = grant.accessExpiresAt
-      ? Date.parse(grant.accessExpiresAt)
-      : Number.NaN;
-    if (
-      !grant.refreshToken ||
-      Number.isNaN(expiresAt) ||
-      expiresAt - Date.now() > REFRESH_EARLY_MS
-    ) {
-      return grant.token;
-    }
+    if (!refreshDue(grant)) return grant.token;
     let pending = refreshing.get(id);
     if (!pending) {
-      pending = refresh(id, grant).finally(() => refreshing.delete(id));
+      pending = refresh(id).finally(() => refreshing.delete(id));
       refreshing.set(id, pending);
     }
     return pending;
   }
 
-  async function refresh(id, grant) {
-    try {
-      const next = await refreshGrant({
-        clientId: grant.clientId ?? config.oauthClientId,
-        refreshToken: grant.refreshToken,
-      });
+  /**
+   * Renew a connection's grant. Every Canvas process sharing the store takes
+   * the same lock and re-reads the grant under it, so a refresh token is
+   * spent once. A grant replaced meanwhile, by a new sign-in for the team,
+   * is never overwritten or forgotten by this late answer.
+   */
+  function refresh(id) {
+    return store.withGrantLock(id, async () => {
+      const current = store.readGrant(id);
+      if (!current) return null;
+      if (!refreshDue(current)) return current.token;
+      const clientId = current.clientId ?? config.oauthClientId;
+      const stillCurrent = () =>
+        store.readGrant(id)?.refreshToken === current.refreshToken;
+      let next;
+      try {
+        next = await refreshGrant({
+          clientId,
+          refreshToken: current.refreshToken,
+        });
+      } catch (error) {
+        if (!error?.isRevoked) throw error;
+        if (!stillCurrent()) return store.getGrant(id)?.token ?? null;
+        store.updateGrant(id, null);
+        return null;
+      }
+      if (!stillCurrent()) {
+        // The newer grant stays; the one renewed here is ended.
+        void revokeToken(next.accessToken);
+        return store.getGrant(id)?.token ?? null;
+      }
       store.updateGrant(id, {
         token: next.accessToken,
         refreshToken: next.refreshToken,
         accessExpiresAt: next.accessExpiresAt,
-        clientId: grant.clientId ?? config.oauthClientId,
+        clientId,
       });
       return next.accessToken;
-    } catch (error) {
-      if (error?.isRevoked) {
-        store.updateGrant(id, null);
-        return null;
-      }
-      throw error;
-    }
+    });
   }
 
   const client = api ?? clientFor(() => tokenFor(store.getActive()?.id));
@@ -323,27 +342,36 @@ export function createMarsTunnelBridge({
    * connection keeps it (see `setTeam`). A token that may not read the
    * account keeps its label instead.
    */
-  async function saveVerified(connection, account = null) {
+  async function saveVerified(
+    connection,
+    account = null,
+    isCancelled = () => false,
+  ) {
     const previousId = store.getActive()?.id ?? null;
     const saved = store.save(connection);
     // Ask about this token, not whichever connection is active when
     // DigitalOcean answers: another tab or agent may switch teams meanwhile.
     const pinned = api ?? clientFor(() => connection.token);
+    let team;
     try {
       await pinned.verifyAccess();
+      team = account ?? (await pinned.getAccount?.().catch(() => null));
+      // The last point a cancelled sign-in can still be undone.
+      if (isCancelled()) {
+        throw new MarsApiError("Sign-in was cancelled.", { status: 409 });
+      }
     } catch (error) {
       const stillActive = store.getActive()?.id === saved.id;
       if (!saved.reused) store.remove(saved.id);
       if (previousId && stillActive) store.setActive(previousId);
       throw error;
     }
-    const team = account ?? (await pinned.getAccount?.().catch(() => null));
     if (team) store.setTeam(saved.id, team);
     return authState();
   }
 
   /** @param {Awaited<ReturnType<typeof exchangeCode>>} grant */
-  function saveOAuthGrant(grant, clientId) {
+  function saveOAuthGrant(grant, clientId, isCancelled) {
     return saveVerified(
       {
         kind: CREDENTIAL_KIND_OAUTH,
@@ -355,6 +383,7 @@ export function createMarsTunnelBridge({
         teamName: grant.account?.name ?? null,
       },
       grant.account,
+      isCancelled,
     );
   }
 
@@ -426,22 +455,34 @@ export function createMarsTunnelBridge({
           status: 400,
         });
       }
+      // Cancel stays possible until the grant is committed.
+      const cancelled = () => attempt.cancelled === true;
+      let grant = null;
       try {
         if (error || !code) {
           throw new MarsApiError(error ?? "DigitalOcean sent no code back.", {
             status: 400,
           });
         }
-        const grant = await exchangeCode({
+        grant = await exchangeCode({
           clientId: attempt.clientId,
           code,
           verifier: attempt.verifier,
           redirectUri: attempt.redirectUri,
         });
-        const signedIn = await saveOAuthGrant(grant, attempt.clientId);
+        if (cancelled()) {
+          throw new MarsApiError("Sign-in was cancelled.", { status: 409 });
+        }
+        const signedIn = await saveOAuthGrant(
+          grant,
+          attempt.clientId,
+          cancelled,
+        );
         attempts.succeed(attempt.id);
         return signedIn;
       } catch (failure) {
+        // Nothing kept the grant a cancelled sign-in got: end it.
+        if (grant && cancelled()) void revokeToken(grant.accessToken);
         attempts.fail(
           attempt.id,
           failure instanceof Error ? failure.message : String(failure),
