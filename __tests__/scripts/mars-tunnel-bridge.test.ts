@@ -597,7 +597,8 @@ describe("signing in with DigitalOcean (code + PKCE)", () => {
       redirectUri: REDIRECT,
     });
     const waiting = bridge.awaitSignIn(attemptId);
-    const returned = `${REDIRECT}?code=code-1&state=${stateOf(authorizeUrl)}`;
+    // What the return route hands over: its request's path and query.
+    const returned = `${new URL(REDIRECT).pathname}?code=code-1&state=${stateOf(authorizeUrl)}`;
 
     await bridge.completeSignIn(returned);
 
