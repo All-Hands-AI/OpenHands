@@ -4,8 +4,8 @@ import { MCPServerConfig } from "#/types/mcp-server";
 import { SETTINGS_QUERY_KEYS } from "#/hooks/query/query-keys";
 import {
   mcpServerRemoved,
-  updateDefaultAgentProfile,
-} from "#/hooks/mutation/update-default-agent-profile";
+  updateEveryAgentProfile,
+} from "#/hooks/mutation/sync-agent-profiles";
 import { clearMcpServerHealth } from "#/api/mcp-health/mcp-health-store";
 import { getMcpServerHealthKey } from "#/utils/mcp-server-health-key";
 
@@ -25,7 +25,7 @@ export function useDeleteMcpServer() {
     meta: { disableToast: true },
     mutationFn: async (target: MCPServerConfig): Promise<void> => {
       await SettingsService.deleteMcpServer(target.id);
-      await updateDefaultAgentProfile(queryClient, mcpServerRemoved(target.id));
+      await updateEveryAgentProfile(queryClient, mcpServerRemoved(target.id));
     },
     onSuccess: (_data, target) => {
       // Drop the deleted server's health entry so a later server that

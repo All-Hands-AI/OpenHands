@@ -41,6 +41,11 @@ import {
   defaultSkillEnablement,
   toProfileSkillFields,
 } from "#/utils/skill-enablement";
+import {
+  applyDefaultAgentProfileToGlobal,
+  enabledMcpServerRefs,
+} from "#/hooks/mutation/sync-agent-profiles";
+import type { Settings } from "#/types/settings";
 
 type ViewMode = "list" | "create" | "edit";
 
@@ -85,6 +90,21 @@ function toAgentSettingsOverride(
     system_message_suffix: profile.system_message_suffix ?? null,
     condenser: (profile.condenser as SettingsValue) ?? null,
     verification: (profile.verification as unknown as SettingsValue) ?? null,
+  };
+}
+
+/** `default` opens on the global pages it shares: MCP servers switched on, every secret, the Skills page list. */
+function defaultProfileOverride(
+  profile: AgentProfile,
+  settings: Settings | undefined,
+): Record<string, SettingsValue> {
+  return {
+    ...toAgentSettingsOverride(profile),
+    mcp_server_refs: enabledMcpServerRefs(settings),
+    secret_refs: null,
+    ...(profile.agent_kind === "openhands" && agentProfileSupportsSkills()
+      ? toProfileSkillFields(defaultSkillEnablement(settings ?? {}))
+      : {}),
   };
 }
 
@@ -196,9 +216,17 @@ export function AgentProfilesLocalView() {
           "encrypted",
         );
         const profile = detail.profile;
+        const isDefault =
+          profile.name === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME;
         setEditingProfile(profile);
-        setOverride(toAgentSettingsOverride(profile));
-        if (profile.agent_kind === "openhands") {
+        setOverride(
+          isDefault
+            ? defaultProfileOverride(profile, settings)
+            : toAgentSettingsOverride(profile),
+        );
+        if (profile.agent_kind === "openhands" && isDefault) {
+          setLlmProfileRef(defaultLlmProfileRef || profile.llm_profile_ref);
+        } else if (profile.agent_kind === "openhands") {
           // A profile can reference an LLM profile that's since been deleted
           // (or renamed): the dropdown would render nothing selected while
           // `llmProfileRef` still holds the stale name and saves it straight
@@ -229,6 +257,7 @@ export function AgentProfilesLocalView() {
       isLlmProfilesLoading,
       defaultLlmProfileRef,
       waitForMigration,
+      settings,
     ],
   );
 
@@ -272,6 +301,10 @@ export function AgentProfilesLocalView() {
     const originalName = editingProfile?.name;
     const isRename =
       viewMode === "edit" && originalName && originalName !== trimmedName;
+    const savesDefault =
+      viewMode === "edit" &&
+      originalName === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME &&
+      trimmedName === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME;
 
     setIsSaving(true);
     try {
@@ -297,7 +330,9 @@ export function AgentProfilesLocalView() {
       // edit (kind-aware — a kind switch stays a clean variant replacement).
       const profile = mergeAgentProfileSaveInput(
         viewMode === "edit" ? editingProfile : seedProfile,
-        input,
+        savesDefault
+          ? await applyDefaultAgentProfileToGlobal(queryClient, input)
+          : input,
       );
       await saveProfile.mutateAsync({ name: trimmedName, profile });
 
@@ -326,6 +361,7 @@ export function AgentProfilesLocalView() {
     t,
     handleBackToList,
     waitForMigration,
+    queryClient,
   ]);
 
   if (viewMode === "list") {
@@ -348,6 +384,9 @@ export function AgentProfilesLocalView() {
       ? t(I18nKey.SETTINGS$PROFILE_LOADED, { name: editingProfile.name })
       : t(I18nKey.SETTINGS$AGENT_PROFILE_SAVE_HINT);
   const isOpenHands = saveControl?.agentType !== "acp";
+  const isEditingDefault =
+    viewMode === "edit" &&
+    editingProfile?.name === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME;
   const nameDirty = viewMode === "edit" && profileName !== editingProfile?.name;
   const loadedLlmRef =
     editingProfile?.agent_kind === "openhands"
@@ -398,23 +437,34 @@ export function AgentProfilesLocalView() {
         key={viewMode === "edit" ? `edit-${editingProfile?.id}` : "new-profile"}
         agentSettingsOverride={override}
         onSaveControlChange={setSaveControl}
+        isDefaultProfile={isEditingDefault}
       />
 
       {/* @spec FF-001 — Profile validation feedback follows the host error role */}
       {/* OpenHands profiles reference an LLM profile (required). */}
       {isOpenHands &&
         (llmProfiles.length > 0 ? (
-          <SettingsDropdownInput
-            testId="agent-profile-llm-selector"
-            name="agent-profile-llm"
-            label={t(I18nKey.SETTINGS$AGENT_PROFILE_LLM_LABEL)}
-            items={llmProfiles.map((p) => ({
-              key: p.name,
-              label: p.model ? `${p.name} (${p.model})` : p.name,
-            }))}
-            selectedKey={llmProfileRef}
-            onSelectionChange={(key) => key && setLlmProfileRef(String(key))}
-          />
+          <div className="flex flex-col gap-2">
+            <SettingsDropdownInput
+              testId="agent-profile-llm-selector"
+              name="agent-profile-llm"
+              label={t(I18nKey.SETTINGS$AGENT_PROFILE_LLM_LABEL)}
+              items={llmProfiles.map((p) => ({
+                key: p.name,
+                label: p.model ? `${p.name} (${p.model})` : p.name,
+              }))}
+              selectedKey={llmProfileRef}
+              onSelectionChange={(key) => key && setLlmProfileRef(String(key))}
+            />
+            {isEditingDefault ? (
+              <p
+                data-testid="agent-profile-llm-default-note"
+                className="text-xs text-tertiary-alt"
+              >
+                {t(I18nKey.SETTINGS$AGENT_PROFILE_DEFAULT_LLM_NOTE)}
+              </p>
+            ) : null}
+          </div>
         ) : (
           <p
             data-testid="agent-profile-no-llm"

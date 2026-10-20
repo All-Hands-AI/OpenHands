@@ -5,9 +5,9 @@ import type { StoredOpenHandsProfile } from "#/api/agent-profiles-service/profil
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import {
-  skillSelectionChanged,
+  skillsMirrored,
   updateDefaultAgentProfile,
-} from "#/hooks/mutation/update-default-agent-profile";
+} from "#/hooks/mutation/sync-agent-profiles";
 import { useAgentProfiles } from "#/hooks/query/use-agent-profiles";
 import {
   AGENT_PROFILES_QUERY_KEYS,
@@ -136,13 +136,11 @@ export function useSkillEnablement(): SkillEnablementController {
 
   const [enablement, setEnablement] = React.useState<SkillEnablement>({});
   const savedRef = React.useRef<string | null>(null);
-  const savedEnablementRef = React.useRef<SkillEnablement>({});
 
   React.useEffect(() => {
     if (settingsLoading || !settings) return;
     const hydrated = readSkillEnablement(settings, usesCatalogAllowList);
     savedRef.current = snapshot(hydrated);
-    savedEnablementRef.current = hydrated;
     setEnablement(hydrated);
   }, [
     settingsLoading,
@@ -157,8 +155,6 @@ export function useSkillEnablement(): SkillEnablementController {
     const next = snapshot(enablement);
     if (savedRef.current === null || savedRef.current === next) return;
     savedRef.current = next;
-    const previous = savedEnablementRef.current;
-    savedEnablementRef.current = enablement;
 
     const disabledSkills = enablement.disabledSkills ?? [];
     saveSettings(
@@ -171,10 +167,7 @@ export function useSkillEnablement(): SkillEnablementController {
     )
       .then(() => {
         if (usesCatalogAllowList) {
-          updateDefaultAgentProfile(
-            queryClient,
-            skillSelectionChanged(previous, enablement),
-          );
+          updateDefaultAgentProfile(queryClient, skillsMirrored(enablement));
         }
       })
       .catch((error) => {

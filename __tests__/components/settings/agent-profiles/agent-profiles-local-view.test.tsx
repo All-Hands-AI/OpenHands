@@ -14,6 +14,7 @@ import { ensureDefaultAgentProfileMigrated } from "#/hooks/use-migrate-default-a
 // control, so the tests exercise the view's mapping to AgentProfileSaveInput.
 let emitControl: AgentSettingsSaveControl | null = null;
 const ADD_PROFILE_LABEL = "add";
+let editTarget = "my-agent";
 const EDIT_PROFILE_LABEL = "edit";
 
 vi.mock("react-i18next", () => ({
@@ -27,9 +28,11 @@ vi.mock("#/routes/agent-settings", () => {
   const MockAgentSettings = ({
     agentSettingsOverride,
     onSaveControlChange,
+    isDefaultProfile,
   }: {
     agentSettingsOverride?: Record<string, unknown> | null;
     onSaveControlChange?: (c: AgentSettingsSaveControl) => void;
+    isDefaultProfile?: boolean;
   }) => {
     useEffect(() => {
       if (emitControl) onSaveControlChange?.(emitControl);
@@ -40,6 +43,7 @@ vi.mock("#/routes/agent-settings", () => {
       <div
         data-testid="mock-agent-settings"
         data-override={JSON.stringify(agentSettingsOverride)}
+        data-default-profile={String(Boolean(isDefaultProfile))}
       />
     );
   };
@@ -70,7 +74,7 @@ vi.mock(
         <button
           type="button"
           data-testid="edit-agent-profile"
-          onClick={() => onEditProfile?.({ name: "default" })}
+          onClick={() => onEditProfile?.({ name: editTarget })}
           aria-label={EDIT_PROFILE_LABEL}
         />
       </>
@@ -104,7 +108,11 @@ vi.mock("#/hooks/query/use-llm-profiles", () => ({
   useLlmProfiles: () => ({ data: llmProfilesData }),
 }));
 
-let settingsData: { enabled_skills?: string[]; disabled_skills?: string[] };
+let settingsData: {
+  enabled_skills?: string[];
+  disabled_skills?: string[];
+  mcp_config?: Record<string, Record<string, unknown>>;
+};
 vi.mock("#/hooks/query/use-settings", () => ({
   useSettings: () => ({ data: settingsData }),
 }));
@@ -118,6 +126,20 @@ vi.mock("#/utils/custom-toast-handlers");
 const profileSupportsSkillsMock = vi.hoisted(() => vi.fn(() => true));
 vi.mock("#/api/agent-profiles-service/profile-field-support", () => ({
   agentProfileSupportsSkills: () => profileSupportsSkillsMock(),
+}));
+
+const applyToGlobalMock = vi.hoisted(() =>
+  vi.fn(async (_queryClient: unknown, input: Record<string, unknown>) => ({
+    ...input,
+    mcp_server_refs: null,
+    secret_refs: null,
+  })),
+);
+vi.mock("#/hooks/mutation/sync-agent-profiles", async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import("#/hooks/mutation/sync-agent-profiles")
+  >()),
+  applyDefaultAgentProfileToGlobal: applyToGlobalMock,
 }));
 
 vi.mock("#/hooks/use-migrate-default-agent-profile", () => ({
@@ -161,6 +183,7 @@ describe("AgentProfilesLocalView save mapping", () => {
       active_profile: "default",
     };
     settingsData = {};
+    editTarget = "my-agent";
     profileSupportsSkillsMock.mockReturnValue(true);
   });
 
@@ -383,7 +406,7 @@ describe("AgentProfilesLocalView save mapping", () => {
     const storedProfile = {
       schema_version: 1,
       id: "p-1",
-      name: "default",
+      name: "my-agent",
       revision: 3,
       agent_kind: "openhands",
       llm_profile_ref: "default",
@@ -399,7 +422,7 @@ describe("AgentProfilesLocalView save mapping", () => {
       meta_profile_ref: "fast-router",
     };
     vi.mocked(AgentProfilesService.getProfile).mockResolvedValue({
-      name: "default",
+      name: "my-agent",
       profile: storedProfile,
     } as never);
     emitControl = {
@@ -450,7 +473,7 @@ describe("AgentProfilesLocalView save mapping", () => {
     // Profiles are secret-free now (no embedded skills), so exposeSecrets is a
     // server-side no-op; canvas still passes "encrypted" for signature parity.
     expect(AgentProfilesService.getProfile).toHaveBeenCalledWith(
-      "default",
+      "my-agent",
       "encrypted",
     );
     const { profile } = saveMutate.mock.calls[0][0];
@@ -470,15 +493,126 @@ describe("AgentProfilesLocalView save mapping", () => {
     expect(profile).not.toHaveProperty("id");
     expect(profile).not.toHaveProperty("name");
     expect(profile).not.toHaveProperty("revision");
+    expect(applyToGlobalMock).not.toHaveBeenCalled();
+  });
+
+  describe("the default profile", () => {
+    const OPTIONAL = "add-javadoc";
+    const storedDefault = {
+      id: "p-default",
+      name: "default",
+      revision: 2,
+      agent_kind: "openhands",
+      llm_profile_ref: "stale",
+      mcp_server_refs: ["github"],
+      secret_refs: ["GITHUB_TOKEN"],
+      public_skills: ["github"],
+      disabled_skills: [],
+    };
+
+    beforeEach(() => {
+      editTarget = "default";
+      llmProfilesData = {
+        profiles: [
+          { name: "stale", model: "gpt-4" },
+          { name: "fast", model: "gpt-5" },
+        ],
+        active_profile: "fast",
+      };
+      settingsData = {
+        enabled_skills: [OPTIONAL],
+        disabled_skills: ["mine"],
+        mcp_config: {
+          github: { transport: "http", url: "https://github.example/mcp" },
+          slack: { transport: "stdio", command: "npx", enabled: false },
+        },
+      };
+      vi.mocked(AgentProfilesService.getProfile).mockResolvedValue({
+        name: "default",
+        profile: storedDefault,
+      } as never);
+      emitControl = {
+        agentType: "openhands",
+        isValid: true,
+        isDirty: true,
+        buildAgentProfileFields: () => ({
+          agent_kind: "openhands",
+          mcp_server_refs: ["slack"],
+          secret_refs: null,
+          public_skills: [OPTIONAL],
+          disabled_skills: [],
+        }),
+        credentials: { isDirty: false, save: vi.fn(), reset: vi.fn() },
+      };
+    });
+
+    it("opens on the global pages: MCP servers on, every secret, the Skills list", async () => {
+      renderView();
+      const user = userEvent.setup();
+      await user.click(screen.getByTestId("edit-agent-profile"));
+      const form = await screen.findByTestId("mock-agent-settings");
+
+      expect(form).toHaveAttribute("data-default-profile", "true");
+      expect(
+        JSON.parse(form.getAttribute("data-override") as string),
+      ).toMatchObject({
+        mcp_server_refs: ["github"],
+        secret_refs: null,
+        public_skills: [OPTIONAL],
+        disabled_skills: ["mine"],
+      });
+      expect(
+        screen.getByTestId("agent-profile-llm-default-note"),
+      ).toBeInTheDocument();
+    });
+
+    it("writes its edits to the global pages and stores every server and secret", async () => {
+      renderView();
+      const user = userEvent.setup();
+      await user.click(screen.getByTestId("edit-agent-profile"));
+      await screen.findByTestId("mock-agent-settings");
+      await user.click(screen.getByTestId("save-agent-profile-btn"));
+
+      await waitFor(() => expect(saveMutate).toHaveBeenCalledTimes(1));
+      expect(applyToGlobalMock).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          llm_profile_ref: "fast",
+          mcp_server_refs: ["slack"],
+          public_skills: [OPTIONAL],
+        }),
+      );
+      const { name, profile } = saveMutate.mock.calls[0][0];
+      expect(name).toBe("default");
+      expect(profile).toMatchObject({
+        llm_profile_ref: "fast",
+        mcp_server_refs: null,
+        secret_refs: null,
+      });
+    });
+
+    it("stops sharing the global pages once renamed", async () => {
+      renderView();
+      const user = userEvent.setup();
+      await user.click(screen.getByTestId("edit-agent-profile"));
+      await screen.findByTestId("mock-agent-settings");
+      const input = screen.getByTestId("agent-profile-name-input");
+      await user.clear(input);
+      await user.type(input, "mine");
+      await user.click(screen.getByTestId("save-agent-profile-btn"));
+
+      await waitFor(() => expect(saveMutate).toHaveBeenCalledTimes(1));
+      expect(applyToGlobalMock).not.toHaveBeenCalled();
+    });
   });
 
   it("seeds tools from a stored profile", async () => {
     vi.mocked(AgentProfilesService.getProfile).mockResolvedValue({
-      name: "default",
+      name: "my-agent",
       profile: {
         schema_version: 3,
         id: "p-1",
-        name: "default",
+        name: "my-agent",
         revision: 3,
         agent_kind: "openhands",
         llm_profile_ref: "default",
@@ -513,11 +647,11 @@ describe("AgentProfilesLocalView save mapping", () => {
 
   it("seeds the editor with a stored secret scope", async () => {
     vi.mocked(AgentProfilesService.getProfile).mockResolvedValue({
-      name: "default",
+      name: "my-agent",
       profile: {
         schema_version: 2,
         id: "p-1",
-        name: "default",
+        name: "my-agent",
         revision: 3,
         agent_kind: "openhands",
         llm_profile_ref: "default",
@@ -550,11 +684,11 @@ describe("AgentProfilesLocalView save mapping", () => {
 
   it("seeds the editor with a stored persona and instructions", async () => {
     vi.mocked(AgentProfilesService.getProfile).mockResolvedValue({
-      name: "default",
+      name: "my-agent",
       profile: {
         schema_version: 2,
         id: "p-1",
-        name: "default",
+        name: "my-agent",
         revision: 3,
         agent_kind: "openhands",
         llm_profile_ref: "default",
@@ -589,11 +723,11 @@ describe("AgentProfilesLocalView save mapping", () => {
 
   it("edit-save persists an edited secret scope over the stored value", async () => {
     vi.mocked(AgentProfilesService.getProfile).mockResolvedValue({
-      name: "default",
+      name: "my-agent",
       profile: {
         schema_version: 2,
         id: "p-1",
-        name: "default",
+        name: "my-agent",
         revision: 3,
         agent_kind: "openhands",
         llm_profile_ref: "default",
@@ -625,11 +759,11 @@ describe("AgentProfilesLocalView save mapping", () => {
 
   it("kind-switch edit-save sends a clean variant payload", async () => {
     vi.mocked(AgentProfilesService.getProfile).mockResolvedValue({
-      name: "default",
+      name: "my-agent",
       profile: {
         schema_version: 1,
         id: "p-1",
-        name: "default",
+        name: "my-agent",
         revision: 3,
         agent_kind: "openhands",
         llm_profile_ref: "default",
@@ -662,7 +796,7 @@ describe("AgentProfilesLocalView save mapping", () => {
     // No stored openhands fields may leak into the acp payload — the server's
     // extra="forbid" union would 422 on a mongrel profile.
     expect(saveMutate).toHaveBeenCalledWith({
-      name: "default",
+      name: "my-agent",
       profile: {
         agent_kind: "acp",
         mcp_server_refs: null,
@@ -679,11 +813,11 @@ describe("AgentProfilesLocalView save mapping", () => {
     // the editor must validate against the live list and self-heal to the
     // active default rather than saving the stale ref straight back.
     vi.mocked(AgentProfilesService.getProfile).mockResolvedValue({
-      name: "default",
+      name: "my-agent",
       profile: {
         schema_version: 1,
         id: "p-1",
-        name: "default",
+        name: "my-agent",
         revision: 3,
         agent_kind: "openhands",
         llm_profile_ref: "deleted-profile",
@@ -777,10 +911,10 @@ describe("AgentProfilesLocalView save mapping", () => {
       }),
     );
     vi.mocked(AgentProfilesService.getProfile).mockResolvedValue({
-      name: "default",
+      name: "my-agent",
       profile: {
         id: "p-1",
-        name: "default",
+        name: "my-agent",
         revision: 1,
         agent_kind: "openhands",
         llm_profile_ref: "default",
@@ -796,7 +930,7 @@ describe("AgentProfilesLocalView save mapping", () => {
     finishMigration(true);
     await screen.findByTestId("mock-agent-settings");
     expect(AgentProfilesService.getProfile).toHaveBeenCalledWith(
-      "default",
+      "my-agent",
       "encrypted",
     );
   });
@@ -804,7 +938,7 @@ describe("AgentProfilesLocalView save mapping", () => {
   describe("duplicate profile name", () => {
     beforeEach(() => {
       agentProfilesData = {
-        profiles: [{ name: "default" }, { name: "triage" }],
+        profiles: [{ name: "my-agent" }, { name: "triage" }],
         active_agent_profile_id: null,
       };
       emitControl = {
@@ -821,7 +955,7 @@ describe("AgentProfilesLocalView save mapping", () => {
 
     it("tells the user a new profile's name is taken until it is unique", async () => {
       renderView();
-      const user = await openCreateAndName("default");
+      const user = await openCreateAndName("my-agent");
       const input = screen.getByTestId("agent-profile-name-input");
 
       expect(input).toHaveAttribute("aria-invalid", "true");
@@ -842,11 +976,11 @@ describe("AgentProfilesLocalView save mapping", () => {
 
     it("flags a rename to another profile's name but not the profile's own name", async () => {
       vi.mocked(AgentProfilesService.getProfile).mockResolvedValue({
-        name: "default",
+        name: "my-agent",
         profile: {
           schema_version: 3,
           id: "p-1",
-          name: "default",
+          name: "my-agent",
           revision: 1,
           agent_kind: "openhands",
           llm_profile_ref: "default",
@@ -859,7 +993,7 @@ describe("AgentProfilesLocalView save mapping", () => {
       await screen.findByTestId("mock-agent-settings");
       const input = screen.getByTestId("agent-profile-name-input");
 
-      expect(input).toHaveValue("default");
+      expect(input).toHaveValue("my-agent");
       expect(input).toHaveAttribute("aria-invalid", "false");
       expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 

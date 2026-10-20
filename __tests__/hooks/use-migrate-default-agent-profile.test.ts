@@ -2,6 +2,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { DEFAULT_ENABLED_SKILL_NAMES } from "@openhands/extensions/skills";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AgentProfilesService from "#/api/agent-profiles-service/agent-profiles-service.api";
+import ProfilesService from "#/api/profiles-service/profiles-service.api";
 import SettingsService from "#/api/settings-service/settings-service.api";
 import {
   buildDefaultProfileMigration,
@@ -20,6 +21,10 @@ vi.mock("#/api/agent-profiles-service/agent-profiles-service.api", () => ({
     saveProfile: vi.fn(),
   },
   WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME: "default",
+}));
+vi.mock("#/api/profiles-service/profiles-service.api", () => ({
+  __esModule: true,
+  default: { listProfiles: vi.fn() },
 }));
 vi.mock("#/api/settings-service/settings-service.api", () => ({
   __esModule: true,
@@ -147,6 +152,10 @@ describe("ensureDefaultAgentProfileMigrated", () => {
       name: "default",
       profile: STORED_DEFAULT,
     } as never);
+    vi.mocked(ProfilesService.listProfiles).mockResolvedValue({
+      profiles: [],
+      active_profile: "active-llm",
+    } as never);
   });
 
   it("merges the global behavior into `default` and records it once", async () => {
@@ -160,10 +169,10 @@ describe("ensureDefaultAgentProfileMigrated", () => {
       .calls[0];
     expect(name).toBe("default");
     expect(saved).toMatchObject({
-      // What the user chose on the profile itself stays.
-      llm_profile_ref: "my-llm",
-      mcp_server_refs: ["linear"],
-      secret_refs: ["GITHUB_TOKEN"],
+      // `default` shares these with the global pages.
+      llm_profile_ref: "active-llm",
+      mcp_server_refs: null,
+      secret_refs: null,
       // What `default` used to take from global settings moves onto it.
       persona: "You review code.",
       tools: GLOBAL_AGENT.tools,
@@ -187,15 +196,32 @@ describe("ensureDefaultAgentProfileMigrated", () => {
     expect(AgentProfilesService.saveProfile).not.toHaveBeenCalled();
   });
 
-  it("only marks the backend when `default` is an ACP profile", async () => {
+  it("gives an ACP `default` every MCP server and secret, and nothing else", async () => {
+    const acpDefault = {
+      ...STORED_DEFAULT,
+      agent_kind: "acp",
+      acp_server: "claude-code",
+    };
     vi.mocked(AgentProfilesService.listProfiles).mockResolvedValue({
-      profiles: [{ ...STORED_DEFAULT, agent_kind: "acp" }],
+      profiles: [acpDefault],
       active_agent_profile_id: STORED_DEFAULT.id,
+    } as never);
+    vi.mocked(AgentProfilesService.getProfile).mockResolvedValue({
+      name: "default",
+      profile: acpDefault,
     } as never);
 
     await ensureDefaultAgentProfileMigrated(new QueryClient(), "local-1");
 
-    expect(AgentProfilesService.saveProfile).not.toHaveBeenCalled();
+    const [, saved] = vi.mocked(AgentProfilesService.saveProfile).mock.calls[0];
+    expect(saved).toMatchObject({
+      agent_kind: "acp",
+      acp_server: "claude-code",
+      mcp_server_refs: null,
+      secret_refs: null,
+    });
+    expect(saved).not.toHaveProperty("public_skills");
+    expect(ProfilesService.listProfiles).not.toHaveBeenCalled();
     expect(SettingsService.saveSettings).toHaveBeenCalledWith({
       default_profile_migrated: true,
     });

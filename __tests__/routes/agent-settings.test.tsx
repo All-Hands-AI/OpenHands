@@ -1419,6 +1419,32 @@ describe("AgentSettingsScreen — MCP scope dirty tracking", () => {
         screen.getByTestId("agent-settings-secrets-mode"),
       ).toBeInTheDocument();
     });
+
+    it("gives the default profile every secret, with no picker", async () => {
+      seedOpenHandsSettings();
+      let control: AgentSettingsSaveControl | null = null;
+      renderAgentSettingsScreen({
+        agentSettingsOverride: { agent_kind: "openhands", secret_refs: null },
+        isDefaultProfile: true,
+        onSaveControlChange: (next) => {
+          control = next;
+        },
+      });
+      await screen.findByTestId("agent-settings-screen");
+
+      expect(
+        screen.queryByTestId("agent-settings-secrets-mode"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByTestId("agent-settings-secrets-default-note"),
+      ).toHaveTextContent("SETTINGS$AGENT_PROFILE_DEFAULT_SECRETS_NOTE");
+      expect(
+        screen.getByTestId("agent-settings-mcp-default-note"),
+      ).toHaveTextContent("SETTINGS$AGENT_PROFILE_DEFAULT_MCP_NOTE");
+      expect(control!.buildAgentProfileFields()).toMatchObject({
+        secret_refs: null,
+      });
+    });
   });
 });
 
@@ -1469,6 +1495,22 @@ describe("AgentSettingsScreen — skills", () => {
       public_skills: ["alpha", "beta"],
       disabled_skills: ["mine"],
     });
+  });
+
+  it("tells the default profile its list is the Skills page", async () => {
+    renderAgentSettingsScreen({
+      agentSettingsOverride: {
+        agent_kind: "openhands",
+        public_skills: ["alpha"],
+        disabled_skills: [],
+      },
+      isDefaultProfile: true,
+    });
+    await screen.findByTestId("agent-settings-skills-alpha");
+
+    expect(
+      screen.getByTestId("agent-settings-skills-default-note"),
+    ).toHaveTextContent("SETTINGS$AGENT_PROFILE_DEFAULT_SKILLS_NOTE");
   });
 
   it("keeps a profile without a list unset until the user edits it", async () => {

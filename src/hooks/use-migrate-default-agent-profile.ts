@@ -5,7 +5,9 @@ import {
 } from "@tanstack/react-query";
 import AgentProfilesService, {
   WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME,
+  type AgentProfileSaveInput,
 } from "#/api/agent-profiles-service/agent-profiles-service.api";
+import ProfilesService from "#/api/profiles-service/profiles-service.api";
 import type { StoredOpenHandsProfile } from "#/api/agent-profiles-service/profile-behavior";
 import SettingsService from "#/api/settings-service/settings-service.api";
 import { isNoBackend } from "#/api/backend-registry/active-store";
@@ -97,7 +99,10 @@ export function buildDefaultProfileMigration(
   };
 }
 
-/** Copy global agent behavior into the OpenHands `default` profile, once. */
+/**
+ * Copy global agent behavior into `default`, once. It also gets every MCP
+ * server switched on, every secret, and the active LLM profile.
+ */
 async function migrateDefaultAgentProfile(): Promise<true> {
   // Read the marker fresh: another tab may have migrated and then edited
   // `default` since this one cached its settings.
@@ -106,24 +111,31 @@ async function migrateDefaultAgentProfile(): Promise<true> {
   if (settings.default_profile_migrated) return true;
 
   const { profiles } = await AgentProfilesService.listProfiles();
-  const hasOpenHandsDefault = profiles.some(
-    (profile) =>
-      profile.name === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME &&
-      profile.agent_kind === "openhands",
-  );
-  if (hasOpenHandsDefault) {
+  if (
+    profiles.some(
+      (profile) => profile.name === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME,
+    )
+  ) {
     const { profile } = await AgentProfilesService.getProfile(
       WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME,
     );
+    const everything = { mcp_server_refs: null, secret_refs: null };
+    let migrated: AgentProfileSaveInput = { agent_kind: "acp", ...everything };
     if (profile.agent_kind === "openhands") {
-      await AgentProfilesService.saveProfile(
-        WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME,
-        mergeAgentProfileSaveInput(profile, {
-          agent_kind: "openhands",
-          ...buildDefaultProfileMigration(settings),
-        }),
-      );
+      const activeLlm = await ProfilesService.listProfiles()
+        .then((list) => list.active_profile)
+        .catch(() => null);
+      migrated = {
+        agent_kind: "openhands",
+        ...buildDefaultProfileMigration(settings),
+        ...everything,
+        ...(activeLlm ? { llm_profile_ref: activeLlm } : {}),
+      };
     }
+    await AgentProfilesService.saveProfile(
+      WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME,
+      mergeAgentProfileSaveInput(profile, migrated),
+    );
   }
   await SettingsService.saveSettings({ default_profile_migrated: true });
   return true;

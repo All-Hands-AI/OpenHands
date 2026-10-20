@@ -24,10 +24,10 @@ import { ActiveBackendProvider } from "#/contexts/active-backend-context";
 const navigateMock = vi.fn();
 const updateDefaultAgentProfileMock = vi.hoisted(() => vi.fn());
 vi.mock(
-  "#/hooks/mutation/update-default-agent-profile",
+  "#/hooks/mutation/sync-agent-profiles",
   async (importOriginal) => ({
     ...(await importOriginal<
-      typeof import("#/hooks/mutation/update-default-agent-profile")
+      typeof import("#/hooks/mutation/sync-agent-profiles")
     >()),
     updateDefaultAgentProfile: updateDefaultAgentProfileMock,
   }),
@@ -621,7 +621,7 @@ Full skill body.`,
     );
   });
 
-  it("applies a toggle to the default agent profile, keeping its other picks", async () => {
+  it("gives the default agent profile the whole list after a toggle", async () => {
     const user = userEvent.setup();
     updateDefaultAgentProfileMock.mockClear();
     mockSkillList([buildSkill({ name: CATALOG_RECOMMENDED })]);
@@ -646,10 +646,7 @@ Full skill body.`,
         public_skills: [CATALOG_RECOMMENDED, CATALOG_OPTIONAL],
         disabled_skills: ["my-skill"],
       }),
-    ).toEqual({
-      public_skills: [CATALOG_OPTIONAL],
-      disabled_skills: ["my-skill"],
-    });
+    ).toEqual({ public_skills: [], disabled_skills: [] });
   });
 
   it("drops a re-enabled catalog skill from an unmigrated deny-list", async () => {

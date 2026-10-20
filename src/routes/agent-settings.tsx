@@ -371,11 +371,14 @@ interface AgentSettingsScreenProps {
   /** `agent_settings`-shaped profile fields the form opens on. */
   agentSettingsOverride?: Record<string, SettingsValue> | null;
   onSaveControlChange: (control: AgentSettingsSaveControl) => void;
+  /** `default` shares its MCP servers and skills with the global pages and keeps every secret. */
+  isDefaultProfile?: boolean;
 }
 
 export function AgentSettingsScreen({
   agentSettingsOverride = null,
   onSaveControlChange,
+  isDefaultProfile = false,
 }: AgentSettingsScreenProps) {
   const { t } = useTranslation("openhands");
   const { data: settings, isLoading } = useSettings();
@@ -1388,11 +1391,18 @@ export function AgentSettingsScreen({
             })}
           </Typography.Text>
         ) : null}
-        <Typography.Text className="text-xs text-tertiary-alt">
+        <Typography.Text
+          testId={
+            isDefaultProfile ? "agent-settings-mcp-default-note" : undefined
+          }
+          className="text-xs text-tertiary-alt"
+        >
           {t(
-            mcpMode === "custom"
-              ? I18nKey.SETTINGS$AGENT_PROFILE_MCP_CHOOSE_HINT
-              : I18nKey.SETTINGS$AGENT_PROFILE_MCP_ALL_HINT,
+            isDefaultProfile
+              ? I18nKey.SETTINGS$AGENT_PROFILE_DEFAULT_MCP_NOTE
+              : mcpMode === "custom"
+                ? I18nKey.SETTINGS$AGENT_PROFILE_MCP_CHOOSE_HINT
+                : I18nKey.SETTINGS$AGENT_PROFILE_MCP_ALL_HINT,
           )}
         </Typography.Text>
       </div>
@@ -1427,7 +1437,21 @@ export function AgentSettingsScreen({
           ))
         : null}
 
-      {secretRefsSupportedOnProfile ? (
+      {secretRefsSupportedOnProfile && isDefaultProfile ? (
+        <div className="flex flex-col gap-2.5">
+          <Typography.Text className="text-sm">
+            {t(I18nKey.SETTINGS$AGENT_PROFILE_SECRETS)}
+          </Typography.Text>
+          <Typography.Text
+            testId="agent-settings-secrets-default-note"
+            className="text-xs text-tertiary-alt"
+          >
+            {t(I18nKey.SETTINGS$AGENT_PROFILE_DEFAULT_SECRETS_NOTE)}
+          </Typography.Text>
+        </div>
+      ) : null}
+
+      {secretRefsSupportedOnProfile && !isDefaultProfile ? (
         <div className="flex flex-col gap-2.5">
           <Typography.Text className="text-sm">
             {t(I18nKey.SETTINGS$AGENT_PROFILE_SECRETS)}
@@ -1533,8 +1557,19 @@ export function AgentSettingsScreen({
               </BrandButton>
             </div>
           ) : null}
-          <Typography.Text className="text-xs text-tertiary-alt">
-            {t(I18nKey.SETTINGS$AGENT_PROFILE_SKILLS_HINT)}
+          <Typography.Text
+            testId={
+              isDefaultProfile
+                ? "agent-settings-skills-default-note"
+                : undefined
+            }
+            className="text-xs text-tertiary-alt"
+          >
+            {t(
+              isDefaultProfile
+                ? I18nKey.SETTINGS$AGENT_PROFILE_DEFAULT_SKILLS_NOTE
+                : I18nKey.SETTINGS$AGENT_PROFILE_SKILLS_HINT,
+            )}
           </Typography.Text>
         </div>
       ) : null}

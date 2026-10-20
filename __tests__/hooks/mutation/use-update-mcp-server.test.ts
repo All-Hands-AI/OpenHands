@@ -13,21 +13,21 @@ import type { MCPServerConfig } from "#/types/mcp-server";
 import { REDACTED_MCP_SECRET_VALUE } from "#/utils/mcp-config";
 import { getMcpServerHealthKey } from "#/utils/mcp-server-health-key";
 
-const updateDefaultAgentProfileMock = vi.hoisted(() => vi.fn());
-vi.mock(
-  "#/hooks/mutation/update-default-agent-profile",
-  async (importOriginal) => ({
-    ...(await importOriginal<
-      typeof import("#/hooks/mutation/update-default-agent-profile")
-    >()),
-    updateDefaultAgentProfile: updateDefaultAgentProfileMock,
-  }),
-);
+const syncMocks = vi.hoisted(() => ({
+  updateDefaultAgentProfile: vi.fn(),
+  updateEveryAgentProfile: vi.fn(),
+}));
+vi.mock("#/hooks/mutation/sync-agent-profiles", async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import("#/hooks/mutation/sync-agent-profiles")
+  >()),
+  ...syncMocks,
+}));
 
-/** The `mcp_server_refs` a sync would give a `default` restricted to these servers. */
+/** The `mcp_server_refs` the sync gives a profile restricted to these servers. */
 const syncedRefs = (refs: string[]) => {
-  expect(updateDefaultAgentProfileMock).toHaveBeenCalledOnce();
-  const [, change] = updateDefaultAgentProfileMock.mock.calls[0];
+  expect(syncMocks.updateEveryAgentProfile).toHaveBeenCalledOnce();
+  const [, change] = syncMocks.updateEveryAgentProfile.mock.calls[0];
   return change({ agent_kind: "openhands", mcp_server_refs: refs });
 };
 
@@ -172,8 +172,8 @@ describe("useUpdateMcpServer", () => {
     expect(serverSpy).not.toHaveBeenCalled();
   });
 
-  it("renames the server in a restricted default agent profile too", async () => {
-    updateDefaultAgentProfileMock.mockClear();
+  it("renames the server in every profile that lists it", async () => {
+    vi.clearAllMocks();
     vi.spyOn(SettingsService, "patchMcpConfig").mockResolvedValue(true);
     const { result } = renderHook(() => useUpdateMcpServer(), {
       wrapper: createWrapper(),
@@ -195,7 +195,7 @@ describe("useUpdateMcpServer", () => {
   });
 
   it("leaves the default agent profile alone when the name stays", async () => {
-    updateDefaultAgentProfileMock.mockClear();
+    vi.clearAllMocks();
     vi.spyOn(SettingsService, "patchMcpServer").mockResolvedValue(true);
     const { result } = renderHook(() => useUpdateMcpServer(), {
       wrapper: createWrapper(),
@@ -211,7 +211,7 @@ describe("useUpdateMcpServer", () => {
       },
     });
 
-    expect(updateDefaultAgentProfileMock).not.toHaveBeenCalled();
+    expect(syncMocks.updateEveryAgentProfile).not.toHaveBeenCalled();
   });
 
   it("rejects a rename collision before issuing a request", async () => {
