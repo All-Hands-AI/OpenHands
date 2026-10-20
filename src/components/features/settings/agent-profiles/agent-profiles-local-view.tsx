@@ -5,6 +5,7 @@ import { ensureDefaultAgentProfileMigrated } from "#/hooks/use-migrate-default-a
 import { useTranslation } from "react-i18next";
 import { AgentProfilesManager } from "./agent-profiles-manager";
 import { mergeAgentProfileSaveInput } from "./merge-agent-profile-save-input";
+import { newProfileSeed } from "./new-profile-seed";
 import { ProfileNameInput } from "#/components/features/settings/llm-profiles/profile-name-input";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
@@ -13,6 +14,7 @@ import {
   type AgentSettingsSaveControl,
 } from "#/routes/agent-settings";
 import AgentProfilesService, {
+  WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME,
   type AgentProfile,
   type AgentProfileSummary,
   type AgentProfileSaveInput,
@@ -117,6 +119,7 @@ export function AgentProfilesLocalView() {
   const [editingProfile, setEditingProfile] = useState<AgentProfile | null>(
     null,
   );
+  const [seedProfile, setSeedProfile] = useState<AgentProfile | null>(null);
   const [override, setOverride] = useState<Record<
     string,
     SettingsValue
@@ -151,11 +154,25 @@ export function AgentProfilesLocalView() {
       (viewMode === "edit" && profileName !== editingProfile?.name));
   const isNameValid = isNameFormatValid && !isDuplicateName;
 
-  const handleAddProfile = useCallback(() => {
+  const handleAddProfile = useCallback(async () => {
+    let seed: AgentProfile | null = null;
+    if (backend.kind === "local") {
+      try {
+        await waitForMigration();
+        const { profile } = await AgentProfilesService.getProfile(
+          WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME,
+        );
+        seed = newProfileSeed(profile);
+      } catch {
+        // Without a readable `default`, the editor starts from its own values.
+      }
+    }
     setProfileName("");
     setEditingProfile(null);
-    // A new profile starts from the skills selected on the Skills page.
+    setSeedProfile(seed);
+    // A new profile copies `default` and the skills selected on the Skills page.
     setOverride({
+      ...(seed ? toAgentSettingsOverride(seed) : {}),
       agent_kind: "openhands",
       ...(agentProfileSupportsSkills()
         ? toProfileSkillFields(defaultSkillEnablement(settings ?? {}))
@@ -164,7 +181,7 @@ export function AgentProfilesLocalView() {
     setLlmProfileRef(defaultLlmProfileRef);
     setSaveControl(null);
     setViewMode("create");
-  }, [defaultLlmProfileRef, settings]);
+  }, [backend.kind, waitForMigration, defaultLlmProfileRef, settings]);
 
   const handleEditProfile = useCallback(
     async (summary: AgentProfileSummary) => {
@@ -218,6 +235,7 @@ export function AgentProfilesLocalView() {
   const handleBackToList = useCallback(() => {
     setViewMode("list");
     setEditingProfile(null);
+    setSeedProfile(null);
     setProfileName("");
     setOverride(null);
     setSaveControl(null);
@@ -278,7 +296,7 @@ export function AgentProfilesLocalView() {
       // the edited fields so the fields this editor doesn't model survive an
       // edit (kind-aware — a kind switch stays a clean variant replacement).
       const profile = mergeAgentProfileSaveInput(
-        viewMode === "edit" ? editingProfile : null,
+        viewMode === "edit" ? editingProfile : seedProfile,
         input,
       );
       await saveProfile.mutateAsync({ name: trimmedName, profile });
@@ -302,6 +320,7 @@ export function AgentProfilesLocalView() {
     profileName,
     viewMode,
     editingProfile,
+    seedProfile,
     saveProfile,
     renameProfile,
     t,

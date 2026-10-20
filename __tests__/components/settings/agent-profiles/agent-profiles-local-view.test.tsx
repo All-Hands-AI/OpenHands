@@ -198,6 +198,113 @@ describe("AgentProfilesLocalView save mapping", () => {
     ).toEqual({ agent_kind: "openhands" });
   });
 
+  it("starts a new profile from default's settings and the global lists", async () => {
+    settingsData = { enabled_skills: ["add-skill"], disabled_skills: [] };
+    vi.mocked(AgentProfilesService.getProfile).mockResolvedValue({
+      name: "default",
+      profile: {
+        id: "p-default",
+        name: "default",
+        revision: 4,
+        agent_kind: "openhands",
+        llm_profile_ref: "other-llm",
+        tools: [{ name: "terminal", params: {} }],
+        tool_concurrency_limit: 3,
+        system_message_suffix: "Be terse.",
+        condenser: { kind: "NoOpCondenserSettings" },
+        verification: { critic_enabled: true },
+        enable_classify_and_switch_llm_tool: true,
+        meta_profile_ref: "fast-router",
+        mcp_server_refs: ["github"],
+        secret_refs: ["GITHUB_TOKEN"],
+        public_skills: ["only-in-default"],
+        disabled_skills: ["off-in-default"],
+      },
+    } as never);
+    emitControl = {
+      agentType: "openhands",
+      isValid: true,
+      isDirty: true,
+      buildAgentProfileFields: () => ({
+        agent_kind: "openhands",
+        mcp_server_refs: null,
+        public_skills: ["add-skill"],
+        disabled_skills: [],
+      }),
+      credentials: { isDirty: false, save: vi.fn(), reset: vi.fn() },
+    };
+
+    renderView();
+    const user = await openCreateAndName("my-agent");
+
+    expect(AgentProfilesService.getProfile).toHaveBeenCalledWith("default");
+    const override = JSON.parse(
+      screen
+        .getByTestId("mock-agent-settings")
+        .getAttribute("data-override") as string,
+    );
+    expect(override).toMatchObject({
+      agent_kind: "openhands",
+      tools: [{ name: "terminal", params: {} }],
+      tool_concurrency_limit: 3,
+      system_message_suffix: "Be terse.",
+      condenser: { kind: "NoOpCondenserSettings" },
+      verification: { critic_enabled: true },
+      enable_classify_and_switch_llm_tool: true,
+      meta_profile_ref: "fast-router",
+      mcp_server_refs: null,
+      secret_refs: null,
+      public_skills: ["add-skill"],
+      disabled_skills: [],
+    });
+
+    await user.click(screen.getByTestId("save-agent-profile-btn"));
+    await waitFor(() => expect(saveMutate).toHaveBeenCalledTimes(1));
+    const { profile } = saveMutate.mock.calls[0][0];
+    expect(profile).toEqual({
+      agent_kind: "openhands",
+      llm_profile_ref: "default",
+      tools: [{ name: "terminal", params: {} }],
+      tool_concurrency_limit: 3,
+      system_message_suffix: "Be terse.",
+      condenser: { kind: "NoOpCondenserSettings" },
+      verification: { critic_enabled: true },
+      enable_classify_and_switch_llm_tool: true,
+      meta_profile_ref: "fast-router",
+      mcp_server_refs: null,
+      public_skills: ["add-skill"],
+      disabled_skills: [],
+    });
+  });
+
+  it("starts a new profile without default's settings when default is an ACP agent", async () => {
+    vi.mocked(AgentProfilesService.getProfile).mockResolvedValue({
+      name: "default",
+      profile: {
+        id: "p-default",
+        name: "default",
+        revision: 1,
+        agent_kind: "acp",
+        acp_server: "claude-code",
+      },
+    } as never);
+
+    renderView();
+    await openCreateAndName("my-agent");
+
+    expect(
+      JSON.parse(
+        screen
+          .getByTestId("mock-agent-settings")
+          .getAttribute("data-override") as string,
+      ),
+    ).toEqual({
+      agent_kind: "openhands",
+      public_skills: [...DEFAULT_ENABLED_SKILL_NAMES],
+      disabled_skills: [],
+    });
+  });
+
   it("describes the add editor with agent copy, not the LLM-profile hint", async () => {
     renderView();
     await openCreateAndName("my-agent");
