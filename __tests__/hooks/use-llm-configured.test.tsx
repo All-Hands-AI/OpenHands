@@ -108,6 +108,24 @@ describe("useLlmConfigured (local, agent-profile-driven)", () => {
     const { result } = renderHook(() => useLlmConfigured(), { wrapper });
     expect(result.current.isConfigured).toBe(true);
   });
+  it("checks the active LLM profile for `default`, which a local launch runs", () => {
+    useLlmProfilesMock.mockReturnValue(
+      llmProfiles("active", [
+        { name: "active", api_key_set: false },
+        { name: "sonnet", api_key_set: true },
+      ]),
+    );
+    useActiveAgentProfileMock.mockReturnValue({
+      activeProfile: {
+        agent_kind: "openhands",
+        llm_profile_ref: "sonnet",
+        name: "default",
+      },
+    });
+
+    const { result } = renderHook(() => useLlmConfigured(), { wrapper });
+    expect(result.current.isConfigured).toBe(false);
+  });
   it("checks the active LLM profile when the agent profile's ref is stale", () => {
     // The agent profile references "ghost", which no longer exists; the launch
     // runs the active LLM profile ("default", which HAS a key) instead.

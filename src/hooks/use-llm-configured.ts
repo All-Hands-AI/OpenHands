@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSettings } from "#/hooks/query/use-settings";
 import { useConfig } from "#/hooks/query/use-config";
 import { useLlmProfiles } from "#/hooks/query/use-llm-profiles";
+import { WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME } from "#/api/agent-profiles-service/agent-profiles-service.api";
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import { useActiveAgentProfile } from "#/hooks/use-active-agent-profile";
 import { isSettingsPageHidden } from "#/utils/settings-utils";
@@ -66,7 +67,8 @@ export function useLlmConfigured(): LlmConfiguredResult {
   const isAcpAgent = activeAgentKind === "acp";
   const hasApiKey = settings?.llm_api_key_set === true;
   // Check the LLM profile the next home launch runs: the agent profile's own
-  // `llm_profile_ref`, or the active LLM profile when it names no saved one.
+  // `llm_profile_ref`, except a local `default`, which runs the active LLM
+  // profile. Either falls back to the other when it names no saved profile.
   const findLlmProfile = (name: string | null | undefined) =>
     name
       ? profilesData?.profiles.find((profile) => profile.name === name)
@@ -77,7 +79,12 @@ export function useLlmConfigured(): LlmConfiguredResult {
       : undefined,
   );
   const selectedProfile = findLlmProfile(profilesData?.active_profile);
-  const activeProfile = referencedProfile ?? selectedProfile;
+  const runsActiveLlmProfile =
+    isLocal &&
+    activeAgentProfile?.name === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME;
+  const activeProfile = runsActiveLlmProfile
+    ? (selectedProfile ?? referencedProfile)
+    : (referencedProfile ?? selectedProfile);
   const hasActiveProfileApiKey = activeProfile?.api_key_set === true;
   const shouldLoadActiveProfileDetail =
     isLocal && !!activeProfile && !hasActiveProfileApiKey;
