@@ -55,6 +55,8 @@ interface RecommendedAutomationsLauncherProps {
    */
   variant?: "catalog" | "rail";
   className?: string;
+  dismissible?: boolean;
+  onDismiss?: () => void;
 }
 
 /**
@@ -90,6 +92,8 @@ export function RecommendedAutomationsLauncher({
   scrollableGrid = false,
   variant = "catalog",
   className,
+  dismissible,
+  onDismiss,
 }: RecommendedAutomationsLauncherProps) {
   const activeBackend = useActiveBackend();
   const { navigate } = useNavigation();
@@ -370,6 +374,8 @@ export function RecommendedAutomationsLauncher({
           installedAutomations={automationsData?.automations ?? []}
           hiddenAutomationIds={hiddenAutomationIds}
           onSelect={handleSelectAutomation}
+          dismissible={dismissible}
+          onDismiss={onDismiss}
         />
       ) : (
         <RecommendedAutomationsSection
