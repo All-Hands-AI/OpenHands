@@ -126,7 +126,7 @@ export function HomeChatLauncher() {
   );
   // A remembered mode the server no longer offers falls back, but only once
   // server_info has answered: a pending probe must not silently turn a Docker
-  // choice into Local Repo (a server that cannot run it rejects the start).
+  // choice into Local (a server that cannot run it rejects the start).
   const effectiveWorkspaceMode =
     serverInfoLoading || workspaceModes.includes(workspaceMode)
       ? workspaceMode
@@ -397,7 +397,6 @@ export function HomeChatLauncher() {
               value={effectiveWorkspaceMode}
               options={workspaceModes}
               backendKind={backend.kind}
-              hasWorkspace={false}
               onChange={setWorkspaceMode}
             />
           ) : null}

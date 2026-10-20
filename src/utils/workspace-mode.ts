@@ -81,7 +81,6 @@ export function writeStoredLocalWorkspaceMode(mode: WorkspaceMode): void {
 export function getWorkspaceModeI18nKey(
   mode: WorkspaceMode,
   backendKind: BackendKind,
-  hasWorkspace = true,
 ): I18nKey {
   if (mode === "new_worktree") {
     return I18nKey.COMMON$WORKSPACE_MODE_NEW_WORKTREE;
@@ -89,7 +88,6 @@ export function getWorkspaceModeI18nKey(
   if (mode === "docker_container") {
     return I18nKey.COMMON$WORKSPACE_MODE_DOCKER_CONTAINER;
   }
-  if (!hasWorkspace) return I18nKey.COMMON$WORKSPACE_MODE_LOCAL;
   return backendKind === "cloud"
     ? I18nKey.COMMON$WORKSPACE_MODE_CLOUD_REPO
     : I18nKey.COMMON$WORKSPACE_MODE_LOCAL_REPO;

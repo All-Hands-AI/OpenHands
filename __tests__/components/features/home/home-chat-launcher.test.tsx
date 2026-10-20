@@ -220,21 +220,21 @@ vi.mock("#/components/features/home/home-git-control-bar-preview", () => ({
         data-testid="stub-workspace-mode-docker-container"
         onClick={() => onWorkspaceModeChange("docker_container")}
       >
-        Docker Container
+        Docker
       </button>
       <button
         type="button"
         data-testid="stub-workspace-mode-new-worktree"
         onClick={() => onWorkspaceModeChange("new_worktree")}
       >
-        New Worktree
+        Worktree
       </button>
       <button
         type="button"
         data-testid="stub-workspace-mode-local-repo"
         onClick={() => onWorkspaceModeChange("local_repo")}
       >
-        Local Repo
+        Local
       </button>
     </div>
   ),
@@ -571,7 +571,7 @@ describe("HomeChatLauncher", () => {
     );
   });
 
-  it("starts a Docker Container conversation when the server offers Docker", async () => {
+  it("starts a Docker conversation when the server offers Docker", async () => {
     mockUseConversationWorkspace.mockReturnValue({
       isolated: false,
       dockerSelectable: true,
@@ -648,7 +648,7 @@ describe("HomeChatLauncher", () => {
     );
   });
 
-  it("offers Local or Docker Container before a workspace is opened", async () => {
+  it("offers Local or Docker before a workspace is opened", async () => {
     mockUseConversationWorkspace.mockReturnValue({
       isolated: false,
       dockerSelectable: true,

@@ -9,7 +9,7 @@ through one **Save Changes** button that stays disabled until a value differs
 from the stored one.
 
 The **Runtime** page renders the conversation schema's `runtime` section the
-same way: a default runtime (Local, New Worktree, Docker Container) followed by
+same way: a default runtime (Local, Worktree, Docker) followed by
 only that runtime's options.
 
 Source: `src/routes/condenser-settings.tsx`, `src/routes/agent-context-settings.tsx`, `src/routes/verification-settings.tsx`, `src/routes/runtime-settings.tsx`, `src/components/features/settings/sdk-settings/`, `src/utils/sdk-settings-schema.ts`.
@@ -30,7 +30,7 @@ Source: `src/routes/condenser-settings.tsx`, `src/routes/agent-context-settings.
 - `F15.verification-critic-fields`: Confirmation Mode reveals Security Analyzer (Advanced); Enable Critic reveals Iterative Refinement and Critic API Key (Basic) plus mode, server URL and model (All); Iterative Refinement reveals threshold and max iterations.
 - `F15.confirmation-mode-save`: Confirmation Mode and Security Analyzer (conversation settings) persist after reload, alongside the agent-settings fields on the same page.
 - `F15.confirmation-mode-effect`: with Confirmation Mode on and Security Analyzer **None**, a new conversation stops before its first command with **Do you want to continue with this action?** and Cancel/Continue; Continue runs it.
-- `F15.runtime-page`: Runtime shows **Default runtime** (`Local` by default, `New Worktree`, `Docker Container`). Local shows nothing else; New Worktree adds **Create worktrees from** (`Default branch`, `Current HEAD`, `Another branch, tag or commit`, which reveals its ref field) and **Branch name prefix** (`openhands/`); Docker Container adds the container memory, CPU and browser fields. The Home launcher starts on the saved default, and saved non-default values reach the next conversation's start request as `worktree_options` and `container`.
+- `F15.runtime-page`: Runtime shows **Default runtime** (`Local` by default, `Worktree`, `Docker`). Local shows nothing else; Worktree adds **Create worktrees from** (`Default branch`, `Current HEAD`, `Another branch, tag or commit`, which reveals its ref field) and **Branch name prefix** (`openhands/`); Docker adds the container memory, CPU and browser fields. The Home launcher starts on the saved default, and saved non-default values reach the next conversation's start request as `worktree_options` and `container`.
 - `F15.critic-tuning`: Critic Mode is a dropdown (`Finish and Message`, `All Actions`); the mode, Critic Threshold and Max Refinement Iterations persist after reload, and an out-of-range threshold (`1.5`) is refused with the 422 toast.
 - `F15.critic-save`: critic text fields persist after reload; the Critic API Key comes back masked; clearing the fields and turning the critic off restores the defaults.
 - `F15.agent-context-effect`: with Persistent Agent Memory on, a new conversation's system prompt carries the `.openhands/memory/` instructions; with it off, it does not.

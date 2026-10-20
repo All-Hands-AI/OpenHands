@@ -17,8 +17,6 @@ interface WorkspaceModeSelectorProps {
   options: WorkspaceMode[];
   backendKind: BackendKind;
   onChange: (value: WorkspaceMode) => void;
-  /** False on Home before a workspace is opened: the host option reads "Local". */
-  hasWorkspace?: boolean;
   disabled?: boolean;
   testId?: string;
 }
@@ -28,14 +26,13 @@ export function WorkspaceModeSelector({
   options,
   backendKind,
   onChange,
-  hasWorkspace = true,
   disabled = false,
   testId = "workspace-mode-selector",
 }: WorkspaceModeSelectorProps) {
   const { t } = useTranslation("openhands");
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const label = t(getWorkspaceModeI18nKey(value, backendKind, hasWorkspace));
+  const label = t(getWorkspaceModeI18nKey(value, backendKind));
 
   useEffect(() => {
     if (!open) return undefined;
@@ -101,9 +98,7 @@ export function WorkspaceModeSelector({
           )}
         >
           {options.map((option) => {
-            const optionLabel = t(
-              getWorkspaceModeI18nKey(option, backendKind, hasWorkspace),
-            );
+            const optionLabel = t(getWorkspaceModeI18nKey(option, backendKind));
             return (
               <button
                 key={option}
