@@ -268,7 +268,7 @@ How to write and prove new entries: [../mapping.md](../mapping.md).
 | F27 | [Workspace tools](F27-workspace-tools.md) | terminal, browser, planner, task list, usage, `canvas_ui_control` | drawer tabs | LLM | 30 |
 | F28 | [Automation setup page](F28-automation-setup-page.md) | blank form, kind toggle, schedule presets, event fields, timeout, draft save and validation, draft Test, Create | **Add Automation → Create Automation**, `/automations/setup`, draft Resume, kebab Edit | automation service; no LLM | 13 |
 
-28 families, 779 sub-features. `control-openhands map ids` lists every ID with its file.
+28 families, 780 sub-features. `control-openhands map ids` lists every ID with its file.
 
 ### Neighbouring families
 
