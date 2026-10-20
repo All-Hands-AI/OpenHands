@@ -175,5 +175,5 @@ The Agent Server API is implemented by the SDK and consumed through the TypeScri
 
 - [Documentation index](./docs/README.md)
 - [Architecture overview](./docs/architecture.md)
-- [Development guide](./docs/DEVELOPMENT.md)
+- [Development guide](./docs/DEVELOPMENT.md), including [embedding Canvas components in a host app](./docs/DEVELOPMENT.md#css-isolation-and-host-app-customization) (load `@openhands/agent-canvas/styles.css` once next to the component imports)
 - [Self-hosting guide](./docs/SELF_HOSTING.md)
