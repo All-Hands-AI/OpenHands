@@ -1,7 +1,16 @@
 import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import AgentProfilesService from "#/api/agent-profiles-service/agent-profiles-service.api";
+import type { StoredOpenHandsProfile } from "#/api/agent-profiles-service/profile-behavior";
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
+import { useAgentProfiles } from "#/hooks/query/use-agent-profiles";
+import {
+  AGENT_PROFILES_QUERY_KEYS,
+  AGENT_PROFILES_RETRY_OPTIONS,
+  CONFIG_CACHE_OPTIONS,
+} from "#/hooks/query/query-keys";
 import { useSettings } from "#/hooks/query/use-settings";
 import { I18nKey } from "#/i18n/declaration";
 import type { Settings, SkillInfo } from "#/types/settings";
@@ -11,6 +20,7 @@ import {
   buildSkillEnablementFilter,
   CATALOG_SKILL_NAMES,
   isCatalogSkill,
+  profileSkillEnablement,
   resolveEnabledCatalogSkills,
   type SkillEnablement,
 } from "#/utils/skill-enablement";
@@ -32,18 +42,52 @@ function readSkillEnablement(
   };
 }
 
-/** Read-only view of the rule, for surfaces that list skills without toggling. */
-export function useSkillEnabledFilter(): (skill: SkillInfo) => boolean {
+/** The stored OpenHands profile with this id, read only on a local backend. */
+function useLocalOpenHandsProfile(
+  agentProfileId: string | null | undefined,
+): StoredOpenHandsProfile | null {
+  const { backend, orgId } = useActiveBackend();
+  const isLocal = backend.kind !== "cloud" && !!agentProfileId;
+  const { data: list } = useAgentProfiles({ enabled: isLocal });
+  const name = isLocal
+    ? (list?.profiles?.find((profile) => profile.id === agentProfileId)?.name ??
+      null)
+    : null;
+  const { data: detail } = useQuery({
+    queryKey: AGENT_PROFILES_QUERY_KEYS.detail(backend.id, orgId, name ?? ""),
+    queryFn: () => AgentProfilesService.getProfile(name!),
+    enabled: name !== null,
+    ...CONFIG_CACHE_OPTIONS,
+    ...AGENT_PROFILES_RETRY_OPTIONS,
+    meta: { disableToast: true },
+  });
+  return detail?.profile.agent_kind === "openhands"
+    ? (detail.profile as StoredOpenHandsProfile)
+    : null;
+}
+
+/**
+ * Read-only view of the rule, for surfaces that list skills without toggling.
+ * Locally a conversation loads its agent profile's selection, so pass the
+ * profile it launched with.
+ */
+export function useSkillEnabledFilter(
+  agentProfileId?: string | null,
+): (skill: SkillInfo) => boolean {
   const { backend } = useActiveBackend();
   const { data: settings } = useSettings();
   const usesCatalogAllowList = backend.kind !== "cloud";
+  const profile = useLocalOpenHandsProfile(agentProfileId);
 
   return React.useMemo(() => {
     const isEnabled = buildSkillEnablementFilter(
-      readSkillEnablement(settings, usesCatalogAllowList),
+      profile
+        ? profileSkillEnablement(profile)
+        : readSkillEnablement(settings, usesCatalogAllowList),
     );
     return (skill: SkillInfo) => isEnabled(skill.name);
   }, [
+    profile,
     settings?.enabled_skills,
     settings?.disabled_skills,
     usesCatalogAllowList,

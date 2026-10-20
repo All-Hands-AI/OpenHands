@@ -38735,6 +38735,24 @@
     "zh-TW": "技能變更僅對新對話生效。",
     "id": "Perubahan skill hanya berlaku untuk percakapan baru."
   },
+  "SETTINGS$SKILLS_DEFAULT_LIST_NOTICE": {
+    "ar": "المهارات المفعّلة هنا هي القائمة الافتراضية لملفات تعريف الوكلاء الجديدة. يحتفظ كل ملف تعريف بقائمته الخاصة.",
+    "ca": "Les habilitats activades aquí són la llista per defecte dels perfils d'agent nous. Cada perfil conserva la seva pròpia llista.",
+    "de": "Die hier aktivierten Fähigkeiten sind die Standardliste für neue Agentenprofile. Jedes Profil behält seine eigene Liste.",
+    "en": "Skills switched on here are the default list for new agent profiles. Each profile keeps its own list.",
+    "es": "Las habilidades activadas aquí son la lista predeterminada para los nuevos perfiles de agente. Cada perfil conserva su propia lista.",
+    "fr": "Les compétences activées ici forment la liste par défaut des nouveaux profils d'agent. Chaque profil conserve sa propre liste.",
+    "it": "Le competenze attivate qui sono l'elenco predefinito per i nuovi profili agente. Ogni profilo mantiene il proprio elenco.",
+    "ja": "ここでオンにしたスキルは、新しいエージェントプロファイルのデフォルトリストになります。各プロファイルは独自のリストを保持します。",
+    "ko-KR": "여기에서 켠 스킬은 새 에이전트 프로필의 기본 목록이 됩니다. 각 프로필은 자체 목록을 유지합니다.",
+    "no": "Ferdighetene som er slått på her, er standardlisten for nye agentprofiler. Hver profil beholder sin egen liste.",
+    "pt": "As habilidades ativadas aqui são a lista padrão para novos perfis de agente. Cada perfil mantém a sua própria lista.",
+    "tr": "Burada açılan yetenekler, yeni ajan profilleri için varsayılan listedir. Her profil kendi listesini korur.",
+    "uk": "Увімкнені тут навички — типовий список для нових профілів агента. Кожен профіль зберігає власний список.",
+    "zh-CN": "此处开启的技能是新代理配置文件的默认列表。每个配置文件保留自己的列表。",
+    "zh-TW": "此處開啟的技能是新代理設定檔的預設清單。每個設定檔會保留自己的清單。",
+    "id": "Skill yang diaktifkan di sini menjadi daftar bawaan untuk profil agen baru. Setiap profil menyimpan daftarnya sendiri."
+  },
   "SETTINGS$SKILLS_SOURCE_PROJECT": {
     "en": "This project",
     "ja": "このプロジェクト",
