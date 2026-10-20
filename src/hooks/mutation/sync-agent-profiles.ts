@@ -67,35 +67,37 @@ async function saveChange(
 interface WriteOptions {
   /** Replaces the default failure toast, which says the global edit saved. */
   onError?: (error: unknown) => void;
+  /** Reject instead, for a caller that must not go on after a failed write. */
+  throwOnError?: boolean;
 }
 
 /** Run profile writes one at a time on a local backend, so each reads the previous one's result. */
 function enqueue(
   queryClient: QueryClient,
   write: () => Promise<boolean>,
-  { onError }: WriteOptions = {},
+  { onError, throwOnError = false }: WriteOptions = {},
 ): Promise<void> {
-  queue = queue
-    .then(async () => {
-      const { backend } = getActiveBackend();
-      if (backend.kind !== "local" || isNoBackend(backend)) return;
-      await settleRunningDefaultAgentProfileMigration(
-        queryClient,
-        backend.id,
-      ).catch(() => undefined);
-      if (await write()) {
-        await queryClient.invalidateQueries({
-          queryKey: AGENT_PROFILES_QUERY_KEYS.all,
-        });
-      }
-    })
-    .catch((error: unknown) => {
-      console.error("Failed to update agent profiles:", error);
-      if (onError) onError(error);
-      else
-        displayErrorToast(i18n.t(I18nKey.SETTINGS$DEFAULT_PROFILE_NOT_UPDATED));
-    });
-  return queue;
+  const run = queue.then(async () => {
+    const { backend } = getActiveBackend();
+    if (backend.kind !== "local" || isNoBackend(backend)) return;
+    await settleRunningDefaultAgentProfileMigration(
+      queryClient,
+      backend.id,
+    ).catch(() => undefined);
+    if (await write()) {
+      await queryClient.invalidateQueries({
+        queryKey: AGENT_PROFILES_QUERY_KEYS.all,
+      });
+    }
+  });
+  queue = run.catch(() => undefined);
+  return run.catch((error: unknown) => {
+    console.error("Failed to update agent profiles:", error);
+    if (throwOnError) throw error;
+    if (onError) onError(error);
+    else
+      displayErrorToast(i18n.t(I18nKey.SETTINGS$DEFAULT_PROFILE_NOT_UPDATED));
+  });
 }
 
 /** Change the local `default` profile. */
@@ -120,17 +122,33 @@ export function updateDefaultAgentProfile(
 export function updateEveryAgentProfile(
   queryClient: QueryClient,
   change: ProfileChange,
+  options?: WriteOptions,
 ): Promise<void> {
-  return enqueue(queryClient, async () => {
-    const { profiles } = await AgentProfilesService.listProfiles();
-    const saved = await Promise.all(
-      profiles.map(async ({ name }) =>
-        saveChange(name, await readProfile(name), change),
-      ),
-    );
-    return saved.some(Boolean);
-  });
+  return enqueue(
+    queryClient,
+    async () => {
+      const { profiles } = await AgentProfilesService.listProfiles();
+      const saved = await Promise.all(
+        profiles.map(async ({ name }) =>
+          saveChange(name, await readProfile(name), change),
+        ),
+      );
+      return saved.some(Boolean);
+    },
+    options,
+  );
 }
+
+export const routerDetached =
+  (name: string): ProfileChange =>
+  (profile) =>
+    profile.agent_kind === "openhands" &&
+    (profile as { meta_profile_ref?: string | null }).meta_profile_ref === name
+      ? ({
+          meta_profile_ref: null,
+          enable_classify_and_switch_llm_tool: false,
+        } as Partial<AgentProfileSaveInput>)
+      : null;
 
 type McpRefs = { mcp_server_refs?: string[] | null };
 
@@ -160,6 +178,13 @@ export const withSkillSelection =
       ? null
       : toProfileSkillFields(selection);
   };
+
+export const llmProfileMovedOff =
+  (from: string, to: string): ProfileChange =>
+  (profile) =>
+    profile.agent_kind === "openhands" && profile.llm_profile_ref === from
+      ? { llm_profile_ref: to }
+      : null;
 
 export const llmProfileMirrored =
   (name: string): ProfileChange =>

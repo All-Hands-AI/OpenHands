@@ -260,6 +260,9 @@ describe("VerificationSettingsRoute on a local backend", () => {
         "sdk-settings-verification.enable_iterative_refinement",
       ),
     ).not.toBeInTheDocument();
+    expect(
+      screen.getByTestId("verification-critic-per-profile-note"),
+    ).toBeInTheDocument();
   });
 
   it("keeps the confirmation controls", async () => {

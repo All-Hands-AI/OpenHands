@@ -106,6 +106,7 @@ const TOOL_CONCURRENCY_FIELD_KEY = "tool_concurrency_limit";
 // Not valid meta-profile names, so they can't collide with one.
 const ROUTER_OFF_KEY = "__off__";
 const ROUTER_FIRST_KEY = "__first__";
+const SKILL_SEARCH_MIN_ITEMS = 10;
 const MCP_SERVER_REFS_KEY = "mcp_server_refs";
 const SECRET_REFS_KEY = "secret_refs";
 const TOOLS_KEY = "tools";
@@ -374,12 +375,15 @@ interface AgentSettingsScreenProps {
   onSaveControlChange: (control: AgentSettingsSaveControl) => void;
   /** `default` shares its MCP servers and skills with the global pages and keeps every secret. */
   isDefaultProfile?: boolean;
+  /** Shown under the agent type for an OpenHands agent. */
+  llmPicker?: React.ReactNode;
 }
 
 export function AgentSettingsScreen({
   agentSettingsOverride = null,
   onSaveControlChange,
   isDefaultProfile = false,
+  llmPicker = null,
 }: AgentSettingsScreenProps) {
   const { t } = useTranslation("openhands");
   const { data: settings, isLoading } = useSettings();
@@ -531,6 +535,16 @@ export function AgentSettingsScreen({
     () => publicSkillTest(skillCatalog),
     [skillCatalog],
   );
+  const [skillQuery, setSkillQuery] = useState("");
+  const visibleSkills = React.useMemo(() => {
+    const query = skillQuery.trim().toLowerCase();
+    if (!skillCatalog || !query) return skillCatalog;
+    return skillCatalog.filter((skill) =>
+      [skill.name, skill.description ?? "", ...(skill.triggers ?? [])].some(
+        (text) => text.toLowerCase().includes(query),
+      ),
+    );
+  }, [skillCatalog, skillQuery]);
   const storedPublicSkills = agentSettingsOverride?.public_skills;
   const hasStoredSkillList = Array.isArray(storedPublicSkills);
   const initialSkills = React.useMemo<SkillEnablement | undefined>(() => {
@@ -1126,6 +1140,8 @@ export function AgentSettingsScreen({
         }}
       />
 
+      {isAcp ? null : llmPicker}
+
       {!isAcp && instructionsSupported ? (
         <div className="flex flex-col gap-2.5">
           <Typography.Text className="text-sm">
@@ -1536,11 +1552,22 @@ export function AgentSettingsScreen({
           <Typography.Text className="text-sm">
             {t(I18nKey.SETTINGS$AGENT_PROFILE_SKILLS)}
           </Typography.Text>
-          {skillCatalog && currentSkills ? (
+          {skillCatalog && skillCatalog.length > SKILL_SEARCH_MIN_ITEMS ? (
+            <SettingsInput
+              testId="agent-settings-skills-search"
+              label=""
+              type="search"
+              className="w-full"
+              value={skillQuery}
+              placeholder={t(I18nKey.SETTINGS$SKILLS_SEARCH_PLACEHOLDER)}
+              onChange={setSkillQuery}
+            />
+          ) : null}
+          {visibleSkills && currentSkills ? (
             <div className="max-h-80 overflow-y-auto pr-1">
               <ProfileScopeList
                 testId="agent-settings-skills"
-                items={skillCatalog.map((skill) => ({
+                items={visibleSkills.map((skill) => ({
                   name: skill.name,
                   description: t(
                     skill.origin === "public"

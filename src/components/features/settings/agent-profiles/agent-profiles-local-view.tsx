@@ -134,6 +134,7 @@ export function AgentProfilesLocalView() {
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [profileName, setProfileName] = useState("");
+  const [nameTouched, setNameTouched] = useState(false);
   const [editingProfile, setEditingProfile] = useState<AgentProfile | null>(
     null,
   );
@@ -186,6 +187,7 @@ export function AgentProfilesLocalView() {
       }
     }
     setProfileName("");
+    setNameTouched(false);
     setEditingProfile(null);
     setSeedProfile(seed);
     // A new profile copies an OpenHands `default`, skills included.
@@ -270,6 +272,7 @@ export function AgentProfilesLocalView() {
     setEditingProfile(null);
     setSeedProfile(null);
     setProfileName("");
+    setNameTouched(false);
     setOverride(null);
     setSaveControl(null);
   }, []);
@@ -389,9 +392,13 @@ export function AgentProfilesLocalView() {
       ? t(I18nKey.SETTINGS$PROFILE_LOADED, { name: editingProfile.name })
       : t(I18nKey.SETTINGS$AGENT_PROFILE_SAVE_HINT);
   const isOpenHands = saveControl?.agentType !== "acp";
-  const isEditingDefault =
+  const isDefaultLocked =
     viewMode === "edit" &&
     editingProfile?.name === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME;
+  const isEditingDefault =
+    viewMode === "edit" &&
+    editingProfile?.name === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME &&
+    profileName.trim() === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME;
   const nameDirty = viewMode === "edit" && profileName !== editingProfile?.name;
   const loadedLlmRef =
     editingProfile?.agent_kind === "openhands"
@@ -404,6 +411,40 @@ export function AgentProfilesLocalView() {
     Boolean(saveControl?.isDirty) ||
     nameDirty ||
     llmRefDirty;
+
+  // @spec FF-001 — Profile validation feedback follows the host error role
+  // OpenHands profiles reference an LLM profile (required).
+  const llmPicker =
+    llmProfiles.length > 0 ? (
+      <div className="flex flex-col gap-2">
+        <SettingsDropdownInput
+          testId="agent-profile-llm-selector"
+          name="agent-profile-llm"
+          label={t(I18nKey.SETTINGS$AGENT_PROFILE_LLM_LABEL)}
+          items={llmProfiles.map((p) => ({
+            key: p.name,
+            label: p.model ? `${p.name} (${p.model})` : p.name,
+          }))}
+          selectedKey={llmProfileRef}
+          onSelectionChange={(key) => key && setLlmProfileRef(String(key))}
+        />
+        {isEditingDefault ? (
+          <p
+            data-testid="agent-profile-llm-default-note"
+            className="text-xs text-tertiary-alt"
+          >
+            {t(I18nKey.SETTINGS$AGENT_PROFILE_DEFAULT_LLM_NOTE)}
+          </p>
+        ) : null}
+      </div>
+    ) : (
+      <p
+        data-testid="agent-profile-no-llm"
+        className="text-sm text-feedback-error"
+      >
+        {t(I18nKey.SETTINGS$AGENT_PROFILE_NO_LLM)}
+      </p>
+    );
 
   return (
     <div className="flex flex-col gap-6">
@@ -425,17 +466,32 @@ export function AgentProfilesLocalView() {
         </p>
       </div>
 
-      <ProfileNameInput
-        testId="agent-profile-name-input"
-        value={profileName}
-        onChange={setProfileName}
-        isRequired
-        error={
-          isDuplicateName
-            ? t(I18nKey.SETTINGS$AGENT_PROFILE_NAME_TAKEN)
-            : undefined
-        }
-      />
+      <div className="flex flex-col gap-2">
+        <ProfileNameInput
+          testId="agent-profile-name-input"
+          value={profileName}
+          onChange={(name) => {
+            setNameTouched(true);
+            setProfileName(name);
+          }}
+          // A new profile's empty name isn't an error until the user types.
+          isRequired={viewMode === "edit" || nameTouched}
+          isDisabled={isDefaultLocked}
+          error={
+            isDuplicateName
+              ? t(I18nKey.SETTINGS$AGENT_PROFILE_NAME_TAKEN)
+              : undefined
+          }
+        />
+        {isDefaultLocked ? (
+          <p
+            data-testid="agent-profile-default-locked-note"
+            className="text-xs text-tertiary-alt"
+          >
+            {t(I18nKey.SETTINGS$AGENT_PROFILE_DEFAULT_LOCKED)}
+          </p>
+        ) : null}
+      </div>
 
       {/* Reuse the existing Agent settings form to define the agent. */}
       <AgentSettingsScreen
@@ -443,41 +499,8 @@ export function AgentProfilesLocalView() {
         agentSettingsOverride={override}
         onSaveControlChange={setSaveControl}
         isDefaultProfile={isEditingDefault}
+        llmPicker={llmPicker}
       />
-
-      {/* @spec FF-001 — Profile validation feedback follows the host error role */}
-      {/* OpenHands profiles reference an LLM profile (required). */}
-      {isOpenHands &&
-        (llmProfiles.length > 0 ? (
-          <div className="flex flex-col gap-2">
-            <SettingsDropdownInput
-              testId="agent-profile-llm-selector"
-              name="agent-profile-llm"
-              label={t(I18nKey.SETTINGS$AGENT_PROFILE_LLM_LABEL)}
-              items={llmProfiles.map((p) => ({
-                key: p.name,
-                label: p.model ? `${p.name} (${p.model})` : p.name,
-              }))}
-              selectedKey={llmProfileRef}
-              onSelectionChange={(key) => key && setLlmProfileRef(String(key))}
-            />
-            {isEditingDefault ? (
-              <p
-                data-testid="agent-profile-llm-default-note"
-                className="text-xs text-tertiary-alt"
-              >
-                {t(I18nKey.SETTINGS$AGENT_PROFILE_DEFAULT_LLM_NOTE)}
-              </p>
-            ) : null}
-          </div>
-        ) : (
-          <p
-            data-testid="agent-profile-no-llm"
-            className="text-sm text-feedback-error"
-          >
-            {t(I18nKey.SETTINGS$AGENT_PROFILE_NO_LLM)}
-          </p>
-        ))}
 
       <div className="flex justify-start gap-3 pt-4">
         <BrandButton

@@ -81,6 +81,7 @@ function useLocalOpenHandsProfile(
  */
 function useDefaultProfileSkills(): {
   ready: boolean;
+  failed: boolean;
   selection: SkillEnablement | null;
 } {
   const { backend, orgId } = useActiveBackend();
@@ -94,7 +95,7 @@ function useDefaultProfileSkills(): {
     ),
     queryFn: () =>
       AgentProfilesService.getProfile(WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME),
-    enabled: isLocal && !migration.isFetching,
+    enabled: isLocal && migration.isSuccess,
     ...CONFIG_CACHE_OPTIONS,
     ...AGENT_PROFILES_RETRY_OPTIONS,
     meta: { disableToast: true },
@@ -110,17 +111,21 @@ function useDefaultProfileSkills(): {
   );
   // Without `default`'s lists the page would show and write settings, which
   // no launch reads; only a missing `default` falls back to them.
-  const failed =
-    !!error && !(error instanceof HttpError && error.status === 404);
+  const failure =
+    (isLocal && migration.error) ||
+    (error && !(error instanceof HttpError && error.status === 404)
+      ? error
+      : null);
   React.useEffect(() => {
-    if (failed) {
+    if (failure) {
       displayErrorToast(
-        retrieveAxiosErrorMessage(error) || i18n.t(I18nKey.ERROR$GENERIC),
+        retrieveAxiosErrorMessage(failure) || i18n.t(I18nKey.ERROR$GENERIC),
       );
     }
-  }, [failed]);
+  }, [failure]);
   return {
-    ready: !isLocal || (!migration.isFetching && !isLoading && !failed),
+    ready: !isLocal || (migration.isSuccess && !isLoading && !failure),
+    failed: !!failure,
     selection,
   };
 }
@@ -156,6 +161,8 @@ export function useSkillEnabledFilter(
 export interface SkillEnablementController {
   isEnabled: (skill: SkillInfo) => boolean;
   setEnabled: (skillName: string, enabled: boolean) => void;
+  /** The list couldn't be read, so switching a skill would save nothing. */
+  isUnavailable: boolean;
 }
 
 /** Stable form of both lists, so an unchanged set can skip the save. */
@@ -280,5 +287,5 @@ export function useSkillEnablement(): SkillEnablementController {
     [usesCatalogAllowList],
   );
 
-  return { isEnabled, setEnabled };
+  return { isEnabled, setEnabled, isUnavailable: defaultSkills.failed };
 }

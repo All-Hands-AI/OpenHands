@@ -1583,6 +1583,65 @@ describe("AgentSettingsScreen — skills", () => {
     });
   });
 
+  it("filters a long skill list by name, description or trigger", async () => {
+    const many: SkillInfo[] = Array.from({ length: 12 }, (_, i) => ({
+      name: `skill-${i}`,
+      type: "knowledge" as const,
+      source: null,
+      origin: "public" as const,
+      description: i === 3 ? "Reviews pull requests" : null,
+      triggers: i === 7 ? ["deploy"] : [],
+    }));
+    vi.spyOn(SkillsService, "getSkillCatalog").mockResolvedValue(many);
+    renderAgentSettingsScreen({
+      agentSettingsOverride: {
+        agent_kind: "openhands",
+        public_skills: [],
+        disabled_skills: [],
+      },
+    });
+    const search = await screen.findByTestId("agent-settings-skills-search");
+    const user = userEvent.setup();
+
+    await user.type(search, "review");
+    expect(screen.getByTestId("agent-settings-skills-skill-3")).toBeVisible();
+    expect(
+      screen.queryByTestId("agent-settings-skills-skill-1"),
+    ).not.toBeInTheDocument();
+
+    await user.clear(search);
+    await user.type(search, "deploy");
+    expect(screen.getByTestId("agent-settings-skills-skill-7")).toBeVisible();
+  });
+
+  it("shows the LLM picker under the agent type for OpenHands only", async () => {
+    renderAgentSettingsScreen({
+      agentSettingsOverride: CLAUDE_PROFILE,
+      llmPicker: <div data-testid="llm-picker-slot" />,
+    });
+    await screen.findByTestId("agent-command-input");
+    expect(screen.queryByTestId("llm-picker-slot")).not.toBeInTheDocument();
+  });
+
+  it("puts the LLM picker right after the agent type", async () => {
+    renderAgentSettingsScreen({
+      agentSettingsOverride: { agent_kind: "openhands" },
+      llmPicker: <div data-testid="llm-picker-slot" />,
+    });
+    const slot = await screen.findByTestId("llm-picker-slot");
+    const agentType = screen.getByTestId("agent-type-selector");
+
+    expect(
+      agentType.compareDocumentPosition(slot) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      slot.compareDocumentPosition(
+        screen.getByTestId("agent-settings-mcp-mode"),
+      ) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it("tells the default profile its list is the Skills page", async () => {
     renderAgentSettingsScreen({
       agentSettingsOverride: {

@@ -24,13 +24,18 @@ import { Settings, SkillInfo } from "#/types/settings";
 import { ActiveBackendProvider } from "#/contexts/active-backend-context";
 
 const navigateMock = vi.fn();
+let migrationState: {
+  isFetching: boolean;
+  isSuccess: boolean;
+  error: unknown;
+} = { isFetching: false, isSuccess: true, error: null };
 vi.mock(
   "#/hooks/use-migrate-default-agent-profile",
   async (importOriginal) => ({
     ...(await importOriginal<
       typeof import("#/hooks/use-migrate-default-agent-profile")
     >()),
-    useMigrateDefaultAgentProfile: () => ({ isFetching: false }),
+    useMigrateDefaultAgentProfile: () => migrationState,
   }),
 );
 const updateDefaultAgentProfileMock = vi.hoisted(() => vi.fn());
@@ -122,6 +127,7 @@ describe("SkillsSettingsScreen", () => {
     vi.restoreAllMocks();
     navigateMock.mockReset();
     vi.spyOn(SettingsService, "getSettings").mockResolvedValue(buildSettings());
+    migrationState = { isFetching: false, isSuccess: true, error: null };
     // No OpenHands `default`: the page keeps its lists in settings.
     vi.spyOn(AgentProfilesService, "getProfile").mockRejectedValue(
       new HttpError(404, "Not Found", {}, "missing"),
@@ -753,6 +759,31 @@ Full skill body.`,
     const toggle = await screen.findByTestId(
       `skill-toggle-${CATALOG_RECOMMENDED}`,
     );
+    await waitFor(() => expect(toggle).toBeDisabled());
+    await user.click(toggle);
+
+    expect(saveSpy).not.toHaveBeenCalled();
+    expect(updateDefaultAgentProfileMock).not.toHaveBeenCalled();
+  });
+
+  it("locks the switches while the default profile's migration has failed", async () => {
+    const user = userEvent.setup();
+    updateDefaultAgentProfileMock.mockReset().mockResolvedValue(undefined);
+    migrationState = {
+      isFetching: false,
+      isSuccess: false,
+      error: new Error("offline"),
+    };
+    mockSkillList([buildSkill({ name: CATALOG_RECOMMENDED })]);
+    const saveSpy = vi
+      .spyOn(SettingsService, "saveSettings")
+      .mockResolvedValue(true);
+
+    renderSkillsSettingsScreen();
+    const toggle = await screen.findByTestId(
+      `skill-toggle-${CATALOG_RECOMMENDED}`,
+    );
+    await waitFor(() => expect(toggle).toBeDisabled());
     await user.click(toggle);
 
     expect(saveSpy).not.toHaveBeenCalled();

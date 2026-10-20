@@ -29,10 +29,12 @@ vi.mock("#/routes/agent-settings", () => {
     agentSettingsOverride,
     onSaveControlChange,
     isDefaultProfile,
+    llmPicker,
   }: {
     agentSettingsOverride?: Record<string, unknown> | null;
     onSaveControlChange?: (c: AgentSettingsSaveControl) => void;
     isDefaultProfile?: boolean;
+    llmPicker?: React.ReactNode;
   }) => {
     useEffect(() => {
       if (emitControl) onSaveControlChange?.(emitControl);
@@ -44,7 +46,9 @@ vi.mock("#/routes/agent-settings", () => {
         data-testid="mock-agent-settings"
         data-override={JSON.stringify(agentSettingsOverride)}
         data-default-profile={String(Boolean(isDefaultProfile))}
-      />
+      >
+        {emitControl?.agentType === "acp" ? null : llmPicker}
+      </div>
     );
   };
   return {
@@ -320,6 +324,28 @@ describe("AgentProfilesLocalView save mapping", () => {
       public_skills: [...DEFAULT_ENABLED_SKILL_NAMES],
       disabled_skills: [],
     });
+  });
+
+  it("waits for typing before calling a new profile's empty name invalid", async () => {
+    renderView();
+    const user = await openCreateAndName("x");
+    const input = screen.getByTestId("agent-profile-name-input");
+    await user.clear(input);
+
+    expect(input).toHaveAttribute("aria-invalid", "true");
+  });
+
+  it("starts a new profile without flagging its empty name", async () => {
+    renderView();
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId("add-agent-profile"));
+    await screen.findByTestId("mock-agent-settings");
+
+    expect(screen.getByTestId("agent-profile-name-input")).toHaveAttribute(
+      "aria-invalid",
+      "false",
+    );
+    expect(screen.getByTestId("save-agent-profile-btn")).toBeDisabled();
   });
 
   it("describes the add editor with agent copy, not the LLM-profile hint", async () => {
@@ -692,18 +718,16 @@ describe("AgentProfilesLocalView save mapping", () => {
       });
     });
 
-    it("stops sharing the global pages once renamed", async () => {
+    it("locks default's name, which the server would otherwise reseed", async () => {
       renderView();
       const user = userEvent.setup();
       await user.click(screen.getByTestId("edit-agent-profile"));
       await screen.findByTestId("mock-agent-settings");
-      const input = screen.getByTestId("agent-profile-name-input");
-      await user.clear(input);
-      await user.type(input, "mine");
-      await user.click(screen.getByTestId("save-agent-profile-btn"));
 
-      await waitFor(() => expect(saveMutate).toHaveBeenCalledTimes(1));
-      expect(applyToGlobalMock).not.toHaveBeenCalled();
+      expect(screen.getByTestId("agent-profile-name-input")).toBeDisabled();
+      expect(
+        screen.getByTestId("agent-profile-default-locked-note"),
+      ).toHaveTextContent("SETTINGS$AGENT_PROFILE_DEFAULT_LOCKED");
     });
   });
 

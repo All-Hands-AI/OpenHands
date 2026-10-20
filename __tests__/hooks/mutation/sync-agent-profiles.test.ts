@@ -13,6 +13,7 @@ import {
   llmProfileMirrored,
   mcpServerRemoved,
   mcpServerRenamed,
+  routerDetached,
   withSkillSelection,
   updateDefaultAgentProfile,
   updateEveryAgentProfile,
@@ -255,6 +256,40 @@ describe("profile writes", () => {
 
     expect(displayErrorToast).toHaveBeenCalledTimes(1);
     expect(AgentProfilesService.saveProfile).toHaveBeenCalledTimes(2);
+  });
+
+  it("detaches a deleted router, and can reject so the delete stops", async () => {
+    storeProfiles(
+      openHands("default"),
+      openHands("routed", {
+        meta_profile_ref: "fast",
+        enable_classify_and_switch_llm_tool: true,
+      }),
+    );
+
+    await updateEveryAgentProfile(queryClient, routerDetached("fast"), {
+      throwOnError: true,
+    });
+
+    expect(AgentProfilesService.saveProfile).toHaveBeenCalledTimes(1);
+    expect(AgentProfilesService.saveProfile).toHaveBeenCalledWith(
+      "routed",
+      expect.objectContaining({
+        meta_profile_ref: null,
+        enable_classify_and_switch_llm_tool: false,
+      }),
+    );
+
+    vi.mocked(AgentProfilesService.saveProfile).mockRejectedValueOnce(
+      new Error("boom"),
+    );
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    await expect(
+      updateEveryAgentProfile(queryClient, routerDetached("fast"), {
+        throwOnError: true,
+      }),
+    ).rejects.toThrow("boom");
+    expect(displayErrorToast).not.toHaveBeenCalled();
   });
 
   it("lets the caller report a failure instead of the default toast", async () => {

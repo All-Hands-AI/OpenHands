@@ -1,4 +1,7 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
+import { Typography } from "#/ui/typography";
+import { I18nKey } from "#/i18n/declaration";
 import { SdkSectionPage } from "#/components/features/settings/sdk-settings/sdk-section-page";
 import { profileBehaviorFieldKeys } from "#/components/features/settings/agent-profiles/profile-behavior-form";
 import { useActiveBackend } from "#/contexts/active-backend-context";
@@ -50,6 +53,7 @@ export function VerificationSettingsScreen({
 
 /** Locally each agent profile owns the critic's behavior; its API key stays here. */
 function GlobalVerificationSettingsScreen() {
+  const { t } = useTranslation("openhands");
   const { data: settings } = useSettings();
   const { data: schema } = useAgentSettingsSchema(
     settings?.agent_settings_schema,
@@ -76,12 +80,20 @@ function GlobalVerificationSettingsScreen() {
   );
   if (!settingsSources) return null;
   return (
-    <SdkSectionPage
-      settingsSources={settingsSources}
-      initialValueOverrides={SHOW_CRITIC_API_KEY}
-      markInitialOverridesDirty={false}
-      testId="verification-settings-screen"
-    />
+    <div className="flex flex-col gap-4">
+      <Typography.Text
+        testId="verification-critic-per-profile-note"
+        className="text-xs text-tertiary-alt"
+      >
+        {t(I18nKey.SETTINGS$VERIFICATION_CRITIC_PER_PROFILE)}
+      </Typography.Text>
+      <SdkSectionPage
+        settingsSources={settingsSources}
+        initialValueOverrides={SHOW_CRITIC_API_KEY}
+        markInitialOverridesDirty={false}
+        testId="verification-settings-screen"
+      />
+    </div>
   );
 }
 

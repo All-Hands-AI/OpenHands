@@ -2591,6 +2591,24 @@
     "ca": "El perfil per defecte fa servir el perfil LLM actiu. Triar-ne un altre aquí el fa actiu.",
     "id": "Profil bawaan memakai profil LLM yang aktif. Memilih yang lain di sini membuatnya aktif."
   },
+  "SETTINGS$AGENT_PROFILE_DEFAULT_LOCKED": {
+    "en": "The default profile can't be renamed or deleted.",
+    "ja": "デフォルトのプロファイルは名前の変更や削除ができません。",
+    "zh-CN": "默认配置文件不能重命名或删除。",
+    "zh-TW": "預設設定檔無法重新命名或刪除。",
+    "ko-KR": "기본 프로필은 이름을 바꾸거나 삭제할 수 없습니다.",
+    "no": "Standardprofilen kan ikke gis nytt navn eller slettes.",
+    "it": "Il profilo predefinito non può essere rinominato né eliminato.",
+    "pt": "O perfil padrão não pode ser renomeado nem excluído.",
+    "es": "El perfil predeterminado no se puede renombrar ni eliminar.",
+    "ar": "لا يمكن إعادة تسمية الملف الافتراضي أو حذفه.",
+    "fr": "Le profil par défaut ne peut pas être renommé ni supprimé.",
+    "tr": "Varsayılan profil yeniden adlandırılamaz veya silinemez.",
+    "de": "Das Standardprofil kann nicht umbenannt oder gelöscht werden.",
+    "uk": "Типовий профіль не можна перейменувати чи видалити.",
+    "ca": "El perfil per defecte no es pot reanomenar ni suprimir.",
+    "id": "Profil bawaan tidak dapat diganti namanya atau dihapus."
+  },
   "SETTINGS$AGENT_PROFILE_LLM_REQUIRED": {
     "en": "Select an LLM profile for this agent.",
     "ja": "このエージェントのLLMプロファイルを選択してください。",
@@ -7918,6 +7936,24 @@
     "uk": "Запити підтвердження та перевірки безпеки для дій.",
     "ca": "Sol·licituds de confirmació i comprovacions de seguretat sobre les accions.",
     "id": "Prompt konfirmasi dan pemeriksaan keamanan pada tindakan."
+  },
+  "SETTINGS$VERIFICATION_CRITIC_PER_PROFILE": {
+    "en": "Each agent profile turns the critic on or off in Settings → Agent.",
+    "ja": "クリティックのオン・オフは、設定 → エージェントでエージェントプロファイルごとに切り替えます。",
+    "zh-CN": "每个代理配置文件在“设置 → 代理”中开启或关闭评审器。",
+    "zh-TW": "每個代理設定檔在「設定 → 代理」中開啟或關閉評審器。",
+    "ko-KR": "크리틱은 설정 → 에이전트에서 에이전트 프로필마다 켜거나 끕니다.",
+    "no": "Hver agentprofil slår kritikeren av eller på under Innstillinger → Agent.",
+    "it": "Ogni profilo agente attiva o disattiva il critico in Impostazioni → Agente.",
+    "pt": "Cada perfil de agente ativa ou desativa o crítico em Configurações → Agente.",
+    "es": "Cada perfil de agente activa o desactiva el crítico en Configuración → Agente.",
+    "ar": "يشغّل كل ملف تعريف وكيل الناقد أو يوقفه من الإعدادات ← الوكيل.",
+    "fr": "Chaque profil d'agent active ou désactive le critique dans Paramètres → Agent.",
+    "tr": "Her ajan profili eleştirmeni Ayarlar → Ajan bölümünden açar veya kapatır.",
+    "de": "Jedes Agentenprofil schaltet den Kritiker unter Einstellungen → Agent ein oder aus.",
+    "uk": "Кожен профіль агента вмикає чи вимикає критика в Налаштування → Агент.",
+    "ca": "Cada perfil d'agent activa o desactiva el crític a Configuració → Agent.",
+    "id": "Setiap profil agen menyalakan atau mematikan critic di Pengaturan → Agen."
   },
   "SETTINGS$PAGE_APPLICATION_SUBLINE": {
     "en": "Language, theme, notifications, and Git identity.",

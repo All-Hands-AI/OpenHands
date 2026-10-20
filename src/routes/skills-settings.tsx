@@ -53,7 +53,7 @@ function SkillsSettingsScreen() {
   const { data: skills, isLoading: skillsLoading } = isCloud
     ? cloudSkills
     : catalog;
-  const { isEnabled, setEnabled } = useSkillEnablement();
+  const { isEnabled, setEnabled, isUnavailable } = useSkillEnablement();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [queryInput, setQueryInput] = React.useState(
@@ -268,6 +268,7 @@ function SkillsSettingsScreen() {
                             onToggle={(enabled) =>
                               setEnabled(skill.name, enabled)
                             }
+                            isToggleDisabled={isUnavailable}
                           />
                         ))}
                       </div>
@@ -295,6 +296,7 @@ function SkillsSettingsScreen() {
             enabled={isEnabled(selectedSkill)}
             onToggle={(enabled) => setEnabled(selectedSkill.name, enabled)}
             onClose={() => setSelectedSkill(null)}
+            isToggleDisabled={isUnavailable}
           />
         )}
 
