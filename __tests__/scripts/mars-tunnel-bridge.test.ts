@@ -278,10 +278,16 @@ describe("createMarsTunnelBridge", () => {
     });
   });
 
-  it("tries the preparation again when the sandbox could not be reached", async () => {
+  it.each([
+    { why: "the sandbox could not be reached", result: "unreachable" },
+    {
+      why: "a step failed while the sandbox was still booting",
+      result: "failed",
+    },
+  ])("tries the preparation again when $why", async ({ result }) => {
     const { bridge, prepare, ipcMain } = setup();
     await ipcMain.invoke(MARS_TUNNEL_IPC.savePat, { token: VALID_PAT });
-    prepare.mockResolvedValueOnce("unreachable" as never);
+    prepare.mockResolvedValueOnce(result as never);
 
     await bridge.openTunnel({ sessionId: "sess_a" });
     await bridge.openTunnel({ sessionId: "sess_a" });

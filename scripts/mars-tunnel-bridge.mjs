@@ -264,8 +264,8 @@ export function createMarsTunnelBridge({
     });
 
   /**
-   * Sandbox preparation per session, run once per process: the fixes it
-   * makes persist with the sandbox, and concurrent connects share one run.
+   * Sandbox preparation per session, remembered once it succeeds: the fixes
+   * it makes persist with the sandbox, and concurrent connects share one run.
    */
   const prepared = new Map();
 
@@ -275,11 +275,18 @@ export function createMarsTunnelBridge({
       run = prepare({
         baseUrl: buildTunnelHost(localPort),
         readFailure: () => registry.get(sessionId)?.upstreamFailure,
-      }).then((result) => {
-        // An unreachable guest may answer next time; try again then.
-        if (result === "unreachable") prepared.delete(sessionId);
-        return result;
-      });
+      }).then(
+        (result) => {
+          // Only a prepared sandbox is remembered. An unreachable guest, or
+          // one still booting when a step failed, is tried again next time.
+          if (result !== "prepared") prepared.delete(sessionId);
+          return result;
+        },
+        (error) => {
+          prepared.delete(sessionId);
+          throw error;
+        },
+      );
       prepared.set(sessionId, run);
     }
     return run;

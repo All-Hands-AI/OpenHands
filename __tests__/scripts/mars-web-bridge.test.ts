@@ -798,7 +798,7 @@ describe("createMarsWebBridge with a session key", () => {
 
     ws.send(JSON.stringify({ type: "auth", session_api_key: "wrong" }));
 
-    expect(await closed).toBe(1008);
+    expect(await closed).toBe(4001);
     expect(upstream.seen.ws).toHaveLength(0);
   });
 });
@@ -826,7 +826,7 @@ describe("createMarsWebBridge first-message login window", () => {
       ws.on("close", (closeCode) => resolve(closeCode)),
     );
 
-    expect(code).toBe(1008);
+    expect(code).toBe(4001);
     expect(upstream.seen.ws).toHaveLength(0);
     await marsWeb.dispose();
     web.close();

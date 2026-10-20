@@ -17,9 +17,14 @@
  * holds the session key alike.
  */
 
+import {
+  BashClient,
+  ServerClient,
+  SettingsClient,
+} from "@openhands/typescript-client/clients";
+
 // The guest agent-server takes no key: the DigitalOcean tunnel is the gate.
 const SCRIPT_TIMEOUT_S = 30;
-const REQUEST_TIMEOUT_MS = (SCRIPT_TIMEOUT_S + 10) * 1000;
 /** The script kills the server one second after answering. */
 const RESTART_GRACE_MS = 2_000;
 
@@ -90,7 +95,6 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * @param {object} options
  * @param {string} options.baseUrl The tunnel listener, `http://127.0.0.1:<port>`
  * @param {() => UpstreamFailure | null | undefined} options.readFailure
- * @param {typeof fetch} [options.fetchImpl]
  * @param {number} [options.budgetMs]
  * @param {number} [options.intervalMs]
  * @returns {Promise<boolean>}
@@ -98,18 +102,16 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 export async function waitForGuest({
   baseUrl,
   readFailure,
-  fetchImpl = globalThis.fetch,
   budgetMs = GUEST_WAIT_MS,
   intervalMs = PROBE_INTERVAL_MS,
 }) {
+  const server = new ServerClient({ host: baseUrl, timeout: PROBE_TIMEOUT_MS });
   const deadline = Date.now() + budgetMs;
   let closedSince = null;
   for (;;) {
     try {
-      const response = await fetchImpl(`${baseUrl}/server_info`, {
-        signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
-      });
-      if (response.ok) return true;
+      await server.getServerInfo();
+      return true;
     } catch {
       // Still waking, or the tunnel is still dialing.
     }
@@ -133,20 +135,6 @@ export async function waitForGuest({
   }
 }
 
-async function guestJson(fetchImpl, url, init = {}) {
-  const response = await fetchImpl(url, {
-    ...init,
-    headers: { "Content-Type": "application/json", ...init.headers },
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-  });
-  if (!response.ok) {
-    throw new Error(
-      `${init.method ?? "GET"} ${url} answered ${response.status}`,
-    );
-  }
-  return response.json();
-}
-
 /**
  * Best-effort: a sandbox this cannot prepare still connects, and the failure
  * surfaces where it bites (conversation start) instead of blocking connect.
@@ -154,7 +142,6 @@ async function guestJson(fetchImpl, url, init = {}) {
  * @param {object} options
  * @param {string} options.baseUrl The tunnel listener, `http://127.0.0.1:<port>`
  * @param {() => UpstreamFailure | null | undefined} options.readFailure
- * @param {typeof fetch} [options.fetchImpl]
  * @param {(message: string) => void} [options.log]
  * @param {{ budgetMs?: number, intervalMs?: number, restartGraceMs?: number }} [options.timing]
  * @returns {Promise<"prepared" | "unreachable" | "failed">}
@@ -162,36 +149,25 @@ async function guestJson(fetchImpl, url, init = {}) {
 export async function prepareSandbox({
   baseUrl,
   readFailure,
-  fetchImpl = globalThis.fetch,
   log = (message) => console.warn(`[mars-sandbox] ${message}`),
   timing = {},
 }) {
-  const wait = () =>
-    waitForGuest({ baseUrl, readFailure, fetchImpl, ...timing });
+  const wait = () => waitForGuest({ baseUrl, readFailure, ...timing });
   if (!(await wait())) return "unreachable";
   try {
-    const output = await guestJson(
-      fetchImpl,
-      `${baseUrl}/api/bash/execute_bash_command`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          command: ENSURE_SECRET_KEY_SCRIPT,
-          timeout: SCRIPT_TIMEOUT_S,
-        }),
-      },
-    );
+    const output = await new BashClient({ host: baseUrl }).executeCommand({
+      command: ENSURE_SECRET_KEY_SCRIPT,
+      timeout: SCRIPT_TIMEOUT_S,
+    });
     if (output?.stdout?.trim() === "restarting") {
       await sleep(timing.restartGraceMs ?? RESTART_GRACE_MS);
       if (!(await wait())) return "unreachable";
     }
-    const settings = await guestJson(fetchImpl, `${baseUrl}/api/settings`);
+    const settingsClient = new SettingsClient({ host: baseUrl });
+    const settings = await settingsClient.getSettings();
     if (settings?.agent_settings?.tools == null) {
-      await guestJson(fetchImpl, `${baseUrl}/api/settings`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          agent_settings_diff: { tools: MARS_SANDBOX_TOOLS },
-        }),
+      await settingsClient.updateSettings({
+        agent_settings_diff: { tools: MARS_SANDBOX_TOOLS },
       });
     }
     return "prepared";
