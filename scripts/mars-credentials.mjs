@@ -37,20 +37,57 @@ export function secretAccountFor(connectionId) {
   return `digitalocean/${connectionId}`;
 }
 
-/** Version of the record kept in a `SecretStore`, so it can grow later. */
+/** Version of the record kept for each connection's secret. */
 const SECRET_VERSION = 1;
 
-/** The token in a stored record; null for anything this version cannot read. */
-function tokenFromSecret(secret) {
+/**
+ * @typedef {object} Grant What a connection signs in with.
+ * @property {string} token The bearer token: a personal access token, or an
+ *   OAuth access token.
+ * @property {string | null} [refreshToken] OAuth only; works exactly once.
+ * @property {string | null} [accessExpiresAt] OAuth only; when `token` stops
+ *   working and must be refreshed.
+ * @property {string | null} [clientId] The OAuth client it was issued to,
+ *   which a refresh must name.
+ */
+
+/** @param {string} kind @param {Grant} grant */
+function secretFor(kind, grant) {
+  return JSON.stringify({
+    v: SECRET_VERSION,
+    kind,
+    token: grant.token,
+    ...(grant.refreshToken ? { refreshToken: grant.refreshToken } : {}),
+    ...(grant.accessExpiresAt
+      ? { accessExpiresAt: grant.accessExpiresAt }
+      : {}),
+    ...(grant.clientId ? { clientId: grant.clientId } : {}),
+  });
+}
+
+/**
+ * A stored secret as a grant; null for anything this version cannot read.
+ * A bare token is what the desktop app stored before records existed.
+ *
+ * @returns {Grant | null}
+ */
+function grantFromSecret(secret) {
+  if (!secret) return null;
+  let record;
   try {
-    const record = JSON.parse(secret);
-    if (record?.v === SECRET_VERSION && typeof record.token === "string") {
-      return record.token;
-    }
+    record = JSON.parse(secret);
   } catch {
-    // Not a record this code wrote.
+    return { token: secret };
   }
-  return null;
+  if (record?.v !== SECRET_VERSION || typeof record.token !== "string") {
+    return null;
+  }
+  return {
+    token: record.token,
+    refreshToken: record.refreshToken ?? null,
+    accessExpiresAt: record.accessExpiresAt ?? null,
+    clientId: record.clientId ?? null,
+  };
 }
 
 /**
@@ -116,15 +153,17 @@ export function createCredentialStore({
     !secrets && filePath && safeStorage?.isEncryptionAvailable?.(),
   );
   /**
-   * Plaintext token per connection id. The only copy when nothing persists
+   * Plaintext grant per connection id. The only copy when nothing persists
    * it; otherwise a cache, so the keychain is not hit on every dial.
+   *
+   * @type {Map<string, Grant>}
    */
-  const memoryTokens = new Map();
+  const memoryGrants = new Map();
 
   let state = load();
 
   function load() {
-    memoryTokens.clear();
+    memoryGrants.clear();
     if (!filePath) return emptyState();
     let loaded;
     try {
@@ -144,9 +183,10 @@ export function createCredentialStore({
     if (secrets) {
       for (const connection of loaded.connections) {
         try {
-          const secret = secrets.read(secretAccountFor(connection.id));
-          const token = secret ? tokenFromSecret(secret) : null;
-          if (token) memoryTokens.set(connection.id, token);
+          const grant = grantFromSecret(
+            secrets.read(secretAccountFor(connection.id)),
+          );
+          if (grant) memoryGrants.set(connection.id, grant);
         } catch (error) {
           // A locked keychain: the connection stays listed, needing sign-in.
           log(error instanceof Error ? error.message : String(error));
@@ -175,39 +215,43 @@ export function createCredentialStore({
     renameSync(temporary, filePath);
   }
 
-  function encrypt(token) {
+  function encrypt(secret) {
     if (!canEncrypt) return null;
-    return safeStorage.encryptString(token).toString("base64");
+    return safeStorage.encryptString(secret).toString("base64");
   }
 
+  /** @returns {Grant | null} */
   function decrypt(connection) {
-    const cached = memoryTokens.get(connection.id);
+    const cached = memoryGrants.get(connection.id);
     if (cached !== undefined) return cached;
     if (!canEncrypt || !connection.token) return null;
     try {
-      const token = safeStorage.decryptString(
-        Buffer.from(connection.token, "base64"),
+      const grant = grantFromSecret(
+        safeStorage.decryptString(Buffer.from(connection.token, "base64")),
       );
-      memoryTokens.set(connection.id, token);
-      return token;
+      if (grant) memoryGrants.set(connection.id, grant);
+      return grant;
     } catch {
       // Keychain rotated or the profile moved between machines.
       return null;
     }
   }
 
-  /** Keep a token where this store keeps tokens; false when it was refused. */
-  function storeToken(connection, token) {
-    memoryTokens.set(connection.id, token);
+  /**
+   * Keep a grant where this store keeps secrets; false when it was refused.
+   *
+   * @param {object} connection
+   * @param {Grant} grant
+   */
+  function storeGrant(connection, grant) {
+    memoryGrants.set(connection.id, grant);
+    const secret = secretFor(connection.kind, grant);
     if (!secrets) {
-      connection.token = encrypt(token);
+      connection.token = encrypt(secret);
       return true;
     }
     try {
-      secrets.write(
-        secretAccountFor(connection.id),
-        JSON.stringify({ v: SECRET_VERSION, kind: connection.kind, token }),
-      );
+      secrets.write(secretAccountFor(connection.id), secret);
       return true;
     } catch (error) {
       // Usable for this run; the UI says it was not saved.
@@ -217,7 +261,7 @@ export function createCredentialStore({
   }
 
   function forgetToken(id) {
-    memoryTokens.delete(id);
+    memoryGrants.delete(id);
     if (!secrets) return;
     try {
       secrets.remove(secretAccountFor(id));
@@ -294,24 +338,59 @@ export function createCredentialStore({
 
     /** Token of one connection, or null once it is removed or expired. */
     getToken(id) {
+      return this.getGrant(id)?.token ?? null;
+    },
+
+    /**
+     * Everything a connection signs in with, refresh token included; null
+     * once it is removed or expired. Never leaves the bridge.
+     *
+     * @returns {Grant | null}
+     */
+    getGrant(id) {
       const connection = find(id);
       if (!connection || isExpired(connection)) return null;
       return decrypt(connection);
     },
 
     /**
+     * Replace a connection's grant after a refresh. Null forgets it: the
+     * connection stays listed and asks for sign-in.
+     *
+     * @param {string} id
+     * @param {Grant | null} grant
+     */
+    updateGrant(id, grant) {
+      const connection = find(id);
+      if (!connection) return;
+      if (grant) {
+        connection.isSaved = storeGrant(connection, grant);
+      } else {
+        forgetToken(id);
+        connection.token = null;
+      }
+      persist();
+    },
+
+    /**
      * Save a credential and make it active. Entering a token this store
      * already holds updates that connection instead of adding a second one.
      *
-     * @param {object} input
-     * @param {string} input.kind
-     * @param {string} input.token
-     * @param {string | null} [input.expiresAt]
-     * @param {string} input.label
-     * @param {string | null} [input.teamName]
+     * @param {Grant & { kind: string, expiresAt?: string | null, label: string, teamName?: string | null }} input
+     *   `expiresAt` is when the whole credential lapses (a token that cannot be
+     *   refreshed); `accessExpiresAt` only says when to refresh.
      * @returns {ReturnType<typeof toMetadata> & { reused: boolean }}
      */
-    save({ kind, token, expiresAt = null, label, teamName = null }) {
+    save({
+      kind,
+      token,
+      refreshToken = null,
+      accessExpiresAt = null,
+      clientId = null,
+      expiresAt = null,
+      label,
+      teamName = null,
+    }) {
       const fingerprint = fingerprintOf(token);
       const existing = state.connections.find(
         (connection) => connection.fingerprint === fingerprint,
@@ -324,7 +403,12 @@ export function createCredentialStore({
         expiresAt,
         fingerprint,
       });
-      connection.isSaved = storeToken(connection, token);
+      connection.isSaved = storeGrant(connection, {
+        token,
+        refreshToken,
+        accessExpiresAt,
+        clientId,
+      });
       if (!existing) state.connections = [...state.connections, connection];
       state.activeConnectionId = connection.id;
       persist();
@@ -349,14 +433,14 @@ export function createCredentialStore({
         : null;
       const target = older ?? connection;
       if (older) {
-        const token = decrypt(connection);
+        const grant = decrypt(connection);
         Object.assign(older, {
           kind: connection.kind,
           label: connection.label,
           expiresAt: connection.expiresAt ?? null,
           fingerprint: connection.fingerprint,
         });
-        if (token) older.isSaved = storeToken(older, token);
+        if (grant) older.isSaved = storeGrant(older, grant);
         forgetToken(id);
         state.connections = state.connections.filter(
           (other) => other.id !== id,
