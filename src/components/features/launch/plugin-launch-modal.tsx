@@ -19,7 +19,11 @@ interface PluginLaunchModalProps {
   parametersSupported: boolean;
   message?: string;
   isLoading?: boolean;
+  /** Submit target: start a conversation (default) or install an automation. */
+  mode?: "conversation" | "automation";
   onStartConversation: (plugins: PluginSpec[], initialMessage?: string) => void;
+  /** Required when mode === "automation". */
+  onInstallAutomation?: (plugins: PluginSpec[]) => void;
   onClose: () => void;
 }
 
@@ -32,7 +36,9 @@ export function PluginLaunchModal({
   parametersSupported,
   message,
   isLoading = false,
+  mode = "conversation",
   onStartConversation,
+  onInstallAutomation,
   onClose,
 }: PluginLaunchModalProps) {
   const { t } = useTranslation("openhands");
@@ -121,10 +127,18 @@ export function PluginLaunchModal({
   };
 
   const unsupportedParameters =
-    !parametersSupported && hasPluginParameters(pluginConfigs);
+    !parametersSupported &&
+    // Automation installs map `parameters` to the plugin's `config`, which the
+    // automation service validates itself — no agent-server dependency.
+    mode !== "automation" &&
+    hasPluginParameters(pluginConfigs);
 
   const handleStartConversation = () => {
     if (unsupportedParameters) return;
+    if (mode === "automation") {
+      onInstallAutomation?.(pluginConfigs);
+      return;
+    }
     onStartConversation(pluginConfigs, message);
   };
 
@@ -237,7 +251,9 @@ export function PluginLaunchModal({
             >
               {isLoading
                 ? t(I18nKey.LAUNCH$STARTING)
-                : t(I18nKey.LAUNCH$START_CONVERSATION)}
+                : mode === "automation"
+                  ? t(I18nKey.LAUNCH$INSTALL_AUTOMATION)
+                  : t(I18nKey.LAUNCH$START_CONVERSATION)}
             </BrandButton>
           </div>
         </div>

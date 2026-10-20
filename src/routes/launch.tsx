@@ -6,6 +6,11 @@ import { PluginSpec } from "#/api/conversation-service/agent-server-conversation
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { I18nKey } from "#/i18n/declaration";
 import { useActiveBackend } from "#/contexts/active-backend-context";
+import AutomationService from "#/api/automation-service/automation-service.api";
+import {
+  automationDetailPath,
+  hasAutomationInterface,
+} from "#/manifests/automation-interface";
 
 type ErrorType = "no_plugins" | "invalid_format" | "creation_failed";
 
@@ -143,11 +148,21 @@ export default function LaunchRoute() {
   const createConversation = useCreateConversation();
 
   const [creationError, setCreationError] = React.useState<string | null>(null);
+  const [isInstalling, setIsInstalling] = React.useState(false);
 
   const parseResult = React.useMemo(
     () => parsePluginsFromUrl(searchParams),
     [searchParams],
   );
+
+  // `mode=automation` asks the route to install the plugin as an automation
+  // (POST /plugin-spec) instead of starting a conversation. Requires an
+  // admitted automation interface manifest, since submit navigates to the
+  // automation detail page afterwards.
+  const automationMode =
+    searchParams.get("mode") === "automation" &&
+    hasAutomationInterface() &&
+    parseResult.plugins.length === 1;
 
   const handleStartConversation = async (
     plugins: PluginSpec[],
@@ -163,6 +178,50 @@ export default function LaunchRoute() {
       navigate(`/conversations/${result.conversation_id}`);
     } catch {
       setCreationError(t(I18nKey.LAUNCH$ERROR_CREATION_UNKNOWN));
+    }
+  };
+
+  /**
+   * Automation name derived from the plugin source, e.g.
+   * `github:org/recipe` -> `recipe (org)`.
+   */
+  const automationNameForPlugin = (plugin: PluginSpec): string => {
+    const source = plugin.source
+      .replace(/^github:/, "")
+      .replace(/^https?:\/\/github\.com\//, "")
+      .replace(/\.git$/, "");
+    const parts = source.split("/");
+    const repo = parts[parts.length - 1] || plugin.source;
+    const owner = parts.length > 1 ? parts[0] : null;
+    return owner ? `${repo} (${owner})` : repo;
+  };
+
+  const handleInstallAutomation = async (plugins: PluginSpec[]) => {
+    const plugin = plugins[0];
+    setCreationError(null);
+    setIsInstalling(true);
+    try {
+      const created = await AutomationService.createPluginSpecAutomation({
+        name: automationNameForPlugin(plugin),
+        plugin: {
+          source: plugin.source,
+          ref: plugin.ref ?? undefined,
+          repo_path: plugin.repo_path ?? undefined,
+        },
+        config: (plugin.parameters ?? undefined) as
+          | Record<string, unknown>
+          | undefined,
+        enabled: true,
+      });
+      navigate(automationDetailPath(created.id));
+    } catch (error) {
+      setCreationError(
+        error instanceof Error
+          ? error.message
+          : t(I18nKey.LAUNCH$ERROR_INSTALL_UNKNOWN),
+      );
+    } finally {
+      setIsInstalling(false);
     }
   };
 
@@ -199,8 +258,12 @@ export default function LaunchRoute() {
         plugins={parseResult.plugins}
         parametersSupported={backend.kind !== "local"}
         message={parseResult.message}
-        isLoading={createConversation.isPending}
+        isLoading={createConversation.isPending || isInstalling}
+        mode={automationMode ? "automation" : "conversation"}
         onStartConversation={handleStartConversation}
+        onInstallAutomation={
+          automationMode ? handleInstallAutomation : undefined
+        }
         onClose={handleGoHome}
       />
     </div>

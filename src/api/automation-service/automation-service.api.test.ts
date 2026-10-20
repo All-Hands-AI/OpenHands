@@ -382,6 +382,68 @@ const gitSyncStatus: GitSyncStatus = {
   dirty_count: 0,
 };
 
+describe("AutomationService.createPluginSpecAutomation", () => {
+  const pluginSpecAutomation: Automation = {
+    ...createdAutomation,
+    id: "plugin-spec-automation",
+    name: "recipe (org)",
+  };
+
+  const pluginSpecRequest = {
+    name: "recipe (org)",
+    plugin: {
+      source: "github:org/recipe",
+      ref: "main",
+      repo_path: "plugins/recipe",
+    },
+    config: { repository: "org/repo" },
+    enabled: true,
+  };
+
+  beforeEach(() => {
+    setRegisteredBackends([localBackend]);
+    setActiveSelection({ backendId: localBackend.id });
+    localAxios.post.mockResolvedValue({ data: pluginSpecAutomation });
+  });
+
+  afterEach(() => {
+    setActiveSelection(null);
+    setRegisteredBackends([]);
+    vi.clearAllMocks();
+  });
+
+  it("creates an automation from the plugin spec on the local backend", async () => {
+    const created =
+      await AutomationService.createPluginSpecAutomation(pluginSpecRequest);
+
+    expect(localAxios.post).toHaveBeenCalledWith(
+      "/api/automation/v1/plugin-spec",
+      pluginSpecRequest,
+    );
+    expect(created.id).toBe("plugin-spec-automation");
+  });
+
+  it("routes cloud creates through the cloud proxy", async () => {
+    setRegisteredBackends([cloudBackend]);
+    setActiveSelection({ backendId: cloudBackend.id });
+    callCloudProxy.mockResolvedValueOnce(pluginSpecAutomation);
+
+    const created =
+      await AutomationService.createPluginSpecAutomation(pluginSpecRequest);
+
+    expect(callCloudProxy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        backend: cloudBackend,
+        method: "POST",
+        path: "/api/automation/v1/plugin-spec",
+        body: pluginSpecRequest,
+      }),
+    );
+    expect(localAxios.post).not.toHaveBeenCalled();
+    expect(created.id).toBe("plugin-spec-automation");
+  });
+});
+
 describe("AutomationService git sync", () => {
   beforeEach(() => {
     setRegisteredBackends([localBackend]);

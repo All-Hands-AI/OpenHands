@@ -108,6 +108,25 @@ export interface AutomationHealthResponse {
   message?: string;
 }
 
+/**
+ * Request body of POST /api/automation/v1/plugin-spec
+ * (CreatePluginSpecAutomationRequest in OpenHands/automation). `trigger` and
+ * `timeout` are optional: the service falls back to the manifest's
+ * `suggested_trigger` when no trigger is given.
+ */
+export interface CreatePluginSpecAutomationRequest {
+  name: string;
+  plugin: {
+    source: string;
+    ref?: string | null;
+    repo_path?: string | null;
+  };
+  config?: Record<string, unknown>;
+  trigger?: unknown;
+  timeout?: number;
+  enabled?: boolean;
+}
+
 type AutomationSdkVersionResponse =
   | string
   | {
@@ -634,6 +653,35 @@ class AutomationService {
     }
 
     const { data } = await localAutomationAxios.post<AutomationRun>(path);
+    return data;
+  }
+
+  /**
+   * Create an automation from a plugin's `.plugin/plugin.json` `automation`
+   * block. The automation service fetches the plugin, validates `config`
+   * against the manifest's `config_schema`, resolves the declared
+   * agent/LLM profile, and falls back to the manifest's suggested trigger.
+   * Backend: POST /api/automation/v1/plugin-spec (OpenHands/automation#580)
+   */
+  static async createPluginSpecAutomation(
+    body: CreatePluginSpecAutomationRequest,
+  ): Promise<Automation> {
+    const active = getActiveBackend().backend;
+    // Literal path (outside the interface manifest surface) like the drafts and
+    // run-cancel paths.
+    const path = `${AUTOMATION_BASE_PATH}/v1/plugin-spec`;
+
+    if (active.kind === "cloud") {
+      return callCloudProxy<Automation>({
+        backend: active,
+        method: "POST",
+        path,
+        body,
+        headers: await buildAutomationRequestHeaders(),
+      });
+    }
+
+    const { data } = await localAutomationAxios.post<Automation>(path, body);
     return data;
   }
 
