@@ -61,9 +61,16 @@ function toAgentSettingsOverride(
       acp_model: profile.acp_model ?? "",
     };
   }
+  const stored = profile as typeof profile & {
+    enable_classify_and_switch_llm_tool?: boolean;
+    meta_profile_ref?: string | null;
+  };
   return {
     agent_kind: "openhands",
     mcp_server_refs: profile.mcp_server_refs ?? null,
+    enable_classify_and_switch_llm_tool:
+      stored.enable_classify_and_switch_llm_tool ?? false,
+    meta_profile_ref: stored.meta_profile_ref ?? null,
     tools: (profile.tools as SettingsValue) ?? null,
     tool_concurrency_limit: profile.tool_concurrency_limit,
     secret_refs: secretRefs,

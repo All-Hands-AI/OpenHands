@@ -11,6 +11,7 @@ import {
 import SettingsService from "#/api/settings-service/settings-service.api";
 import { SecretsService } from "#/api/secrets-service";
 import SkillsService from "#/api/skills-service";
+import MetaProfilesService from "#/api/meta-profiles-service/meta-profiles-service.api";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 import { Settings, SkillInfo } from "#/types/settings";
 import {
@@ -55,11 +56,13 @@ const CLAUDE_MODELS = [
 const profileSupportsSecretRefsMock = vi.hoisted(() => vi.fn(() => true));
 const profileSupportsInstructionsMock = vi.hoisted(() => vi.fn(() => false));
 const profileSupportsSkillsMock = vi.hoisted(() => vi.fn(() => true));
+const profileSupportsRouterMock = vi.hoisted(() => vi.fn(() => true));
 vi.mock("#/api/agent-profiles-service/profile-field-support", () => ({
   agentProfileSupportsSecretRefs: () => profileSupportsSecretRefsMock(),
   agentProfileSupportsInstructions: () => profileSupportsInstructionsMock(),
   agentProfileSupportsSkills: () => profileSupportsSkillsMock(),
   agentProfileSupportsTools: () => true,
+  agentProfileSupportsRouter: () => profileSupportsRouterMock(),
 }));
 
 // The secret picker lists the user's saved secrets; stub the query so these
@@ -1666,6 +1669,154 @@ describe("AgentSettingsScreen — condenser and verification", () => {
       window.localStorage.clear();
       __resetActiveStoreForTests();
     }
+  });
+});
+
+describe("AgentSettingsScreen — Model Router", () => {
+  const WITH_ROUTER = {
+    agent_kind: "openhands",
+    mcp_server_refs: null,
+    enable_classify_and_switch_llm_tool: true,
+    meta_profile_ref: "fast-router",
+  };
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    profileSupportsRouterMock.mockReturnValue(true);
+    vi.spyOn(SettingsService, "getSettings").mockResolvedValue(buildSettings());
+    vi.spyOn(SecretsService, "getSecrets").mockResolvedValue([]);
+    vi.spyOn(MetaProfilesService, "listMetaProfiles").mockResolvedValue({
+      meta_profiles: [
+        { name: "fast-router", classifier_model: null, num_classes: 2 },
+        { name: "pro-router", classifier_model: null, num_classes: 3 },
+      ],
+      active_meta_profile: null,
+    });
+    acpAuthStatusMock.mockReturnValue({
+      status: "unknown",
+      isChecking: false,
+      isSupported: true,
+    });
+    acpModelDiscoveryMock.mockReturnValue(NO_DISCOVERY);
+  });
+
+  async function choose(
+    user: ReturnType<typeof userEvent.setup>,
+    name: string,
+  ) {
+    const combo = screen.getByTestId("agent-settings-router-select");
+    combo.focus();
+    await user.keyboard("{ArrowDown}");
+    await user.click(await screen.findByRole("option", { name }));
+  }
+
+  it("opens on the profile's router and saves a change to it", async () => {
+    const { control } = renderAgentSettingsScreen({
+      agentSettingsOverride: WITH_ROUTER,
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId("agent-settings-router-select")).toHaveValue(
+        "fast-router",
+      ),
+    );
+    expect(control().isDirty).toBe(false);
+
+    const user = userEvent.setup();
+    await choose(user, "pro-router");
+    await waitFor(() => expect(control().isDirty).toBe(true));
+    expect(control().buildAgentProfileFields()).toMatchObject({
+      enable_classify_and_switch_llm_tool: true,
+      meta_profile_ref: "pro-router",
+    });
+
+    await choose(user, "SETTINGS$AGENT_PROFILE_ROUTER_OFF");
+    expect(control().buildAgentProfileFields()).toMatchObject({
+      enable_classify_and_switch_llm_tool: false,
+      meta_profile_ref: null,
+    });
+  });
+
+  it("leaves the stored router alone when saving other changes", async () => {
+    const { control } = renderAgentSettingsScreen({
+      agentSettingsOverride: WITH_ROUTER,
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId("agent-settings-router-select")).toHaveValue(
+        "fast-router",
+      ),
+    );
+
+    const fields = control().buildAgentProfileFields();
+    expect(fields).not.toHaveProperty("enable_classify_and_switch_llm_tool");
+    expect(fields).not.toHaveProperty("meta_profile_ref");
+  });
+
+  it("shows a router left on without a name as the first saved router and keeps it", async () => {
+    const { control } = renderAgentSettingsScreen({
+      agentSettingsOverride: { ...WITH_ROUTER, meta_profile_ref: null },
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId("agent-settings-router-select")).toHaveValue(
+        "SETTINGS$AGENT_PROFILE_ROUTER_FIRST",
+      ),
+    );
+    expect(
+      screen.queryByTestId("agent-settings-router-dangling"),
+    ).not.toBeInTheDocument();
+    expect(control().isDirty).toBe(false);
+    expect(control().buildAgentProfileFields()).not.toHaveProperty(
+      "enable_classify_and_switch_llm_tool",
+    );
+
+    const user = userEvent.setup();
+    await choose(user, "SETTINGS$AGENT_PROFILE_ROUTER_OFF");
+    await waitFor(() => expect(control().isDirty).toBe(true));
+    expect(control().buildAgentProfileFields()).toMatchObject({
+      enable_classify_and_switch_llm_tool: false,
+      meta_profile_ref: null,
+    });
+  });
+
+  it("is not offered on Cloud, which keeps routers per organization", async () => {
+    profileSupportsRouterMock.mockReturnValue(false);
+    const { control } = renderAgentSettingsScreen({
+      agentSettingsOverride: WITH_ROUTER,
+    });
+    await screen.findByTestId("agent-settings-screen");
+
+    expect(
+      screen.queryByTestId("agent-settings-router"),
+    ).not.toBeInTheDocument();
+    expect(control().buildAgentProfileFields()).not.toHaveProperty(
+      "meta_profile_ref",
+    );
+  });
+
+  it("warns about a router that no longer exists, which would fail the launch", async () => {
+    renderAgentSettingsScreen({
+      agentSettingsOverride: { ...WITH_ROUTER, meta_profile_ref: "gone" },
+    });
+
+    expect(
+      await screen.findByTestId("agent-settings-router-dangling"),
+    ).toHaveTextContent("SETTINGS$AGENT_PROFILE_ROUTER_DANGLING");
+  });
+
+  it("points the default profile to the Model Router page", async () => {
+    const { control } = renderAgentSettingsScreen({
+      agentSettingsOverride: WITH_ROUTER,
+      isDefaultProfile: true,
+    });
+
+    expect(
+      await screen.findByTestId("agent-settings-router-default-profile"),
+    ).toHaveTextContent("SETTINGS$AGENT_PROFILE_ROUTER_DEFAULT_PROFILE");
+    expect(
+      screen.queryByTestId("agent-settings-router-select"),
+    ).not.toBeInTheDocument();
+    expect(control().buildAgentProfileFields()).not.toHaveProperty(
+      "meta_profile_ref",
+    );
   });
 });
 

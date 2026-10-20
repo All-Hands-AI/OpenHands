@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   agentProfileSupportsInstructions,
+  agentProfileSupportsRouter,
   agentProfileSupportsSecretRefs,
   agentProfileSupportsSkills,
   agentProfileSupportsTools,
@@ -17,6 +18,7 @@ describe.each([
   ["agentProfileSupportsInstructions", agentProfileSupportsInstructions],
   ["agentProfileSupportsTools", agentProfileSupportsTools],
   ["agentProfileSupportsSkills", agentProfileSupportsSkills],
+  ["agentProfileSupportsRouter", agentProfileSupportsRouter],
 ])("%s", (_name, supports) => {
   it("is offered on a local backend", () => {
     mockBackendKind.mockReturnValue("local");
