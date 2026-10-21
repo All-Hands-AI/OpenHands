@@ -515,6 +515,8 @@ export interface CreateConversationOptions {
    * can show a non-blocking indicator. Absent for workspaces with no script.
    */
   onSetupScriptProgress?: (update: SetupScriptStatusUpdate) => void;
+  /** Cloud only: run this conversation on the named LLM profile (`llm_profile`). */
+  llmProfile?: string;
 }
 
 class AgentServerConversationService {
@@ -577,6 +579,7 @@ class AgentServerConversationService {
       profileHasRouter,
       acpServer,
       onSetupScriptProgress,
+      llmProfile,
     } = options;
 
     if (getActiveBackend().backend.kind === "cloud") {
@@ -610,6 +613,7 @@ class AgentServerConversationService {
         agent_type: agentType,
         sandbox_id: sandboxId ?? null,
         agent_profile_id: agentProfileId ?? null,
+        ...(llmProfile ? { llm_profile: llmProfile } : {}),
         ...(routerAtStartSuffix
           ? {
               agent_launch_additions: {

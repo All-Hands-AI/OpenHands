@@ -6,9 +6,15 @@ const useOptionalConversationIdMock = vi.fn();
 const useActiveConversationMock = vi.fn();
 const useLlmProfilesMock = vi.fn();
 const switchAndLog = vi.fn();
+const setHomeLlmProfile = vi.fn();
 
-let modelStoreState: { activeProfileByConversation: Record<string, string> } = {
+let modelStoreState: {
+  activeProfileByConversation: Record<string, string>;
+  homeLlmProfile?: string | null;
+  setHomeLlmProfile?: typeof setHomeLlmProfile;
+} = {
   activeProfileByConversation: {},
+  setHomeLlmProfile,
 };
 
 vi.mock("#/hooks/use-conversation-id", () => ({
@@ -73,7 +79,8 @@ const PROFILES = [
 describe("useChatInputLlmProfileState", () => {
   beforeEach(() => {
     switchAndLog.mockReset();
-    modelStoreState = { activeProfileByConversation: {} };
+    setHomeLlmProfile.mockReset();
+    modelStoreState = { activeProfileByConversation: {}, setHomeLlmProfile };
     useOptionalConversationIdMock.mockReturnValue({ conversationId: "c1" });
     useActiveConversationMock.mockReturnValue({ data: undefined });
     useLlmProfilesMock.mockReturnValue({
@@ -207,17 +214,47 @@ describe("useChatInputLlmProfileState", () => {
     expect(switchAndLog).toHaveBeenCalledWith(null, "Smart");
   });
 
-  it("keeps the home picker read-only for a member who cannot manage org profiles", () => {
-    // A home pick hits the org-gated activate endpoint, which a cloud member
-    // could only 403 on.
+  it("holds a member's home pick for the next launch instead of activating it", () => {
+    // A home activate hits the org-gated endpoint, which a cloud member could
+    // only 403 on; the pick is sent with the next home launch instead.
     useOptionalConversationIdMock.mockReturnValue({ conversationId: null });
     useCanManageOrgProfilesMock.mockReturnValue(false);
 
     const { result } = renderState();
     result.current.selectProfile("Smart");
 
-    expect(result.current.canSwitchProfile).toBe(false);
+    expect(result.current.canSwitchProfile).toBe(true);
+    expect(setHomeLlmProfile).toHaveBeenCalledWith("Smart");
     expect(switchAndLog).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    {
+      description: "names a member's home pick on the home page",
+      conversationId: null,
+      pick: "Smart",
+      expected: "Smart",
+    },
+    {
+      description: "names a member's home pick while its start task runs",
+      conversationId: "task-abc",
+      pick: "Smart",
+      expected: "Smart",
+    },
+    {
+      description:
+        "falls back to the active profile when the picked one is gone",
+      conversationId: null,
+      pick: "Deleted",
+      expected: "Fast",
+    },
+  ])("$description", ({ conversationId, pick, expected }) => {
+    useOptionalConversationIdMock.mockReturnValue({ conversationId });
+    modelStoreState = { ...modelStoreState, homeLlmProfile: pick };
+
+    const { result } = renderState();
+
+    expect(result.current.currentProfileName).toBe(expected);
   });
 
   it("keeps the picker read-only while a cloud start task is provisioning", () => {
