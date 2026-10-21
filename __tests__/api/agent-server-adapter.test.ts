@@ -9,6 +9,8 @@ import {
   ACP_SERVER_TAG_KEY,
   AGENT_CANVAS_SOURCE,
   CLIENT_SOURCE_TAG_KEY,
+  WORKSPACE_TAG_KEY,
+  buildWorkspaceTags,
   buildRuntimeServicesSystemSuffix,
   buildStartConversationRequest,
   buildStartConversationRequestWithEncryptedSettings,
@@ -605,12 +607,76 @@ describe("getDefaultConversationTitle", () => {
   });
 });
 
+describe("buildWorkspaceTags (#17386)", () => {
+  it("emits the workspace tag with a normalized path", () => {
+    expect(buildWorkspaceTags("/Users/jane/projects/openhands/")).toEqual({
+      [WORKSPACE_TAG_KEY]: "/Users/jane/projects/openhands",
+    });
+  });
+
+  it("returns an empty object for null/empty/whitespace input", () => {
+    expect(buildWorkspaceTags(null)).toEqual({});
+    expect(buildWorkspaceTags(undefined)).toEqual({});
+    expect(buildWorkspaceTags("   ")).toEqual({});
+  });
+
+  it("only ever emits keys the agent-server accepts (`^[a-z0-9]+$`)", () => {
+    const tags = buildWorkspaceTags("/Users/jane/projects/openhands");
+    for (const key of Object.keys(tags)) {
+      expect(key).toMatch(/^[a-z0-9]+$/);
+    }
+  });
+});
+
 describe("toAppConversation", () => {
   const baseInfo: DirectConversationInfo = {
     id: "372eb-1234-5678-9abc",
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
   };
+
+  describe("server-side workspace tag fallback (#17386)", () => {
+    afterEach(() => {
+      removeStoredConversationMetadata(baseInfo.id);
+    });
+
+    it("uses a key the agent-server will accept (lowercase alphanumeric)", () => {
+      // The agent-server rejects tag keys that are not `^[a-z0-9]+$` (SDK
+      // conversation/types.py), which would 422 the create request.
+      expect(WORKSPACE_TAG_KEY).toMatch(/^[a-z0-9]+$/);
+    });
+
+    it("hydrates selected_workspace from the tag when localStorage has none", () => {
+      const result = toAppConversation({
+        ...baseInfo,
+        tags: { [WORKSPACE_TAG_KEY]: "/Users/jane/projects/openhands" },
+      });
+
+      expect(result.selected_workspace).toBe("/Users/jane/projects/openhands");
+    });
+
+    it("prefers stored metadata over the tag (warm cache for the creating client)", () => {
+      setStoredConversationMetadata(baseInfo.id, {
+        selected_repository: null,
+        selected_branch: null,
+        git_provider: null,
+        selected_workspace: "/Users/jane/projects/local-fork",
+      });
+
+      const result = toAppConversation({
+        ...baseInfo,
+        tags: { [WORKSPACE_TAG_KEY]: "/Users/jane/projects/openhands" },
+      });
+
+      expect(result.selected_workspace).toBe("/Users/jane/projects/local-fork");
+    });
+
+    it("stays null when neither localStorage nor the tag has a workspace", () => {
+      const result = toAppConversation({ ...baseInfo, tags: {} });
+
+      expect(result.selected_workspace).toBeNull();
+    });
+  });
 
   it("uses the archived status for a missing runtime that cannot resume", () => {
     const result = toAppConversation({
