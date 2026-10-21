@@ -13,6 +13,7 @@ import type {
   AutomationSetupTriggerKind,
   AutomationSetupFrequency,
 } from "#/api/automation-setup-types";
+import { readAutomationRepositories } from "#/utils/automation-preset-sources";
 
 const AUTOMATION_FORM_SESSION_CHANGED_EVENT =
   "openhands:automation-form-session-changed";
@@ -173,6 +174,9 @@ function normalizeDraft(value: AutomationSetupDraft): AutomationSetupDraft {
     typeof value.existingCustomTarballPath === "string"
       ? value.existingCustomTarballPath.trim()
       : "";
+  const existingRepositories = readAutomationRepositories(
+    value.existingRepositories,
+  );
   const serverDraftId =
     typeof value.serverDraftId === "string" ? value.serverDraftId.trim() : "";
   const materializedAutomationId =
@@ -194,6 +198,10 @@ function normalizeDraft(value: AutomationSetupDraft): AutomationSetupDraft {
     form: normalizedForm,
     ...(editingAutomationId ? { editingAutomationId } : {}),
     ...(existingCustomTarballPath ? { existingCustomTarballPath } : {}),
+    ...(existingRepositories.length > 0 ? { existingRepositories } : {}),
+    ...(value.canUpdateRepositories === true
+      ? { canUpdateRepositories: true }
+      : {}),
     ...(serverDraftId ? { serverDraftId } : {}),
     ...(materializedAutomationId ? { materializedAutomationId } : {}),
     ...(fieldMetadata ? { fieldMetadata } : {}),
