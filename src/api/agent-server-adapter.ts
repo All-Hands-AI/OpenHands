@@ -425,7 +425,11 @@ export function toAppConversation(
     selected_repository: metadata?.selected_repository ?? null,
     selected_branch: metadata?.selected_branch ?? null,
     git_provider: metadata?.git_provider ?? null,
-    selected_workspace: metadata?.selected_workspace ?? null,
+    // Prefer the creating client's localStorage metadata; fall back to the
+    // server-side workspace tag so local sidebar grouping survives on another
+    // browser, device, or after cleared site data (#17386).
+    selected_workspace:
+      metadata?.selected_workspace ?? info.tags?.[WORKSPACE_TAG_KEY] ?? null,
     active_profile: metadata?.active_profile ?? null,
     title: info.title?.trim()
       ? info.title
@@ -536,6 +540,32 @@ type ConversationSettingsPayload = SettingsRecord & {
 export const ACP_SERVER_TAG_KEY = "acpserver";
 export const CLIENT_SOURCE_TAG_KEY = "clientsource";
 export const AGENT_CANVAS_SOURCE = "agentcanvas";
+
+/**
+ * Server-side conversation tag that persists the home-page workspace selection
+ * on the agent-server, so local sidebar grouping survives a different browser,
+ * device, or cleared localStorage (the localStorage metadata store stays the
+ * warm cache for the creating client). See #17386.
+ *
+ * The agent-server validates tag keys against `^[a-z0-9]+$` (SDK
+ * `conversation/types.py`), so the key must stay lowercase alphanumeric with
+ * no separators — an underscored key like `selected_workspace` would make the
+ * create request 422. It is already in {@link RESERVED_CONVERSATION_TAG_KEYS},
+ * so it never appears as an editable chip.
+ */
+export const WORKSPACE_TAG_KEY = "workspace";
+
+/**
+ * Build the workspace tag to stamp at conversation creation, normalizing the
+ * path and returning an empty object when there is nothing to persist (so the
+ * caller can skip adding a `tags` payload entirely).
+ */
+export function buildWorkspaceTags(
+  selectedWorkspace?: string | null,
+): Record<string, string> {
+  const workspace = selectedWorkspace?.trim().replace(/\/+$/, "");
+  return workspace ? { [WORKSPACE_TAG_KEY]: workspace } : {};
+}
 
 export const AUTOMATION_TRIGGER_TAG_KEY = "automationtrigger";
 export const AUTOMATION_ID_TAG_KEY = "automationid";
