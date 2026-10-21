@@ -50,10 +50,10 @@ function isLocallyInstallableMcpOption(
   const oauth = option.auth.oauth;
   if (!oauth) return false;
 
-  // Local agent-server installs only support OAuth flows initiated by the MCP
-  // server itself through fastmcp. Catalog entries that specify provider OAuth
-  // endpoints still need the hosted integration-auth flow and should not be
-  // exposed as locally installable static MCP configs.
+  // Both backends only run OAuth flows initiated by the MCP server itself
+  // through fastmcp. Provider OAuth endpoints in the catalog describe a hosted
+  // integration-auth flow, so prefer the entry's other options for these
+  // entries; `getDiscoveryOAuthOption` is the fallback when there are none.
   return (
     !oauth.authorizationUrl &&
     !oauth.tokenUrl &&
@@ -63,10 +63,31 @@ function isLocallyInstallableMcpOption(
   );
 }
 
+/**
+ * Connects a remote OAuth option through the MCP server's own OAuth
+ * discovery and dynamic client registration. The catalog's provider
+ * endpoints, scopes and client authentication belong to the hosted flow and
+ * are dropped. A server without dynamic registration reports that from the
+ * authorization attempt instead of leaving Install without an action.
+ */
+function getDiscoveryOAuthOption(
+  option: McpMarketplaceConnectionOption,
+): McpMarketplaceConnectionOption | undefined {
+  if (option.auth.strategy !== "oauth2" || option.transport.kind === "stdio") {
+    return undefined;
+  }
+  return { ...option, auth: { strategy: "oauth2" } };
+}
+
 export function getInstallableMcpConnectionOption(
   entry: MarketplaceEntry,
 ): McpMarketplaceConnectionOption | undefined {
-  return getMcpConnectionOptions(entry).find(isLocallyInstallableMcpOption);
+  const options = getMcpConnectionOptions(entry);
+  // @spec MCP-006 — Library installs never dead-end
+  return (
+    options.find(isLocallyInstallableMcpOption) ??
+    options.map(getDiscoveryOAuthOption).find(Boolean)
+  );
 }
 
 export function getDefaultMcpTransport(
