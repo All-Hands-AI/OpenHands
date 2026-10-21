@@ -660,7 +660,9 @@ export function createMarsWebBridge({
   function relayWebSocket(client, { sessionId, path }) {
     const target = upstreamFor(sessionId);
     if (!target) {
-      client.close(CLOSE_UNREACHABLE, `session ${sessionId} is not connected`);
+      // Fixed text: a close reason over 123 bytes makes ws throw, and a long
+      // session id in the path would otherwise take the whole server down.
+      client.close(CLOSE_UNREACHABLE, "session is not connected");
       return;
     }
     const upstream = new WebSocket(`${target.replace(/^http/, "ws")}${path}`);
