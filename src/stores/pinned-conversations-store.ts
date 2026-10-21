@@ -6,12 +6,25 @@ interface PinnedConversationsState {
 }
 
 interface PinnedConversationsActions {
-  pinConversation: (backendId: string, conversationId: string) => void;
-  unpinConversation: (backendId: string, conversationId: string) => void;
-  togglePin: (backendId: string, conversationId: string) => void;
+  pinConversation: (
+    backendId: string,
+    conversationId: string,
+    legacyBackendId?: string,
+  ) => void;
+  unpinConversation: (
+    backendId: string,
+    conversationId: string,
+    legacyBackendId?: string,
+  ) => void;
+  togglePin: (
+    backendId: string,
+    conversationId: string,
+    legacyBackendId?: string,
+  ) => void;
   pruneMissingConversations: (
     backendId: string,
     existingIds: readonly string[],
+    legacyBackendId?: string,
   ) => void;
 }
 
@@ -38,11 +51,19 @@ export function getPinnedConversationsScopeKey(
   return orgId ? `${backendId}:${orgId}` : backendId;
 }
 
-function getPinsForBackend(
+const EMPTY_PINNED_IDS: string[] = [];
+
+/** Scoped writes override the legacy list, including an explicitly empty list. */
+export function getPinnedConversationIds(
   pinsByBackendId: Record<string, string[]>,
   backendId: string,
+  legacyBackendId?: string,
 ): string[] {
-  return pinsByBackendId[backendId] ?? [];
+  return (
+    pinsByBackendId[backendId] ??
+    pinsByBackendId[legacyBackendId ?? backendId] ??
+    EMPTY_PINNED_IDS
+  );
 }
 
 export const usePinnedConversationsStore = create<PinnedConversationsStore>()(
@@ -50,8 +71,12 @@ export const usePinnedConversationsStore = create<PinnedConversationsStore>()(
     (set, get) => ({
       ...initialState,
 
-      pinConversation: (backendId, conversationId) => {
-        const current = getPinsForBackend(get().pinsByBackendId, backendId);
+      pinConversation: (backendId, conversationId, legacyBackendId) => {
+        const current = getPinnedConversationIds(
+          get().pinsByBackendId,
+          backendId,
+          legacyBackendId,
+        );
         if (current.includes(conversationId)) {
           return;
         }
@@ -63,8 +88,12 @@ export const usePinnedConversationsStore = create<PinnedConversationsStore>()(
         }));
       },
 
-      unpinConversation: (backendId, conversationId) => {
-        const current = getPinsForBackend(get().pinsByBackendId, backendId);
+      unpinConversation: (backendId, conversationId, legacyBackendId) => {
+        const current = getPinnedConversationIds(
+          get().pinsByBackendId,
+          backendId,
+          legacyBackendId,
+        );
         if (!current.includes(conversationId)) {
           return;
         }
@@ -76,18 +105,26 @@ export const usePinnedConversationsStore = create<PinnedConversationsStore>()(
         }));
       },
 
-      togglePin: (backendId, conversationId) => {
-        const current = getPinsForBackend(get().pinsByBackendId, backendId);
+      togglePin: (backendId, conversationId, legacyBackendId) => {
+        const current = getPinnedConversationIds(
+          get().pinsByBackendId,
+          backendId,
+          legacyBackendId,
+        );
         if (current.includes(conversationId)) {
-          get().unpinConversation(backendId, conversationId);
+          get().unpinConversation(backendId, conversationId, legacyBackendId);
         } else {
-          get().pinConversation(backendId, conversationId);
+          get().pinConversation(backendId, conversationId, legacyBackendId);
         }
       },
 
-      pruneMissingConversations: (backendId, existingIds) => {
+      pruneMissingConversations: (backendId, existingIds, legacyBackendId) => {
         const existing = new Set(existingIds);
-        const current = getPinsForBackend(get().pinsByBackendId, backendId);
+        const current = getPinnedConversationIds(
+          get().pinsByBackendId,
+          backendId,
+          legacyBackendId,
+        );
         const pruned = current.filter((id) => existing.has(id));
         if (pruned.length === current.length) {
           return;

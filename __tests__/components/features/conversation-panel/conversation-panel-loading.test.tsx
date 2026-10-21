@@ -646,6 +646,45 @@ describe("ConversationPanel list loading", () => {
   });
 
   describe("pinned conversations", () => {
+    it("keeps legacy Cloud pins after upgrade and remembers an unpin across reload", async () => {
+      setRegisteredBackends([cloudBackend]);
+      setActiveSelection({ backendId: cloudBackend.id, orgId: "org-1" });
+      window.localStorage.setItem(
+        "pinned-conversations",
+        JSON.stringify({
+          state: { pinsByBackendId: { [cloudBackend.id]: ["2"] } },
+          version: 0,
+        }),
+      );
+      await usePinnedConversationsStore.persist.rehydrate();
+      const renderCloudPanel = () =>
+        renderWithProviders(
+          <ActiveBackendProvider>
+            <RouterStub />
+          </ActiveBackendProvider>,
+        );
+      const user = userEvent.setup();
+      const view = renderCloudPanel();
+      const pinned = await screen.findByTestId(
+        "conversation-panel-pinned-section",
+      );
+      expect(within(pinned).getByText("Conversation 2")).toBeInTheDocument();
+      await user.hover(within(pinned).getByTestId("conversation-card"));
+      await user.click(within(pinned).getByTestId("conversation-pin-toggle-2"));
+      await waitFor(() =>
+        expect(
+          screen.queryByTestId("conversation-panel-pinned-section"),
+        ).not.toBeInTheDocument(),
+      );
+      view.unmount();
+      await usePinnedConversationsStore.persist.rehydrate();
+      renderCloudPanel();
+      await screen.findByText("Conversation 2");
+      expect(
+        screen.queryByTestId("conversation-panel-pinned-section"),
+      ).not.toBeInTheDocument();
+    });
+
     it("shows a pinned section above the conversations list when pins exist", async () => {
       usePinnedConversationsStore
         .getState()

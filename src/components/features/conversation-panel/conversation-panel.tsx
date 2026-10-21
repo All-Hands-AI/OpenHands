@@ -61,6 +61,7 @@ import {
 import { useArchivedConversationsStore } from "#/stores/archived-conversations-store";
 import {
   getPinnedConversationsScopeKey,
+  getPinnedConversationIds,
   usePinnedConversationsStore,
 } from "#/stores/pinned-conversations-store";
 import { usePinnedConversationDetails } from "#/hooks/query/use-pinned-conversation-details";
@@ -180,10 +181,12 @@ export function ConversationPanel({
   const [expandedPinnedPreview, setExpandedPinnedPreview] =
     React.useState(false);
 
-  const pinnedIds = usePinnedConversationsStore(
-    (state) =>
-      state.pinsByBackendId[pinnedConversationsScopeKey] ??
-      EMPTY_PINNED_CONVERSATION_IDS,
+  const pinnedIds = usePinnedConversationsStore((state) =>
+    getPinnedConversationIds(
+      state.pinsByBackendId,
+      pinnedConversationsScopeKey,
+      activeBackend.id,
+    ),
   );
   const togglePin = usePinnedConversationsStore((state) => state.togglePin);
   const unpinConversation = usePinnedConversationsStore(
@@ -444,9 +447,14 @@ export function ConversationPanel({
     const loadedIds = data.pages.flatMap((page) =>
       page.items.map((item) => item.id),
     );
-    pruneMissingPinnedConversations(pinnedConversationsScopeKey, loadedIds);
+    pruneMissingPinnedConversations(
+      pinnedConversationsScopeKey,
+      loadedIds,
+      activeBackend.id,
+    );
   }, [
     pinnedConversationsScopeKey,
+    activeBackend.id,
     data,
     hasNextPage,
     isFetched,
@@ -854,7 +862,11 @@ export function ConversationPanel({
       return;
     }
     archiveConversation(activeBackend.id, selectedConversationId);
-    unpinConversation(pinnedConversationsScopeKey, selectedConversationId);
+    unpinConversation(
+      pinnedConversationsScopeKey,
+      selectedConversationId,
+      activeBackend.id,
+    );
     if (selectedConversationId === currentConversationId) {
       navigate("/conversations");
     }
@@ -1043,7 +1055,11 @@ export function ConversationPanel({
               isArchived={isArchived}
               isPinned={isPinned}
               onTogglePin={() =>
-                togglePin(pinnedConversationsScopeKey, conversation.id)
+                togglePin(
+                  pinnedConversationsScopeKey,
+                  conversation.id,
+                  activeBackend.id,
+                )
               }
               alwaysShowPinIcon={isPinned && !options?.inPinnedSection}
             />
