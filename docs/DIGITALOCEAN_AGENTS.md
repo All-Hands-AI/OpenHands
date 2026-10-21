@@ -7,8 +7,11 @@ on the team that is active in Canvas.
 
 ## The key
 
-- An agent in a local Canvas conversation already has it, as
-  `$OPENHANDS_AUTOMATION_API_KEY`.
+- An agent in a conversation on Canvas's Local backend (the Agent Server
+  that Canvas starts on this machine or in its Docker container) already
+  has it, as `$OPENHANDS_AUTOMATION_API_KEY`. The launcher sets that for
+  Automations; it is the same key. Nothing in the agent's prompt mentions
+  DigitalOcean, so point it at this page.
 - On the machine that runs Canvas, it is in
   `~/.openhands/agent-canvas/api-key.txt` (Docker: `$STATE_DIR/api-key.txt`,
   or whatever `LOCAL_BACKEND_API_KEY` is set to).
@@ -23,6 +26,10 @@ The agent must be able to reach Canvas. By default Canvas listens on
 DigitalOcean session, in the cloud or in CI cannot reach it; it should use its
 own DigitalOcean token with DigitalOcean directly
 (`doctl agents port-forward`).
+
+These calls are served by the browser build of Canvas (the `npx` launcher
+or Docker). The desktop app keeps its DigitalOcean bridge inside the app and
+doesn't serve them yet.
 
 ## The calls
 
