@@ -114,21 +114,10 @@ export function resolveMarsWebKey({
 }
 
 /**
- * Mount the bridge for a server, or return null when it must not be. On by
- * default; off when:
- *
- * - `MARS_WEB=0`. The explicit opt-out, for a server that fronts nothing a
- *   browser reaches directly (dev-with-automation's static child behind the
- *   ingress) or runs under Electron, where the preload already provides the
- *   bridge and a second one would only hold its own sign-in state.
- * - No key on a non-loopback bind: the routes would be open to the LAN with
- *   the DO token behind them.
- *
- * The refusal is a warning only when someone asked for the bridge (the old
- * `MARS_WEB=1` opt-in, or `MARS_TOKEN` set); a Docker public-mode instance
- * that never uses DigitalOcean gets a debug line, not a warning on every
- * start. `MARS_WEB_KEY` is not a signal here: with it set there is a key and
- * this branch is never reached.
+ * The web integration is experimental: mount only with `MARS_WEB=1`.
+ * This readiness flag is separate from authentication. An opted-in bridge
+ * still refuses a non-loopback bind without a key. Launchers set `MARS_WEB=0`
+ * on static children and under Electron so only the web ingress hosts it.
  */
 export function mountMarsWebBridge({
   env = process.env,
@@ -137,40 +126,16 @@ export function mountMarsWebBridge({
   log = (message) => console.warn(`[mars-web] ${message}`),
   debug = (message) => console.debug(`[mars-web] ${message}`),
 } = {}) {
-  if (isMarsWebDisabled(env, log)) return null;
+  if (env.MARS_WEB !== "1") return null;
   const key = resolveMarsWebKey({ env, sessionApiKey });
   if (!key && !isLoopbackBind(host)) {
-    const optedIn = env.MARS_WEB === "1" || Boolean(env.MARS_TOKEN?.trim());
-    (optedIn ? log : debug)(
+    log(
       `no key and bind host ${host} is not loopback; not mounting /mars/* (set MARS_WEB_KEY or --session-api-key).`,
     );
     return null;
   }
   if (!key) debug("no key configured; /mars/* is open to local callers only");
   return createMarsWebBridge({ env, host, key });
-}
-
-const MARS_WEB_OFF = new Set(["0", "false", "off", "no"]);
-const MARS_WEB_ON = new Set(["", "1", "true", "on", "yes"]);
-
-/**
- * `MARS_WEB=0` (also `false`, `off`, `no`) turns the bridge off for a server
- * that must not host it. The old `MARS_WEB=1` opt-in and its synonyms mean
- * on, which is the default anyway. Anything else is a typo in the off switch:
- * say so once, and stay on, since on is what no value means.
- */
-export function isMarsWebDisabled(
-  env = process.env,
-  log = (message) => console.warn(`[mars-web] ${message}`),
-) {
-  const value = (env.MARS_WEB ?? "").trim().toLowerCase();
-  if (MARS_WEB_OFF.has(value)) return true;
-  if (!MARS_WEB_ON.has(value)) {
-    log(
-      `MARS_WEB=${JSON.stringify(env.MARS_WEB)} is not recognised (use 0/false/off/no to turn the bridge off); leaving it on.`,
-    );
-  }
-  return false;
 }
 
 function safeEqual(a, b) {

@@ -1087,8 +1087,9 @@ describe("static-server.mjs MARS web bridge (Docker arguments)", () => {
 
   // docker/entrypoint.sh runs `--host :: --session-api-key <key>` with no
   // `--allow-lan-session-key`: the key is stripped from the HTML, but the
-  // bridge must still mount behind it.
-  it("mounts with the entrypoint's `--host :: --session-api-key` arguments", async () => {
+  // opted-in bridge must still mount behind it.
+  it("mounts with MARS_WEB=1 and the entrypoint's `--host :: --session-api-key` arguments", async () => {
+    vi.stubEnv("MARS_WEB", "1");
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const origin = await start({ host: "::", sessionApiKey: "docker-key" });
     expect(await (await fetch(`${origin}/mars/health`)).json()).toEqual({
@@ -1103,16 +1104,20 @@ describe("static-server.mjs MARS web bridge (Docker arguments)", () => {
   });
 
   it("does not mount on a LAN bind with no key (public mode)", async () => {
+    vi.stubEnv("MARS_WEB", "1");
     vi.spyOn(console, "debug").mockImplementation(() => {});
     const origin = await start({ host: "::", authRequired: true });
     const response = await fetch(`${origin}/mars/health`);
     expect(response.headers.get("content-type")).toMatch(/text\/html/);
   });
 
-  it("honours MARS_WEB=0", async () => {
-    vi.stubEnv("MARS_WEB", "0");
-    const origin = await start({ host: "127.0.0.1", sessionApiKey: "k" });
-    const response = await fetch(`${origin}/mars/health`);
-    expect(response.headers.get("content-type")).toMatch(/text\/html/);
-  });
+  it.each([undefined, "0"])(
+    "does not mount with MARS_WEB=%s",
+    async (value) => {
+      vi.stubEnv("MARS_WEB", value);
+      const origin = await start({ host: "127.0.0.1", sessionApiKey: "k" });
+      const response = await fetch(`${origin}/mars/health`);
+      expect(response.headers.get("content-type")).toMatch(/text\/html/);
+    },
+  );
 });

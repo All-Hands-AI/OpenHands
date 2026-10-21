@@ -24,7 +24,6 @@ import { MARS_TUNNEL_IPC } from "../../scripts/mars-tunnel-bridge.mjs";
 import {
   RPC_METHODS,
   createMarsWebBridge,
-  isMarsWebDisabled,
   mountMarsWebBridge,
   rewriteAgentServerUrls,
 } from "../../scripts/mars-web-bridge.mjs";
@@ -661,11 +660,31 @@ describe("createMarsWebBridge with a session key", () => {
 });
 
 describe("mountMarsWebBridge", () => {
-  it("mounts by default on a loopback bind, even without a key", async () => {
+  it.each([
+    {},
+    { MARS_WEB_KEY: "k" },
+    { MARS_TOKEN: "dop_v1_test" },
+    ...["", "0", "false", "off", "no", "true", "on", "yes", "nope"].map(
+      (MARS_WEB) => ({ MARS_WEB }),
+    ),
+  ])("does not mount without MARS_WEB=1: %j", (env) => {
+    const log = vi.fn();
+    const mounted = mountMarsWebBridge({
+      env,
+      host: "127.0.0.1",
+      sessionApiKey: "stack-key",
+      log,
+      debug: log,
+    });
+    expect(mounted).toBeNull();
+    expect(log).not.toHaveBeenCalled();
+  });
+
+  it("mounts with MARS_WEB=1 on a loopback bind, even without a key", async () => {
     const warnings: string[] = [];
     const debugs: string[] = [];
     const mounted = mountMarsWebBridge({
-      env: {},
+      env: { MARS_WEB: "1" },
       host: "127.0.0.1",
       log: (m) => warnings.push(m),
       debug: (m) => debugs.push(m),
@@ -676,80 +695,11 @@ describe("mountMarsWebBridge", () => {
     await mounted!.dispose();
   });
 
-  it("is off with MARS_WEB=0 and its synonyms, silently", () => {
-    for (const value of ["0", "false", "off", "no", "OFF", " 0 "]) {
-      const logs: string[] = [];
-      expect(
-        mountMarsWebBridge({
-          env: { MARS_WEB: value, MARS_WEB_KEY: "k" },
-          host: "127.0.0.1",
-          log: (m) => logs.push(m),
-          debug: (m) => logs.push(m),
-        }),
-      ).toBeNull();
-      expect(logs).toEqual([]);
-    }
-  });
-
-  it("stays on for the old MARS_WEB=1 opt-in, and warns once about a typo", async () => {
-    for (const value of ["1", "true", "on", "yes"]) {
-      const logs: string[] = [];
-      expect(isMarsWebDisabled({ MARS_WEB: value }, (m) => logs.push(m))).toBe(
-        false,
-      );
-      expect(logs).toEqual([]);
-    }
-    const logs: string[] = [];
-    expect(isMarsWebDisabled({ MARS_WEB: "nope" }, (m) => logs.push(m))).toBe(
-      false,
-    );
-    expect(logs[0]).toMatch(/not recognised/);
-    const mounted = mountMarsWebBridge({
-      env: { MARS_WEB: "nope" },
-      host: "127.0.0.1",
-      log: () => {},
-      debug: () => {},
-    });
-    expect(mounted).not.toBeNull();
-    await mounted!.dispose();
-  });
-
-  it("only warns about an unmountable LAN bind when someone opted in", () => {
-    const warnings: string[] = [];
-    const debugs: string[] = [];
-    // Nobody asked for DigitalOcean: a Docker public-mode instance must not
-    // see a warning on every start.
-    expect(
-      mountMarsWebBridge({
-        env: {},
-        host: "::",
-        log: (m) => warnings.push(m),
-        debug: (m) => debugs.push(m),
-      }),
-    ).toBeNull();
-    expect(warnings).toEqual([]);
-    expect(debugs[0]).toMatch(/not loopback/);
-    // MARS_TOKEN, or the old MARS_WEB=1 opt-in, says they meant to use it, so
-    // the refusal is worth a warning.
-    for (const env of [{ MARS_TOKEN: "dop_v1_x" }, { MARS_WEB: "1" }]) {
-      const warned: string[] = [];
-      expect(
-        mountMarsWebBridge({
-          env,
-          host: "::",
-          log: (m) => warned.push(m),
-          debug: () => {},
-        }),
-      ).toBeNull();
-      expect(warned[0]).toMatch(/not loopback/);
-    }
-  });
-
   it("refuses a non-loopback bind without a key, and mounts with one", async () => {
     const logs: string[] = [];
     expect(
       mountMarsWebBridge({
-        env: {},
+        env: { MARS_WEB: "1" },
         host: "0.0.0.0",
         log: (m) => logs.push(m),
         debug: (m) => logs.push(m),
@@ -758,7 +708,7 @@ describe("mountMarsWebBridge", () => {
     expect(logs[0]).toMatch(/not loopback/);
 
     const mounted = mountMarsWebBridge({
-      env: { MARS_WEB_KEY: "k" },
+      env: { MARS_WEB: "1", MARS_WEB_KEY: "k" },
       host: "0.0.0.0",
       log: () => {},
     });
