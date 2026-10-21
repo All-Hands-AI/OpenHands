@@ -631,6 +631,82 @@ const MOCK_AGENT_SERVER_VERSION = "1.55.0";
 // (e.g., http://127.0.0.1:8000/api/...) since the code uses absolute URLs
 // when VITE_BACKEND_BASE_URL is configured.
 
+const MOCK_SETTINGS_DOCUMENT_SCHEMA = {
+  model_name: "SettingsDocument",
+  sections: [
+    {
+      key: "product",
+      label: "Application",
+      description: "User interface preferences.",
+      fields: [
+        {
+          key: "product.language",
+          label: "Language",
+          description: "Preferred interface language.",
+          value_type: "string",
+          required: false,
+          default: "en",
+          secret: false,
+          prominence: "critical",
+          depends_on: [],
+          choices: [],
+        },
+      ],
+    },
+  ],
+};
+
+function buildMockSettingsDocument() {
+  const settings = (MOCK_USER_PREFERENCES.settings ?? {}) as Partial<Settings>;
+  const misc = (settings as Record<string, unknown>).misc_settings as
+    | { app_preferences?: Record<string, unknown> }
+    | undefined;
+  return {
+    schema_version: 1,
+    agent: settings.agent_settings ?? {},
+    conversation: settings.conversation_settings ?? {},
+    product: {
+      language: settings.language ?? misc?.app_preferences?.language ?? "en",
+    },
+    resources: {
+      llm_profiles: {},
+      agent_profiles: {},
+      provider_connections: {},
+      model_routers: {},
+      marketplaces: [],
+      credentials: {},
+      pointers: {},
+    },
+  };
+}
+
+async function patchMockSettingsDocument(request: Request) {
+  const settings = MOCK_USER_PREFERENCES.settings;
+  if (!settings) return HttpResponse.json(null, { status: 404 });
+
+  const patch = (await request.json()) as {
+    agent?: Record<string, SettingsValue>;
+    conversation?: Record<string, SettingsValue>;
+    product?: Record<string, SettingsValue> | null;
+  };
+  if (patch.agent) {
+    settings.agent_settings = deepMerge(
+      settings.agent_settings ?? {},
+      patch.agent,
+    ) as Record<string, SettingsValue>;
+  }
+  if (patch.conversation) {
+    settings.conversation_settings = deepMerge(
+      settings.conversation_settings ?? {},
+      patch.conversation,
+    ) as Record<string, SettingsValue>;
+  }
+  if (patch.product && typeof patch.product.language === "string") {
+    settings.language = patch.product.language;
+  }
+  return HttpResponse.json(buildMockSettingsDocument());
+}
+
 export const SETTINGS_HANDLERS = [
   http.get("*/server_info", async () =>
     HttpResponse.json({
@@ -936,6 +1012,36 @@ export const SETTINGS_HANDLERS = [
     "*/integration/jira/workspaces/link",
     () => new HttpResponse(null, { status: 404 }),
   ),
+
+  http.get("*/api/settings/document", async () => {
+    await delay();
+    return HttpResponse.json(buildMockSettingsDocument());
+  }),
+
+  http.get("*/api/settings/document-schema", async () => {
+    await delay();
+    return HttpResponse.json(MOCK_SETTINGS_DOCUMENT_SCHEMA);
+  }),
+
+  http.patch("*/api/settings/document", async ({ request }) => {
+    await delay();
+    return patchMockSettingsDocument(request);
+  }),
+
+  http.get("*/api/v1/settings/document", async () => {
+    await delay();
+    return HttpResponse.json(buildMockSettingsDocument());
+  }),
+
+  http.get("*/api/v1/settings/document-schema", async () => {
+    await delay();
+    return HttpResponse.json(MOCK_SETTINGS_DOCUMENT_SCHEMA);
+  }),
+
+  http.patch("*/api/v1/settings/document", async ({ request }) => {
+    await delay();
+    return patchMockSettingsDocument(request);
+  }),
 
   http.get("*/api/settings/conversation-schema", async () => {
     await delay();

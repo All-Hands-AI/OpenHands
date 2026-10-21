@@ -4,6 +4,11 @@ import {
   type Settings,
   type SettingsValue,
 } from "#/types/settings";
+import type {
+  SettingsDocument,
+  SettingsDocumentPatch,
+  SettingsDocumentSchema,
+} from "#/types/settings-document";
 import { type AppPreferences } from "../settings-service/settings-service.api";
 import { getActiveBackend } from "../backend-registry/active-store";
 import type { Backend } from "../backend-registry/types";
@@ -148,6 +153,33 @@ export async function fetchCloudSettings(): Promise<Partial<Settings>> {
     search_api_key_set: !!flat.search_api_key_set,
     provider_tokens_set: flat.provider_tokens_set,
   } as Partial<Settings>;
+}
+
+export async function fetchCloudSettingsDocument(): Promise<SettingsDocument> {
+  return callCloudProxy<SettingsDocument>({
+    backend: getActiveCloudBackend(),
+    method: "GET",
+    path: "/api/v1/settings/document",
+  });
+}
+
+export async function fetchCloudSettingsDocumentSchema(): Promise<SettingsDocumentSchema> {
+  return callCloudProxy<SettingsDocumentSchema>({
+    backend: getActiveCloudBackend(),
+    method: "GET",
+    path: "/api/v1/settings/document-schema",
+  });
+}
+
+export async function saveCloudSettingsDocument(
+  patch: SettingsDocumentPatch,
+): Promise<SettingsDocument> {
+  return callCloudProxy<SettingsDocument>({
+    backend: getActiveCloudBackend(),
+    method: "PATCH",
+    path: "/api/v1/settings/document",
+    body: patch,
+  });
 }
 
 export async function saveCloudSettings(diff: {
