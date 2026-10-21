@@ -38,7 +38,8 @@ export function isNativeGitCandidate(entryId: string): boolean {
 export function useNativeGitIntegrations() {
   const { backend } = useActiveBackend();
   const isCloud = backend.kind === "cloud";
-  const { providers: connectedProviders } = useUserProviders();
+  const { providers: connectedProviders, isLoadingSettings } =
+    useUserProviders();
 
   const { data: config, isLoading } = useQuery({
     queryKey: [
@@ -69,7 +70,9 @@ export function useNativeGitIntegrations() {
     getNativeIntegration,
     isJiraEnabled: isCloud && config?.isJiraEnabled === true,
     isLinearEnabled: isCloud && config?.isLinearEnabled === true,
+    // A provider is not known to be disconnected until both the Cloud
+    // configuration and the active backend's saved provider settings load.
+    isLoading: isCloud && (isLoading || isLoadingSettings),
     deploymentMode: isCloud ? (config?.deploymentMode ?? null) : null,
-    isLoading,
   };
 }
