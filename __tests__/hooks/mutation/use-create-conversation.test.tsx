@@ -336,10 +336,94 @@ describe("useCreateConversation", () => {
 
     const pending = useOptimisticUserMessageStore.getState().pendingMessages;
     expect(pending).toHaveLength(1);
+    // Ambiguous failure (transport, not an HTTP status): the server may have
+    // accepted the event, so the bubble stays "sending" and the echo/watchdog
+    // reconciles it instead of offering a retry that could duplicate it.
     expect(pending[0]).toMatchObject({
       conversationId: "conv-bootstrapped",
       text: "Add a dark mode toggle",
+      status: "sending",
+    });
+
+    useOptimisticUserMessageStore.getState().clearPendingMessages();
+  });
+
+  it("offers retry when the send was definitively rejected with a 4xx status", async () => {
+    // A 4xx means the server validated and refused the request, so the event
+    // was not appended and resending cannot duplicate it — the bubble becomes
+    // an errored one with a retry affordance.
+    const httpError = Object.assign(new Error("HTTP 422"), {
+      name: "HttpError",
+      status: 422,
+    });
+    vi.spyOn(
+      AgentServerConversationService,
+      "createConversation",
+    ).mockRejectedValue(
+      new ConversationFirstMessageError(
+        "conv-rejected",
+        [{ type: "text", text: "hi" }],
+        httpError,
+      ),
+    );
+    useOptimisticUserMessageStore.getState().clearPendingMessages();
+
+    const { result } = renderHook(() => useCreateConversation(), {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={new QueryClient()}>
+          {children}
+        </QueryClientProvider>
+      ),
+    });
+
+    const data = await result.current.mutateAsync({ query: "hi" });
+    expect(data.conversation_id).toBe("conv-rejected");
+
+    const pending = useOptimisticUserMessageStore.getState().pendingMessages;
+    expect(pending).toHaveLength(1);
+    expect(pending[0]).toMatchObject({
+      conversationId: "conv-rejected",
+      text: "hi",
       status: "error",
+    });
+
+    useOptimisticUserMessageStore.getState().clearPendingMessages();
+  });
+
+  it("keeps the bubble sending when the server faulted with a 5xx", async () => {
+    // A 5xx can fault after the event was persisted, so it stays ambiguous: the
+    // bubble must not offer retry until the echo/watchdog settles it.
+    const httpError = Object.assign(new Error("HTTP 500"), {
+      name: "HttpError",
+      status: 500,
+    });
+    vi.spyOn(
+      AgentServerConversationService,
+      "createConversation",
+    ).mockRejectedValue(
+      new ConversationFirstMessageError(
+        "conv-server-fault",
+        [{ type: "text", text: "hi" }],
+        httpError,
+      ),
+    );
+    useOptimisticUserMessageStore.getState().clearPendingMessages();
+
+    const { result } = renderHook(() => useCreateConversation(), {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={new QueryClient()}>
+          {children}
+        </QueryClientProvider>
+      ),
+    });
+
+    await result.current.mutateAsync({ query: "hi" });
+
+    const pending = useOptimisticUserMessageStore.getState().pendingMessages;
+    expect(pending).toHaveLength(1);
+    expect(pending[0]).toMatchObject({
+      conversationId: "conv-server-fault",
+      status: "sending",
     });
 
     useOptimisticUserMessageStore.getState().clearPendingMessages();
@@ -384,7 +468,7 @@ describe("useCreateConversation", () => {
     expect(pending[0]).toMatchObject({
       conversationId: "conv-bootstrapped",
       text: "Add a dark mode toggle\n\nFocus on review comments",
-      status: "error",
+      status: "sending",
     });
 
     useOptimisticUserMessageStore.getState().clearPendingMessages();

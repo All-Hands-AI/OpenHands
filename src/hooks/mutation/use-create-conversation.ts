@@ -18,6 +18,7 @@ import PluginsManagementService, {
 import { PLUGINS_QUERY_KEYS } from "#/hooks/query/query-keys";
 import { launchConversation } from "#/hooks/mutation/resolve-conversation-launch";
 import { ConversationFirstMessageError } from "#/api/conversation-service/agent-server-conversation-service.api";
+import { isSdkHttpError } from "#/utils/sdk-http-error";
 import type { SetupScriptStatusUpdate } from "#/api/setup-script-service";
 import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
 import { pluginReferenceKey } from "#/utils/plugin-display";
@@ -83,17 +84,39 @@ function messageContentText(content: MessageContent[]): string {
 }
 
 /**
+ * Whether the send was *definitively* rejected, as opposed to failing
+ * ambiguously after the server may already have accepted the event.
+ *
+ * Only a 4xx counts: the server validated and refused the request, so the event
+ * was not appended and resending cannot duplicate it. Everything else is
+ * ambiguous — a transport failure (socket closed, timeout, connection reset)
+ * never reached a verdict, and a 5xx can fault *after* the event was persisted.
+ * Offering retry there invites a duplicate first message.
+ */
+function isDefinitiveSendRejection(error: unknown): boolean {
+  // `isSdkHttpError` matches on shape, not a type predicate, so narrow the
+  // status here rather than widening the shared helper's contract.
+  return isSdkHttpError(error) && (error as { status: number }).status < 500;
+}
+
+/**
  * The conversation was created, but its withheld first message never sent, so
  * its first turn never started. Reporting a failed create here would be worse
  * than useless: the caller's retry starts a *second* conversation and leaves
  * this one idle. Instead report success for the conversation that does exist
- * and leave the user's message as an errored pending bubble on it, so the
- * retry affordance resends to the same conversation.
+ * and leave the user's message as a pending bubble on it, so the retry
+ * affordance resends to the same conversation.
  *
  * The bubble is rebuilt from the exact `content` the send attempted, not the
  * caller's raw `query`: the local path folds `conversationInstructions` into
  * the body, so a `query`-only rebuild would drop them (and produce no bubble
  * at all for an instructions-only launch).
+ *
+ * Only a *definitive* rejection (the server answered with a non-2xx) becomes an
+ * errored bubble with retry. An ambiguous failure — the request may have been
+ * accepted before the response was lost — stays "sending": the server's echo
+ * removes it via `consumeMatchingPendingMessage`, and the store's watchdog
+ * flips it to error later if no echo arrives, so the two never race.
  *
  * `launchConversation` stamps the LLM profile before rethrowing, so only the
  * plugin snapshot remains here — the launch's own snapshot runs after
@@ -112,7 +135,9 @@ function recoverConversationFirstMessage(
       text,
       content: text,
     });
-    store.markPendingMessageError(pendingId, error.message);
+    if (isDefinitiveSendRejection(error.cause)) {
+      store.markPendingMessageError(pendingId, error.message);
+    }
   }
   return snapshotPlugins(error.conversationId, queryClient, snapshot).then(
     () => ({
