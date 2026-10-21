@@ -10,6 +10,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import net from "node:net";
+import { createRequire } from "node:module";
 import { homedir } from "node:os";
 import path from "node:path";
 import process from "node:process";
@@ -63,6 +64,9 @@ const AGENT_SERVER_POSTHOG_CONSTRAINT = "posthog>=6,<7";
 // (OpenHands/software-agent-sdk#6088). uvx installs do not inherit the SDK
 // uv.lock, so pin litellm here until the SDK publishes a compatible cap.
 export const AGENT_SERVER_LITELLM_CONSTRAINT = "litellm<1.106.0";
+// Interpreter request passed to uvx for agent-server and automation; see
+// buildUvxPythonArgs.
+const DEFAULT_UVX_PYTHON_REQUEST = SHARED_DEFAULTS.python.uvxRequest;
 const FRONTEND_REQUIRED_BINS = ["cross-env", "react-router"];
 
 function pushAgentServerUvxConstraints(uvxArgs) {
@@ -417,6 +421,27 @@ export function validateFrontendDependencies(
 export const AGENT_SERVER_IMPORT_MODULES = "canvas_ui_tool";
 
 /**
+ * Build the `--python` arguments for a uvx-launched service.
+ *
+ * When no suitable interpreter is installed, uvx downloads the newest
+ * CPython it knows, and the SDK's compiled dependencies lag each new
+ * Python release by weeks. A fresh machine therefore failed to start as
+ * soon as Python 3.15 shipped (#18654). Requesting a range makes uvx reuse
+ * any installed interpreter inside it and otherwise download the newest
+ * matching one. An explicit `--python` would outrank uv's own UV_PYTHON
+ * variable, so it is omitted when UV_PYTHON is set.
+ *
+ * @param {Record<string, string | undefined>} env
+ * @returns {string[]}
+ */
+export function buildUvxPythonArgs(env = process.env) {
+  if (env.UV_PYTHON) {
+    return [];
+  }
+  return ["--python", DEFAULT_UVX_PYTHON_REQUEST];
+}
+
+/**
  * Build the uvx command and arguments for running agent-server.
  *
  * Environment variables (highest precedence first):
@@ -432,6 +457,9 @@ export const AGENT_SERVER_IMPORT_MODULES = "canvas_ui_tool";
  * DEFAULT_AGENT_SERVER_VERSION. Set OH_AGENT_SERVER_GIT_REF to use a
  * git branch or commit instead.
  *
+ * UV_PYTHON, when set, replaces the default interpreter request (the
+ * python.uvxRequest range in config/defaults.json) given to uvx.
+ *
  * @param {Record<string, string | undefined>} env
  * @returns {{ command: string, args: string[], source: string }}
  */
@@ -440,7 +468,7 @@ export function buildAgentServerCommand(env = process.env) {
   const gitRef = env.OH_AGENT_SERVER_GIT_REF;
   const version = env.OH_AGENT_SERVER_VERSION;
 
-  const uvxArgs = [];
+  const uvxArgs = buildUvxPythonArgs(env);
   let source = "";
 
   if (localPath) {
@@ -636,7 +664,25 @@ export async function buildSafeDevConfigAsync(
  * @property {string} secretKey
  * @property {string} sessionApiKey
  * @property {string} canvasToolsDir
+ * @property {string | null} extensionsDir
  */
+
+/**
+ * The installed `@openhands/extensions` package, so the agent-server reads the
+ * same public skills Canvas bundles instead of cloning the repository.
+ * @returns {string | null}
+ */
+export function resolveExtensionsDir() {
+  try {
+    return path.dirname(
+      createRequire(import.meta.url).resolve(
+        "@openhands/extensions/package.json",
+      ),
+    );
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Internal helper to build config from already-resolved ports.
@@ -711,6 +757,7 @@ function buildConfigFromPorts(ports, cwd, env) {
     secretKey,
     sessionApiKey,
     canvasToolsDir,
+    extensionsDir: resolveExtensionsDir(),
   };
 }
 
@@ -856,6 +903,9 @@ export function buildAgentServerEnv(config, options = {}) {
     // Let the agent-server resolve canvas_ui_tool when old persisted metadata
     // requests that compatibility module during startup.
     OH_EXTRA_PYTHON_PATH: config.canvasToolsDir,
+    ...(env.EXTENSIONS_PATH || config.extensionsDir
+      ? { EXTENSIONS_PATH: env.EXTENSIONS_PATH || config.extensionsDir }
+      : {}),
   };
 }
 

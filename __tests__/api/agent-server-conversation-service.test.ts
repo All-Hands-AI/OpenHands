@@ -600,6 +600,7 @@ describe("AgentServerConversationService", () => {
       });
 
       await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
         agentLlmProfileRef: "powerful",
       });
 
@@ -646,6 +647,7 @@ describe("AgentServerConversationService", () => {
       });
 
       await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
         agentLlmProfileRef: "powerful",
       });
 
@@ -689,6 +691,7 @@ describe("AgentServerConversationService", () => {
       // must degrade to the account-wide active profile instead of sending an
       // unresolvable name.
       await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
         agentLlmProfileRef: "powerful",
       });
 
@@ -716,8 +719,12 @@ describe("AgentServerConversationService", () => {
         },
       });
 
-      await AgentServerConversationService.createConversation();
-      await AgentServerConversationService.createConversation();
+      await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
+      });
+      await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
+      });
 
       // The first conversation on a cold agent-server can exceed the client's
       // default timeout, so createConversation constructs its ConversationClient
@@ -789,7 +796,9 @@ describe("AgentServerConversationService", () => {
         },
       });
 
-      await AgentServerConversationService.createConversation();
+      await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
+      });
 
       const [payloadCall] = mockHttpPost.mock.calls;
       const payload = payloadCall[1] as {
@@ -823,6 +832,7 @@ describe("AgentServerConversationService", () => {
       });
 
       await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
         workingDirOverride: "/Users/jane/projects/foo",
       });
 
@@ -854,6 +864,7 @@ describe("AgentServerConversationService", () => {
       });
 
       await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
         workingDirOverride: "/Users/jane/projects/foo",
         workspaceMode: "new_worktree",
       });
@@ -1454,6 +1465,26 @@ describe("AgentServerConversationService", () => {
       });
     });
 
+    it("sends a picked LLM profile as llm_profile on the cloud start request", async () => {
+      const requests = captureRequests(["post"], {
+        id: "task-1",
+        status: "WORKING",
+        app_conversation_id: null,
+        agent_server_url: null,
+        request: {},
+        created_at: "2024-01-01",
+        updated_at: "2024-01-01",
+      });
+
+      await AgentServerConversationService.createConversation({
+        metadata: null,
+        llmProfile: "ops55",
+      });
+
+      expect(requests).toHaveLength(1);
+      expect(requests[0].body).toMatchObject({ llm_profile: "ops55" });
+    });
+
     it("forwards automation client tools and setup tag to cloud OpenHands conversations", async () => {
       const requests = captureRequests(["post"], {
         id: "task-automation",
@@ -1517,6 +1548,69 @@ describe("AgentServerConversationService", () => {
       };
       expect(body.tags).toEqual({ automationsetup: "draft" });
       expect(body.client_tools).toBeUndefined();
+    });
+
+    // Connect Repo on an existing cloud conversation must reach the server, so
+    // other clients and server features see the repository.
+    it("saves a connected repository on the cloud conversation", async () => {
+      // Arrange
+      const requests = captureRequests(
+        ["patch", "get"],
+        [{ id: "conv-cloud-1", selected_repository: "OpenHands/agent-canvas" }],
+      );
+
+      // Act
+      await AgentServerConversationService.updateConversationRepository(
+        "conv-cloud-1",
+        "OpenHands/agent-canvas",
+        "main",
+        "github",
+      );
+
+      // Assert
+      const patch = requests.find((request) => request.method === "PATCH");
+      expect(patch?.url).toBe(
+        `${cloudBackend.host}/api/v1/app-conversations/conv-cloud-1`,
+      );
+      expect(patch?.headers.authorization).toBe("Bearer bearer-token");
+      expect(patch?.body).toEqual({
+        selected_repository: "OpenHands/agent-canvas",
+        selected_branch: "main",
+        git_provider: "github",
+      });
+    });
+
+    // Older servers reject some repository names (e.g. Azure DevOps
+    // org/project/repo). Connect Repo must still work for the user.
+    it("keeps the connected repository when the cloud server rejects it", async () => {
+      // Arrange
+      captureRequests(
+        ["patch"],
+        HttpResponse.json({ detail: "invalid" }, { status: 500 }),
+      );
+      captureRequests(["get"], [{ id: "conv-cloud-1" }]);
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      try {
+        // Act
+        const conversation =
+          await AgentServerConversationService.updateConversationRepository(
+            "conv-cloud-1",
+            "contoso/project/repo",
+            "main",
+            "azure_devops",
+          );
+
+        // Assert
+        expect(warn).toHaveBeenCalled();
+        expect(conversation).toMatchObject({
+          selected_repository: "contoso/project/repo",
+          selected_branch: "main",
+          git_provider: "azure_devops",
+        });
+      } finally {
+        warn.mockRestore();
+      }
     });
 
     it("routes readConversationFile to the cloud file endpoint with the file_path query param", async () => {
@@ -2381,6 +2475,7 @@ describe("AgentServerConversationService", () => {
       });
 
       await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
         initialUserMsg: "Inspect the repository",
         metadata: {
           selected_repository: "OpenHands/agent-canvas",
@@ -2420,7 +2515,9 @@ describe("AgentServerConversationService", () => {
       });
 
       await expect(
-        AgentServerConversationService.createConversation(),
+        AgentServerConversationService.createConversation({
+          agentProfileId: "profile-1",
+        }),
       ).rejects.toThrow("No backend is configured");
     });
 
@@ -3050,6 +3147,7 @@ describe("AgentServerConversationService", () => {
       ];
 
       const result = await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
         initialUserMsg: "Inspect the repository",
         plugins,
         workingDirOverride: "/Users/jane/projects/canvas",
@@ -3085,7 +3183,9 @@ describe("AgentServerConversationService", () => {
     it("does not persist empty metadata for a conversation without a selected source", async () => {
       arrangeLocalCreate("conv-unselected");
 
-      await AgentServerConversationService.createConversation();
+      await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
+      });
 
       expect(getStoredConversationMetadata("conv-unselected")).toBeNull();
       expect(window.localStorage.getItem(metadataStorageKey)).toBeNull();
