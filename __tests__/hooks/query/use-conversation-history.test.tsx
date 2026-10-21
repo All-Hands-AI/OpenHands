@@ -110,6 +110,7 @@ describe("useConversationHistory", () => {
       {
         limit: INITIAL_HISTORY_PAGE_SIZE,
         sortOrder: "TIMESTAMP_DESC",
+        source: "runtime",
       },
     );
   });
@@ -523,8 +524,24 @@ describe("useConversationHistory cache key stability", () => {
     });
 
     describe("on a Cloud backend", () => {
-      // The count is the runtime's log, but the page comes from the App
-      // API's webhook-fed copy of it, which can lag the runtime.
+      // The socket cursor counts the runtime's log. The App API holds a
+      // webhook-fed copy of it that can lag the runtime.
+      const withCloudConversation = (sandboxStatus: string) =>
+        vi.mocked(useUserConversation).mockReturnValue({
+          data: {
+            ...makeConversation("V1"),
+            sandbox_status: sandboxStatus,
+            conversation_url:
+              "https://runtime.example.com/api/conversations/conv-cloud",
+            session_api_key: "session-key",
+          },
+          isLoading: false,
+          isPending: false,
+          isError: false,
+          error: null,
+          refetch: vi.fn(),
+        } as any);
+
       beforeEach(() => {
         setRegisteredBackends([
           {
@@ -543,51 +560,79 @@ describe("useConversationHistory cache key stability", () => {
         __resetActiveStoreForTests();
       });
 
-      it("does not resume past runtime events the lagging page lacks", async () => {
-        // Arrange: the runtime holds 6 events (seq 0..5) and the user's
-        // first message is seq 3, but the App API page has only seq 0..2.
-        withUrl();
-        vi.spyOn(EventService, "getEventCount").mockResolvedValue(6);
-        vi.spyOn(EventService, "searchEvents").mockResolvedValue(
-          makePage([
-            makeEvent("evt-2"),
-            makeEvent("evt-1"),
-            makeEvent("evt-0"),
-          ]),
-        );
+      it("reads the count and the page from the running sandbox", async () => {
+        // Arrange: the runtime holds 7 events, the newest being the reply
+        // the App API has not received yet.
+        withCloudConversation("RUNNING");
+        vi.spyOn(EventService, "getEventCount").mockResolvedValue(7);
+        const searchSpy = vi
+          .spyOn(EventService, "searchEvents")
+          .mockResolvedValue(makePage([makeEvent("evt-reply")]));
 
         // Act
         const { result } = renderHook(
-          () => useConversationHistory("conv-cloud-lag"),
+          () => useConversationHistory("conv-cloud-running"),
           { wrapper },
         );
         await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-        // Assert: the socket replays the whole short log (deduped by id)
-        // instead of resuming after seq 5 and losing the message.
-        expect(result.current.data?.afterSeq).toBe(-1);
+        // Assert: the page and the cursor come from the same log.
+        expect(searchSpy).toHaveBeenCalledTimes(1);
+        expect(searchSpy.mock.calls[0][3]).toMatchObject({
+          source: "runtime",
+        });
+        expect(result.current.data?.source).toBe("runtime");
+        expect(result.current.data?.afterSeq).toBe(6);
       });
 
-      it("replays only one page-width of a long runtime log", async () => {
-        // Arrange
-        withUrl();
-        vi.spyOn(EventService, "getEventCount").mockResolvedValue(120);
-        vi.spyOn(EventService, "searchEvents").mockResolvedValue(
-          makePage([makeEvent()]),
-        );
+      it("reads the App API without a cursor while the sandbox is paused", async () => {
+        // Arrange: a paused conversation keeps its stale runtime URL.
+        withCloudConversation("PAUSED");
+        const countSpy = vi.spyOn(EventService, "getEventCount");
+        const searchSpy = vi
+          .spyOn(EventService, "searchEvents")
+          .mockResolvedValue(makePage([makeEvent()]));
 
         // Act
         const { result } = renderHook(
-          () => useConversationHistory("conv-cloud-long"),
+          () => useConversationHistory("conv-cloud-paused"),
           { wrapper },
         );
         await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-        // Assert: the newest INITIAL_HISTORY_PAGE_SIZE runtime events are
-        // replayed, not the whole log.
-        expect(result.current.data?.afterSeq).toBe(
-          119 - INITIAL_HISTORY_PAGE_SIZE,
+        // Assert
+        expect(countSpy).not.toHaveBeenCalled();
+        expect(searchSpy.mock.calls[0][3]).toMatchObject({
+          source: "app-api",
+        });
+        expect(result.current.data?.source).toBe("app-api");
+        expect(result.current.data?.afterSeq).toBeNull();
+      });
+
+      it("falls back to the App API without a cursor when the sandbox read fails", async () => {
+        // Arrange: the count succeeds but the runtime page does not.
+        withCloudConversation("RUNNING");
+        vi.spyOn(EventService, "getEventCount").mockResolvedValue(7);
+        vi.spyOn(EventService, "searchEvents").mockImplementation(
+          async (_id, _url, _key, options) => {
+            if (options?.source === "runtime") throw new Error("unreachable");
+            return makePage([makeEvent("evt-app-api")]);
+          },
         );
+
+        // Act
+        const { result } = renderHook(
+          () => useConversationHistory("conv-cloud-fallback"),
+          { wrapper },
+        );
+        await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+        // Assert: the runtime count is not paired with the App API page.
+        expect(result.current.data?.events.map((e: any) => e.id)).toEqual([
+          "evt-app-api",
+        ]);
+        expect(result.current.data?.source).toBe("app-api");
+        expect(result.current.data?.afterSeq).toBeNull();
       });
     });
   });

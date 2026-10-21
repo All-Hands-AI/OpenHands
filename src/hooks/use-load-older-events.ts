@@ -31,8 +31,9 @@ interface UseLoadOlderEventsResult {
 
 /**
  * REST-side companion to `useConversationHistory`: paginates older events
- * (`timestamp < oldest known`) into the event store on demand. Used by the
- * chat scroll handler to lazily backfill history when the user scrolls up.
+ * (`timestamp < oldest known`) into the event store on demand, from the same
+ * log as the first page. Used by the chat scroll handler to lazily backfill
+ * history when the user scrolls up.
  *
  * Server dependency: cloud pagination requires the timestamp comparison
  * fix from OpenHands/OpenHands#14399. The `EventService.searchEvents`
@@ -146,6 +147,7 @@ export const useLoadOlderEvents = (
           limit: INITIAL_HISTORY_PAGE_SIZE,
           sortOrder: "TIMESTAMP_DESC",
           timestampLt: oldestTimestamp,
+          source: initialHistory?.source,
         },
       );
 
@@ -203,6 +205,7 @@ export const useLoadOlderEvents = (
     conversation,
     conversation?.conversation_url,
     conversation?.session_api_key,
+    initialHistory?.source,
     addEvents,
   ]);
 

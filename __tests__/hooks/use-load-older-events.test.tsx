@@ -231,6 +231,38 @@ describe("useLoadOlderEvents", () => {
     });
   });
 
+  it.each(["runtime", "app-api"] as const)(
+    "reads older pages from the first page's log (%s)",
+    async (source) => {
+      // Arrange
+      vi.mocked(useConversationHistory).mockReturnValue({
+        data: {
+          events: [makeEvent("evt-recent", "2024-06-01T00:00:00Z")],
+          hasMore: true,
+          nextPageId: null,
+          afterSeq: null,
+          source,
+        },
+        isFetched: true,
+      } as ReturnType<typeof useConversationHistory>);
+      setConversationEvents("conv-1", [
+        makeEvent("evt-recent", "2024-06-01T00:00:00Z"),
+      ]);
+      const spy = vi
+        .spyOn(EventService, "searchEvents")
+        .mockResolvedValue(makePage([]));
+      const { result } = renderConversationHook("conv-1");
+
+      // Act
+      await act(async () => {
+        await result.current.loadOlder();
+      });
+
+      // Assert
+      expect(spy.mock.calls[0][3]).toMatchObject({ source });
+    },
+  );
+
   it("seeds inline model-switch messages for switches in a paginated older page", async () => {
     // A successful SwitchLLMObservation is hidden as a card and surfaced via an
     // inline "Switched to" message seeded from history. The initial preload only

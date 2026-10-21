@@ -9,6 +9,13 @@ export interface ConfirmationResponseResponse {
 
 export type EventSortOrder = "TIMESTAMP" | "TIMESTAMP_DESC";
 
+/**
+ * Which copy of a conversation's event log to read. On Cloud the runtime
+ * sandbox holds the log and the App API holds a webhook-fed copy of it that
+ * can lag. Local backends only have the runtime.
+ */
+export type EventLogSource = "runtime" | "app-api";
+
 export interface EventSearchOptions {
   /** Maximum number of events to return per page (server caps at 100). */
   limit?: number;
@@ -26,6 +33,11 @@ export interface EventSearchOptions {
    * must set this so a partial history is never mistaken for exhaustion.
    */
   strictPagination?: boolean;
+  /**
+   * Log to read on Cloud. Defaults to `"app-api"`, which outlives the
+   * sandbox. Ignored on Local backends, which always read the runtime.
+   */
+  source?: EventLogSource;
 }
 
 export interface EventSearchPage<TEvent> {

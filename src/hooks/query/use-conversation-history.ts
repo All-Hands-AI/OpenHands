@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import EventService from "#/api/event-service/event-service.api";
 import { getActiveBackend } from "#/api/backend-registry/active-store";
+import type { AppConversation } from "#/api/conversation-service/agent-server-conversation-service.types";
+import type { EventLogSource } from "#/api/event-service/event-service.types";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import type { OpenHandsEvent } from "#/types/agent-server/core";
 
@@ -20,31 +22,81 @@ export interface ConversationHistoryPage {
   /**
    * Session-socket resume cursor for the first connect: the last `seq` on
    * disk *before* this page was read, so nothing appended in between is
-   * missed and nothing older than the page is replayed. On Cloud it is one
-   * page-width further back (see `resumeCursor`). `null` when the count
-   * could not be read.
+   * missed and nothing older than the page is replayed. Set only when the
+   * count and the page were read from the runtime; `null` otherwise, so the
+   * socket replays the whole log.
    */
   afterSeq: number | null;
+  /** Log this page was read from. Older pages must read the same log. */
+  source: EventLogSource;
 }
 
 /**
- * First-connect `after_seq` from the runtime's event count.
- *
- * Locally the count and the page are the same log, so the socket resumes at
- * the count's tail. On Cloud the page comes from the App API's webhook-fed
- * copy of the log (`EventService.searchEvents`), which can lag the runtime:
- * resuming at the runtime's tail would skip every event the page does not yet
- * hold — the first user message's echo among them (#18717). There the socket
- * replays the newest page-width of the runtime log instead; the event store
- * dedupes what the page already has by id (both logs share event ids). Only
- * a lag of more than a page could still leave a hole; the whole log is not
- * replayed because that would load every older event of a long conversation
- * past pagination and re-run their socket side effects.
+ * Log to read history from. On Cloud the App API's copy only receives
+ * events through the runtime's batched webhook and can lag it, while the
+ * socket cursor counts the runtime's log. So history is read from the
+ * runtime while the sandbox runs, and from the App API otherwise.
  */
-function resumeCursor(count: number): number {
-  const lastSeq = count - 1;
-  if (getActiveBackend().backend.kind !== "cloud") return lastSeq;
-  return Math.max(-1, lastSeq - INITIAL_HISTORY_PAGE_SIZE);
+function historySource(
+  conversation: AppConversation | null | undefined,
+): EventLogSource {
+  if (getActiveBackend().backend.kind !== "cloud") return "runtime";
+  return conversation?.sandbox_status === "RUNNING" &&
+    conversation.conversation_url
+    ? "runtime"
+    : "app-api";
+}
+
+async function readHistoryPage(
+  conversationId: string,
+  conversationUrl: string | null,
+  sessionApiKey: string | null,
+  source: EventLogSource,
+): Promise<ConversationHistoryPage> {
+  // Read the count first: an unfiltered count is the log length, so every
+  // event appended after it has `seq >= count` and is replayed (and deduped
+  // against this page) rather than lost. Only the runtime log has `seq`.
+  let count: number | null = null;
+  if (source === "runtime" && conversationUrl) {
+    try {
+      count = await EventService.getEventCount(
+        conversationId,
+        conversationUrl,
+        sessionApiKey,
+      );
+    } catch {
+      // Not fatal: without a cursor the socket replays the whole log.
+      count = null;
+    }
+  }
+
+  const page = await EventService.searchEvents(
+    conversationId,
+    conversationUrl,
+    sessionApiKey,
+    {
+      limit: INITIAL_HISTORY_PAGE_SIZE,
+      sortOrder: "TIMESTAMP_DESC",
+      source,
+    },
+  );
+
+  if (!Array.isArray(page.items)) {
+    throw new Error(
+      "Invalid conversation history response: expected page.items to be an array.",
+    );
+  }
+
+  // Reverse so callers can append in chronological order.
+  const events = [...page.items].reverse();
+  return {
+    events,
+    hasMore:
+      !!page.next_page_id || page.items.length >= INITIAL_HISTORY_PAGE_SIZE,
+    nextPageId: page.next_page_id ?? null,
+    afterSeq: typeof count === "number" ? count - 1 : null,
+    source,
+  };
 }
 
 /**
@@ -53,70 +105,62 @@ function resumeCursor(count: number): number {
  * we reverse the result to chronological order before handing it to callers.
  *
  * Older events are loaded on demand by `useLoadOlderEvents` once the user
- * scrolls up. The session socket then resumes from `afterSeq`, so it neither
- * re-receives the history we already have nor misses what landed meanwhile.
+ * scrolls up, from the same log (`source`). The session socket then resumes
+ * from `afterSeq`, so it neither re-receives the history we already have nor
+ * misses what landed meanwhile.
  */
 export const useConversationHistory = (conversationId?: string) => {
   const { data: conversation } = useUserConversation(conversationId ?? null);
+
+  const source = historySource(conversation);
 
   return useQuery<ConversationHistoryPage>({
     queryKey: [
       "conversation-history",
       conversationId,
       // Include the conversation's host + key so a backend swap (or a
-      // re-provisioned cloud sandbox with a new URL) re-fetches.
+      // re-provisioned cloud sandbox with a new URL) re-fetches, and the
+      // source so a sandbox that starts or stops switches logs.
       conversation?.conversation_url ?? null,
       conversation?.session_api_key ?? null,
+      source,
     ],
     enabled: !!conversationId && !!conversation,
     queryFn: async () => {
       if (!conversationId) {
-        return { events: [], hasMore: false, nextPageId: null, afterSeq: null };
+        return {
+          events: [],
+          hasMore: false,
+          nextPageId: null,
+          afterSeq: null,
+          source,
+        };
       }
 
-      // Read the count first: an unfiltered count is the log length, so every
-      // event appended after it has `seq >= count` and is replayed (and
-      // deduped against this page) rather than lost.
       const conversationUrl = conversation?.conversation_url ?? null;
-      let count: number | null = null;
-      if (conversationUrl) {
+      const sessionApiKey = conversation?.session_api_key ?? null;
+
+      if (source === "runtime") {
         try {
-          count = await EventService.getEventCount(
+          return await readHistoryPage(
             conversationId,
             conversationUrl,
-            conversation?.session_api_key ?? null,
+            sessionApiKey,
+            "runtime",
           );
-        } catch {
-          // Not fatal: without a cursor the socket replays the whole log.
-          count = null;
+        } catch (error) {
+          // Locally the runtime is the only log. On Cloud the sandbox may
+          // have stopped since the conversation was fetched.
+          if (getActiveBackend().backend.kind !== "cloud") throw error;
         }
       }
 
-      const page = await EventService.searchEvents(
+      return readHistoryPage(
         conversationId,
-        conversation?.conversation_url ?? null,
-        conversation?.session_api_key ?? null,
-        {
-          limit: INITIAL_HISTORY_PAGE_SIZE,
-          sortOrder: "TIMESTAMP_DESC",
-        },
+        conversationUrl,
+        sessionApiKey,
+        "app-api",
       );
-
-      if (!Array.isArray(page.items)) {
-        throw new Error(
-          "Invalid conversation history response: expected page.items to be an array.",
-        );
-      }
-
-      // Reverse so callers can append in chronological order.
-      const events = [...page.items].reverse();
-      return {
-        events,
-        hasMore:
-          !!page.next_page_id || page.items.length >= INITIAL_HISTORY_PAGE_SIZE,
-        nextPageId: page.next_page_id ?? null,
-        afterSeq: typeof count === "number" ? resumeCursor(count) : null,
-      };
     },
     // Keep the cached page so returning to a conversation renders the
     // last-known discussion instantly (no skeleton). But refetch the tail on

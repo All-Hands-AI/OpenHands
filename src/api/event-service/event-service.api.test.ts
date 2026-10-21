@@ -397,6 +397,36 @@ describe("EventService", () => {
       expect(callCloudProxyMock).not.toHaveBeenCalled();
     });
 
+    it("reads cloud history from the runtime when asked for the runtime log", async () => {
+      remoteSearchMock.mockResolvedValue({
+        items: [{ id: "event-runtime" }],
+        next_page_id: null,
+      });
+
+      await expect(
+        EventService.searchEvents(
+          "conversation-cloud",
+          "https://runtime.example.com/api/conversations/conversation-cloud",
+          "session-key",
+          { limit: 50, sortOrder: "TIMESTAMP_DESC", source: "runtime" },
+        ),
+      ).resolves.toEqual({
+        items: [{ id: "event-runtime" }],
+        next_page_id: null,
+      });
+
+      expect(getAgentServerHttpClientOptionsMock).toHaveBeenCalledWith({
+        conversationUrl:
+          "https://runtime.example.com/api/conversations/conversation-cloud",
+        sessionApiKey: "session-key",
+      });
+      expect(remoteSearchMock).toHaveBeenCalledWith({
+        limit: 50,
+        sort_order: "TIMESTAMP_DESC",
+      });
+      expect(callCloudProxyMock).not.toHaveBeenCalled();
+    });
+
     it("uses default local options and normalizes a missing page", async () => {
       useBackend(localBackend);
       remoteSearchMock.mockResolvedValue(undefined);

@@ -24,8 +24,10 @@ import type {
  *
  *   - **Runtime sandbox** (extracted from `conversation.conversation_url`):
  *     live runtime endpoints like `/api/conversations/{id}/events/count`
- *     and `/api/conversations/{id}/events/respond_to_confirmation`. Auth on
- *     these endpoints is `X-Session-API-Key`, not `Authorization: Bearer`.
+ *     and `/api/conversations/{id}/events/respond_to_confirmation`, plus
+ *     event history when `searchEvents` is asked for `source: "runtime"`.
+ *     Auth on these endpoints is `X-Session-API-Key`, not
+ *     `Authorization: Bearer`.
  *
  * App API calls go directly to the cloud backend with bearer auth. Runtime
  * sandbox calls go **directly** to the per-conversation runtime host from the
@@ -81,9 +83,9 @@ class EventService {
     const active = getActiveBackend().backend;
     const limit = options.limit ?? 100;
 
-    if (active.kind === "cloud") {
-      // Event *history* lives on the cloud App API, not the runtime
-      // sandbox. Path is singular `conversation` and v1-prefixed.
+    if (active.kind === "cloud" && options.source !== "runtime") {
+      // The App API's copy of the history. Path is singular `conversation`
+      // and v1-prefixed.
       //
       // Full pagination params (sort_order, page_id, timestamp filters)
       // require the server-side fix from OpenHands/OpenHands#14399. If
