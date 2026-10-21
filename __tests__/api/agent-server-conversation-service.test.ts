@@ -1465,6 +1465,26 @@ describe("AgentServerConversationService", () => {
       });
     });
 
+    it("sends a picked LLM profile as llm_profile on the cloud start request", async () => {
+      const requests = captureRequests(["post"], {
+        id: "task-1",
+        status: "WORKING",
+        app_conversation_id: null,
+        agent_server_url: null,
+        request: {},
+        created_at: "2024-01-01",
+        updated_at: "2024-01-01",
+      });
+
+      await AgentServerConversationService.createConversation({
+        metadata: null,
+        llmProfile: "ops55",
+      });
+
+      expect(requests).toHaveLength(1);
+      expect(requests[0].body).toMatchObject({ llm_profile: "ops55" });
+    });
+
     it("forwards automation client tools and setup tag to cloud OpenHands conversations", async () => {
       const requests = captureRequests(["post"], {
         id: "task-automation",
