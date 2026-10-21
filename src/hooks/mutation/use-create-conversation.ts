@@ -13,6 +13,9 @@ import PluginsManagementService, {
 } from "#/api/plugins-management-service";
 import { PLUGINS_QUERY_KEYS } from "#/hooks/query/query-keys";
 import { launchConversation } from "#/hooks/mutation/resolve-conversation-launch";
+import { ConversationFirstMessageError } from "#/api/conversation-service/agent-server-conversation-service.api";
+import type { SetupScriptStatusUpdate } from "#/api/setup-script-service";
+import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
 import { pluginReferenceKey } from "#/utils/plugin-display";
 import {
   mergeStoredConversationMetadata,
@@ -41,6 +44,12 @@ export interface CreateConversationVariables {
   // launch from the user's selected profile (#3727).
   agentProfileId?: string;
   entryPoint?: string; // analytics only; not forwarded to the service
+  /**
+   * Progress of the workspace bootstrap (`.openhands/setup.sh`), so the caller
+   * can show an indicator while it runs. Not forwarded to the service as data:
+   * the callback itself is passed straight through.
+   */
+  onSetupScriptProgress?: (update: SetupScriptStatusUpdate) => void;
 }
 
 export const CREATE_CONVERSATION_MUTATION_KEY = ["create-conversation"];
@@ -50,6 +59,35 @@ interface CreateConversationResponse {
   session_api_key: string | null;
   url: string | null;
   task_id?: string;
+}
+
+/**
+ * The conversation was created, but its withheld first message never sent, so
+ * its first turn never started. Reporting a failed create here would be worse
+ * than useless: the caller's retry starts a *second* conversation and leaves
+ * this one idle. Instead report success for the conversation that does exist
+ * and leave the user's message as an errored pending bubble on it, so the
+ * retry affordance resends to the same conversation.
+ */
+function recoverConversationFirstMessage(
+  error: ConversationFirstMessageError,
+  query: string | undefined,
+): CreateConversationResponse {
+  const text = query?.trim();
+  if (text) {
+    const store = useOptimisticUserMessageStore.getState();
+    const pendingId = store.enqueuePendingMessage({
+      conversationId: error.conversationId,
+      text,
+      content: text,
+    });
+    store.markPendingMessageError(pendingId, error.message);
+  }
+  return {
+    conversation_id: error.conversationId,
+    session_api_key: null,
+    url: null,
+  };
 }
 
 interface UseCreateConversationOptions {
@@ -101,49 +139,63 @@ export const useCreateConversation = ({
         parentConversationId,
         agentType,
         agentProfileId,
+        onSetupScriptProgress,
       } = variables;
 
       // The active AgentProfile is the default launch profile for new
       // conversations (#3727), on both local and cloud. sandboxId is unused
       // here.
-      const conversation = await launchConversation(
-        {
-          queryClient,
-          backendId: backend.id,
-          orgId,
-          isCloud: backend.kind === "cloud",
-          agentProfileId,
-        },
-        {
-          initialUserMsg: query,
-          automationSetup,
-          ...(automationSetupTags ? { automationSetupTags } : {}),
-          conversationInstructions,
-          plugins,
-          metadata: repository
-            ? {
-                selected_repository: repository.name,
-                selected_branch: repository.branch ?? null,
-                git_provider: repository.gitProvider,
-              }
-            : null,
-          workingDirOverride: workingDir,
-          workspaceMode,
-          parentConversationId,
-          agentType,
-          // Cloud only; a local launch reads the toggle itself and gates it
-          // on the launched profile's router. Only stamped when on, so the
-          // e2e snapshot tests that assert the exact createConversation
-          // payload stay stable. The active meta-profile gates the suffix:
-          // no router attached means no route-at-start instruction.
-          ...(settings?.run_router_at_conversation_start
-            ? {
-                runRouterAtConversationStart: true,
-                hasActiveMetaProfile: !!metaProfiles?.active_meta_profile,
-              }
-            : {}),
-        },
-      );
+      let conversation: Awaited<ReturnType<typeof launchConversation>>;
+      try {
+        conversation = await launchConversation(
+          {
+            queryClient,
+            backendId: backend.id,
+            orgId,
+            isCloud: backend.kind === "cloud",
+            agentProfileId,
+          },
+          {
+            initialUserMsg: query,
+            automationSetup,
+            ...(automationSetupTags ? { automationSetupTags } : {}),
+            conversationInstructions,
+            plugins,
+            metadata: repository
+              ? {
+                  selected_repository: repository.name,
+                  selected_branch: repository.branch ?? null,
+                  git_provider: repository.gitProvider,
+                }
+              : null,
+            workingDirOverride: workingDir,
+            workspaceMode,
+            parentConversationId,
+            agentType,
+            onSetupScriptProgress,
+            // Cloud only; a local launch reads the toggle itself and gates it
+            // on the launched profile's router. Only stamped when on, so the
+            // e2e snapshot tests that assert the exact createConversation
+            // payload stay stable. The active meta-profile gates the suffix:
+            // no router attached means no route-at-start instruction.
+            ...(settings?.run_router_at_conversation_start
+              ? {
+                  runRouterAtConversationStart: true,
+                  hasActiveMetaProfile: !!metaProfiles?.active_meta_profile,
+                }
+              : {}),
+          },
+        );
+      } catch (error) {
+        // The workspace bootstrap splits create from the first send, so the
+        // conversation can exist with its first turn never started. Recover on
+        // that conversation instead of reporting a failed create the caller
+        // would retry into a duplicate.
+        if (error instanceof ConversationFirstMessageError) {
+          return recoverConversationFirstMessage(error, query);
+        }
+        throw error;
+      }
 
       // Cloud conversations have no app_conversation_id until the sandbox is
       // READY.

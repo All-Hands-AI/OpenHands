@@ -1,8 +1,11 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import AgentServerConversationService from "#/api/conversation-service/agent-server-conversation-service.api";
+import AgentServerConversationService, {
+  ConversationFirstMessageError,
+} from "#/api/conversation-service/agent-server-conversation-service.api";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
+import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
 import { SuggestedTask } from "#/utils/types";
 import {
   getStoredConversationMetadata,
@@ -301,6 +304,44 @@ describe("useCreateConversation", () => {
       profileError,
     );
     expect(createConversationSpy).not.toHaveBeenCalled();
+  });
+
+  it("recovers on the created conversation when its first message fails to send", async () => {
+    vi.spyOn(
+      AgentServerConversationService,
+      "createConversation",
+    ).mockRejectedValue(
+      new ConversationFirstMessageError(
+        "conv-bootstrapped",
+        new Error("socket closed"),
+      ),
+    );
+    useOptimisticUserMessageStore.getState().clearPendingMessages();
+
+    const { result } = renderHook(() => useCreateConversation(), {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={new QueryClient()}>
+          {children}
+        </QueryClientProvider>
+      ),
+    });
+
+    // Not a rejected create: the conversation exists, so the caller must land
+    // on it rather than start a second one.
+    const data = await result.current.mutateAsync({
+      query: "Add a dark mode toggle",
+    });
+    expect(data.conversation_id).toBe("conv-bootstrapped");
+
+    const pending = useOptimisticUserMessageStore.getState().pendingMessages;
+    expect(pending).toHaveLength(1);
+    expect(pending[0]).toMatchObject({
+      conversationId: "conv-bootstrapped",
+      text: "Add a dark mode toggle",
+      status: "error",
+    });
+
+    useOptimisticUserMessageStore.getState().clearPendingMessages();
   });
 
   it("invalidates the conversation list and start-tasks queries on success", async () => {
