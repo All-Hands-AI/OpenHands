@@ -95,9 +95,10 @@ report_unwritable() {
         log_error "  find $host_hint -type f -exec chmod a+rw {} +"
         log_error "This grants all host users read/write access to project files; executable bits stay unchanged."
         log_error "Keep the workspace separate from ~/.openhands so secret-file modes stay private."
+      else
+        log_error "This grants all host users directory write access; existing file modes stay unchanged."
       fi
       log_error "Use your actual host bind-mount path if different from the example."
-      log_error "This grants all host users directory write access; existing file modes stay unchanged."
       log_error "If Docker created root-owned dirs, use sudo find ... for the same command."
       log_error "Create host dirs with mkdir -p before starting Docker to avoid root-owned mounts."
       ;;

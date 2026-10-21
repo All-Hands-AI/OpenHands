@@ -169,6 +169,7 @@ describe("docker/entrypoint.sh startup preflight", () => {
       expect(result.stderr).toContain("sudo find");
       expect(result.stderr).not.toContain("--user");
       expect(result.stderr).not.toContain("-type f");
+      expect(result.stderr).toContain("existing file modes stay unchanged");
     },
   );
 
@@ -188,6 +189,7 @@ describe("docker/entrypoint.sh startup preflight", () => {
       );
       expect(result.stderr).toContain("all host users read/write access");
       expect(result.stderr).toContain("secret-file modes stay private");
+      expect(result.stderr).not.toContain("existing file modes stay unchanged");
     },
   );
 
