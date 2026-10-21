@@ -499,7 +499,7 @@ describe("AutomationSetupPanel", () => {
     );
   });
 
-  it("pins an automation agent profile without changing the conversation", async () => {
+  it("does not offer or send an agent profile for prompt automations", async () => {
     vi.mocked(AutomationService.createServerDraft).mockRejectedValue({
       response: { status: 404 },
     });
@@ -509,38 +509,53 @@ describe("AutomationSetupPanel", () => {
     });
 
     const user = userEvent.setup();
-    renderPanel();
+    renderPanel({
+      prompt: "Review every pull request",
+      kind: "prompt",
+      form: { kind: "prompt", agentProfileId: "agent-reviewer" },
+    });
 
-    const agentProfile = screen.getByTestId("automation-setup-agent-profile");
-    const model = screen.getByTestId("automation-setup-model");
-    expect(agentProfile).toHaveAttribute("aria-label", "default");
     expect(
-      agentProfile.compareDocumentPosition(model) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    await user.click(screen.getByTestId("automation-setup-agent-profile"));
-    await user.click(
-      screen.getByTestId("automation-setup-agent-profile-option-reviewer"),
-    );
-    expect(
-      screen.getByTestId("automation-setup-agent-profile"),
-    ).toHaveAttribute("aria-label", "reviewer");
-    expect(screen.getByTestId("automation-setup-model")).toHaveAttribute(
-      "aria-label",
-      "claude-opus-4-5-20251101",
-    );
+      screen.queryByTestId("automation-setup-agent-profile"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId("automation-setup-model")).toBeInTheDocument();
 
     await user.click(screen.getByTestId("automation-setup-test"));
 
     await waitFor(() =>
-      expect(AutomationService.validateDraft).toHaveBeenCalledWith(
-        expect.objectContaining({
-          draft: expect.objectContaining({
-            agent_profile_id: "agent-reviewer",
-          }),
-        }),
-      ),
+      expect(AutomationService.validateDraft).toHaveBeenCalled(),
     );
+    expect(
+      vi.mocked(AutomationService.validateDraft).mock.calls[0][0].draft,
+    ).not.toHaveProperty("agent_profile_id");
+  });
+
+  it("leaves a prompt automation's stored agent profile alone on save", async () => {
+    vi.mocked(AutomationService.updateAutomation).mockResolvedValue({
+      id: "auto-1",
+    } as never);
+
+    const user = userEvent.setup();
+    renderPanel({
+      prompt: "Review every pull request",
+      kind: "prompt",
+      editingAutomationId: "auto-1",
+      form: {
+        kind: "prompt",
+        name: "Daily digest",
+        prompt: "Review every pull request",
+        agentProfileId: "agent-reviewer",
+      },
+    });
+
+    await user.click(screen.getByTestId("automation-setup-save"));
+
+    await waitFor(() =>
+      expect(AutomationService.updateAutomation).toHaveBeenCalledTimes(1),
+    );
+    expect(
+      vi.mocked(AutomationService.updateAutomation).mock.calls[0][1],
+    ).not.toHaveProperty("agent_profile_id");
   });
 
   it("sends each comma-separated repository to the automation service", async () => {

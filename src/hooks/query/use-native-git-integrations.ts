@@ -32,6 +32,8 @@ export function isNativeGitCandidate(entryId: string): boolean {
  * `isJiraEnabled` and `isLinearEnabled` are whether the instance offers the
  * built-in Jira Cloud and Linear integrations there; they are not git
  * connections, so they never satisfy an integration requirement.
+ * `deploymentMode` is the instance's reported deployment mode (`cloud` or
+ * `self_hosted`), null on local backends and on instances that report none.
  */
 export function useNativeGitIntegrations() {
   const { backend } = useActiveBackend();
@@ -71,5 +73,6 @@ export function useNativeGitIntegrations() {
     // A provider is not known to be disconnected until both the Cloud
     // configuration and the active backend's saved provider settings load.
     isLoading: isCloud && (isLoading || isLoadingSettings),
+    deploymentMode: isCloud ? (config?.deploymentMode ?? null) : null,
   };
 }

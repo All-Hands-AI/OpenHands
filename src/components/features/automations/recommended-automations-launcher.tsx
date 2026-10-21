@@ -31,6 +31,7 @@ import {
 import { SETUP_REGISTRY } from "#/manifests/manifest-sources";
 import {
   getAutomationLaunchPrompt,
+  getHiddenAutomationIds,
   getRequiredIntegrationIds,
 } from "#/utils/automation-catalog";
 import { isResponderAutomation } from "#/utils/responder-deployment";
@@ -54,6 +55,8 @@ interface RecommendedAutomationsLauncherProps {
    */
   variant?: "catalog" | "rail";
   className?: string;
+  dismissible?: boolean;
+  onDismiss?: () => void;
 }
 
 /**
@@ -89,6 +92,8 @@ export function RecommendedAutomationsLauncher({
   scrollableGrid = false,
   variant = "catalog",
   className,
+  dismissible,
+  onDismiss,
 }: RecommendedAutomationsLauncherProps) {
   const activeBackend = useActiveBackend();
   const { navigate } = useNavigation();
@@ -124,8 +129,10 @@ export function RecommendedAutomationsLauncher({
     getNativeIntegration,
     isJiraEnabled,
     isLinearEnabled,
+    deploymentMode,
     isLoading: isNativeIntegrationsLoading,
   } = useNativeGitIntegrations();
+  const hiddenAutomationIds = getHiddenAutomationIds(deploymentMode);
 
   const installedMcpConfig = useMemo(
     () =>
@@ -365,12 +372,16 @@ export function RecommendedAutomationsLauncher({
         <RecommendedAutomationsRail
           className={className}
           installedAutomations={automationsData?.automations ?? []}
+          hiddenAutomationIds={hiddenAutomationIds}
           onSelect={handleSelectAutomation}
+          dismissible={dismissible}
+          onDismiss={onDismiss}
         />
       ) : (
         <RecommendedAutomationsSection
           backendKind={activeBackend.backend.kind}
           installedServers={installedMcpConfig}
+          hiddenAutomationIds={hiddenAutomationIds}
           getNativeIntegration={getNativeIntegration}
           query={query}
           onSelect={handleSelectAutomation}
