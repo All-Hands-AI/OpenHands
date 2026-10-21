@@ -865,6 +865,7 @@ describe("AgentServerConversationService", () => {
       });
 
       await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
         workingDirOverride: "/Users/jane/projects/foo/",
       });
 
@@ -898,7 +899,9 @@ describe("AgentServerConversationService", () => {
         },
       });
 
-      await AgentServerConversationService.createConversation();
+      await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
+      });
 
       const [payloadCall] = mockHttpPost.mock.calls;
       const payload = payloadCall[1] as { tags?: Record<string, string> };
