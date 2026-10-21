@@ -32,9 +32,9 @@ export interface ChatInputLlmProfileState {
   canSwitchProfile: boolean;
   /**
    * Switch the LLM profile: live via `/switch_profile` inside a conversation.
-   * On the home page it becomes the active agent profile's LLM, which for
-   * `default` means activating it (see {@link useSwitchLlmProfile}). A cloud
-   * member's home pick is held for the next home launch instead.
+   * On the home page it becomes the active agent profile's LLM, which for a
+   * local `default` means activating it (see {@link useSwitchLlmProfile}). A
+   * cloud member's home pick is held for the next home launch instead.
    */
   selectProfile: (profileName: string) => void;
 }
@@ -53,7 +53,7 @@ export function useChatInputLlmProfileState(): ChatInputLlmProfileState {
   const queryClient = useQueryClient();
   const { backend } = useActiveBackend();
   const { data: agentProfiles } = useAgentProfiles({
-    enabled: !conversationId && backend.kind === "local",
+    enabled: !conversationId,
   });
   const canManageOrgProfiles = useCanManageOrgProfiles();
   const { switchAndLog } = useSwitchLlmProfileAndLog();
@@ -108,12 +108,15 @@ export function useChatInputLlmProfileState(): ChatInputLlmProfileState {
     profiles.some((p) => p.name === activeAgentProfile.llm_profile_ref)
       ? activeAgentProfile.llm_profile_ref
       : null;
-  // `default` runs the active LLM profile, so a home pick activates it; any
-  // other profile keeps the pick as its own LLM.
+  // A local `default` runs the active LLM profile, so a home pick activates
+  // it; any other profile keeps the pick as its own LLM.
   const ownsHomeLlm =
     !conversationId &&
     agentLlmProfile !== null &&
-    activeAgentProfile?.name !== WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME;
+    !(
+      backend.kind === "local" &&
+      activeAgentProfile?.name === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME
+    );
   const currentProfileName =
     optimisticActiveProfile ??
     conversationProfile ??
@@ -132,17 +135,9 @@ export function useChatInputLlmProfileState(): ChatInputLlmProfileState {
   const selectProfile = useCallback(
     (profileName: string) => {
       if (!canSwitchProfile || profileName === currentProfileName) return;
-      if (ownsHomeLlm && activeAgentProfile) {
-        updateAgentProfile(
-          queryClient,
-          activeAgentProfile.name,
-          llmProfileMirrored(profileName),
-        );
-        return;
-      }
       if (!conversationId) {
-        // Otherwise a home pick activates the profile account-wide — on cloud
-        // that's the org-gated activate endpoint a member can only 403 on.
+        // A home pick edits the org's agent profile or activates the LLM
+        // profile org-wide, both of which a cloud member can only 403 on.
         // Hold a member's pick for the next home launch (sent as
         // `llm_profile`).
         if (!canManageOrgProfiles) {
@@ -150,6 +145,14 @@ export function useChatInputLlmProfileState(): ChatInputLlmProfileState {
           return;
         }
         setHomeLlmProfile(null);
+        if (ownsHomeLlm && activeAgentProfile) {
+          updateAgentProfile(
+            queryClient,
+            activeAgentProfile.name,
+            llmProfileMirrored(profileName),
+          );
+          return;
+        }
       }
       switchAndLog(conversationId, profileName);
     },

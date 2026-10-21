@@ -44,8 +44,11 @@ const useAgentProfilesMock = vi.fn();
 vi.mock("#/hooks/query/use-agent-profiles", () => ({
   useAgentProfiles: () => useAgentProfilesMock(),
 }));
+const backendKind = vi.hoisted(() => ({ current: "local" }));
 vi.mock("#/contexts/active-backend-context", () => ({
-  useActiveBackend: () => ({ backend: { id: "b1", kind: "local" } }),
+  useActiveBackend: () => ({
+    backend: { id: "b1", kind: backendKind.current },
+  }),
 }));
 const updateAgentProfileMock = vi.hoisted(() => vi.fn());
 vi.mock("#/hooks/mutation/sync-agent-profiles", async (importOriginal) => ({
@@ -92,6 +95,7 @@ describe("useChatInputLlmProfileState", () => {
     useCanManageOrgProfilesMock.mockReturnValue(true);
     useAgentProfilesMock.mockReturnValue({ data: undefined });
     updateAgentProfileMock.mockReset();
+    backendKind.current = "local";
   });
 
   const activeAgent = (name: string, llmProfileRef: string) =>
@@ -142,6 +146,19 @@ describe("useChatInputLlmProfileState", () => {
 
     expect(updateAgentProfileMock).not.toHaveBeenCalled();
     expect(switchAndLog).toHaveBeenCalledWith(null, "Smart");
+  });
+
+  it("treats a cloud profile named default like any other profile", () => {
+    backendKind.current = "cloud";
+    useOptionalConversationIdMock.mockReturnValue({ conversationId: null });
+    activeAgent("default", "Smart");
+
+    const { result } = renderState();
+    expect(result.current.currentProfileName).toBe("Smart");
+    result.current.selectProfile("Fast");
+
+    expect(switchAndLog).not.toHaveBeenCalled();
+    expect(updateAgentProfileMock.mock.calls[0][1]).toBe("default");
   });
 
   it("prefers the profile stamped on the conversation over a model match", () => {
@@ -226,6 +243,19 @@ describe("useChatInputLlmProfileState", () => {
     expect(result.current.canSwitchProfile).toBe(true);
     expect(setHomeLlmProfile).toHaveBeenCalledWith("Smart");
     expect(switchAndLog).not.toHaveBeenCalled();
+  });
+
+  it("holds a member's home pick instead of editing the org's agent profile", () => {
+    backendKind.current = "cloud";
+    useOptionalConversationIdMock.mockReturnValue({ conversationId: null });
+    useCanManageOrgProfilesMock.mockReturnValue(false);
+    activeAgent("reviewer", "Fast");
+
+    const { result } = renderState();
+    result.current.selectProfile("Smart");
+
+    expect(setHomeLlmProfile).toHaveBeenCalledWith("Smart");
+    expect(updateAgentProfileMock).not.toHaveBeenCalled();
   });
 
   it.each([
