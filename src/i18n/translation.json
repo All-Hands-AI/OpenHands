@@ -15824,7 +15824,7 @@
   "AUTOMATIONS$DOWNLOAD_TARBALL": {
     "en": "Tarball",
     "ja": "Tarball",
-    "zh-CN": "Tarball",
+    "zh-CN": "下载压缩包",
     "zh-TW": "Tarball",
     "ko-KR": "Tarball",
     "no": "Tarball",
@@ -50233,7 +50233,7 @@
     "pt": "Save draft",
     "tr": "Save draft",
     "uk": "Save draft",
-    "zh-CN": "Save draft",
+    "zh-CN": "保存草稿",
     "zh-TW": "Save draft",
     "id": "Simpan draf"
   },
@@ -50251,7 +50251,7 @@
     "pt": "Test",
     "tr": "Test",
     "uk": "Test",
-    "zh-CN": "Test",
+    "zh-CN": "测试",
     "zh-TW": "Test",
     "id": "Uji"
   },
@@ -50305,7 +50305,7 @@
     "pt": "Plugin",
     "tr": "Plugin",
     "uk": "Plugin",
-    "zh-CN": "Plugin",
+    "zh-CN": "插件",
     "zh-TW": "Plugin",
     "id": "Plugin"
   },
@@ -50323,7 +50323,7 @@
     "pt": "Custom",
     "tr": "Custom",
     "uk": "Custom",
-    "zh-CN": "Custom",
+    "zh-CN": "自定义",
     "zh-TW": "Custom",
     "id": "Khusus"
   },
@@ -50467,7 +50467,7 @@
     "pt": "Plugin ref",
     "tr": "Plugin ref",
     "uk": "Plugin ref",
-    "zh-CN": "Plugin ref",
+    "zh-CN": "插件引用分支",
     "zh-TW": "Plugin ref",
     "id": "Ref plugin"
   },
@@ -50503,7 +50503,7 @@
     "pt": "Schedule",
     "tr": "Schedule",
     "uk": "Schedule",
-    "zh-CN": "Schedule",
+    "zh-CN": "定时计划",
     "zh-TW": "Schedule",
     "id": "Jadwal"
   },
@@ -50557,7 +50557,7 @@
     "pt": "Frequency",
     "tr": "Frequency",
     "uk": "Frequency",
-    "zh-CN": "Frequency",
+    "zh-CN": "频率",
     "zh-TW": "Frequency",
     "id": "Frekuensi"
   },
@@ -50575,7 +50575,7 @@
     "pt": "Once",
     "tr": "Once",
     "uk": "Once",
-    "zh-CN": "Once",
+    "zh-CN": "执行一次",
     "zh-TW": "Once",
     "id": "Sekali"
   },
@@ -50593,7 +50593,7 @@
     "pt": "Hourly",
     "tr": "Hourly",
     "uk": "Hourly",
-    "zh-CN": "Hourly",
+    "zh-CN": "每小时",
     "zh-TW": "Hourly",
     "id": "Setiap jam"
   },
@@ -50629,7 +50629,7 @@
     "pt": "Weekly",
     "tr": "Weekly",
     "uk": "Weekly",
-    "zh-CN": "Weekly",
+    "zh-CN": "每周",
     "zh-TW": "Weekly",
     "id": "Mingguan"
   },
@@ -50719,7 +50719,7 @@
     "pt": "Event key",
     "tr": "Event key",
     "uk": "Event key",
-    "zh-CN": "Event key",
+    "zh-CN": "事件键",
     "zh-TW": "Event key",
     "id": "Kunci peristiwa"
   },
