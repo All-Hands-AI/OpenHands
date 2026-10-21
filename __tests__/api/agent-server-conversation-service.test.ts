@@ -647,7 +647,7 @@ describe("AgentServerConversationService", () => {
         expect(request.tool_name).toBe("terminal");
         expect(request.action.kind).toBe("TerminalAction");
         expect(request.action.command).toMatch(
-          /^chmod \+x ".*\/\.openhands\/setup\.sh" && \. ".*\/\.openhands\/setup\.sh"$/,
+          /^chmod \+x '.*\/\.openhands\/setup\.sh' && \. '.*\/\.openhands\/setup\.sh'$/,
         );
         // ...and only then was the withheld message sent, with run: true.
         expect(mockSendEvent).toHaveBeenCalledWith(
@@ -692,6 +692,36 @@ describe("AgentServerConversationService", () => {
             run: true,
           },
         );
+      });
+
+      it("surfaces the conversation id when the withheld first message fails to send", async () => {
+        server.use(
+          http.get("*/server_info", () =>
+            HttpResponse.json({ capabilities: ["direct_tool_execution_v1"] }),
+          ),
+        );
+        mockFileClient.mockReturnValue({
+          downloadTextFile: async () => "#!/bin/sh",
+          getHome: async () => ({ home: "/Users/agent" }),
+        });
+        const executeTool = vi.fn().mockResolvedValue({
+          observation: { kind: "TerminalObservation", exit_code: 0 },
+        });
+        mockConversationClientWith(executeTool);
+        mockSendEvent.mockRejectedValueOnce(new Error("socket closed"));
+
+        // The conversation exists but its first turn never started. The error
+        // must carry the id so the caller can retry the message on it rather
+        // than create a second conversation and strand this one idle.
+        await expect(
+          AgentServerConversationService.createConversation({
+            agentProfileId: "profile-1",
+            initialUserMsg: "Add a dark mode toggle",
+          }),
+        ).rejects.toMatchObject({
+          name: "ConversationFirstMessageError",
+          conversationId: "conv-1",
+        });
       });
 
       it("leaves the launch untouched when the workspace has no script", async () => {

@@ -82,7 +82,7 @@ const plan = {
   workingDir: "/workspace/project",
   scriptPath: "/workspace/project/.openhands/setup.sh",
   command:
-    'chmod +x "/workspace/project/.openhands/setup.sh" && . "/workspace/project/.openhands/setup.sh"',
+    "chmod +x '/workspace/project/.openhands/setup.sh' && . '/workspace/project/.openhands/setup.sh'",
 };
 
 beforeEach(() => {
@@ -105,45 +105,72 @@ afterEach(() => {
 });
 
 describe("SetupScriptService.prepare", () => {
-  it("returns a plan when the server supports direct tool execution and the script exists", async () => {
-    mockGetServerInfo.mockResolvedValue(supportingServerInfo);
+  it("returns a plan when the workspace has the script", async () => {
     mockDownloadTextFile.mockResolvedValue(
       "#!/bin/sh\nexport PATH=$PATH:/opt/bin",
     );
 
-    const result = await SetupScriptService.prepare("/workspace/project");
-
-    expect(result).toEqual(plan);
-  });
-
-  it("returns null when the agent-server does not advertise the capability", async () => {
-    mockGetServerInfo.mockResolvedValue(unsupportedServerInfo);
-    mockDownloadTextFile.mockResolvedValue("#!/bin/sh");
-
-    expect(await SetupScriptService.prepare("/workspace/project")).toBeNull();
+    expect(await SetupScriptService.prepare("/workspace/project")).toEqual(plan);
   });
 
   it("returns null when the workspace has no setup script", async () => {
-    mockGetServerInfo.mockResolvedValue(supportingServerInfo);
     mockDownloadTextFile.mockRejectedValue(sdkStatusError(404));
 
     expect(await SetupScriptService.prepare("/workspace/project")).toBeNull();
   });
 
-  it("returns null on a cloud backend without probing", async () => {
+  it("quotes the path so a shell-metacharacter workspace cannot inject", async () => {
+    mockDownloadTextFile.mockResolvedValue("#!/bin/sh");
+
+    const result = await SetupScriptService.prepare("/tmp/$(touch x)/it's");
+
+    expect(result?.command).toBe(
+      "chmod +x '/tmp/$(touch x)/it'\\''s/.openhands/setup.sh' && . '/tmp/$(touch x)/it'\\''s/.openhands/setup.sh'",
+    );
+  });
+});
+
+describe("SetupScriptService.isSupported", () => {
+  it("requires the server capability and a client that can call it", async () => {
+    mockGetServerInfo.mockResolvedValue(supportingServerInfo);
+
+    expect(await SetupScriptService.isSupported()).toBe(true);
+  });
+
+  it("is false when the agent-server lacks the capability", async () => {
+    mockGetServerInfo.mockResolvedValue(unsupportedServerInfo);
+
+    expect(await SetupScriptService.isSupported()).toBe(false);
+  });
+
+  it("is false when the pinned client has no executeTool", async () => {
+    mockGetServerInfo.mockResolvedValue(supportingServerInfo);
+    // A server that advertises the capability while this Canvas build pins a
+    // client predating `executeTool` must skip, not throw mid-launch.
+    mockConversationClient.mockImplementationOnce(
+      (function ConversationClientMock() {
+        return {};
+      }) as unknown as Parameters<
+        typeof mockConversationClient.mockImplementationOnce
+      >[0],
+    );
+
+    expect(await SetupScriptService.isSupported()).toBe(false);
+  });
+
+  it("is false on a cloud backend without probing", async () => {
     setRegisteredBackends([cloudBackend]);
     setActiveSelection({ backendId: cloudBackend.id });
 
-    expect(await SetupScriptService.prepare("/workspace/project")).toBeNull();
+    expect(await SetupScriptService.isSupported()).toBe(false);
     expect(mockGetServerInfo).not.toHaveBeenCalled();
     expect(mockDownloadTextFile).not.toHaveBeenCalled();
   });
 
-  it("returns null when the capability probe fails", async () => {
+  it("is false when the capability probe fails", async () => {
     mockGetServerInfo.mockRejectedValue(new Error("unreachable"));
-    mockDownloadTextFile.mockResolvedValue("#!/bin/sh");
 
-    expect(await SetupScriptService.prepare("/workspace/project")).toBeNull();
+    expect(await SetupScriptService.isSupported()).toBe(false);
   });
 });
 

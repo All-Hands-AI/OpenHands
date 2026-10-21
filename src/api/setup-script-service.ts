@@ -3,7 +3,6 @@ import {
   FileClient,
   ServerClient,
 } from "@openhands/typescript-client/clients";
-import { getAgentServerWorkingDir } from "./agent-server-config";
 import { getAgentServerClientOptions } from "./agent-server-client-options";
 import { getEffectiveLocalBackend } from "./backend-registry/active-store";
 import {
@@ -96,12 +95,24 @@ function getSetupScriptPath(workingDir: string): string {
   return `${workingDir.replace(/\/+$/, "")}/${SETUP_SCRIPT_RELATIVE_PATH}`;
 }
 
+/**
+ * Quote a path for a POSIX shell. Double quotes do NOT stop command
+ * substitution, so a working directory containing `$(...)` or backticks would
+ * execute when sourced. Single quotes suppress every expansion; an embedded
+ * single quote is closed, escaped, and reopened (`'\''`), which is the one
+ * sequence single quotes cannot carry.
+ */
+function quoteForShell(value: string): string {
+  return `'${value.replace(/'/g, `'\\''`)}'`;
+}
+
 function buildSetupCommand(scriptPath: string): string {
   // `.` (POSIX source) rather than `source`: the terminal shell may be dash,
   // where `source` is not found — the exact failure behind enterprise#41.
   // Sourcing keeps `export`/`cd` in the agent's own terminal session, which is
   // the whole point of routing this through the tool executor.
-  return `chmod +x "${scriptPath}" && . "${scriptPath}"`;
+  const quoted = quoteForShell(scriptPath);
+  return `chmod +x ${quoted} && . ${quoted}`;
 }
 
 function extractText(observation: TerminalObservation): string {
@@ -166,6 +177,36 @@ class SetupScriptService {
     }
   }
 
+  /**
+   * Whether the *pinned* client actually exposes `executeTool`. The server and
+   * the browser client are versioned independently, so a separately upgraded
+   * server can advertise `direct_tool_execution_v1` while this Canvas build
+   * pins a client that predates the method (it ships in
+   * OpenHands/software-agent-sdk#6099). The capability alone would then send
+   * us into a call that throws; skip cleanly instead.
+   */
+  private static clientSupportsExecuteTool(): boolean {
+    const client = new ConversationClient(
+      getAgentServerClientOptions(),
+    ) as unknown as Partial<DirectToolClient>;
+    return typeof client.executeTool === "function";
+  }
+
+  /**
+   * Whether this launch can run a workspace bootstrap at all: a local backend,
+   * a server that advertises direct tool execution, and a client that can call
+   * it. Any one missing means "skip", never "fail mid-launch".
+   */
+  static async isSupported(): Promise<boolean> {
+    if (!getEffectiveLocalBackend()) {
+      return false;
+    }
+    if (!(await this.resolveDirectToolExecutionSupport())) {
+      return false;
+    }
+    return this.clientSupportsExecuteTool();
+  }
+
   private static async scriptExists(
     workingDir: string,
     scriptPath: string,
@@ -190,34 +231,21 @@ class SetupScriptService {
   }
 
   /**
-   * Detect the script before the conversation is created, so the caller can
-   * withhold the initial message until setup has run. Returns null — and logs
-   * why — when setup does not apply.
+   * Detect the script in `workingDir` and return the plan to run it, or null
+   * when there is nothing to run. Callers must check `isSupported()` first.
+   *
+   * Probed before the conversation is created, so `workingDir` must be a path
+   * that already exists on the server — the workspace the user attached. A
+   * fresh per-conversation dir has no script, and a `new_worktree` copy is made
+   * from the attached dir the probe already read, so probing there is enough.
    */
-  static async prepare(workingDir?: string): Promise<SetupScriptPlan | null> {
-    if (!getEffectiveLocalBackend()) {
+  static async prepare(workingDir: string): Promise<SetupScriptPlan | null> {
+    const scriptPath = getSetupScriptPath(workingDir);
+    if (!(await this.scriptExists(workingDir, scriptPath))) {
       return null;
     }
-
-    const resolvedWorkingDir = workingDir ?? getAgentServerWorkingDir();
-    const scriptPath = getSetupScriptPath(resolvedWorkingDir);
-    const [supported, exists] = await Promise.all([
-      this.resolveDirectToolExecutionSupport(),
-      this.scriptExists(resolvedWorkingDir, scriptPath),
-    ]);
-
-    if (!supported) {
-      console.info(
-        "Agent server does not advertise direct tool execution; skipping .openhands/setup.sh.",
-      );
-      return null;
-    }
-    if (!exists) {
-      return null;
-    }
-
     return {
-      workingDir: resolvedWorkingDir,
+      workingDir,
       scriptPath,
       command: buildSetupCommand(scriptPath),
     };

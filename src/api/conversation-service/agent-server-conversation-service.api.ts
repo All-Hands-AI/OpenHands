@@ -103,6 +103,29 @@ function invalidConversationResponse(): Error {
   return new Error(INVALID_CONVERSATION_RESPONSE_MESSAGE);
 }
 
+/**
+ * A conversation was created but its withheld first message could not be sent.
+ *
+ * The workspace bootstrap splits what used to be one request into create +
+ * send, so a failed send leaves a real, idle conversation behind. Carrying its
+ * id lets a caller recover — retry the message on the same conversation —
+ * instead of creating a second one and stranding the first.
+ */
+export class ConversationFirstMessageError extends Error {
+  readonly conversationId: string;
+  readonly cause: unknown;
+
+  constructor(conversationId: string, cause: unknown) {
+    const detail = cause instanceof Error ? cause.message : String(cause);
+    super(
+      `Conversation ${conversationId} was created, but its first message could not be sent: ${detail}`,
+    );
+    this.name = "ConversationFirstMessageError";
+    this.conversationId = conversationId;
+    this.cause = cause;
+  }
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -624,10 +647,12 @@ class AgentServerConversationService {
 
     // Detect the workspace bootstrap before creating the conversation so the
     // first agent turn can be withheld until setup finishes: the script
-    // typically installs dependencies that turn needs. `prepare` degrades to
-    // null on cloud backends, older agent-servers, and workspaces without a
-    // script, so every other launch path is unchanged.
-    const setupPlan = await SetupScriptService.prepare(workingDir);
+    // typically installs dependencies that turn needs. `isSupported` is false
+    // on cloud backends, older agent-servers, and when the pinned client lacks
+    // `executeTool`, so every other launch path is unchanged.
+    const setupPlan = (await SetupScriptService.isSupported())
+      ? await SetupScriptService.prepare(workingDir)
+      : null;
 
     // Use encrypted settings to avoid exposing secrets in the browser
     const payload = await buildStartConversationRequestWithEncryptedSettings({
@@ -656,7 +681,8 @@ class AgentServerConversationService {
 
     // Hold the first message back so setup runs before the agent's first turn.
     // `initial_message` is what starts the run server-side, so removing it
-    // creates the conversation idle; the message is re-sent below.
+    // creates the conversation idle; the message is re-sent below. Only done
+    // when setup is possible, so the no-setup path stays a single request.
     const withheldInitialMessage = setupPlan
       ? (payload.initial_message as
           | AppConversationStartRequest["initial_message"]
@@ -693,23 +719,14 @@ class AgentServerConversationService {
       }
     }
 
-    // Sending the withheld message with `run: true` starts the agent's first
-    // turn, now that setup has run in the same terminal session.
-    if (withheldInitialMessage) {
-      await new ConversationClient(
-        getAgentServerClientOptions({
-          timeout: CREATE_CONVERSATION_TIMEOUT_MS,
-        }),
-      ).sendEvent(data.id, withheldInitialMessage, { run: true });
-    }
-
+    // Persist the home-page selection before the first message is sent, so a
+    // failed send still leaves a fully-described conversation in the sidebar.
+    // The agent-server runtime has no concept of selected repo/branch/
+    // workspace, so this lives client-side: `toAppConversation` reads the
+    // repo/branch fields back to hydrate the chat-page badges;
+    // `useHasAttachedSource` reads `selected_workspace` to default the Files
+    // tab to Diff mode when the user explicitly attached a local workspace.
     if (metadata?.selected_repository || workingDirOverride) {
-      // The agent-server runtime has no concept of selected repo/branch/
-      // workspace, so persist the home-page selection client-side.
-      // `toAppConversation` reads the repo/branch fields back to hydrate
-      // the chat-page badges; `useHasAttachedSource` reads
-      // `selected_workspace` to default the Files tab to Diff mode when
-      // the user explicitly attached a local workspace.
       setStoredConversationMetadata(data.id, {
         selected_repository: metadata?.selected_repository ?? null,
         selected_branch: metadata?.selected_branch ?? null,
@@ -717,6 +734,24 @@ class AgentServerConversationService {
         selected_workspace: workingDirOverride ?? null,
         workspace_mode: resolvedWorkspaceMode,
       });
+    }
+
+    // Sending the withheld message with `run: true` starts the agent's first
+    // turn, now that setup has run in the same terminal session. The
+    // conversation already exists, so a failed send must not lose its id: a
+    // caller that retried blindly would strand this conversation idle and
+    // create another. Surface the id on the error so the caller can retry the
+    // message on the same conversation.
+    if (withheldInitialMessage) {
+      try {
+        await new ConversationClient(
+          getAgentServerClientOptions({
+            timeout: CREATE_CONVERSATION_TIMEOUT_MS,
+          }),
+        ).sendEvent(data.id, withheldInitialMessage, { run: true });
+      } catch (error) {
+        throw new ConversationFirstMessageError(data.id, error);
+      }
     }
 
     return {
