@@ -40,6 +40,8 @@ export interface CreateConversationVariables {
   // active AgentProfile (if any) is used so home-composed conversations
   // launch from the user's selected profile (#3727).
   agentProfileId?: string;
+  // Cloud: run on this LLM profile (a member's home pick) without activating it.
+  llmProfile?: string;
   entryPoint?: string; // analytics only; not forwarded to the service
 }
 
@@ -101,6 +103,7 @@ export const useCreateConversation = ({
         parentConversationId,
         agentType,
         agentProfileId,
+        llmProfile,
       } = variables;
 
       // The active AgentProfile is the default launch profile for new
@@ -131,6 +134,7 @@ export const useCreateConversation = ({
           workspaceMode,
           parentConversationId,
           agentType,
+          ...(llmProfile ? { llmProfile } : {}),
           // Cloud only; a local launch reads the toggle itself and gates it
           // on the launched profile's router. Only stamped when on, so the
           // e2e snapshot tests that assert the exact createConversation
