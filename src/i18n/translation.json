@@ -40135,7 +40135,7 @@
     "pt": "Navigation",
     "tr": "Gezinme",
     "uk": "Navigation",
-    "zh-CN": "Navigation",
+    "zh-CN": "导航",
     "zh-TW": "Navigation",
     "id": "Navigasi"
   },
@@ -40153,7 +40153,7 @@
     "pt": "Settings",
     "tr": "Ayarlar",
     "uk": "Settings",
-    "zh-CN": "Settings",
+    "zh-CN": "设置",
     "zh-TW": "Settings",
     "id": "Pengaturan"
   },
@@ -40171,7 +40171,7 @@
     "pt": "Actions",
     "tr": "Eylemler",
     "uk": "Actions",
-    "zh-CN": "Actions",
+    "zh-CN": "操作",
     "zh-TW": "Actions",
     "id": "Tindakan"
   },
@@ -40243,7 +40243,7 @@
     "pt": "Go",
     "tr": "Aç",
     "uk": "Go",
-    "zh-CN": "Go",
+    "zh-CN": "跳转",
     "zh-TW": "Go",
     "id": "Buka"
   },
@@ -40261,7 +40261,7 @@
     "pt": "Run",
     "tr": "Çalıştır",
     "uk": "Run",
-    "zh-CN": "Run",
+    "zh-CN": "运行",
     "zh-TW": "Run",
     "id": "Jalankan"
   },
@@ -40279,7 +40279,7 @@
     "pt": "New chat",
     "tr": "Yeni sohbet",
     "uk": "New chat",
-    "zh-CN": "New chat",
+    "zh-CN": "新对话",
     "zh-TW": "New chat",
     "id": "Chat baru"
   },
@@ -40333,7 +40333,7 @@
     "pt": "Customize",
     "tr": "Özelleştir",
     "uk": "Customize",
-    "zh-CN": "Customize",
+    "zh-CN": "自定义",
     "zh-TW": "Customize",
     "id": "Sesuaikan"
   },
@@ -40441,7 +40441,7 @@
     "pt": "Settings",
     "tr": "Ayarlar",
     "uk": "Settings",
-    "zh-CN": "Settings",
+    "zh-CN": "设置",
     "zh-TW": "Settings",
     "id": "Pengaturan"
   },
@@ -50287,7 +50287,7 @@
     "pt": "Prompt",
     "tr": "Prompt",
     "uk": "Prompt",
-    "zh-CN": "Prompt",
+    "zh-CN": "提示词",
     "zh-TW": "Prompt",
     "id": "Prompt"
   },
@@ -50647,7 +50647,7 @@
     "pt": "At",
     "tr": "At",
     "uk": "At",
-    "zh-CN": "At",
+    "zh-CN": "在",
     "zh-TW": "At",
     "id": "Pada"
   },
