@@ -558,6 +558,202 @@ describe("AgentServerConversationService", () => {
   });
 
   describe("createConversation", () => {
+    // #18737 — the workspace bootstrap must run in the conversation's own
+    // terminal before the agent's first turn, so it is driven from this
+    // service boundary: detect the script, create the conversation without
+    // `initial_message` (which is what starts the run), run setup, then send
+    // the withheld message with `run: true`.
+    describe("workspace bootstrap (.openhands/setup.sh)", () => {
+      /** A 404 shaped like the typescript-client's `HttpError`. */
+      const notFound = () =>
+        Object.assign(new Error("Not found"), {
+          name: "HttpError",
+          status: 404,
+        });
+
+      const mockConversationClientWith = (
+        executeTool: ReturnType<typeof vi.fn>,
+      ) => {
+        mockConversationClient.mockReturnValue({
+          createConversation: async (payload: unknown) => {
+            const response = await mockHttpPost("/api/conversations", payload);
+            return response.data;
+          },
+          executeTool,
+          sendEvent: mockSendEvent,
+        });
+      };
+
+      beforeEach(() => {
+        // A stale capability cached by an earlier test would skip detection.
+        clearCachedAgentServerInfo();
+        mockGetSettings.mockResolvedValue({
+          agent_settings: { llm: { model: "gpt-4o" } },
+          conversation_settings: {},
+        });
+        mockGetSettingsForConversation.mockResolvedValue({
+          agentSettings: { llm: { model: "gpt-4o" } },
+          conversationSettings: {},
+          secretsEncrypted: true,
+        });
+        mockHttpPost.mockResolvedValue({
+          data: {
+            id: "conv-1",
+            created_at: "2026-07-01T12:00:00.000Z",
+            updated_at: "2026-07-01T12:01:00.000Z",
+          },
+        });
+      });
+
+      it("runs the script in the terminal before starting the agent", async () => {
+        server.use(
+          http.get("*/server_info", () =>
+            HttpResponse.json({ capabilities: ["direct_tool_execution_v1"] }),
+          ),
+        );
+        const downloadTextFile = vi.fn(
+          async () => "#!/bin/sh\nexport PATH=$PATH:/opt/bin",
+        );
+        mockFileClient.mockReturnValue({
+          downloadTextFile,
+          getHome: async () => ({ home: "/Users/agent" }),
+        });
+        const executeTool = vi.fn().mockResolvedValue({
+          observation: {
+            kind: "TerminalObservation",
+            exit_code: 0,
+            content: [{ type: "text", text: "installed" }],
+          },
+        });
+        mockConversationClientWith(executeTool);
+
+        await AgentServerConversationService.createConversation({
+          agentProfileId: "profile-1",
+          initialUserMsg: "Add a dark mode toggle",
+        });
+
+        // The conversation was created without the first message...
+        expect(mockHttpPost).toHaveBeenCalledWith(
+          "/api/conversations",
+          expect.not.objectContaining({ initial_message: expect.anything() }),
+        );
+        // ...the script was looked up in the conversation's workspace...
+        expect(downloadTextFile).toHaveBeenCalledWith(
+          expect.stringMatching(/\/\.openhands\/setup\.sh$/),
+        );
+        // ...setup ran through the terminal tool...
+        const [conversationId, request] = executeTool.mock.calls[0];
+        expect(conversationId).toBe("conv-1");
+        expect(request.tool_name).toBe("terminal");
+        expect(request.action.kind).toBe("TerminalAction");
+        expect(request.action.command).toMatch(
+          /^chmod \+x ".*\/\.openhands\/setup\.sh" && \. ".*\/\.openhands\/setup\.sh"$/,
+        );
+        // ...and only then was the withheld message sent, with run: true.
+        expect(mockSendEvent).toHaveBeenCalledWith(
+          "conv-1",
+          expect.objectContaining({
+            role: "user",
+            content: [{ type: "text", text: "Add a dark mode toggle" }],
+          }),
+          { run: true },
+        );
+      });
+
+      it("starts the agent even when the script fails", async () => {
+        server.use(
+          http.get("*/server_info", () =>
+            HttpResponse.json({ capabilities: ["direct_tool_execution_v1"] }),
+          ),
+        );
+        mockFileClient.mockReturnValue({
+          downloadTextFile: async () => "#!/bin/sh",
+          getHome: async () => ({ home: "/Users/agent" }),
+        });
+        const executeTool = vi.fn().mockResolvedValue({
+          observation: {
+            kind: "TerminalObservation",
+            exit_code: 1,
+            content: [{ type: "text", text: "npm ERR!" }],
+          },
+        });
+        mockConversationClientWith(executeTool);
+
+        await AgentServerConversationService.createConversation({
+          agentProfileId: "profile-1",
+          initialUserMsg: "Add a dark mode toggle",
+        });
+
+        expect(executeTool).toHaveBeenCalledTimes(1);
+        expect(mockSendEvent).toHaveBeenCalledWith(
+          "conv-1",
+          expect.anything(),
+          {
+            run: true,
+          },
+        );
+      });
+
+      it("leaves the launch untouched when the workspace has no script", async () => {
+        server.use(
+          http.get("*/server_info", () =>
+            HttpResponse.json({ capabilities: ["direct_tool_execution_v1"] }),
+          ),
+        );
+        mockFileClient.mockReturnValue({
+          downloadTextFile: async () => {
+            throw notFound();
+          },
+          getHome: async () => ({ home: "/Users/agent" }),
+        });
+        const executeTool = vi.fn();
+        mockConversationClientWith(executeTool);
+
+        await AgentServerConversationService.createConversation({
+          agentProfileId: "profile-1",
+          initialUserMsg: "Add a dark mode toggle",
+        });
+
+        // The initial message rides in the create payload as before, and no
+        // terminal call or follow-up event is made.
+        expect(mockHttpPost).toHaveBeenCalledWith(
+          "/api/conversations",
+          expect.objectContaining({
+            initial_message: expect.objectContaining({ run: true }),
+          }),
+        );
+        expect(executeTool).not.toHaveBeenCalled();
+        expect(mockSendEvent).not.toHaveBeenCalled();
+      });
+
+      it("leaves the launch untouched when the server lacks the capability", async () => {
+        server.use(
+          http.get("*/server_info", () =>
+            HttpResponse.json({ capabilities: ["hooks"] }),
+          ),
+        );
+        mockFileClient.mockReturnValue({
+          downloadTextFile: async () => "#!/bin/sh",
+          getHome: async () => ({ home: "/Users/agent" }),
+        });
+        const executeTool = vi.fn();
+        mockConversationClientWith(executeTool);
+
+        await AgentServerConversationService.createConversation({
+          agentProfileId: "profile-1",
+          initialUserMsg: "Add a dark mode toggle",
+        });
+
+        expect(mockHttpPost).toHaveBeenCalledWith(
+          "/api/conversations",
+          expect.objectContaining({
+            initial_message: expect.objectContaining({ run: true }),
+          }),
+        );
+        expect(executeTool).not.toHaveBeenCalled();
+      });
+    });
+
     // #16885 — A named agent profile's pinned LLM (llm_profile_ref) must reach
     // the agent-server as `title_llm_profile` when no explicit preference is
     // set, so the title uses the same model as the running agent. These cover

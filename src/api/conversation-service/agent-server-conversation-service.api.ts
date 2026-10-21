@@ -57,6 +57,9 @@ import {
   NoBackendAvailableError,
 } from "../agent-server-client-options";
 import SettingsService from "../settings-service/settings-service.api";
+import SetupScriptService, {
+  type SetupScriptStatusUpdate,
+} from "../setup-script-service";
 import { getTelemetryDistinctId } from "../../services/telemetry";
 import {
   ConversationMetadata,
@@ -471,6 +474,12 @@ export interface CreateConversationOptions {
   agentLlmProfileRef?: string | null;
   /** Local only: run the agent profile with this LLM profile instead of its own. */
   agentLlmProfileOverride?: string;
+  /**
+   * Progress of the workspace bootstrap (`.openhands/setup.sh`). Called with
+   * "running" before the script starts and a terminal phase after, so the UI
+   * can show a non-blocking indicator. Absent for workspaces with no script.
+   */
+  onSetupScriptProgress?: (update: SetupScriptStatusUpdate) => void;
 }
 
 class AgentServerConversationService {
@@ -532,6 +541,7 @@ class AgentServerConversationService {
       agentLlmProfileOverride,
       profileHasRouter,
       acpServer,
+      onSetupScriptProgress,
     } = options;
 
     if (getActiveBackend().backend.kind === "cloud") {
@@ -612,6 +622,13 @@ class AgentServerConversationService {
     const resolvedWorkspaceMode =
       workspaceMode ?? (workingDirOverride ? "local_repo" : "new_worktree");
 
+    // Detect the workspace bootstrap before creating the conversation so the
+    // first agent turn can be withheld until setup finishes: the script
+    // typically installs dependencies that turn needs. `prepare` degrades to
+    // null on cloud backends, older agent-servers, and workspaces without a
+    // script, so every other launch path is unchanged.
+    const setupPlan = await SetupScriptService.prepare(workingDir);
+
     // Use encrypted settings to avoid exposing secrets in the browser
     const payload = await buildStartConversationRequestWithEncryptedSettings({
       settings,
@@ -637,6 +654,18 @@ class AgentServerConversationService {
       titleLlmProfile,
     });
 
+    // Hold the first message back so setup runs before the agent's first turn.
+    // `initial_message` is what starts the run server-side, so removing it
+    // creates the conversation idle; the message is re-sent below.
+    const withheldInitialMessage = setupPlan
+      ? (payload.initial_message as
+          | AppConversationStartRequest["initial_message"]
+          | undefined)
+      : undefined;
+    if (withheldInitialMessage) {
+      delete payload.initial_message;
+    }
+
     const telemetryDistinctId = await getTelemetryDistinctId();
     const data = await new ConversationClient(
       getAgentServerClientOptions({ timeout: CREATE_CONVERSATION_TIMEOUT_MS }),
@@ -646,6 +675,33 @@ class AgentServerConversationService {
     });
     const localBackend = getEffectiveLocalBackend();
     if (!localBackend) throw new NoBackendAvailableError();
+
+    if (setupPlan) {
+      const result = await SetupScriptService.run(
+        setupPlan,
+        data.id,
+        onSetupScriptProgress,
+      );
+      if (result.status === "ran" && result.failed) {
+        console.warn(
+          `\`.openhands/setup.sh\` exited with code ${result.exitCode}; starting the agent anyway.`,
+        );
+      } else if (result.status === "error") {
+        console.warn(
+          `Could not run \`.openhands/setup.sh\`; starting the agent anyway: ${result.message}`,
+        );
+      }
+    }
+
+    // Sending the withheld message with `run: true` starts the agent's first
+    // turn, now that setup has run in the same terminal session.
+    if (withheldInitialMessage) {
+      await new ConversationClient(
+        getAgentServerClientOptions({
+          timeout: CREATE_CONVERSATION_TIMEOUT_MS,
+        }),
+      ).sendEvent(data.id, withheldInitialMessage, { run: true });
+    }
 
     if (metadata?.selected_repository || workingDirOverride) {
       // The agent-server runtime has no concept of selected repo/branch/
@@ -671,7 +727,9 @@ class AgentServerConversationService {
       app_conversation_id: data.id,
       agent_server_url: localBackend.host,
       request: {
-        initial_message: payload.initial_message as
+        // The withheld message was sent after setup ran, so report it here for
+        // callers that inspect the launch (the value is unchanged either way).
+        initial_message: (withheldInitialMessage ?? payload.initial_message) as
           | AppConversationStartRequest["initial_message"]
           | undefined,
         plugins: plugins ?? null,
