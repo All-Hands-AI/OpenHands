@@ -4,7 +4,7 @@ import { SettingsClient } from "@openhands/typescript-client/clients";
 import { I18nKey } from "#/i18n/declaration";
 import { isSdkHttpStatusError } from "#/api/agent-server-compatibility";
 import { getAgentServerClientOptions } from "#/api/agent-server-client-options";
-import { isNoBackend } from "#/api/backend-registry/active-store";
+import { isNoBackend, NO_BACKEND } from "#/api/backend-registry/active-store";
 import { useActiveBackendContext } from "#/contexts/active-backend-context";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import {
@@ -29,9 +29,19 @@ import {
  */
 export default function ApiKeyEntryScreen() {
   const { t } = useTranslation("openhands");
-  const { active, addBackend, updateBackend } = useActiveBackendContext();
+  const { active, backends, addBackend, updateBackend, setActive } =
+    useActiveBackendContext();
 
   const host = window.location.origin;
+  const rootBackend = backends.find((backend) => {
+    if (backend.kind !== "local" || backend.marsSessionId) return false;
+    try {
+      const url = new URL(backend.host);
+      return url.origin === host && url.pathname === "/";
+    } catch {
+      return false;
+    }
+  });
 
   const [isValidating, setIsValidating] = React.useState(false);
   const [connectionStatus, setConnectionStatus] = React.useState<
@@ -56,10 +66,19 @@ export default function ApiKeyEntryScreen() {
 
         setConnectionStatus("success");
 
-        if (isNoBackend(active.backend)) {
-          addBackend(payload);
+        // This form authenticates the serving Canvas, even when a DigitalOcean
+        // guest is active. Its host, credentials, and session metadata must stay
+        // on their own record so a reload can reconnect to the same session.
+        // Validation above uses the local Agent Server protocol even when
+        // the Canvas hostname resembles an OpenHands Cloud deployment.
+        const rootPayload = { ...payload, kind: "local" as const };
+        if (rootBackend) {
+          updateBackend(rootBackend.id, rootPayload);
         } else {
-          updateBackend(active.backend.id, payload);
+          addBackend(rootPayload);
+          if (!isNoBackend(active.backend)) {
+            setActive(active.backend.id, active.orgId);
+          }
         }
 
         window.location.reload();
@@ -77,7 +96,7 @@ export default function ApiKeyEntryScreen() {
         setIsValidating(false);
       }
     },
-    [active.backend, addBackend, updateBackend, t],
+    [active, rootBackend, addBackend, updateBackend, setActive, t],
   );
 
   return (
@@ -101,7 +120,12 @@ export default function ApiKeyEntryScreen() {
         <div className="px-6 pb-6 pt-2">
           <BackendForm
             mode="add"
-            backend={{ ...active.backend, host, apiKey: "", name: "" }}
+            backend={{
+              ...(rootBackend ?? NO_BACKEND),
+              host,
+              apiKey: "",
+              name: "",
+            }}
             onSubmitted={() => {}}
             testIdRoot="api-key-entry"
             hostReadOnly
