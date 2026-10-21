@@ -13,6 +13,7 @@ import type {
   AutomationSetupTriggerKind,
   AutomationSetupFrequency,
 } from "#/api/automation-setup-types";
+import type { AutomationRepository } from "#/types/automation";
 import { readAutomationRepositories } from "#/utils/automation-preset-sources";
 
 const AUTOMATION_FORM_SESSION_CHANGED_EVENT =
@@ -242,6 +243,19 @@ export function initializeAutomationFormSession(
   draft: AutomationSetupDraft,
 ) {
   sessions.set(conversationId, normalizeDraft(draft));
+}
+
+/** Record the repositories an edited automation clones after a save. */
+export function setAutomationFormSessionRepositories(
+  conversationId: string,
+  repositories: AutomationRepository[],
+) {
+  const existing = sessions.get(conversationId);
+  if (!existing) return;
+  sessions.set(
+    conversationId,
+    normalizeDraft({ ...existing, existingRepositories: repositories }),
+  );
 }
 
 export function getAutomationFormSession(

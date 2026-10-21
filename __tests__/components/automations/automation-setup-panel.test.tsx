@@ -21,10 +21,13 @@ import {
   AutomationSetupPanel,
 } from "#/components/features/automations/setup/automation-setup-panel";
 import AutomationService from "#/api/automation-service/automation-service.api";
+import { useEffect, useState } from "react";
 import {
   PENDING_AUTOMATION_SETUP_ID,
+  clearAutomationFormSession,
   getAutomationFormSession,
   initializeAutomationFormSession,
+  subscribeAutomationFormSession,
 } from "#/api/automation-form-session";
 import type { AutomationSetupDraft } from "#/api/automation-setup-types";
 import AgentServerConversationService from "#/api/conversation-service/agent-server-conversation-service.api";
@@ -245,6 +248,47 @@ function renderPanel(
           conversationId={conversationId}
           conversationTags={conversationTags}
         />
+      </NavigationProvider>
+    </QueryClientProvider>,
+  );
+}
+
+/** Feeds the panel from the form session on every change, as the setup route does. */
+function SessionBoundPanel({ conversationId }: { conversationId: string }) {
+  const [draft, setDraft] = useState(
+    () => getAutomationFormSession(conversationId) as AutomationSetupDraft,
+  );
+  useEffect(
+    () =>
+      subscribeAutomationFormSession(conversationId, (next) => {
+        if (next) setDraft(next);
+      }),
+    [conversationId],
+  );
+  return (
+    <AutomationSetupPanel
+      draft={draft}
+      conversationId={conversationId}
+      conversationTags={null}
+    />
+  );
+}
+
+function renderSessionBoundPanel(conversationId: string) {
+  const value: NavigationContextValue = {
+    currentPath: "/automations/setup",
+    conversationId: null,
+    isNavigating: false,
+    navigate: mockNavigate,
+  };
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <NavigationProvider value={value}>
+        <SessionBoundPanel conversationId={conversationId} />
       </NavigationProvider>
     </QueryClientProvider>,
   );
@@ -2494,6 +2538,64 @@ describe("AutomationSetupPanel", () => {
         { url: "OpenHands/software-agent-sdk", provider: "github" },
       ],
     });
+  });
+
+  it("saves a repository removal made after an earlier save", async () => {
+    vi.mocked(useDeploymentCapabilities).mockReturnValue({
+      data: {
+        ready: true,
+        features: ["repoUpdate"],
+        triggerKinds: ["cron"],
+        eventSources: [],
+        eventTypes: [],
+        triggers: {},
+      },
+      isLoading: false,
+    } as never);
+    vi.mocked(AutomationService.updateAutomation).mockImplementation(
+      async (_id, body) =>
+        savedReviewer({
+          preset_metadata: {
+            preset_type: "prompt",
+            repos: (body as { repos: unknown }).repos,
+          },
+        }),
+    );
+    initializeAutomationFormSession(
+      PENDING_AUTOMATION_SETUP_ID,
+      setupDraftFromAutomation(savedReviewer()),
+    );
+
+    const user = userEvent.setup();
+    renderSessionBoundPanel(PENDING_AUTOMATION_SETUP_ID);
+
+    await user.click(screen.getByTestId("automation-setup-repository-add"));
+    await user.click(
+      await screen.findByTestId(
+        "automation-setup-repository-option-OpenHands/software-agent-sdk",
+      ),
+    );
+    await user.click(screen.getByTestId("automation-setup-save"));
+    await waitFor(() =>
+      expect(AutomationService.updateAutomation).toHaveBeenCalledTimes(1),
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "COMMON$REMOVE OpenHands/software-agent-sdk",
+      }),
+    );
+    await user.click(screen.getByTestId("automation-setup-save"));
+
+    await waitFor(() =>
+      expect(AutomationService.updateAutomation).toHaveBeenCalledTimes(2),
+    );
+    expect(
+      vi.mocked(AutomationService.updateAutomation).mock.calls[1][1],
+    ).toMatchObject({
+      repos: [{ url: "OpenHands/OpenHands", ref: "main", provider: "github" }],
+    });
+    clearAutomationFormSession(PENDING_AUTOMATION_SETUP_ID);
   });
 
   it("shows existing custom bundle metadata without replacing it on save", async () => {

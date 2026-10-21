@@ -32,6 +32,7 @@ import {
   initializeAutomationFormSession,
   isPendingAutomationSetupId,
   patchAutomationFormSession,
+  setAutomationFormSessionRepositories,
   subscribeAutomationFormSession,
 } from "#/api/automation-form-session";
 import type {
@@ -1758,7 +1759,13 @@ export function AutomationSetupPanel({
         editingAutomationId,
         buildExistingAutomationBody(),
       );
-      setExistingRepositories(withPresetSources(updated).repositories ?? []);
+      const savedRepositories = withPresetSources(updated).repositories ?? [];
+      // The session re-supplies this draft on every edit, so it must hold the
+      // saved list too, or the next change is compared with the old one.
+      if (conversationId) {
+        setAutomationFormSessionRepositories(conversationId, savedRepositories);
+      }
+      setExistingRepositories(savedRepositories);
       setSaveState("saved");
       toast.success(t(I18nKey.AUTOMATIONS$EDIT_SUCCESS));
     } catch (error) {
