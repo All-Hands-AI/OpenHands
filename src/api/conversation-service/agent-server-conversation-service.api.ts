@@ -44,6 +44,7 @@ import {
   buildRouterAtStartSystemSuffix,
   buildStartConversationRequestWithEncryptedSettings,
   buildStartPlanningConversationRequestWithEncryptedSettings,
+  buildWorkspaceTags,
   emptyHooksResponse,
   fetchBackendExecutionRuntime,
   getDefaultConversationTitle,
@@ -697,6 +698,19 @@ class AgentServerConversationService {
       acpServer,
       titleLlmProfile,
     });
+
+    // Persist the selected workspace as a server-side conversation tag so local
+    // sidebar grouping survives on another browser, device, or after cleared
+    // localStorage (#17386). localStorage below stays the warm cache for the
+    // creating client.
+    const workspaceTags = buildWorkspaceTags(workingDirOverride);
+    if (Object.keys(workspaceTags).length > 0) {
+      const existingTags =
+        payload.tags && typeof payload.tags === "object"
+          ? (payload.tags as Record<string, string>)
+          : {};
+      payload.tags = { ...existingTags, ...workspaceTags };
+    }
 
     // Hold the first message back so setup runs before the agent's first turn.
     // `initial_message` is what starts the run server-side, so removing it
