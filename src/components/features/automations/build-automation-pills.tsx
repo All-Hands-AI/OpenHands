@@ -14,6 +14,7 @@ import {
   getTriggerEventLabel,
   getTriggerSource,
 } from "#/components/features/home/featured-automations/automation-run-health";
+import { AutomationTagPill } from "./automation-tag-pill";
 
 export function buildAutomationMetadataPills(
   automation: Automation,
@@ -98,6 +99,10 @@ export function buildAutomationMetadataPills(
       ),
     });
   }
+
+  automation.tags?.forEach((tag) => {
+    pills.push({ id: `tag-${tag}`, node: <AutomationTagPill tag={tag} /> });
+  });
 
   return pills;
 }
