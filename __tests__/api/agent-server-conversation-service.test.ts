@@ -660,6 +660,96 @@ describe("AgentServerConversationService", () => {
         );
       });
 
+      it("runs setup in the worktree the server assigned, not the source workspace", async () => {
+        server.use(
+          http.get("*/server_info", () =>
+            HttpResponse.json({ capabilities: ["direct_tool_execution_v1"] }),
+          ),
+        );
+        // The source carries the script; the server reports a different
+        // worktree dir, which is where setup must actually run.
+        const downloadTextFile = vi.fn(async () => "#!/bin/sh");
+        mockFileClient.mockReturnValue({
+          downloadTextFile,
+          getHome: async () => ({ home: "/Users/agent" }),
+        });
+        const executeTool = vi.fn().mockResolvedValue({
+          observation: { kind: "TerminalObservation", exit_code: 0 },
+        });
+        mockConversationClientWith(executeTool);
+        mockHttpPost.mockResolvedValueOnce({
+          data: {
+            id: "conv-1",
+            created_at: "2026-07-01T12:00:00.000Z",
+            updated_at: "2026-07-01T12:01:00.000Z",
+            workspace: {
+              working_dir: "/tmp/conversation-worktrees/conv-1/repo",
+            },
+          },
+        });
+
+        await AgentServerConversationService.createConversation({
+          agentProfileId: "profile-1",
+          workingDirOverride: "/Users/jane/projects/foo",
+          workspaceMode: "new_worktree",
+          initialUserMsg: "Add a dark mode toggle",
+        });
+
+        // The script is sourced from the assigned worktree, not the source.
+        const [, request] = executeTool.mock.calls[0];
+        expect(request.action.command).toContain(
+          "/tmp/conversation-worktrees/conv-1/repo/.openhands/setup.sh",
+        );
+        expect(request.action.command).not.toContain(
+          "/Users/jane/projects/foo/.openhands/setup.sh",
+        );
+      });
+
+      it("starts the agent when the assigned worktree lacks the script", async () => {
+        server.use(
+          http.get("*/server_info", () =>
+            HttpResponse.json({ capabilities: ["direct_tool_execution_v1"] }),
+          ),
+        );
+        // Found in the source (so the message is withheld), but absent from the
+        // assigned worktree. Setup must be skipped, never leaving the launch
+        // idle with its first message unsent.
+        const downloadTextFile = vi
+          .fn()
+          .mockResolvedValueOnce("#!/bin/sh")
+          .mockRejectedValueOnce(notFound());
+        mockFileClient.mockReturnValue({
+          downloadTextFile,
+          getHome: async () => ({ home: "/Users/agent" }),
+        });
+        const executeTool = vi.fn();
+        mockConversationClientWith(executeTool);
+        mockHttpPost.mockResolvedValueOnce({
+          data: {
+            id: "conv-1",
+            created_at: "2026-07-01T12:00:00.000Z",
+            updated_at: "2026-07-01T12:01:00.000Z",
+            workspace: {
+              working_dir: "/tmp/conversation-worktrees/conv-1/repo",
+            },
+          },
+        });
+
+        await AgentServerConversationService.createConversation({
+          agentProfileId: "profile-1",
+          workingDirOverride: "/Users/jane/projects/foo",
+          workspaceMode: "new_worktree",
+          initialUserMsg: "Add a dark mode toggle",
+        });
+
+        expect(executeTool).not.toHaveBeenCalled();
+        expect(mockSendEvent).toHaveBeenCalledWith(
+          "conv-1",
+          expect.anything(),
+          { run: true },
+        );
+      });
+
       it("starts the agent even when the script fails", async () => {
         server.use(
           http.get("*/server_info", () =>

@@ -647,10 +647,13 @@ class AgentServerConversationService {
 
     // Detect the workspace bootstrap before creating the conversation so the
     // first agent turn can be withheld until setup finishes: the script
-    // typically installs dependencies that turn needs. `isSupported` is false
-    // on cloud backends, older agent-servers, and when the pinned client lacks
-    // `executeTool`, so every other launch path is unchanged.
-    const setupPlan = (await SetupScriptService.isSupported())
+    // typically installs dependencies that turn needs. Probing the requested
+    // workspace is enough to decide *whether* to withhold — a `new_worktree`
+    // launch copies the attached workspace, so it carries the same script.
+    // `isSupported` is false on cloud backends, older agent-servers, and when
+    // the pinned client lacks `executeTool`, so other launch paths are
+    // unchanged.
+    const preCreatePlan = (await SetupScriptService.isSupported())
       ? await SetupScriptService.prepare(workingDir)
       : null;
 
@@ -683,7 +686,7 @@ class AgentServerConversationService {
     // `initial_message` is what starts the run server-side, so removing it
     // creates the conversation idle; the message is re-sent below. Only done
     // when setup is possible, so the no-setup path stays a single request.
-    const withheldInitialMessage = setupPlan
+    const withheldInitialMessage = preCreatePlan
       ? (payload.initial_message as
           | AppConversationStartRequest["initial_message"]
           | undefined)
@@ -701,6 +704,20 @@ class AgentServerConversationService {
     });
     const localBackend = getEffectiveLocalBackend();
     if (!localBackend) throw new NoBackendAvailableError();
+
+    // Re-target setup at the workspace the server actually assigned. A
+    // `new_worktree` launch does not run in the requested dir: the server cuts
+    // a fresh worktree (`/…/conversation-worktrees/<id>/…`) and reports it in
+    // `workspace.working_dir`. Sourcing the script from the requested dir would
+    // run it against the user's own checkout — polluting it and leaving the
+    // worktree the agent uses unprovisioned. Probe the reported workspace, and
+    // if the script is not there, fall through to sending the withheld message
+    // so the launch still starts.
+    const assignedWorkingDir = data.workspace?.working_dir;
+    const setupPlan =
+      preCreatePlan && assignedWorkingDir && assignedWorkingDir !== workingDir
+        ? await SetupScriptService.prepare(assignedWorkingDir)
+        : preCreatePlan;
 
     if (setupPlan) {
       const result = await SetupScriptService.run(
@@ -740,8 +757,10 @@ class AgentServerConversationService {
     // turn, now that setup has run in the same terminal session. The
     // conversation already exists, so a failed send must not lose its id: a
     // caller that retried blindly would strand this conversation idle and
-    // create another. Surface the id on the error so the caller can retry the
-    // message on the same conversation.
+    // create another. Surface the id on the error so the caller can recover on
+    // the same conversation. Deliberately not retried here — the server may
+    // have accepted the event before the response was lost, and a blind retry
+    // would duplicate the user's first message.
     if (withheldInitialMessage) {
       try {
         await new ConversationClient(
