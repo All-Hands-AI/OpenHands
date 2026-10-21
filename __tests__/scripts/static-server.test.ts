@@ -1,5 +1,11 @@
 import { createServer, request, type Server } from "node:http";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -1103,12 +1109,33 @@ describe("static-server.mjs MARS web bridge (Docker arguments)", () => {
     ).toBe(false);
   });
 
-  it("does not mount on a LAN bind with no key (public mode)", async () => {
+  it("does not mount on a LAN bind with no key (public mode), and warns", async () => {
     vi.stubEnv("MARS_WEB", "1");
-    vi.spyOn(console, "debug").mockImplementation(() => {});
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const origin = await start({ host: "::", authRequired: true });
     const response = await fetch(`${origin}/mars/health`);
     expect(response.headers.get("content-type")).toMatch(/text\/html/);
+    expect(
+      warn.mock.calls.some((c) =>
+        /\[mars-web\].*not loopback/.test(String(c[0])),
+      ),
+    ).toBe(true);
+  });
+
+  // The public-mode instance binds `::` with no key, so a container-wide
+  // MARS_WEB=1 would make it warn on every start, or, with MARS_WEB_KEY set
+  // too, host a second bridge with its own sign-in state.
+  it("pins the entrypoint's public-mode instance to MARS_WEB=0", () => {
+    const entrypoint = readFileSync(
+      path.resolve(import.meta.dirname, "../../docker/entrypoint.sh"),
+      "utf-8",
+    );
+    expect(
+      entrypoint.match(/^.*node \/opt\/agent-canvas\/static-server\.mjs/gm),
+    ).toEqual([
+      "node /opt/agent-canvas/static-server.mjs",
+      "  MARS_WEB=0 node /opt/agent-canvas/static-server.mjs",
+    ]);
   });
 
   it.each([undefined, "0"])(

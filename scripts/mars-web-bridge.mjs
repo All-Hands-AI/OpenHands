@@ -122,6 +122,8 @@ export function resolveMarsWebKey({
  * This readiness flag is separate from authentication. An opted-in bridge
  * still refuses a non-loopback bind without a key. Launchers set `MARS_WEB=0`
  * on static children and under Electron so only the web ingress hosts it.
+ * Off is silent unless the env suggests someone meant it on
+ * (`marsWebOffWarning`).
  *
  * @param {object} [options]
  * @param {Record<string, string | undefined>} [options.env]
@@ -137,7 +139,11 @@ export function mountMarsWebBridge({
   log = (message) => console.warn(`[mars-web] ${message}`),
   debug = (message) => console.debug(`[mars-web] ${message}`),
 } = {}) {
-  if (env.MARS_WEB !== "1") return null;
+  if (env.MARS_WEB !== "1") {
+    const warning = marsWebOffWarning(env);
+    if (warning) log(warning);
+    return null;
+  }
   const key = resolveMarsWebKey({ env, sessionApiKey });
   if (!key && !isLoopbackBind(host)) {
     log(
@@ -147,6 +153,25 @@ export function mountMarsWebBridge({
   }
   if (!key) debug("no key configured; /mars/* is open to local callers only");
   return createMarsWebBridge({ env, host, key });
+}
+
+/**
+ * Why the bridge stays off, for an operator who seems to have wanted it on;
+ * null otherwise, so a server nobody pointed at DigitalOcean starts quietly.
+ * Any value but `1` or `0` (launchers set `0` on purpose) gets a line, since
+ * it may be a mistyped opt-in (`true`, `"1 "`, a quoted `"1"` from
+ * `docker run --env-file`), and so does `MARS_TOKEN` with no `MARS_WEB`.
+ */
+function marsWebOffWarning(env) {
+  const value = env.MARS_WEB ?? "";
+  if (value.trim() === "0") return null;
+  if (value) {
+    return `MARS_WEB=${JSON.stringify(value)} is not "1"; not mounting /mars/* (set MARS_WEB=1).`;
+  }
+  if (env.MARS_TOKEN?.trim()) {
+    return `MARS_TOKEN is set but MARS_WEB is not "1"; not mounting /mars/* (set MARS_WEB=1).`;
+  }
+  return null;
 }
 
 function safeEqual(a, b) {

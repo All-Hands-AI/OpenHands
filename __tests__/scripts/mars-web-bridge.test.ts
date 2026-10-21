@@ -660,14 +660,14 @@ describe("createMarsWebBridge with a session key", () => {
 });
 
 describe("mountMarsWebBridge", () => {
+  // Launchers set MARS_WEB=0 on servers that inherit MARS_TOKEN, so an
+  // explicit 0 stays quiet even then.
   it.each([
     {},
     { MARS_WEB_KEY: "k" },
-    { MARS_TOKEN: "dop_v1_test" },
-    ...["", "0", "false", "off", "no", "true", "on", "yes", "nope"].map(
-      (MARS_WEB) => ({ MARS_WEB }),
-    ),
-  ])("does not mount without MARS_WEB=1: %j", (env) => {
+    { MARS_WEB: "" },
+    { MARS_WEB: "0", MARS_TOKEN: "dop_v1_test" },
+  ])("stays off quietly without MARS_WEB=1: %j", (env) => {
     const log = vi.fn();
     const mounted = mountMarsWebBridge({
       env,
@@ -678,6 +678,30 @@ describe("mountMarsWebBridge", () => {
     });
     expect(mounted).toBeNull();
     expect(log).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [{ MARS_WEB: "true" }, /MARS_WEB="true" is not "1"/],
+    [{ MARS_WEB: "1 " }, /MARS_WEB="1 " is not "1"/],
+    [{ MARS_WEB: '"1"' }, /MARS_WEB="\\"1\\"" is not "1"/],
+    [
+      { MARS_TOKEN: "dop_v1_test" },
+      /MARS_TOKEN is set but MARS_WEB is not "1"/,
+    ],
+  ])("stays off but warns when it looks meant to be on: %j", (env, message) => {
+    const warnings: string[] = [];
+    const debugs: string[] = [];
+    const mounted = mountMarsWebBridge({
+      env,
+      host: "127.0.0.1",
+      sessionApiKey: "stack-key",
+      log: (m) => warnings.push(m),
+      debug: (m) => debugs.push(m),
+    });
+    expect(mounted).toBeNull();
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toMatch(message);
+    expect(debugs).toEqual([]);
   });
 
   it("mounts with MARS_WEB=1 on a loopback bind, even without a key", async () => {
@@ -696,16 +720,21 @@ describe("mountMarsWebBridge", () => {
   });
 
   it("refuses a non-loopback bind without a key, and mounts with one", async () => {
-    const logs: string[] = [];
+    // A warning, not a debug line: the operator opted in and DigitalOcean
+    // will be missing.
+    const warnings: string[] = [];
+    const debugs: string[] = [];
     expect(
       mountMarsWebBridge({
         env: { MARS_WEB: "1" },
         host: "0.0.0.0",
-        log: (m) => logs.push(m),
-        debug: (m) => logs.push(m),
+        log: (m) => warnings.push(m),
+        debug: (m) => debugs.push(m),
       }),
     ).toBeNull();
-    expect(logs[0]).toMatch(/not loopback/);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toMatch(/not loopback/);
+    expect(debugs).toEqual([]);
 
     const mounted = mountMarsWebBridge({
       env: { MARS_WEB: "1", MARS_WEB_KEY: "k" },
