@@ -102,6 +102,10 @@ const CANVAS_ONLY_HEADERS = ["cookie", AUTH_HEADER, "origin", "referer"];
  * `MARS_WEB_KEY` wins so a deployment can decouple it from the agent-server
  * key; otherwise the server's own `--session-api-key` is reused, which is
  * what the renderer already holds.
+ *
+ * @param {object} [options]
+ * @param {Record<string, string | undefined>} [options.env]
+ * @param {string | null} [options.sessionApiKey]
  */
 export function resolveMarsWebKey({
   env = process.env,
@@ -118,6 +122,13 @@ export function resolveMarsWebKey({
  * This readiness flag is separate from authentication. An opted-in bridge
  * still refuses a non-loopback bind without a key. Launchers set `MARS_WEB=0`
  * on static children and under Electron so only the web ingress hosts it.
+ *
+ * @param {object} [options]
+ * @param {Record<string, string | undefined>} [options.env]
+ * @param {string} [options.host]
+ * @param {string | null} [options.sessionApiKey]
+ * @param {(message: string) => void} [options.log]
+ * @param {(message: string) => void} [options.debug]
  */
 export function mountMarsWebBridge({
   env = process.env,
