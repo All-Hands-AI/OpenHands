@@ -812,6 +812,26 @@ describe("createMarsWebBridge with a session key", () => {
     stream.stop();
   });
 
+  it("closes a keyed socket to an unknown, very long session id without crashing", async () => {
+    const longId = `sess_${"x".repeat(200)}`;
+    const ws = new WebSocket(
+      `${web.origin.replace("http", "ws")}/mars/sessions/${longId}/sockets/session/c1`,
+    );
+    const closed = new Promise<number>((resolve) =>
+      ws.on("close", (code) => resolve(code)),
+    );
+    await new Promise<void>((resolve, reject) => {
+      ws.on("open", () => resolve());
+      ws.on("error", reject);
+    });
+
+    ws.send(JSON.stringify({ type: "auth", session_api_key: KEY }));
+
+    expect(await closed).toBe(1011);
+    // The server is still alive afterwards.
+    expect((await fetch(`${web.origin}/mars/health`)).status).toBe(200);
+  });
+
   it("closes a socket whose first message is not the key, without touching the session", async () => {
     const { ws, closed } = await openBare();
 
