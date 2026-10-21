@@ -32,8 +32,8 @@ export interface ChatInputLlmProfileState {
   canSwitchProfile: boolean;
   /**
    * Switch the LLM profile: live via `/switch_profile` inside a conversation.
-   * On the home page it becomes the active agent profile's LLM, which for
-   * `default` means activating it (see {@link useSwitchLlmProfile}).
+   * On the home page it becomes the active agent profile's LLM, which for a
+   * local `default` means activating it (see {@link useSwitchLlmProfile}).
    */
   selectProfile: (profileName: string) => void;
 }
@@ -52,7 +52,7 @@ export function useChatInputLlmProfileState(): ChatInputLlmProfileState {
   const queryClient = useQueryClient();
   const { backend } = useActiveBackend();
   const { data: agentProfiles } = useAgentProfiles({
-    enabled: !conversationId && backend.kind === "local",
+    enabled: !conversationId,
   });
   const canManageOrgProfiles = useCanManageOrgProfiles();
   const { switchAndLog } = useSwitchLlmProfileAndLog();
@@ -93,12 +93,15 @@ export function useChatInputLlmProfileState(): ChatInputLlmProfileState {
     profiles.some((p) => p.name === activeAgentProfile.llm_profile_ref)
       ? activeAgentProfile.llm_profile_ref
       : null;
-  // `default` runs the active LLM profile, so a home pick activates it; any
-  // other profile keeps the pick as its own LLM.
+  // A local `default` runs the active LLM profile, so a home pick activates
+  // it; any other profile keeps the pick as its own LLM.
   const ownsHomeLlm =
     !conversationId &&
     agentLlmProfile !== null &&
-    activeAgentProfile?.name !== WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME;
+    !(
+      backend.kind === "local" &&
+      activeAgentProfile?.name === WELL_KNOWN_DEFAULT_AGENT_PROFILE_NAME
+    );
   const currentProfileName =
     optimisticActiveProfile ??
     conversationProfile ??
@@ -110,11 +113,10 @@ export function useChatInputLlmProfileState(): ChatInputLlmProfileState {
     conversationModel ??
     null;
 
-  // A home pick activates the profile account-wide — on cloud that's the
-  // org-gated activate endpoint a member can only 403 on. A cloud `task-…`
-  // route has no real conversation id yet, so the per-conversation
-  // /switch_profile would 404. Either way the pill still names the active
-  // profile; only the selectable rows drop out.
+  // A home pick changes org-wide state on cloud, which a member can only 403
+  // on. A cloud `task-…` route has no real conversation id yet, so the
+  // per-conversation /switch_profile would 404. Either way the pill still
+  // names the active profile; only the selectable rows drop out.
   const isTaskRoute = conversationId?.startsWith("task-") ?? false;
   const canSwitchProfile =
     !isTaskRoute && (!!conversationId || canManageOrgProfiles);
