@@ -313,6 +313,7 @@ describe("useCreateConversation", () => {
     ).mockRejectedValue(
       new ConversationFirstMessageError(
         "conv-bootstrapped",
+        [{ type: "text", text: "Add a dark mode toggle" }],
         new Error("socket closed"),
       ),
     );
@@ -341,6 +342,139 @@ describe("useCreateConversation", () => {
       status: "error",
     });
 
+    useOptimisticUserMessageStore.getState().clearPendingMessages();
+  });
+
+  it("rebuilds the recovered pending bubble from the withheld content, keeping instructions", async () => {
+    // The local path folds `conversationInstructions` into the sent body; the
+    // error carries that exact content, so the retry bubble must not fall back
+    // to the bare `query` (which would drop the instructions).
+    vi.spyOn(
+      AgentServerConversationService,
+      "createConversation",
+    ).mockRejectedValue(
+      new ConversationFirstMessageError(
+        "conv-bootstrapped",
+        [
+          {
+            type: "text",
+            text: "Add a dark mode toggle\n\nFocus on review comments",
+          },
+        ],
+        new Error("socket closed"),
+      ),
+    );
+    useOptimisticUserMessageStore.getState().clearPendingMessages();
+
+    const { result } = renderHook(() => useCreateConversation(), {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={new QueryClient()}>
+          {children}
+        </QueryClientProvider>
+      ),
+    });
+
+    await result.current.mutateAsync({
+      query: "Add a dark mode toggle",
+      conversationInstructions: "Focus on review comments",
+    });
+
+    const pending = useOptimisticUserMessageStore.getState().pendingMessages;
+    expect(pending).toHaveLength(1);
+    expect(pending[0]).toMatchObject({
+      conversationId: "conv-bootstrapped",
+      text: "Add a dark mode toggle\n\nFocus on review comments",
+      status: "error",
+    });
+
+    useOptimisticUserMessageStore.getState().clearPendingMessages();
+  });
+
+  it("snapshots attached plugins on the recovered conversation", async () => {
+    vi.spyOn(
+      AgentServerConversationService,
+      "createConversation",
+    ).mockRejectedValue(
+      new ConversationFirstMessageError(
+        "conv-recovered-plugins",
+        [{ type: "text", text: "hi" }],
+        new Error("socket closed"),
+      ),
+    );
+    removeStoredConversationMetadata("conv-recovered-plugins");
+
+    const { result } = renderHook(() => useCreateConversation(), {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={new QueryClient()}>
+          {children}
+        </QueryClientProvider>
+      ),
+    });
+
+    await result.current.mutateAsync({
+      query: "hi",
+      plugins: [
+        {
+          source: "github:o/a",
+          ref: null,
+          repo_path: "plugins/a",
+          parameters: { token: "secret" },
+        },
+      ],
+    });
+
+    // The plugin snapshot normally runs after createConversation resolves —
+    // past the point the send fails. The recovery path must still record it.
+    await waitFor(() =>
+      expect(
+        getStoredConversationMetadata("conv-recovered-plugins")?.plugins,
+      ).toEqual([{ source: "github:o/a", ref: null, repo_path: "plugins/a" }]),
+    );
+
+    removeStoredConversationMetadata("conv-recovered-plugins");
+    useOptimisticUserMessageStore.getState().clearPendingMessages();
+  });
+
+  it("stamps the launch LLM profile on the recovered conversation", async () => {
+    mockUseActiveBackend.mockReturnValue({
+      backend: { id: "local-1", kind: "local" as const },
+      orgId: null,
+    });
+    listLlmProfilesMock.mockResolvedValue({
+      profiles: [{ name: "gpt" }],
+      active_profile: "gpt",
+    });
+    vi.spyOn(
+      AgentServerConversationService,
+      "createConversation",
+    ).mockRejectedValue(
+      new ConversationFirstMessageError(
+        "conv-recovered-profile",
+        [{ type: "text", text: "hi" }],
+        new Error("socket closed"),
+      ),
+    );
+    removeStoredConversationMetadata("conv-recovered-profile");
+
+    const { result } = renderHook(() => useCreateConversation(), {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={new QueryClient()}>
+          {children}
+        </QueryClientProvider>
+      ),
+    });
+
+    await result.current.mutateAsync({ query: "hi" });
+
+    // `launchConversation` stamps the profile only after createConversation
+    // resolves; the recovery path must not lose it.
+    await waitFor(() =>
+      expect(
+        getStoredConversationMetadata("conv-recovered-profile")?.active_profile,
+      ).toBe("gpt"),
+    );
+
+    removeStoredConversationMetadata("conv-recovered-profile");
     useOptimisticUserMessageStore.getState().clearPendingMessages();
   });
 

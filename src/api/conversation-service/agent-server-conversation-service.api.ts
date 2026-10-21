@@ -84,6 +84,7 @@ import type {
   AppConversationStartRequest,
   AppConversationStartTask,
   MetricsSnapshot,
+  MessageContent,
   RuntimeConversationInfo,
   RuntimeConversationStats,
   SendMessageRequest,
@@ -110,18 +111,29 @@ function invalidConversationResponse(): Error {
  * send, so a failed send leaves a real, idle conversation behind. Carrying its
  * id lets a caller recover — retry the message on the same conversation —
  * instead of creating a second one and stranding the first.
+ *
+ * The exact `content` the send was attempted with is carried too: the local
+ * path folds `conversationInstructions` into the message body, so rebuilding
+ * the retry from the caller's raw `query` alone would drop those instructions
+ * (and leave no retry at all for an instructions-only launch).
  */
 export class ConversationFirstMessageError extends Error {
   readonly conversationId: string;
+  readonly content: MessageContent[];
   readonly cause: unknown;
 
-  constructor(conversationId: string, cause: unknown) {
+  constructor(
+    conversationId: string,
+    content: MessageContent[],
+    cause: unknown,
+  ) {
     const detail = cause instanceof Error ? cause.message : String(cause);
     super(
       `Conversation ${conversationId} was created, but its first message could not be sent: ${detail}`,
     );
     this.name = "ConversationFirstMessageError";
     this.conversationId = conversationId;
+    this.content = content;
     this.cause = cause;
   }
 }
@@ -769,7 +781,11 @@ class AgentServerConversationService {
           }),
         ).sendEvent(data.id, withheldInitialMessage, { run: true });
       } catch (error) {
-        throw new ConversationFirstMessageError(data.id, error);
+        throw new ConversationFirstMessageError(
+          data.id,
+          withheldInitialMessage.content,
+          error,
+        );
       }
     }
 
