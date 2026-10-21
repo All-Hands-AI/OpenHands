@@ -62,7 +62,13 @@ vi.mock(
 
 vi.mock(
   "#/api/conversation-service/agent-server-conversation-service.api",
-  () => ({
+  async (importOriginal) => ({
+    // Keep the real named exports (e.g. `ConversationFirstMessageError`, which
+    // `resolve-conversation-launch` imports as a value for `instanceof`) and
+    // override only the default service object the tests stub.
+    ...(await importOriginal<
+      typeof import("#/api/conversation-service/agent-server-conversation-service.api")
+    >()),
     default: {
       createConversation: mockCreateConversation,
       resolveConversationWorkingDir: mockResolveWorkingDir,
