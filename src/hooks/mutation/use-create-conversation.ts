@@ -171,11 +171,22 @@ async function snapshotPlugins(
     }))
     .filter((plugin) => !seen.has(pluginReferenceKey(plugin)));
   attachedPlugins = [...explicitPlugins, ...enabledInstalled];
-  // Merge so the metadata the launch just persisted is preserved.
+  // Merge so the metadata the launch just persisted is preserved. Best-effort:
+  // the snapshot is a convenience for the plugins view, so a storage write that
+  // fails (e.g. quota) must not fail the create — on the first-message recovery
+  // path it would otherwise replace the recoverable error and strand the
+  // created conversation.
   if (attachedPlugins.length) {
-    mergeStoredConversationMetadata(conversationId, {
-      plugins: attachedPlugins,
-    });
+    try {
+      mergeStoredConversationMetadata(conversationId, {
+        plugins: attachedPlugins,
+      });
+    } catch (error) {
+      console.warn(
+        `Could not snapshot plugins for conversation ${conversationId}:`,
+        error,
+      );
+    }
   }
 }
 

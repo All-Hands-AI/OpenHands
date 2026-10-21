@@ -435,6 +435,49 @@ describe("useCreateConversation", () => {
     useOptimisticUserMessageStore.getState().clearPendingMessages();
   });
 
+  it("still recovers on the created conversation when the plugin snapshot's storage write fails", async () => {
+    // The plugin snapshot also runs on the recovery path. Like the profile
+    // stamp, a failing storage write must not replace the recoverable error.
+    vi.spyOn(
+      AgentServerConversationService,
+      "createConversation",
+    ).mockRejectedValue(
+      new ConversationFirstMessageError(
+        "conv-snapshot-throws",
+        [{ type: "text", text: "hi" }],
+        new Error("socket closed"),
+      ),
+    );
+    removeStoredConversationMetadata("conv-snapshot-throws");
+    const setItemSpy = vi
+      .spyOn(Storage.prototype, "setItem")
+      .mockImplementation(() => {
+        throw new DOMException("QuotaExceededError");
+      });
+
+    try {
+      const { result } = renderHook(() => useCreateConversation(), {
+        wrapper: ({ children }) => (
+          <QueryClientProvider client={new QueryClient()}>
+            {children}
+          </QueryClientProvider>
+        ),
+      });
+
+      const created = await result.current.mutateAsync({
+        query: "hi",
+        plugins: [
+          { source: "github:o/a", ref: null, repo_path: "plugins/a" },
+        ],
+      });
+      expect(created.conversation_id).toBe("conv-snapshot-throws");
+    } finally {
+      setItemSpy.mockRestore();
+      removeStoredConversationMetadata("conv-snapshot-throws");
+      useOptimisticUserMessageStore.getState().clearPendingMessages();
+    }
+  });
+
   it("stamps the launch LLM profile on the recovered conversation", async () => {
     mockUseActiveBackend.mockReturnValue({
       backend: { id: "local-1", kind: "local" as const },
@@ -476,6 +519,54 @@ describe("useCreateConversation", () => {
 
     removeStoredConversationMetadata("conv-recovered-profile");
     useOptimisticUserMessageStore.getState().clearPendingMessages();
+  });
+
+  it("still recovers on the created conversation when the profile stamp's storage write fails", async () => {
+    // The launch's profile stamp runs on the recovery path. A storage write
+    // that throws (e.g. quota) must not replace the recoverable
+    // ConversationFirstMessageError — the caller would then retry into a
+    // duplicate conversation instead of opening the one that exists.
+    mockUseActiveBackend.mockReturnValue({
+      backend: { id: "local-1", kind: "local" as const },
+      orgId: null,
+    });
+    listLlmProfilesMock.mockResolvedValue({
+      profiles: [{ name: "gpt" }],
+      active_profile: "gpt",
+    });
+    vi.spyOn(
+      AgentServerConversationService,
+      "createConversation",
+    ).mockRejectedValue(
+      new ConversationFirstMessageError(
+        "conv-stamp-throws",
+        [{ type: "text", text: "hi" }],
+        new Error("socket closed"),
+      ),
+    );
+    removeStoredConversationMetadata("conv-stamp-throws");
+    const setItemSpy = vi
+      .spyOn(Storage.prototype, "setItem")
+      .mockImplementation(() => {
+        throw new DOMException("QuotaExceededError");
+      });
+
+    try {
+      const { result } = renderHook(() => useCreateConversation(), {
+        wrapper: ({ children }) => (
+          <QueryClientProvider client={new QueryClient()}>
+            {children}
+          </QueryClientProvider>
+        ),
+      });
+
+      const created = await result.current.mutateAsync({ query: "hi" });
+      expect(created.conversation_id).toBe("conv-stamp-throws");
+    } finally {
+      setItemSpy.mockRestore();
+      removeStoredConversationMetadata("conv-stamp-throws");
+      useOptimisticUserMessageStore.getState().clearPendingMessages();
+    }
   });
 
   it("invalidates the conversation list and start-tasks queries on success", async () => {

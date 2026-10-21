@@ -230,8 +230,17 @@ export async function launchConversation(
     // conversation still exists and the caller recovers onto it, so stamp the
     // LLM profile now — otherwise the recovered conversation loses its
     // launch-profile label, which the success path below would have set.
+    // Best-effort: a storage write that fails (e.g. quota) must not replace the
+    // recoverable error and strand the created conversation.
     if (error instanceof ConversationFirstMessageError) {
-      stampLlmProfile(error.conversationId, launch, context.isCloud);
+      try {
+        stampLlmProfile(error.conversationId, launch, context.isCloud);
+      } catch (stampError) {
+        console.warn(
+          `Could not stamp the launch LLM profile on conversation ${error.conversationId}:`,
+          stampError,
+        );
+      }
     }
     throw error;
   }
