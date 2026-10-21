@@ -152,7 +152,7 @@ export function BuiltInIntegrationChoiceModal({
             <BrandButton
               type="button"
               variant="primary"
-              className="mt-auto flex items-center justify-center gap-2"
+              className="mt-auto flex items-center justify-center gap-2 bg-contrast text-contrast-foreground"
               testId="built-in-integration-choice-use-built-in"
               onClick={isConnected ? onClose : onUseBuiltIn}
             >
