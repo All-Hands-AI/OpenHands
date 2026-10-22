@@ -21,10 +21,13 @@ import {
   AutomationSetupPanel,
 } from "#/components/features/automations/setup/automation-setup-panel";
 import AutomationService from "#/api/automation-service/automation-service.api";
+import { useEffect, useState } from "react";
 import {
   PENDING_AUTOMATION_SETUP_ID,
+  clearAutomationFormSession,
   getAutomationFormSession,
   initializeAutomationFormSession,
+  subscribeAutomationFormSession,
 } from "#/api/automation-form-session";
 import type { AutomationSetupDraft } from "#/api/automation-setup-types";
 import AgentServerConversationService from "#/api/conversation-service/agent-server-conversation-service.api";
@@ -34,8 +37,11 @@ import { AUTOMATION_FORM_UPDATE_ACTION_KIND } from "#/constants/automation-form"
 import { AUTOMATION_SETUP_SHOW_AGENT_EVENT } from "#/components/features/automations/setup/automation-setup-agent-request";
 import { setupDraftFromAutomation } from "#/utils/automation-edit-draft";
 import { useDeploymentCapabilities } from "#/hooks/query/use-manifest-capabilities";
+import { AUTOMATION_DETAIL_QUERY_KEY } from "#/hooks/query/use-automation-detail";
+import { AUTOMATIONS_QUERY_KEY } from "#/hooks/query/use-automations";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import type { AutomationDraftApiResponse } from "#/manifests/types";
+import type { Automation } from "#/types/automation";
 
 const mockNavigate = vi.fn();
 const mockToastSuccess = vi.fn();
@@ -70,6 +76,10 @@ const createGitRepositoriesQueryResult = () => ({
   onLoadMore: vi.fn(),
 });
 const mockUseGitRepositories = vi.fn(createGitRepositoriesQueryResult);
+const mockUseSearchRepositories = vi.fn((..._args: unknown[]) => ({
+  data: undefined as { full_name: string }[] | undefined,
+  isFetching: false,
+}));
 
 const { mockSendMessage } = vi.hoisted(() => ({
   mockSendMessage: vi.fn().mockResolvedValue({ queued: false }),
@@ -158,15 +168,22 @@ vi.mock("#/hooks/query/use-agent-profiles", () => ({
   }),
 }));
 
+const mockUseUserProviders = vi.fn(() => ({
+  providers: ["github"],
+  isLoadingSettings: false,
+}));
+
 vi.mock("#/hooks/use-user-providers", () => ({
-  useUserProviders: () => ({
-    providers: ["github"],
-    isLoadingSettings: false,
-  }),
+  useUserProviders: () => mockUseUserProviders(),
 }));
 
 vi.mock("#/hooks/query/use-git-repositories", () => ({
   useGitRepositories: () => mockUseGitRepositories(),
+}));
+
+vi.mock("#/hooks/query/use-search-repositories", () => ({
+  useSearchRepositories: (...args: unknown[]) =>
+    mockUseSearchRepositories(...args),
 }));
 
 vi.mock("#/hooks/query/use-llm-profiles", () => ({
@@ -214,10 +231,55 @@ function renderPanel(
   },
   conversationId = "conv-1",
   conversationTags: Record<string, string> | null | undefined = null,
+  queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  }),
 ) {
   const value: NavigationContextValue = {
     currentPath: `/conversations/${conversationId}`,
     conversationId,
+    isNavigating: false,
+    navigate: mockNavigate,
+  };
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <NavigationProvider value={value}>
+        <AutomationSetupPanel
+          draft={draft}
+          conversationId={conversationId}
+          conversationTags={conversationTags}
+        />
+      </NavigationProvider>
+    </QueryClientProvider>,
+  );
+}
+
+/** Feeds the panel from the form session on every change, as the setup route does. */
+function SessionBoundPanel({ conversationId }: { conversationId: string }) {
+  const [draft, setDraft] = useState(
+    () => getAutomationFormSession(conversationId) as AutomationSetupDraft,
+  );
+  useEffect(
+    () =>
+      subscribeAutomationFormSession(conversationId, (next) => {
+        if (next) setDraft(next);
+      }),
+    [conversationId],
+  );
+  return (
+    <AutomationSetupPanel
+      draft={draft}
+      conversationId={conversationId}
+      conversationTags={null}
+    />
+  );
+}
+
+function renderSessionBoundPanel(conversationId: string) {
+  const value: NavigationContextValue = {
+    currentPath: "/automations/setup",
+    conversationId: null,
     isNavigating: false,
     navigate: mockNavigate,
   };
@@ -228,11 +290,7 @@ function renderPanel(
   return render(
     <QueryClientProvider client={queryClient}>
       <NavigationProvider value={value}>
-        <AutomationSetupPanel
-          draft={draft}
-          conversationId={conversationId}
-          conversationTags={conversationTags}
-        />
+        <SessionBoundPanel conversationId={conversationId} />
       </NavigationProvider>
     </QueryClientProvider>,
   );
@@ -256,6 +314,14 @@ describe("AutomationSetupPanel", () => {
       AgentServerConversationService.updateConversationTags,
     ).mockImplementation(async (_conversationId, tags) => ({ tags }) as never);
     mockUseGitRepositories.mockReturnValue(createGitRepositoriesQueryResult());
+    mockUseSearchRepositories.mockReturnValue({
+      data: undefined,
+      isFetching: false,
+    });
+    mockUseUserProviders.mockReturnValue({
+      providers: ["github"],
+      isLoadingSettings: false,
+    });
   });
 
   afterEach(() => {
@@ -599,8 +665,16 @@ describe("AutomationSetupPanel", () => {
       "OpenHands/software-agent-sdk",
     );
     await user.click(screen.getByTestId("automation-setup-repository-submit"));
+    await user.click(screen.getByTestId("automation-setup-repository-add"));
+    await user.click(screen.getByTestId("automation-setup-repository-custom"));
+    await user.type(
+      screen.getByTestId("automation-setup-repository-address"),
+      "https://gitlab.com/acme/tools",
+    );
+    await user.click(screen.getByTestId("automation-setup-repository-submit"));
     await user.click(screen.getByTestId("automation-setup-test"));
 
+    // A full URL names its own host, so it is cloned without a GitHub token.
     await waitFor(() =>
       expect(AutomationService.validateDraft).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -608,6 +682,7 @@ describe("AutomationSetupPanel", () => {
             repos: [
               { url: "OpenHands/OpenHands", provider: "github" },
               { url: "OpenHands/software-agent-sdk", provider: "github" },
+              { url: "https://gitlab.com/acme/tools" },
             ],
           }),
         }),
@@ -628,14 +703,16 @@ describe("AutomationSetupPanel", () => {
       screen.queryByTestId("automation-setup-add-repository-modal"),
     ).not.toBeInTheDocument();
 
-    await user.click(
-      await screen.findByTestId(
-        "automation-setup-repository-option-OpenHands/OpenHands",
-      ),
+    const option = await screen.findByTestId(
+      "automation-setup-repository-option-OpenHands/OpenHands",
     );
-    expect(
-      screen.getByTestId("automation-setup-repository-value"),
-    ).toHaveTextContent("OpenHands/OpenHands");
+    // Long organization/project/repository names are truncated, so the full
+    // name is available on hover.
+    expect(within(option).getByTitle("OpenHands/OpenHands")).toBeVisible();
+    await user.click(option);
+    const pill = screen.getByTestId("automation-setup-repository-value");
+    expect(pill).toHaveTextContent("OpenHands/OpenHands");
+    expect(within(pill).getByTitle("OpenHands/OpenHands")).toBeVisible();
 
     await user.click(screen.getByTestId("automation-setup-repository-add"));
     await user.click(screen.getByTestId("automation-setup-repository-custom"));
@@ -705,6 +782,85 @@ describe("AutomationSetupPanel", () => {
     expect(
       screen.getByTestId("automation-setup-repository-custom"),
     ).toBeInTheDocument();
+  });
+
+  it("searches the provider for repositories that are not loaded yet", async () => {
+    mockUseSearchRepositories.mockImplementation((query) => ({
+      data:
+        query === "agent"
+          ? [{ full_name: "OpenHands/agent-canvas-extras" }]
+          : undefined,
+      isFetching: false,
+    }));
+
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(screen.getByTestId("automation-setup-repository-add"));
+    await user.type(
+      screen.getByTestId("automation-setup-repository-search"),
+      "agent",
+    );
+
+    expect(
+      await screen.findByTestId(
+        "automation-setup-repository-option-OpenHands/agent-canvas-extras",
+      ),
+    ).toBeInTheDocument();
+    // A loaded repository that matches stays listed.
+    expect(
+      screen.getByTestId(
+        "automation-setup-repository-option-OpenHands/software-agent-sdk",
+      ),
+    ).toBeInTheDocument();
+    expect(mockUseSearchRepositories).toHaveBeenLastCalledWith(
+      "agent",
+      "github",
+      false,
+    );
+  });
+
+  it("explains that automations cannot clone another provider's repositories", async () => {
+    mockUseUserProviders.mockReturnValue({
+      providers: ["azure_devops"],
+      isLoadingSettings: false,
+    });
+    mockUseGitRepositories.mockReturnValue({
+      ...createGitRepositoriesQueryResult(),
+      data: {
+        pages: [
+          {
+            items: [
+              {
+                id: "ado-1",
+                full_name: "fabrikam/Fabrikam Fiber/fabrikam-web",
+                git_provider: "azure_devops",
+                is_public: false,
+              },
+            ],
+            missing_token: false,
+            next_page_id: null,
+          },
+        ],
+      },
+    });
+
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(screen.getByTestId("automation-setup-repository-add"));
+
+    expect(
+      screen.getByTestId("automation-setup-repository-unsupported"),
+    ).toHaveTextContent("AUTOMATION_SETUP$REPOSITORY_PROVIDER_UNSUPPORTED");
+    const option = screen.getByTestId(
+      "automation-setup-repository-option-fabrikam/Fabrikam Fiber/fabrikam-web",
+    );
+    expect(option).toBeDisabled();
+    await user.click(option);
+    expect(
+      screen.queryByTestId("automation-setup-repository-value"),
+    ).not.toBeInTheDocument();
   });
 
   it("streams agent form updates field by field without overwriting user edits", async () => {
@@ -2254,31 +2410,57 @@ describe("AutomationSetupPanel", () => {
     expect(AutomationService.dispatchServerDraft).not.toHaveBeenCalled();
   });
 
-  it("does not send unsupported repository and plugin fields while editing", async () => {
-    vi.mocked(AutomationService.updateAutomation).mockResolvedValue({
-      id: "auto-1",
-    } as never);
+  const savedReviewer = (overrides: Partial<Automation> = {}): Automation => ({
+    id: "auto-1",
+    name: "Reviewer",
+    prompt: "Review PRs",
+    enabled: true,
+    created_at: "2026-01-01T00:00:00.000Z",
+    updated_at: "2026-01-01T00:00:00.000Z",
+    // The service keeps repositories in preset metadata; the client reads
+    // them as `repositories`.
+    repositories: [
+      { url: "OpenHands/OpenHands", ref: "main", provider: "github" },
+    ],
+    preset_metadata: {
+      preset_type: "prompt",
+      repos: [{ url: "OpenHands/OpenHands", ref: "main", provider: "github" }],
+    },
+    trigger: {
+      type: "cron",
+      schedule: "0 9 * * *",
+      timezone: "UTC",
+    },
+    ...overrides,
+  });
+
+  it("shows saved repositories read-only when the service cannot change them", async () => {
+    vi.mocked(AutomationService.updateAutomation).mockResolvedValue(
+      savedReviewer(),
+    );
 
     const user = userEvent.setup();
     renderPanel(
-      setupDraftFromAutomation({
-        id: "auto-1",
-        name: "Reviewer",
-        prompt: "Review PRs",
-        enabled: true,
-        created_at: "2026-01-01T00:00:00.000Z",
-        updated_at: "2026-01-01T00:00:00.000Z",
-        repository: "OpenHands/OpenHands",
-        plugins: ["github:OpenHands/extensions/plugins/pr-review"],
-        trigger: {
-          type: "cron",
-          schedule: "0 9 * * *",
-          timezone: "UTC",
-        },
-      }),
+      setupDraftFromAutomation(
+        savedReviewer({
+          plugins: ["github:OpenHands/extensions/plugins/pr-review"],
+        }),
+      ),
     );
 
-    await user.click(screen.getByTestId("automation-setup-repository-remove"));
+    expect(
+      screen.getByTestId("automation-setup-repository-value"),
+    ).toHaveTextContent("OpenHands/OpenHands");
+    expect(
+      screen.getByTestId("automation-setup-repository-read-only"),
+    ).toHaveTextContent("AUTOMATION_SETUP$REPOSITORIES_READ_ONLY");
+    expect(
+      screen.queryByTestId("automation-setup-repository-add"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("automation-setup-repository-remove"),
+    ).not.toBeInTheDocument();
+
     await user.click(screen.getByTestId("automation-setup-plugin-remove"));
     await user.click(screen.getByTestId("automation-setup-save"));
 
@@ -2300,6 +2482,189 @@ describe("AutomationSetupPanel", () => {
         plugins: expect.anything(),
       }),
     );
+  });
+
+  it("saves changed repositories when the service can change them", async () => {
+    vi.mocked(useDeploymentCapabilities).mockReturnValue({
+      data: {
+        ready: true,
+        features: ["repoUpdate"],
+        triggerKinds: ["cron"],
+        eventSources: [],
+        eventTypes: [],
+        triggers: {},
+      },
+      isLoading: false,
+    } as never);
+    vi.mocked(AutomationService.updateAutomation).mockImplementation(
+      async (_id, body) =>
+        savedReviewer({
+          preset_metadata: {
+            preset_type: "prompt",
+            ...((body as { repos?: unknown }).repos
+              ? { repos: (body as { repos: unknown }).repos }
+              : {}),
+          },
+        }),
+    );
+
+    const user = userEvent.setup();
+    renderPanel(setupDraftFromAutomation(savedReviewer()));
+
+    // An unchanged list is not sent.
+    await user.click(screen.getByTestId("automation-setup-save"));
+    await waitFor(() =>
+      expect(AutomationService.updateAutomation).toHaveBeenCalledTimes(1),
+    );
+    expect(
+      vi.mocked(AutomationService.updateAutomation).mock.calls[0][1],
+    ).not.toHaveProperty("repos");
+
+    await user.click(screen.getByTestId("automation-setup-repository-add"));
+    await user.click(
+      await screen.findByTestId(
+        "automation-setup-repository-option-OpenHands/software-agent-sdk",
+      ),
+    );
+    await user.click(screen.getByTestId("automation-setup-save"));
+
+    // The saved repository keeps its branch and provider.
+    await waitFor(() =>
+      expect(AutomationService.updateAutomation).toHaveBeenCalledTimes(2),
+    );
+    expect(
+      vi.mocked(AutomationService.updateAutomation).mock.calls[1][1],
+    ).toMatchObject({
+      repos: [
+        { url: "OpenHands/OpenHands", ref: "main", provider: "github" },
+        { url: "OpenHands/software-agent-sdk", provider: "github" },
+      ],
+    });
+  });
+
+  it("saves a repository removal made after an earlier save", async () => {
+    vi.mocked(useDeploymentCapabilities).mockReturnValue({
+      data: {
+        ready: true,
+        features: ["repoUpdate"],
+        triggerKinds: ["cron"],
+        eventSources: [],
+        eventTypes: [],
+        triggers: {},
+      },
+      isLoading: false,
+    } as never);
+    vi.mocked(AutomationService.updateAutomation).mockImplementation(
+      async (_id, body) =>
+        savedReviewer({
+          preset_metadata: {
+            preset_type: "prompt",
+            repos: (body as { repos: unknown }).repos,
+          },
+        }),
+    );
+    initializeAutomationFormSession(
+      PENDING_AUTOMATION_SETUP_ID,
+      setupDraftFromAutomation(savedReviewer()),
+    );
+
+    const user = userEvent.setup();
+    renderSessionBoundPanel(PENDING_AUTOMATION_SETUP_ID);
+
+    await user.click(screen.getByTestId("automation-setup-repository-add"));
+    await user.click(
+      await screen.findByTestId(
+        "automation-setup-repository-option-OpenHands/software-agent-sdk",
+      ),
+    );
+    await user.click(screen.getByTestId("automation-setup-save"));
+    await waitFor(() =>
+      expect(AutomationService.updateAutomation).toHaveBeenCalledTimes(1),
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "COMMON$REMOVE OpenHands/software-agent-sdk",
+      }),
+    );
+    await user.click(screen.getByTestId("automation-setup-save"));
+
+    await waitFor(() =>
+      expect(AutomationService.updateAutomation).toHaveBeenCalledTimes(2),
+    );
+    expect(
+      vi.mocked(AutomationService.updateAutomation).mock.calls[1][1],
+    ).toMatchObject({
+      repos: [{ url: "OpenHands/OpenHands", ref: "main", provider: "github" }],
+    });
+    clearAutomationFormSession(PENDING_AUTOMATION_SETUP_ID);
+  });
+
+  it("refreshes the cached automation after a save, so Edit from its page starts from the saved repositories", async () => {
+    vi.mocked(useDeploymentCapabilities).mockReturnValue({
+      data: {
+        ready: true,
+        features: ["repoUpdate"],
+        triggerKinds: ["cron"],
+        eventSources: [],
+        eventTypes: [],
+        triggers: {},
+      },
+      isLoading: false,
+    } as never);
+    vi.mocked(AutomationService.updateAutomation).mockImplementation(
+      async (_id, body) =>
+        savedReviewer({
+          preset_metadata: {
+            preset_type: "prompt",
+            repos: (body as { repos: unknown }).repos,
+          },
+        }),
+    );
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    // The automation's page keeps its copy for five minutes and opens Edit from it.
+    const detailKey = [
+      ...AUTOMATION_DETAIL_QUERY_KEY,
+      "auto-1",
+      "cloud",
+      "org-1",
+    ];
+    const listKey = [...AUTOMATIONS_QUERY_KEY, "cloud", "org-1"];
+    queryClient.setQueryData(detailKey, savedReviewer());
+    queryClient.setQueryData(listKey, { automations: [savedReviewer()] });
+
+    const user = userEvent.setup();
+    renderPanel(
+      setupDraftFromAutomation(savedReviewer()),
+      "conv-1",
+      null,
+      queryClient,
+    );
+    await user.click(screen.getByTestId("automation-setup-repository-add"));
+    await user.click(
+      await screen.findByTestId(
+        "automation-setup-repository-option-OpenHands/software-agent-sdk",
+      ),
+    );
+    await user.click(screen.getByTestId("automation-setup-save"));
+    await waitFor(() =>
+      expect(AutomationService.updateAutomation).toHaveBeenCalledTimes(1),
+    );
+
+    await waitFor(() =>
+      expect(
+        setupDraftFromAutomation(
+          queryClient.getQueryData<Automation>(detailKey)!,
+        ).form?.repository,
+      ).toBe("OpenHands/OpenHands, OpenHands/software-agent-sdk"),
+    );
+    expect(queryClient.getQueryState(detailKey)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(listKey)?.isInvalidated).toBe(true);
   });
 
   it("shows existing custom bundle metadata without replacing it on save", async () => {

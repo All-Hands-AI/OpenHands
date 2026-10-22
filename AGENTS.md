@@ -86,10 +86,8 @@ Create TDD tests for behavioral changes. Keep tests focused on user behavior and
 
 Use the `e2e-testing` skill for suite selection and E2E-specific requirements.
 
-## Specifications and Releases
+## Releases
 
-- Spec files live under `specs/`. Keep spec IDs stable and mark deprecated specs with strikethrough rather than renumbering them.
-- Tag implementation code and tests with `// @spec BM-002 — Short title` comments immediately above the relevant block so coverage remains grep-able.
 - Follow `.agents/skills/release.md` for release automation. Never hand-edit a release-please branch.
 
 ## DigitalOcean Managed Agents

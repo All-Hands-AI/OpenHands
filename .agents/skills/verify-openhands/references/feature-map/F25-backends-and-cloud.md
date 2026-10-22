@@ -17,7 +17,7 @@ token and turns a Managed Agents session into a backend.
 Everything except the Cloud and DigitalOcean accounts themselves can be driven
 locally with a second `control-openhands` stack as the extra backend.
 
-Source: `src/components/features/backends/`, `src/contexts/active-backend-context.tsx`, `src/api/backend-registry/`, `src/hooks/query/use-backends-health.ts`, `src/routes/device-verify.tsx`, `src/routes/shared-conversation.tsx`, `src/components/features/conversation/conversation-name-context-menu.tsx`, `src/api/cloud/`, `src/api/mars/`, `src/hooks/use-mars-*.ts`, `src/hooks/use-connect-mars-session.ts`, `src/hooks/use-launch-mars-session.ts`, `src/hooks/query/use-mars-agents.ts`, `src/components/features/sidebar/mars-session-panel.tsx`, `src/assets/branding/digitalocean-logo.svg`, `scripts/mars-web-bridge.mjs`, `scripts/mars-tunnel-bridge.mjs`, `specs/backend-management.md`.
+Source: `src/components/features/backends/`, `src/contexts/active-backend-context.tsx`, `src/api/backend-registry/`, `src/hooks/query/use-backends-health.ts`, `src/routes/device-verify.tsx`, `src/routes/shared-conversation.tsx`, `src/components/features/conversation/conversation-name-context-menu.tsx`, `src/api/cloud/`, `src/api/mars/`, `src/hooks/use-mars-*.ts`, `src/hooks/use-connect-mars-session.ts`, `src/hooks/use-launch-mars-session.ts`, `src/hooks/query/use-mars-agents.ts`, `src/components/features/sidebar/mars-session-panel.tsx`, `src/assets/branding/digitalocean-logo.svg`, `scripts/mars-web-bridge.mjs`, `scripts/mars-tunnel-bridge.mjs`.
 
 ## Sub-features
 
