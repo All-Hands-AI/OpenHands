@@ -107,6 +107,10 @@ export function providerForAddress(
   } catch {
     return undefined;
   }
+  // Two connected instances can share an origin with one base nested under
+  // the other (`https://example.com` and `https://example.com/gitlab`), so the
+  // longest matching base wins rather than whichever key comes first.
+  let match: { provider: Provider; base: string } | undefined;
   for (const [provider, host] of Object.entries(hosts) as [
     Provider,
     string | null,
@@ -116,11 +120,13 @@ export function providerForAddress(
     if (
       base &&
       base !== hostedBaseUrl(provider) &&
-      (address === base || address.startsWith(`${base}/`))
+      (address === base || address.startsWith(`${base}/`)) &&
+      (!match || base.length > match.base.length)
     ) {
-      return provider;
+      match = { provider, base };
     }
   }
+  if (match) return match.provider;
   return undefined;
 }
 

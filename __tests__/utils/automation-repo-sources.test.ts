@@ -162,6 +162,29 @@ describe("providerForAddress", () => {
     );
     expect(providerForAddress("not a url", hosts)).toBe(undefined);
   });
+
+  it("prefers the longest matching base when instances share an origin", () => {
+    const nested = {
+      github: "https://example.com",
+      gitlab: "https://example.com/gitlab",
+    };
+    const reversed = {
+      gitlab: "https://example.com/gitlab",
+      github: "https://example.com",
+    };
+    for (const connected of [nested, reversed]) {
+      expect(
+        providerForAddress("https://example.com/gitlab/acme/tools", connected),
+      ).toBe("gitlab");
+      expect(
+        providerForAddress("https://example.com/acme/tools", connected),
+      ).toBe("github");
+      // The prefix must end at a path boundary.
+      expect(
+        providerForAddress("https://example.com/gitlabber/x", connected),
+      ).toBe("github");
+    }
+  });
 });
 
 describe("buildAutomationRepoSources", () => {
