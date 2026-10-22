@@ -1,5 +1,6 @@
 import type { AutomationRepository } from "#/types/automation";
 import type { Provider } from "#/types/settings";
+import { getGitProviderBaseUrl } from "#/utils/utils";
 
 /** A `repos` entry in a preset create or update request. */
 export type AutomationRepoSource = {
@@ -13,26 +14,30 @@ export type AutomationRepoSource = {
 const SHORTHAND_PROVIDER = "github";
 const FULL_GIT_URL_PATTERN = /^(?:https?:\/\/|git@)/i;
 
-/** Hosts of the providers' hosted services; a connected self-hosted instance supplies its own. */
-const PROVIDER_HOSTS: Partial<Record<Provider, string>> = {
-  github: "github.com",
-  gitlab: "gitlab.com",
-  bitbucket: "bitbucket.org",
-  azure_devops: "dev.azure.com",
-};
-
-/** The host a connected provider is set to, without scheme or path. */
-export function providerHost(host: string | null | undefined): string | null {
+/**
+ * The base URL a connected provider is served on: scheme, host, port and any
+ * path prefix, without a trailing slash. A self-managed instance keeps its
+ * port (`https://git.example.com:8443`) and prefix (`https://example.com/gitlab`).
+ */
+export function providerBaseUrl(
+  host: string | null | undefined,
+): string | null {
   const trimmed = host?.trim();
   if (!trimmed) return null;
   try {
     const url = new URL(
       trimmed.includes("://") ? trimmed : `https://${trimmed}`,
     );
-    return url.hostname.toLowerCase() || null;
+    if (!url.hostname) return null;
+    return `${url.origin}${url.pathname.replace(/\/+$/, "")}`;
   } catch {
     return null;
   }
+}
+
+/** The base URL of the provider's hosted service, or null when it has none. */
+function hostedBaseUrl(provider: Provider): string | null {
+  return providerBaseUrl(getGitProviderBaseUrl(provider));
 }
 
 /**
@@ -47,33 +52,35 @@ export function automationRepositoryAddress(
   fullName: string,
   host?: string | null,
 ): string {
-  const configuredHost = providerHost(host);
-  if (provider === "github" && !configuredHost) return fullName;
-  const hostname = configuredHost ?? PROVIDER_HOSTS[provider];
-  if (!hostname) return fullName;
+  const configured = providerBaseUrl(host);
+  if (provider === "github" && !configured) return fullName;
+  const base = configured ?? hostedBaseUrl(provider);
+  if (!base) return fullName;
   if (provider === "azure_devops") {
     // Azure DevOps names a repository organization/project/repository.
     const [organization, project, ...rest] = fullName.split("/");
     const repository = rest.join("/");
     if (!organization || !project || !repository) return fullName;
     const path = [organization, project].map(encodeURIComponent).join("/");
-    return `https://${hostname}/${path}/_git/${encodeURIComponent(repository)}`;
+    return `${base}/${path}/_git/${encodeURIComponent(repository)}`;
   }
-  return `https://${hostname}/${fullName}`;
+  return `${base}/${fullName}`;
 }
 
 /**
  * The provider a full URL belongs to when it points at a connected
- * self-hosted instance. A hosted service's URL needs no provider: the service
- * recognizes those hosts itself.
+ * self-hosted instance, matched on the same base URL the address was built
+ * from. A hosted service's URL needs no provider: the service recognizes
+ * those hosts itself.
  */
 export function providerForAddress(
   url: string,
   hosts: Partial<Record<Provider, string | null>> = {},
 ): Provider | undefined {
-  let hostname: string;
+  let address: string;
   try {
-    hostname = new URL(url).hostname.toLowerCase();
+    const parsed = new URL(url);
+    address = `${parsed.origin}${parsed.pathname}`;
   } catch {
     return undefined;
   }
@@ -81,11 +88,11 @@ export function providerForAddress(
     Provider,
     string | null,
   ][]) {
-    const configured = providerHost(host);
+    const base = providerBaseUrl(host);
     if (
-      configured &&
-      configured === hostname &&
-      configured !== PROVIDER_HOSTS[provider]
+      base &&
+      base !== hostedBaseUrl(provider) &&
+      (address === base || address.startsWith(`${base}/`))
     ) {
       return provider;
     }
