@@ -1,5 +1,13 @@
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
+import { compile } from "@tailwindcss/node";
+import { createElement } from "react";
+import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { renderWithProviders } from "../../../../test-utils";
+import { AutomationRunActivitySparkline } from "#/components/features/home/featured-automations/automation-run-activity-sparkline";
 import {
+  AUTOMATION_RUN_ACTIVITY_TRACK_PX,
   AUTOMATION_RUN_ACTIVITY_MAX_BAR_PX,
   AUTOMATION_RUN_ACTIVITY_MIN_BAR_PX,
   AUTOMATION_RUN_ACTIVITY_UNKNOWN_BAR_PX,
@@ -110,5 +118,41 @@ describe("barColorClassForStatus", () => {
   it("uses warning color for partial and unknown task outcomes", () => {
     expect(barColorClassForStatus("partial_success")).toContain("bg-warning");
     expect(barColorClassForStatus("unknown")).toContain("bg-warning");
+  });
+});
+
+describe("AutomationRunActivitySparkline", () => {
+  it("builds the track height from the custom property supplied by the rendered component", async () => {
+    // Arrange: use the real component and production stylesheet, without
+    // prescribing a utility spelling or repeating its custom-property name.
+    renderWithProviders(
+      createElement(AutomationRunActivitySparkline, {
+        automationId: "automation-1",
+        runs: [makeRun()],
+        testId: "run-activity-track",
+      }),
+    );
+    const track = screen.getByTestId("run-activity-track");
+    const compiler = await compile(
+      await readFile(resolve("src/tailwind.css"), "utf8"),
+      { base: resolve("src"), onDependency: () => {} },
+    );
+
+    // Act: compile the classes actually emitted by this render.
+    const css = compiler.build([...track.classList]);
+    const declarations = [...css.matchAll(/\.((?:\\.|[\w-])+)\s*\{([^}]+)\}/g)]
+      .filter(([, selector]) =>
+        track.classList.contains(selector.replace(/\\(.)/g, "$1")),
+      )
+      .map(([, , body]) => body)
+      .join("\n");
+    const height = /(?:^|\n)\s*height:\s*var\((--[\w-]+)\);/.exec(declarations);
+
+    // Assert: the emitted height rule consumes the property's real value.
+    // Removing the class or misspelling either side breaks this contract.
+    expect(height).not.toBeNull();
+    expect(track.style.getPropertyValue(height![1])).toBe(
+      `${AUTOMATION_RUN_ACTIVITY_TRACK_PX}px`,
+    );
   });
 });
