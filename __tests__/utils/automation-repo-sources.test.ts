@@ -62,15 +62,22 @@ describe("automationRepositoryAddress", () => {
         "https://example.com/bitbucket/",
       ),
     ).toBe("https://example.com/bitbucket/PROJ/repo");
-    expect(
-      automationRepositoryAddress(
-        "azure_devops",
-        "fabrikam/Fabrikam Fiber/fabrikam-web",
-        "https://devops.example.com:8080/tfs",
-      ),
-    ).toBe(
-      "https://devops.example.com:8080/tfs/fabrikam/Fabrikam%20Fiber/_git/fabrikam-web",
-    );
+  });
+
+  it("keeps Azure DevOps on dev.azure.com whatever the connection's host says", () => {
+    // The server keeps an Azure DevOps connection's organization in `host`,
+    // not an instance, and OpenHands serves dev.azure.com only.
+    for (const host of ["fabrikam", "https://dev.azure.com/fabrikam", null]) {
+      expect(
+        automationRepositoryAddress(
+          "azure_devops",
+          "fabrikam/Fabrikam Fiber/fabrikam-web",
+          host,
+        ),
+      ).toBe(
+        "https://dev.azure.com/fabrikam/Fabrikam%20Fiber/_git/fabrikam-web",
+      );
+    }
   });
 
   it("builds an Azure DevOps _git URL from organization/project/repository", () => {
@@ -97,6 +104,7 @@ describe("providerHostKnown", () => {
   it("needs a reported host only where one name covers self-managed instances", () => {
     expect(providerHostKnown("github")).toBe(true);
     expect(providerHostKnown("bitbucket")).toBe(true);
+    // Azure DevOps is served on dev.azure.com only.
     expect(providerHostKnown("azure_devops", null)).toBe(true);
     expect(providerHostKnown("gitlab")).toBe(false);
     expect(providerHostKnown("gitlab", "")).toBe(false);
@@ -141,12 +149,13 @@ describe("providerForAddress", () => {
     expect(
       providerForAddress("https://git.example.com:8443/acme/tools", hosts),
     ).toBe("gitlab");
+    // An Azure DevOps connection's host is its organization, never an instance.
     expect(
       providerForAddress("https://devops.example.com/o/p/_git/r", hosts, [
         "github",
         "azure_devops",
       ]),
-    ).toBe("azure_devops");
+    ).toBe(undefined);
   });
 
   it("names only providers the run can clone", () => {

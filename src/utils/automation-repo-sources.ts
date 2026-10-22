@@ -64,8 +64,9 @@ function hostedBaseUrl(provider: Provider): string | null {
 // One provider name covers the hosted service and self-managed instances alike
 // for these, so a connection whose host the server does not report cannot be
 // addressed: the hosted URL would silently point a self-managed repository at
-// the public service. Bitbucket and Azure DevOps name their self-managed
-// products separately, so a missing host there is the hosted service.
+// the public service. Bitbucket names its self-managed product separately
+// (`bitbucket_data_center`), and OpenHands' Azure DevOps integration serves
+// dev.azure.com only, so a missing host there is the hosted service.
 const HOST_REQUIRED_PROVIDERS: Provider[] = ["gitlab", "forgejo"];
 
 /**
@@ -98,16 +99,19 @@ export function automationRepositoryAddress(
   const configured = providerBaseUrl(host);
   if (provider === "github" && !configured) return fullName;
   if (!providerHostKnown(provider, host)) return null;
-  const base = configured ?? hostedBaseUrl(provider);
-  if (!base) return fullName;
   if (provider === "azure_devops") {
-    // Azure DevOps names a repository organization/project/repository.
+    // Azure DevOps names a repository organization/project/repository, always
+    // on dev.azure.com: the server stores an Azure DevOps connection's
+    // organization (sometimes as a URL with a path) in its `host`, not an
+    // instance, so that value is never a base URL.
     const [organization, project, ...rest] = fullName.split("/");
     const repository = rest.join("/");
     if (!organization || !project || !repository) return fullName;
     const path = [organization, project].map(encodeURIComponent).join("/");
-    return `${base}/${path}/_git/${encodeURIComponent(repository)}`;
+    return `${hostedBaseUrl(provider)}/${path}/_git/${encodeURIComponent(repository)}`;
   }
+  const base = configured ?? hostedBaseUrl(provider);
+  if (!base) return fullName;
   return `${base}/${fullName}`;
 }
 
@@ -138,7 +142,10 @@ export function providerForAddress(
     Provider,
     string | null,
   ][]) {
-    if (!cloneProviders.includes(provider)) continue;
+    // An Azure DevOps connection's `host` is its organization, not a base URL.
+    if (!cloneProviders.includes(provider) || provider === "azure_devops") {
+      continue;
+    }
     const base = providerBaseUrl(host);
     if (
       base &&
