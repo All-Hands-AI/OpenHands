@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRoutesStub } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -94,8 +100,8 @@ const RouterStub = createRoutesStub([
   },
 ]);
 
-const renderApp = (initialEntries: string[] = ["/"]) =>
-  render(<RouterStub initialEntries={initialEntries} />, {
+const renderApp = async (initialEntries: string[] = ["/"]) => {
+  const result = render(<RouterStub initialEntries={initialEntries} />, {
     wrapper: ({ children }) => (
       <QueryClientProvider
         client={
@@ -108,6 +114,11 @@ const renderApp = (initialEntries: string[] = ["/"]) =>
       </QueryClientProvider>
     ),
   });
+
+  // Wait for real lazy-loaded gates, not the query timeout for cold Vite imports.
+  await act(() => vi.dynamicImportSettled());
+  return result;
+};
 
 const COOKIE_DEPLOYMENT_ORIGIN = "https://pr-254.staging.openhands.dev";
 
@@ -168,7 +179,7 @@ describe("App root agent-server availability guard", () => {
     window.localStorage.clear();
     __resetActiveStoreForTests();
 
-    renderApp(["/"]);
+    await renderApp(["/"]);
 
     await waitFor(() => {
       expect(
@@ -191,7 +202,7 @@ describe("App root agent-server availability guard", () => {
     window.localStorage.clear();
     __resetActiveStoreForTests();
 
-    renderApp(["/"]);
+    await renderApp(["/"]);
 
     await waitFor(() => {
       expect(
@@ -210,11 +221,11 @@ describe("App root agent-server availability guard", () => {
   it("lets root-level onboarding navigate to the launched conversation before closing", async () => {
     server.use(
       http.get("*/server_info", () =>
-        HttpResponse.json({ uptime: 0, idle_time: 0, version: "1.52.0" }),
+        HttpResponse.json({ uptime: 0, idle_time: 0, version: "1.56.0" }),
       ),
     );
 
-    renderApp(["/"]);
+    await renderApp(["/"]);
 
     fireEvent.click(await screen.findByTestId("mock-onboarding-launch"));
 
@@ -237,7 +248,7 @@ describe("App root agent-server availability guard", () => {
     window.localStorage.clear();
     __resetActiveStoreForTests();
 
-    renderApp(["/"]);
+    await renderApp(["/"]);
 
     await waitFor(() => {
       expect(
@@ -267,7 +278,7 @@ describe("App root agent-server availability guard", () => {
     window.localStorage.clear();
     __resetActiveStoreForTests();
 
-    renderApp(["/"]);
+    await renderApp(["/"]);
 
     await waitFor(() => {
       expect(
@@ -310,7 +321,7 @@ describe("App root agent-server availability guard", () => {
     );
     __resetActiveStoreForTests();
 
-    renderApp(["/"]);
+    await renderApp(["/"]);
 
     await waitFor(() => {
       expect(
@@ -359,11 +370,11 @@ describe("App root agent-server availability guard", () => {
         }),
       ),
       http.get("*/server_info", () =>
-        HttpResponse.json({ uptime: 0, idle_time: 0, version: "1.52.0" }),
+        HttpResponse.json({ uptime: 0, idle_time: 0, version: "1.56.0" }),
       ),
     );
 
-    renderApp(["/"]);
+    await renderApp(["/"]);
 
     await waitFor(() => {
       expect(
@@ -415,11 +426,11 @@ describe("App root agent-server availability guard", () => {
         }),
       ),
       http.get("*/server_info", () =>
-        HttpResponse.json({ uptime: 0, idle_time: 0, version: "1.52.0" }),
+        HttpResponse.json({ uptime: 0, idle_time: 0, version: "1.56.0" }),
       ),
     );
 
-    renderApp(["/"]);
+    await renderApp(["/"]);
 
     await waitFor(() => {
       expect(
@@ -450,7 +461,7 @@ describe("App root agent-server availability guard", () => {
     window.localStorage.setItem(ONBOARDING_COMPLETED_STORAGE_KEY, "1");
     __resetActiveStoreForTests();
 
-    renderApp(["/"]);
+    await renderApp(["/"]);
 
     await waitFor(() => {
       expect(
@@ -475,7 +486,7 @@ describe("App root agent-server availability guard", () => {
     window.localStorage.setItem(ONBOARDING_COMPLETED_STORAGE_KEY, "1");
     __resetActiveStoreForTests();
 
-    renderApp(["/"]);
+    await renderApp(["/"]);
 
     await waitFor(() => {
       expect(screen.getByTestId("api-key-entry-screen")).toBeInTheDocument();
@@ -491,7 +502,7 @@ describe("App root agent-server availability guard", () => {
       ),
     );
 
-    renderApp(["/"]);
+    await renderApp(["/"]);
 
     await waitFor(() => {
       expect(
@@ -513,7 +524,7 @@ describe("App root agent-server availability guard", () => {
       ),
     );
 
-    renderApp(["/"]);
+    await renderApp(["/"]);
 
     await waitFor(() => {
       expect(
@@ -536,7 +547,7 @@ describe("App root agent-server availability guard", () => {
       }),
     );
 
-    renderApp(["/"]);
+    await renderApp(["/"]);
 
     await waitFor(() => {
       expect(
@@ -584,7 +595,7 @@ describe("App root agent-server availability guard", () => {
       ),
     );
 
-    renderApp(["/"]);
+    await renderApp(["/"]);
 
     await waitFor(() => {
       expect(
@@ -628,7 +639,7 @@ describe("App root agent-server availability guard", () => {
       ),
     );
 
-    renderApp(["/"]);
+    await renderApp(["/"]);
 
     await waitFor(() => {
       expect(
@@ -645,7 +656,7 @@ describe("App root agent-server availability guard", () => {
   it("renders the routed page when the agent server is reachable", async () => {
     window.localStorage.setItem(ONBOARDING_COMPLETED_STORAGE_KEY, "1");
 
-    renderApp(["/"]);
+    await renderApp(["/"]);
 
     await waitFor(() => {
       expect(screen.getByTestId("app-outlet")).toBeInTheDocument();
@@ -681,11 +692,11 @@ describe("App root agent-server availability guard", () => {
         }),
       ),
       http.get("*/server_info", () =>
-        HttpResponse.json({ uptime: 0, idle_time: 0, version: "1.52.0" }),
+        HttpResponse.json({ uptime: 0, idle_time: 0, version: "1.56.0" }),
       ),
     );
 
-    renderApp(["/"]);
+    await renderApp(["/"]);
 
     await waitFor(() => {
       expect(
@@ -706,7 +717,7 @@ describe("App root agent-server availability guard", () => {
       .__AGENT_CANVAS_SESSION_API_KEY__;
     __resetActiveStoreForTests();
 
-    renderApp(["/"]);
+    await renderApp(["/"]);
 
     await waitFor(() => {
       expect(
@@ -755,7 +766,7 @@ describe("App root agent-server availability guard", () => {
     );
     __resetActiveStoreForTests();
 
-    renderApp(["/"]);
+    await renderApp(["/"]);
 
     await waitFor(() => {
       expect(assign).toHaveBeenCalledWith(
@@ -786,7 +797,7 @@ describe("App root agent-server availability guard", () => {
     );
 
     // Act
-    renderApp(["/"]);
+    await renderApp(["/"]);
 
     // Assert: main-app login, not the device-flow recovery modal.
     await waitFor(() => {
@@ -821,7 +832,7 @@ describe("App root agent-server availability guard", () => {
     );
 
     // Act
-    renderApp(["/"]);
+    await renderApp(["/"]);
 
     // Assert: the stale health verdict must not bounce a valid session to
     // /login (which would loop back via returnTo); the app renders instead.
@@ -880,7 +891,7 @@ describe("App root agent-server availability guard", () => {
       ),
     );
 
-    renderApp(["/"]);
+    await renderApp(["/"]);
 
     // The first-run onboarding screen must NOT be mounted (no reopen),
     // and the routed app must render instead.

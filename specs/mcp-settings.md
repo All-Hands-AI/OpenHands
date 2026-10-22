@@ -40,3 +40,14 @@
 - [x] Both text roles meet 4.5:1 against the modal surface in every built-in
       palette, independently of the danger/success control colors.
 - [x] Embedded host overrides for those roles survive palette changes.
+
+### MCP-006: Library installs never dead-end
+
+- [x] An entry keeps its preferred installable option, such as an API-key
+      fallback, when one exists.
+- [x] When an entry's only remote option is OAuth, including an option that
+      names provider OAuth endpoints, Install connects through the MCP server's
+      own OAuth discovery. The catalog's provider endpoints, scopes and client
+      authentication are not sent.
+- [x] When no option can be installed, the dialog says so and Install is
+      disabled. Install never does nothing silently.
