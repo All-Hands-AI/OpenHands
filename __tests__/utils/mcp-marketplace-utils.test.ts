@@ -6,6 +6,7 @@ import {
   getDefaultMcpConnectionOption,
   getDefaultMcpTransport,
   getInstallableMcpConnectionOption,
+  getInstallableMcpConnectionOptions,
   getMarketplaceEntriesByPopularity,
   getMarketplaceEntryById,
   getMcpConnectionOptions,
@@ -15,7 +16,13 @@ import {
   marketplaceEntryMatchesQuery,
   urlsMatch,
 } from "#/utils/mcp-marketplace-utils";
-import { INTEGRATION_CATALOG as MCP_MARKETPLACE } from "@openhands/extensions/integrations";
+import {
+  INTEGRATION_CATALOG as MCP_MARKETPLACE,
+  type IntegrationCatalogEntry,
+} from "@openhands/extensions/integrations";
+// Sentry's entry from OpenHands/extensions#818, which adds the `mcp` and
+// `api` options; the released catalog pinned here does not carry it yet.
+import sentryWithTokenOption from "../fixtures/integrations/sentry.extensions-afb5930.json";
 
 const mcpMarketplace = getMcpMarketplaceCatalog(MCP_MARKETPLACE);
 const slackEntry = mcpMarketplace.find((e) => e.id === "slack")!;
@@ -198,6 +205,77 @@ describe("getInstallableMcpConnectionOption", () => {
     };
     const option = getInstallableMcpConnectionOption(noOptionsEntry);
     expect(option).toBeUndefined();
+  });
+});
+
+describe("getInstallableMcpConnectionOptions", () => {
+  const sentryFixture = sentryWithTokenOption as IntegrationCatalogEntry;
+
+  it("offers Sentry's OAuth and personal-token options, OAuth first", () => {
+    const options = getInstallableMcpConnectionOptions(sentryFixture);
+
+    expect(options.map((option) => option.id)).toEqual(["mcp", "api"]);
+    expect(options[1].transport).toMatchObject({
+      kind: "stdio",
+      command: "npx",
+      args: ["-y", "@sentry/mcp-server"],
+    });
+    expect(getInstallableMcpConnectionOption(sentryFixture)).toBe(options[0]);
+  });
+
+  it("offers only installable options for Sentry in the real catalog", () => {
+    const sentry = MCP_MARKETPLACE.find((e) => e.id === "sentry")!;
+    const options = getInstallableMcpConnectionOptions(sentry);
+
+    expect(options[0]).toMatchObject({
+      transport: { kind: "shttp", url: "https://mcp.sentry.dev/mcp" },
+      auth: { strategy: "oauth2" },
+    });
+    for (const option of options) {
+      expect(option.auth.oauth?.authorizationUrl).toBeUndefined();
+      expect(option.auth.oauth?.tokenUrl).toBeUndefined();
+    }
+  });
+
+  it("keeps a single option for entries with one installable option", () => {
+    expect(
+      getInstallableMcpConnectionOptions(slackEntry).map((o) => o.id),
+    ).toEqual(["api"]);
+  });
+
+  it("offers one OAuth fallback when no option is directly installable", () => {
+    const entry = {
+      ...slackEntry,
+      connectionOptions: [
+        {
+          id: "first",
+          provider: "mcp",
+          auth: {
+            strategy: "oauth2",
+            oauth: { authorizationUrl: "https://example.com/authorize" },
+          },
+          transport: { kind: "shttp", url: "https://example.com/mcp" },
+        },
+        {
+          id: "second",
+          provider: "mcp",
+          auth: {
+            strategy: "oauth2",
+            oauth: { tokenUrl: "https://example.com/token" },
+          },
+          transport: { kind: "shttp", url: "https://example.com/other" },
+        },
+      ],
+    } as typeof slackEntry;
+
+    const options = getInstallableMcpConnectionOptions(entry);
+
+    expect(options).toHaveLength(1);
+    expect(options[0]).toMatchObject({
+      id: "first",
+      auth: { strategy: "oauth2" },
+    });
+    expect(options[0].auth.oauth).toBeUndefined();
   });
 });
 
