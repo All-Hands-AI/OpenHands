@@ -406,6 +406,25 @@ describe("ApiKeyEntryScreen", () => {
     expect(stored.find((backend) => backend.id === first.id)).toEqual(first);
   });
 
+  it("saves the key for this origin, not on a backend the build points elsewhere", async () => {
+    vi.stubEnv("VITE_BACKEND_BASE_URL", "https://remote.openhands.dev");
+    const remote: Backend = {
+      id: "remote-default",
+      name: "Remote",
+      host: "https://remote.openhands.dev",
+      apiKey: "remote-key",
+      kind: "local",
+    };
+
+    const { stored, activeAfter } = await recoverWith([remote], remote.id);
+
+    expect(stored.find((backend) => backend.id === remote.id)).toEqual(remote);
+    expect(activeAfter).toMatchObject({
+      host: window.location.origin,
+      apiKey: "new-key",
+    });
+  });
+
   it("selects the root when the active record is a DigitalOcean entry an older recovery rewrote to the origin", async () => {
     // Before this screen kept the hosting key on its own record, recovery
     // overwrote the active guest's host and key but kept its marsSessionId.
