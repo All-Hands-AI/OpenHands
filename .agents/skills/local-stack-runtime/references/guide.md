@@ -7,6 +7,7 @@ Supported deployment environment variables:
 - `VITE_WORKING_DIR` — default workspace path sent when starting conversations.
 - `VITE_ENABLE_BROWSER_TOOLS=false` — start the agent-server with the browser tool set off (`OH_ENABLE_BROWSER=false`).
 - `VITE_BASE_PATH` — serve the SPA under a subpath such as `/canvas`; pair it with `scripts/static-server.mjs --base-path` at runtime.
+- `MARS_WEB=1` — opt in to the experimental DigitalOcean web bridge. Keep it off by default until the integration is ready; session-key authentication is a separate requirement. Static children and Electron keep their bridge disabled so the web ingress is the only owner.
 
 GitHub automation includes `.github/workflows/ci.yml` for `npm ci`, `npm test`, and `npm run build`, plus `.github/dependabot.yml` with weekly npm and GitHub Actions updates gated by a seven-day cooldown.
 
