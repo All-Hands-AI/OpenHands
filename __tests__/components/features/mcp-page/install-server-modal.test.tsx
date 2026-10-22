@@ -24,9 +24,6 @@ import {
   type IntegrationCatalogEntry as MarketplaceEntry,
 } from "@openhands/extensions/integrations";
 import { getMcpMarketplaceCatalog } from "#/utils/mcp-marketplace-utils";
-// Sentry's entry from OpenHands/extensions#818, which adds the `mcp` and
-// `api` options; the released catalog pinned here does not carry it yet.
-import sentryWithTokenOption from "../../../fixtures/integrations/sentry.extensions-afb5930.json";
 
 function renderWith(ui: React.ReactNode) {
   return render(ui, {
@@ -578,7 +575,7 @@ describe("InstallServerModal", () => {
   });
 
   describe("entries with several installable options", () => {
-    const sentry = sentryWithTokenOption as MarketplaceEntry;
+    const sentry = MCP_MARKETPLACE.find((e) => e.id === "sentry")!;
 
     it("selects the preferred OAuth option and offers the token option", async () => {
       renderWith(
