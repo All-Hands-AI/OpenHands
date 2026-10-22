@@ -67,10 +67,14 @@ export type SettingsSchema = {
 
 export type SkillType = "repo" | "knowledge" | "agentskills";
 
+/** Where a server-listed skill comes from: the public catalog or the user's own skills. */
+export type SkillOrigin = "public" | "user";
+
 export type SkillInfo = {
   name: string;
   type: SkillType;
   source: string | null;
+  origin?: SkillOrigin;
   description?: string | null;
   triggers?: string[];
   /**
@@ -151,6 +155,8 @@ export type Settings = {
    * it is deliberately absent from `DEFAULT_SETTINGS`.
    */
   enabled_skills?: string[];
+  /** Global agent behavior has been copied into the `default` agent profile. */
+  default_profile_migrated?: boolean;
   max_budget_per_task: number | null;
   email?: string;
   email_verified?: boolean;

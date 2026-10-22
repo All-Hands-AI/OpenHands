@@ -109,6 +109,25 @@ describe("buildAutomationCommand", () => {
     expect(cmd.source).toBe(`PyPI (${DEFAULT_AUTOMATION_VERSION}, default)`);
   });
 
+  it("requests the shared Python range for uvx in every source mode", () => {
+    // See buildUvxPythonArgs in dev-safe.mjs and #18654.
+    const variants = [
+      {},
+      { OH_AUTOMATION_VERSION: "1.0.0" },
+      { OH_AUTOMATION_GIT_REF: "main" },
+    ];
+    for (const env of variants) {
+      const { command, args } = buildAutomationCommand(env);
+      expect(command).toBe("uvx");
+      expect(args.slice(0, 2)).toEqual(["--python", ">=3.12,<3.15"]);
+    }
+  });
+
+  it("leaves the interpreter choice to uv when UV_PYTHON is set", () => {
+    const { args } = buildAutomationCommand({ UV_PYTHON: "3.13" });
+    expect(args).not.toContain("--python");
+  });
+
   it("uses custom git ref from OH_AUTOMATION_GIT_REF", () => {
     const cmd = buildAutomationCommand({
       OH_AUTOMATION_GIT_REF: "feat/my-feature",
