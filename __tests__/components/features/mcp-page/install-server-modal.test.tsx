@@ -416,6 +416,130 @@ describe("InstallServerModal", () => {
     });
   });
 
+  // @spec MCP-006 — Library installs never dead-end
+  it("installs an entry whose catalog OAuth names provider endpoints through the server's own OAuth", async () => {
+    // Arrange: an OHE-style cloud backend and an entry shaped like Sentry's,
+    // whose only MCP option carries the provider's own OAuth app details.
+    setRegisteredBackends([
+      {
+        id: "cloud-1",
+        name: "Cloud",
+        host: "https://app.all-hands.dev",
+        apiKey: "k",
+        kind: "cloud",
+      },
+    ]);
+    setActiveSelection({ backendId: "cloud-1" });
+    const entry: MarketplaceEntry = {
+      id: "provider-oauth",
+      name: "Provider OAuth",
+      description:
+        "Remote MCP server whose catalog option names provider OAuth.",
+      docsUrl: "https://example.com/docs",
+      iconBg: "#000000",
+      connectionOptions: [
+        {
+          id: "oauth-mcp",
+          provider: "mcp",
+          transport: { kind: "shttp", url: "https://mcp.example.com/mcp" },
+          auth: {
+            strategy: "oauth2",
+            oauth: {
+              authorizationUrl: "https://example.com/oauth/authorize",
+              tokenUrl: "https://example.com/oauth/token",
+              scopes: ["project:read"],
+              clientAuthentication: "body",
+            },
+          },
+        },
+      ],
+    };
+    const oauthSpy = vi.spyOn(McpService, "authorizeOAuth").mockResolvedValue({
+      ok: true,
+      tools: ["search_issues"],
+      oauth_state: { tokens: { access_token: "gAAAAencrypted" } },
+    });
+    const saveSpy = vi
+      .spyOn(SettingsService, "saveSettings")
+      .mockResolvedValue(true);
+    renderWith(
+      <InstallServerModal
+        existingServers={[]}
+        entry={entry}
+        onClose={vi.fn()}
+      />,
+    );
+    await screen.findByTestId("mcp-install-oauth-info");
+
+    // Act
+    fireEvent.click(screen.getByTestId("mcp-install-submit"));
+
+    // Assert: the server's own OAuth runs without the provider's app details,
+    // and the authorized server is saved.
+    await waitFor(() => expect(oauthSpy).toHaveBeenCalledTimes(1));
+    expect(oauthSpy.mock.calls[0][0]).toEqual({
+      id: "",
+      type: "shttp",
+      name: "provider-oauth",
+      url: "https://mcp.example.com/mcp",
+      auth: { strategy: "oauth2" },
+    });
+    await waitFor(() => expect(saveSpy).toHaveBeenCalledTimes(1));
+    const sent = (saveSpy.mock.calls[0][0] as Record<string, unknown>)
+      .agent_settings_diff as { mcp_config: Record<string, unknown> };
+    expect(sent.mcp_config).toMatchObject({
+      "provider-oauth": {
+        url: "https://mcp.example.com/mcp",
+        auth: {
+          strategy: "oauth2",
+          state: { tokens: { access_token: "gAAAAencrypted" } },
+        },
+      },
+    });
+  });
+
+  // @spec MCP-006 — Library installs never dead-end
+  it("explains and disables Install when no option can be installed", async () => {
+    const entry = {
+      id: "stdio-oauth",
+      name: "Stdio OAuth",
+      description:
+        "An OAuth option on a transport this backend cannot authorize.",
+      docsUrl: "https://example.com/docs",
+      iconBg: "#000000",
+      connectionOptions: [
+        {
+          id: "oauth",
+          provider: "mcp",
+          transport: {
+            kind: "stdio",
+            serverName: "stdio-oauth",
+            command: "npx",
+            args: ["stdio-oauth-mcp"],
+          },
+          auth: { strategy: "oauth2" },
+        },
+      ],
+    } as MarketplaceEntry;
+    const oauthSpy = vi.spyOn(McpService, "authorizeOAuth");
+    const saveSpy = vi.spyOn(SettingsService, "saveSettings");
+    renderWith(
+      <InstallServerModal
+        existingServers={[]}
+        entry={entry}
+        onClose={vi.fn()}
+      />,
+    );
+
+    await screen.findByTestId("mcp-install-unavailable");
+    const install = screen.getByTestId("mcp-install-submit");
+    expect(install).toBeDisabled();
+    fireEvent.click(install);
+    expect(McpService.testServer).not.toHaveBeenCalled();
+    expect(oauthSpy).not.toHaveBeenCalled();
+    expect(saveSpy).not.toHaveBeenCalled();
+  });
+
   it("styles the OAuth info box with theme surface and text tokens", async () => {
     const entry: MarketplaceEntry = {
       id: "synthetic-oauth",
