@@ -44,6 +44,7 @@ import {
   buildRouterAtStartSystemSuffix,
   buildStartConversationRequestWithEncryptedSettings,
   buildStartPlanningConversationRequestWithEncryptedSettings,
+  buildWorkspaceTags,
   emptyHooksResponse,
   fetchBackendExecutionRuntime,
   getDefaultConversationTitle,
@@ -471,6 +472,8 @@ export interface CreateConversationOptions {
   agentLlmProfileRef?: string | null;
   /** Local only: run the agent profile with this LLM profile instead of its own. */
   agentLlmProfileOverride?: string;
+  /** Cloud only: run this conversation on the named LLM profile (`llm_profile`). */
+  llmProfile?: string;
 }
 
 class AgentServerConversationService {
@@ -532,6 +535,7 @@ class AgentServerConversationService {
       agentLlmProfileOverride,
       profileHasRouter,
       acpServer,
+      llmProfile,
     } = options;
 
     if (getActiveBackend().backend.kind === "cloud") {
@@ -565,6 +569,7 @@ class AgentServerConversationService {
         agent_type: agentType,
         sandbox_id: sandboxId ?? null,
         agent_profile_id: agentProfileId ?? null,
+        ...(llmProfile ? { llm_profile: llmProfile } : {}),
         ...(routerAtStartSuffix
           ? {
               agent_launch_additions: {
@@ -636,6 +641,19 @@ class AgentServerConversationService {
       acpServer,
       titleLlmProfile,
     });
+
+    // Persist the selected workspace as a server-side conversation tag so local
+    // sidebar grouping survives on another browser, device, or after cleared
+    // localStorage (#17386). localStorage below stays the warm cache for the
+    // creating client.
+    const workspaceTags = buildWorkspaceTags(workingDirOverride);
+    if (Object.keys(workspaceTags).length > 0) {
+      const existingTags =
+        payload.tags && typeof payload.tags === "object"
+          ? (payload.tags as Record<string, string>)
+          : {};
+      payload.tags = { ...existingTags, ...workspaceTags };
+    }
 
     const telemetryDistinctId = await getTelemetryDistinctId();
     const data = await new ConversationClient(
