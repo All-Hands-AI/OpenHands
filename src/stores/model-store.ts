@@ -35,6 +35,11 @@ interface ModelState {
    * server lands.
    */
   activeProfileByConversation: Record<string, string>;
+  /**
+   * A cloud member's home-page pick, sent with the next home launch instead of
+   * activating the profile org-wide (which needs org-admin permission).
+   */
+  homeLlmProfile: string | null;
 }
 
 interface ModelActions {
@@ -54,8 +59,16 @@ interface ModelActions {
    * without duplicating, and it preserves live-recorded entries.
    */
   seedSwitches: (conversationId: string, switches: SeededSwitch[]) => void;
+  /**
+   * Sets the optimistic active-profile entry for a conversation without
+   * appending a chat entry — the reload/history path re-derives the stamp
+   * from past SwitchLLM observations, which seed their chat entries through
+   * `seedSwitches` instead of `recordSwitch`.
+   */
+  setActiveProfile: (conversationId: string, profileName: string) => void;
   /** Drops only the optimistic active-profile entry for a conversation. */
   clearActiveProfile: (conversationId: string) => void;
+  setHomeLlmProfile: (profileName: string | null) => void;
   clear: (conversationId: string) => void;
   clearAll: () => void;
 }
@@ -81,6 +94,7 @@ export const useModelStore = create<ModelStore>()(
     (set) => ({
       entriesByConversation: {},
       activeProfileByConversation: {},
+      homeLlmProfile: null,
       show: (conversationId, anchorEventId, profiles) =>
         set((s) =>
           appendEntry(s, conversationId, {
@@ -124,6 +138,13 @@ export const useModelStore = create<ModelStore>()(
             },
           };
         }),
+      setActiveProfile: (conversationId, profileName) =>
+        set((s) => ({
+          activeProfileByConversation: {
+            ...s.activeProfileByConversation,
+            [conversationId]: profileName,
+          },
+        })),
       clearActiveProfile: (conversationId) =>
         set((s) => {
           if (!(conversationId in s.activeProfileByConversation)) return s;
@@ -133,6 +154,7 @@ export const useModelStore = create<ModelStore>()(
           delete activeProfileByConversation[conversationId];
           return { activeProfileByConversation };
         }),
+      setHomeLlmProfile: (profileName) => set({ homeLlmProfile: profileName }),
       clear: (conversationId) =>
         set((s) => {
           const entriesByConversation = { ...s.entriesByConversation };
@@ -144,7 +166,11 @@ export const useModelStore = create<ModelStore>()(
           return { entriesByConversation, activeProfileByConversation };
         }),
       clearAll: () =>
-        set({ entriesByConversation: {}, activeProfileByConversation: {} }),
+        set({
+          entriesByConversation: {},
+          activeProfileByConversation: {},
+          homeLlmProfile: null,
+        }),
     }),
     { name: "ModelStore" },
   ),

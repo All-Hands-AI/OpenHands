@@ -7,6 +7,8 @@ import { formControlTransitionClassName } from "#/utils/form-control-classes";
 interface ViewToggleProps {
   view: SettingsView;
   setView: (view: SettingsView) => void;
+  /** Whether the basic tier has anything to show (any critical fields). */
+  showBasic?: boolean;
   showAdvanced: boolean;
   showAll: boolean;
   isDisabled?: boolean;
@@ -18,21 +20,23 @@ const tabButtonClass = (isActive: boolean, isDisabled: boolean) =>
     formControlTransitionClassName,
     "border-b-2 pb-2",
     isActive
-      ? "text-white border-white"
-      : "text-[var(--oh-muted)] border-transparent hover:text-white",
+      ? "text-contrast border-contrast"
+      : "text-muted border-transparent hover:text-contrast",
     isDisabled && "pointer-events-none opacity-30 cursor-not-allowed",
   );
 
 export function ViewToggle({
   view,
   setView,
+  showBasic = true,
   showAdvanced,
   showAll,
   isDisabled = false,
 }: ViewToggleProps) {
   const { t } = useTranslation("openhands");
 
-  if (!showAdvanced && !showAll) return null;
+  const visibleTabs = [showBasic, showAdvanced, showAll].filter(Boolean).length;
+  if (visibleTabs <= 1) return null;
 
   return (
     <div
@@ -40,17 +44,19 @@ export function ViewToggle({
       aria-orientation="horizontal"
       className="mb-6 flex items-center gap-2"
     >
-      <button
-        data-testid="sdk-section-basic-toggle"
-        type="button"
-        role="tab"
-        aria-selected={view === "basic"}
-        disabled={isDisabled}
-        className={tabButtonClass(view === "basic", isDisabled)}
-        onClick={() => setView("basic")}
-      >
-        {t(I18nKey.SETTINGS$BASIC)}
-      </button>
+      {showBasic ? (
+        <button
+          data-testid="sdk-section-basic-toggle"
+          type="button"
+          role="tab"
+          aria-selected={view === "basic"}
+          disabled={isDisabled}
+          className={tabButtonClass(view === "basic", isDisabled)}
+          onClick={() => setView("basic")}
+        >
+          {t(I18nKey.SETTINGS$BASIC)}
+        </button>
+      ) : null}
       {showAdvanced ? (
         <button
           data-testid="sdk-section-advanced-toggle"

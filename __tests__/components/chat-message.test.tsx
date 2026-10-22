@@ -5,6 +5,37 @@ import util from "util";
 import { ChatMessage } from "#/components/features/chat/chat-message";
 
 describe("ChatMessage", () => {
+  it.each(["user", "agent"] as const)(
+    "shows the recorded timestamp when a %s message is hovered",
+    async (type) => {
+      const user = userEvent.setup();
+      const timestamp = "2026-04-16T19:32:29.828Z";
+      const expected = new Date(timestamp).toLocaleString("en", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      });
+
+      render(<ChatMessage type={type} message="Hello" timestamp={timestamp} />);
+
+      const message = screen.getByTestId(`${type}-message`);
+      await user.hover(message);
+
+      const tooltip = await screen.findByRole("tooltip");
+      expect(tooltip).toHaveTextContent(expected);
+      expect(tooltip.querySelector("time")).toHaveAttribute(
+        "datetime",
+        timestamp,
+      );
+    },
+  );
+
+  it("does not fabricate a timestamp for an invalid value", () => {
+    render(<ChatMessage type="user" message="Hello" timestamp="not-a-date" />);
+
+    expect(screen.getByTestId("user-message")).not.toHaveAttribute("tabindex");
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+  });
+
   it("does not update the parent while measuring user-message truncation", async () => {
     // Regression test for the React warning:
     //   "Cannot update a component (`ChatMessage`) while rendering a different
@@ -207,6 +238,27 @@ describe("ChatMessage", () => {
     fireEvent.click(stopButton);
 
     expect(onStop).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows retry and dismiss controls for a failed user message", async () => {
+    const onRetry = vi.fn();
+    const onDismiss = vi.fn();
+    render(
+      <ChatMessage
+        type="user"
+        message="Failed to deliver"
+        pendingStatus="error"
+        onRetry={onRetry}
+        onDismiss={onDismiss}
+      />,
+    );
+
+    expect(screen.getByTestId("chat-message-error")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("chat-message-retry"));
+    fireEvent.click(screen.getByTestId("chat-message-dismiss"));
+
+    expect(onRetry).toHaveBeenCalledTimes(1);
+    expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
   it("renders a literal angle-bracket user message as visible text", () => {

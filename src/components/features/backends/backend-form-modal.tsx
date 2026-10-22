@@ -1,8 +1,20 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import {
+  ChevronDown,
+  ChevronRight,
+  CloudCog,
+  Globe,
+  Info,
+  Monitor,
+} from "lucide-react";
 import { ServerClient } from "@openhands/typescript-client/clients";
 import OpenHandsLogoWhite from "#/assets/branding/openhands-logo-white.svg?react";
+import DigitalOceanLogo from "#/assets/branding/digitalocean-logo.svg?react";
+import { getMarsBridge } from "#/api/mars/mars-tunnel-backend";
+import { DigitalOceanConnectPanel } from "./managed-agents/digitalocean-connect-panel";
+import { BackNavButton } from "#/components/shared/buttons/back-nav-button";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import {
   MODAL_MAX_WIDTH_VIEWPORT,
@@ -13,7 +25,6 @@ import { BrandButton } from "#/components/features/settings/brand-button";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { SegmentedToggle } from "#/components/features/files-tab/segmented-toggle";
 import { useActiveBackendContext } from "#/contexts/active-backend-context";
-import { useNavigation } from "#/context/navigation-context";
 import { useBackendsHealth } from "#/hooks/query/use-backends-health";
 import { useTracking } from "#/hooks/use-tracking";
 import type { CloudConnectionSource } from "#/services/cloud-funnel-analytics";
@@ -21,8 +32,8 @@ import { getAgentServerClientOptions } from "#/api/agent-server-client-options";
 import { getLockedCloudHost } from "#/api/agent-server-config";
 import { isOpenHandsCloudHost } from "#/api/device-flow-client";
 import {
-  assertAgentServerVersionIsSupported,
   getDisplayAgentServerVersion,
+  validateLocalBackend,
 } from "#/api/agent-server-compatibility";
 import ChevronDownSmallIcon from "#/icons/chevron-down-small.svg?react";
 import { I18nKey } from "#/i18n/declaration";
@@ -33,9 +44,12 @@ import {
   modalTitleLgClassName,
   modalTitleLgMediumClassName,
 } from "#/utils/modal-classes";
+import ExternalLinkIcon from "#/icons/external-link.svg?react";
+import ServerIcon from "#/icons/server.svg?react";
 import { getBackendStatusLabel } from "./backend-status-label";
 import { BackendStatusDot } from "./backend-status-dot";
 import { DeviceFlowAuth } from "./device-flow-auth";
+import { useBackendSwitchRedirect } from "./use-backend-switch-redirect";
 
 export type BackendFormMode = "add" | "edit";
 
@@ -142,10 +156,18 @@ function isValidHostUrl(host: string): boolean {
 }
 
 const DEFAULT_OPENHANDS_CLOUD_HOST = "https://app.all-hands.dev";
-
+const LOCAL_BACKEND_COMMAND = "agent-canvas --backend-only --port 8001";
+const LOCAL_AGENT_SERVER_DOCS_URL =
+  "https://github.com/OpenHands/OpenHands/blob/main/docs/DEVELOPMENT.md#alternative-development-workflows";
+const REMOTE_AGENT_SERVER_DOCS_URL =
+  "https://github.com/OpenHands/OpenHands/blob/main/docs/SELF_HOSTING.md";
+const DEPLOYMENT_OPTIONS_URL =
+  "https://docs.openhands.dev/overview/introduction";
 export type BackendConnectionMethod = "manual" | "cloud_login";
 
 export type BackendAddedSource = CloudConnectionSource;
+type AddBackendOption = "cloud" | "agent-server" | "providers";
+type AgentServerLocation = "local" | "remote";
 
 function getConnectionTestFailedTitle(
   t: ReturnType<typeof useTranslation>["t"],
@@ -171,16 +193,8 @@ async function testBackendConnection(
 ): Promise<BackendConnectionTestMetadata> {
   // Cloud backends authenticate via OAuth; preflight GET is not applicable.
   if (backend.kind !== "local") return { agentServerVersion: null };
-
-  const serverInfo = await new ServerClient(
-    getAgentServerClientOptions({
-      host: backend.host,
-      sessionApiKey: backend.apiKey || null,
-      timeout: 5000,
-    }),
-  ).getServerInfo();
-  assertAgentServerVersionIsSupported(serverInfo);
-  return { agentServerVersion: getDisplayAgentServerVersion(serverInfo) };
+  const agentServerVersion = await validateLocalBackend(backend, 5000);
+  return { agentServerVersion };
 }
 
 /**
@@ -235,14 +249,17 @@ function BackendStatusBadge({
         className="flex items-center gap-3 text-sm"
       >
         <BackendStatusDot isConnected={isConnected} />
-        <span className="text-white" data-testid={`${testIdRoot}-status-label`}>
+        <span
+          className="text-contrast"
+          data-testid={`${testIdRoot}-status-label`}
+        >
           {statusLabel}
         </span>
         <span className="text-tertiary-alt">·</span>
-        <span className="text-[var(--oh-text-tertiary)]">{kindLabel}</span>
+        <span className="text-text-tertiary">{kindLabel}</span>
         {version ? (
           <span
-            className="text-xs text-[var(--oh-muted)]"
+            className="text-xs text-muted"
             data-testid={`${testIdRoot}-version`}
           >
             {t(I18nKey.BACKEND$VERSION_LABEL, { version })}
@@ -250,15 +267,16 @@ function BackendStatusBadge({
         ) : null}
       </div>
 
+      {/* @spec BM-004 — Theme-aware backend connection feedback */}
       {disabled ? (
         <div
           data-testid={`${testIdRoot}-status-error`}
-          className="flex flex-col gap-1 rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm"
+          className="flex flex-col gap-1 rounded-md border border-semantic-danger/40 bg-semantic-danger/5 p-3 text-sm"
         >
-          <span className="font-semibold text-red-300">
+          <span className="font-semibold text-feedback-error">
             {t(I18nKey.BACKEND$HEALTH_FAILED_TITLE)}
           </span>
-          <span className="text-xs text-[var(--oh-text-tertiary)]">
+          <span className="text-xs text-text-tertiary">
             {t(I18nKey.BACKEND$HEALTH_FAILED_DETAIL, {
               count: consecutiveFailures,
             })}
@@ -266,7 +284,7 @@ function BackendStatusBadge({
           {lastError ? (
             <span
               data-testid={`${testIdRoot}-status-error-message`}
-              className="text-xs text-red-300 whitespace-pre-wrap break-words"
+              className="text-xs text-feedback-error whitespace-pre-wrap break-words"
             >
               {lastError}
             </span>
@@ -308,6 +326,8 @@ interface UseBackendFormOptions {
    * success side effects. Should throw on failure.
    */
   onSubmitOverride?: (payload: BackendFormSubmitPayload) => Promise<void>;
+  /** Fix the persisted backend kind instead of inferring it from the host. */
+  fixedKind?: BackendKind;
 }
 
 /**
@@ -324,6 +344,7 @@ function useBackendForm({
   onSuccess,
   requireApiKey = false,
   onSubmitOverride,
+  fixedKind,
 }: UseBackendFormOptions) {
   const { t } = useTranslation("openhands");
 
@@ -342,7 +363,7 @@ function useBackendForm({
   // respects that choice. A custom-domain OHE can't be distinguished from a
   // custom-domain local agent-server by host alone, so ManualConnectionColumn
   // exposes `setKind` (a Type selector) to let the user declare it.
-  const kind = kindOverride ?? inferKindFromHost(host);
+  const kind = fixedKind ?? kindOverride ?? inferKindFromHost(host);
   const needsApiKey = requireApiKey || kind !== "local";
   const canSubmit =
     name.trim().length > 0 &&
@@ -395,6 +416,7 @@ function useBackendForm({
       onSuccess,
       requireApiKey,
       onSubmitOverride,
+      fixedKind,
       t,
     ],
   );
@@ -637,7 +659,7 @@ export function BackendForm({
           <div
             role="alert"
             data-testid={`${testIdRoot}-error`}
-            className="rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300 whitespace-pre-wrap break-words"
+            className="rounded-md border border-semantic-danger/40 bg-semantic-danger/5 p-3 text-sm text-feedback-error whitespace-pre-wrap break-words"
           >
             {connectionError}
           </div>
@@ -679,21 +701,6 @@ export function BackendForm({
 }
 
 // ── Add-mode two-column layout ──────────────────────────────────────
-
-/**
- * @spec BM-002 — Adding a backend auto-switches the active selection to it
- * (BM-001), so a backend-scoped detail page the user is viewing now belongs
- * to the previous backend. Redirect to that section's list so they never see
- * stale data, mirroring the switch-backend redirect in BackendSelector.
- */
-function useRedirectAfterAddBackend() {
-  const { currentPath, navigate } = useNavigation();
-  return React.useCallback(() => {
-    if (/^\/automations\/[^/]+/.test(currentPath)) navigate("/automations");
-    else if (/^\/conversations\/[^/]+/.test(currentPath))
-      navigate("/conversations");
-  }, [currentPath, navigate]);
-}
 
 interface BackendConnectionOptionsProps {
   onConnected: (
@@ -793,6 +800,8 @@ interface ManualConnectionColumnProps {
   submitLabel: React.ReactNode;
   submittingLabel: React.ReactNode;
   submitTestId?: string;
+  fixedKind?: BackendKind;
+  showKindSelector?: boolean;
 }
 
 /**
@@ -807,6 +816,8 @@ function ManualConnectionColumn({
   submitLabel,
   submittingLabel,
   submitTestId,
+  fixedKind,
+  showKindSelector = true,
 }: ManualConnectionColumnProps) {
   const { t } = useTranslation("openhands");
 
@@ -842,6 +853,7 @@ function ManualConnectionColumn({
       );
     },
     requireApiKey,
+    fixedKind,
   });
 
   return (
@@ -850,62 +862,53 @@ function ManualConnectionColumn({
       onSubmit={handleSubmit}
       className="flex flex-col gap-4 flex-1 min-w-0"
     >
-      <div className="flex flex-col gap-1">
-        <SettingsInput
-          testId={`${testIdRoot}-name`}
-          name={`${testIdRoot}-name`}
-          type="text"
-          label={t(I18nKey.BACKEND$NAME_LABEL)}
-          value={name}
-          onChange={(value) => {
-            setName(value);
-            setConnectionError(null);
-          }}
-          // eslint-disable-next-line i18next/no-literal-string -- example placeholder, not user-facing copy
-          placeholder="e.g. My Server"
-          className="w-full"
-        />
-        <p className="text-xs text-[var(--oh-muted)]">
-          {t(I18nKey.BACKEND$NAME_HELPER)}
-        </p>
-      </div>
+      <SettingsInput
+        testId={`${testIdRoot}-name`}
+        name={`${testIdRoot}-name`}
+        type="text"
+        label={t(I18nKey.BACKEND$NAME_LABEL)}
+        hint={t(I18nKey.BACKEND$NAME_HELPER)}
+        value={name}
+        onChange={(value) => {
+          setName(value);
+          setConnectionError(null);
+        }}
+        // eslint-disable-next-line i18next/no-literal-string -- example placeholder, not user-facing copy
+        placeholder="e.g. My Server"
+        className="w-full"
+      />
 
-      <div className="flex flex-col gap-1">
-        <SettingsInput
-          testId={`${testIdRoot}-host`}
-          name={`${testIdRoot}-host`}
-          type="text"
-          label={t(I18nKey.BACKEND$HOST_LABEL)}
-          value={host}
-          onChange={(value) => {
-            setHost(value);
-            setConnectionError(null);
-          }}
-          // eslint-disable-next-line i18next/no-literal-string -- example value, not translatable
-          placeholder="http://localhost:8000"
-          className="w-full"
-        />
-        <p
-          className="text-xs text-[var(--oh-muted)]"
-          data-testid={`${testIdRoot}-host-helper`}
-        >
-          {t(I18nKey.BACKEND$HOST_HELPER)}
-        </p>
-      </div>
+      <SettingsInput
+        testId={`${testIdRoot}-host`}
+        name={`${testIdRoot}-host`}
+        type="text"
+        label={t(I18nKey.BACKEND$HOST_LABEL)}
+        hint={t(I18nKey.BACKEND$HOST_HELPER)}
+        value={host}
+        onChange={(value) => {
+          setHost(value);
+          setConnectionError(null);
+        }}
+        // eslint-disable-next-line i18next/no-literal-string -- example value, not translatable
+        placeholder="http://localhost:8000"
+        className="w-full"
+      />
 
-      <div className="flex flex-col items-start gap-2.5">
-        <span className="text-sm">{t(I18nKey.BACKEND$KIND_LABEL)}</span>
-        <SegmentedToggle<BackendKind>
-          value={kind}
-          options={[
-            { value: "local", label: t(I18nKey.BACKEND$KIND_LOCAL) },
-            { value: "cloud", label: t(I18nKey.BACKEND$KIND_CLOUD) },
-          ]}
-          onChange={(value) => setKind(value)}
-          ariaLabel={t(I18nKey.BACKEND$KIND_LABEL)}
-          testId={`${testIdRoot}-kind`}
-        />
-      </div>
+      {showKindSelector ? (
+        <div className="flex flex-col items-start gap-2.5">
+          <span className="text-sm">{t(I18nKey.BACKEND$KIND_LABEL)}</span>
+          <SegmentedToggle<BackendKind>
+            value={kind}
+            options={[
+              { value: "local", label: t(I18nKey.BACKEND$KIND_LOCAL) },
+              { value: "cloud", label: t(I18nKey.BACKEND$KIND_CLOUD) },
+            ]}
+            onChange={(value) => setKind(value)}
+            ariaLabel={t(I18nKey.BACKEND$KIND_LABEL)}
+            testId={`${testIdRoot}-kind`}
+          />
+        </div>
+      ) : null}
 
       <SettingsInput
         testId={`${testIdRoot}-api-key`}
@@ -926,7 +929,7 @@ function ManualConnectionColumn({
         <div
           role="alert"
           data-testid={`${testIdRoot}-error`}
-          className="rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300 whitespace-pre-wrap break-words"
+          className="rounded-md border border-semantic-danger/40 bg-semantic-danger/5 p-3 text-sm text-feedback-error whitespace-pre-wrap break-words"
         >
           {connectionError}
         </div>
@@ -954,6 +957,8 @@ interface CloudLoginColumnProps {
   testIdRoot: string;
   lockedHost?: string;
   analyticsSource?: CloudConnectionSource;
+  /** Omit repeated branding when a surrounding chooser already names Cloud. */
+  showBranding?: boolean;
 }
 
 /**
@@ -966,11 +971,13 @@ function CloudLoginColumn({
   testIdRoot,
   lockedHost,
   analyticsSource,
+  showBranding = true,
 }: CloudLoginColumnProps) {
   const { t } = useTranslation("openhands");
 
   const [advancedOpen, setAdvancedOpen] = React.useState(false);
   const [customHost, setCustomHost] = React.useState("");
+  const advancedPanelId = `${testIdRoot}-advanced-panel`;
 
   const effectiveHost =
     lockedHost ?? (customHost.trim() || DEFAULT_OPENHANDS_CLOUD_HOST);
@@ -988,70 +995,541 @@ function CloudLoginColumn({
   };
 
   return (
-    <div className="flex flex-1 min-w-0 flex-col items-center gap-3 pb-8">
-      <div className="flex flex-col items-center gap-1">
-        <OpenHandsLogoWhite width={56} height={56} aria-hidden />
+    <div className="flex w-full min-w-0 flex-col items-center gap-3">
+      {showBranding ? (
+        <div className="flex flex-col items-center gap-1">
+          <OpenHandsLogoWhite
+            width={56}
+            height={56}
+            className="text-contrast [&_path:not([fill=transparent])]:fill-current"
+            aria-hidden
+          />
 
-        <h4
-          className={modalTitleLgMediumClassName}
-          data-testid={`${testIdRoot}-cloud-title`}
-        >
-          {t(I18nKey.BACKEND$CLOUD_TITLE)}
-        </h4>
-      </div>
-
-      <p className="text-center text-sm leading-relaxed text-[var(--oh-muted)]">
-        {t(I18nKey.BACKEND$CLOUD_DESCRIPTION)}
-      </p>
+          <h4
+            className={modalTitleLgMediumClassName}
+            data-testid={`${testIdRoot}-cloud-title`}
+          >
+            {t(I18nKey.BACKEND$CLOUD_TITLE)}
+          </h4>
+        </div>
+      ) : null}
 
       <DeviceFlowAuth
         host={effectiveHost}
         onSuccess={handleLoginSuccess}
         testIdRoot={testIdRoot}
         analyticsSource={analyticsSource}
+        className="w-full items-center"
+        idleDescription={
+          <p
+            className="text-center text-sm leading-relaxed text-muted"
+            data-testid={`${testIdRoot}-cloud-description`}
+          >
+            {t(I18nKey.BACKEND$CLOUD_DESCRIPTION)}
+          </p>
+        }
+        // Host overriding only matters before the flow starts, so it rides the
+        // same idle-only slot as the description instead of sitting under the
+        // authorization status.
+        idleFooter={
+          lockedHost ? null : (
+            // Keep the Advanced disclosure at the original compact width even
+            // though the surrounding cloud panel spans the full chooser.
+            <div className="mx-auto w-full max-w-md">
+              <button
+                type="button"
+                onClick={() => setAdvancedOpen((open) => !open)}
+                aria-expanded={advancedOpen}
+                aria-controls={advancedPanelId}
+                data-testid={`${testIdRoot}-advanced-toggle`}
+                className="flex w-full cursor-pointer items-center justify-center gap-1 text-center text-xs text-muted transition-colors hover:text-content-2"
+              >
+                <span>{t(I18nKey.BACKEND$ADVANCED)}</span>
+                <ChevronDownSmallIcon
+                  className={cn(
+                    "h-4 w-4 shrink-0 text-muted transition-transform duration-200 ease-out",
+                    advancedOpen && "rotate-180",
+                  )}
+                  aria-hidden
+                />
+              </button>
+              {/* Height animates through `grid-template-rows` (0fr ↔ 1fr) so no
+                  max-height guess is needed; the inner clip is what makes `0fr`
+                  collapse. Content stays mounted so a typed host survives, and
+                  `inert` keeps the collapsed field out of the tab order. */}
+              <div
+                className={cn(
+                  "grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
+                  advancedOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+                )}
+              >
+                <div className="overflow-hidden">
+                  <div
+                    id={advancedPanelId}
+                    data-testid={`${testIdRoot}-advanced-panel`}
+                    aria-hidden={!advancedOpen}
+                    inert={!advancedOpen ? true : undefined}
+                    className={cn(
+                      "pt-3 transition-opacity duration-200 ease-out motion-reduce:transition-none",
+                      advancedOpen ? "opacity-100" : "opacity-0",
+                    )}
+                  >
+                    <SettingsInput
+                      testId={`${testIdRoot}-cloud-host`}
+                      name={`${testIdRoot}-cloud-host`}
+                      type="text"
+                      label={t(I18nKey.BACKEND$HOST_LABEL)}
+                      value={customHost}
+                      onChange={setCustomHost}
+                      placeholder={DEFAULT_OPENHANDS_CLOUD_HOST}
+                      className="w-full"
+                    />
+                    <p className="mt-1 text-xs text-muted">
+                      {t(I18nKey.BACKEND$LOGIN_CLOUD_HINT)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        }
       />
+    </div>
+  );
+}
 
-      {lockedHost ? null : (
-        <div className="w-full">
-          <button
-            type="button"
-            onClick={() => setAdvancedOpen((open) => !open)}
-            aria-expanded={advancedOpen}
-            data-testid={`${testIdRoot}-advanced-toggle`}
-            className="flex w-full cursor-pointer items-center justify-center gap-1 text-center text-xs text-[var(--oh-muted)] transition-colors hover:text-content-2"
-          >
-            <span>{t(I18nKey.BACKEND$ADVANCED)}</span>
-            <ChevronDownSmallIcon
-              className={cn(
-                "h-4 w-4 shrink-0 text-muted transition-transform",
-                advancedOpen && "rotate-180",
-              )}
-              aria-hidden
-            />
-          </button>
-          <div
+interface BackendOptionTabProps {
+  value: AddBackendOption;
+  selectedValue: AddBackendOption;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  onSelect: (value: AddBackendOption) => void;
+  panelId: string;
+  testId: string;
+}
+
+/**
+ * Presents a connection-method tab: icon, title, and a one-line subtitle.
+ *
+ * The shared tablist owns the outer border, so these buttons meet cleanly at
+ * the center. Selection uses a bottom bar instead of recoloring the full
+ * outline, preserving the group as one visual control.
+ */
+function BackendOptionTab({
+  value,
+  selectedValue,
+  title,
+  description,
+  icon,
+  onSelect,
+  panelId,
+  testId,
+}: BackendOptionTabProps) {
+  const isSelected = value === selectedValue;
+  const tabId = `${testId}-tab`;
+
+  return (
+    <button
+      id={tabId}
+      type="button"
+      role="tab"
+      aria-selected={isSelected}
+      aria-controls={panelId}
+      aria-describedby={`${tabId}-description`}
+      data-testid={testId}
+      onClick={() => onSelect(value)}
+      className={cn(
+        "relative flex min-h-14 w-full cursor-pointer items-center gap-2.5 px-2.5 py-2.5 text-left transition-colors",
+        "not-last:border-r not-last:border-r-border",
+        "focus-visible:z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus",
+        isSelected
+          ? "bg-surface-raised text-contrast after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-primary"
+          : "text-muted hover:bg-surface-raised hover:text-contrast",
+      )}
+    >
+      <span
+        className="flex size-7 shrink-0 items-center justify-center"
+        aria-hidden
+      >
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-medium">{title}</span>
+        <span id={`${tabId}-description`} className="sr-only">
+          {description}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+interface AnimatedPanelHeightProps {
+  children: React.ReactNode;
+}
+
+/**
+ * Animates a panel between content-driven heights.
+ *
+ * A ResizeObserver keeps the wrapper synchronized as tabs or nested
+ * disclosures change. The transition class remains mounted before the
+ * observer publishes a new height; adding it in the same render as the height
+ * would give the browser no previous painted value to interpolate from.
+ */
+function AnimatedPanelHeight({ children }: AnimatedPanelHeightProps) {
+  const contentRef = React.useRef<HTMLDivElement>(null);
+  const [height, setHeight] = React.useState<number>();
+
+  React.useLayoutEffect(() => {
+    const content = contentRef.current;
+    if (!content) return undefined;
+
+    const measure = () => {
+      const nextHeight = content.getBoundingClientRect().height;
+      // jsdom reports zero-sized layout boxes; leaving height automatic there
+      // keeps component tests representative without changing browser behavior.
+      setHeight(nextHeight > 0 ? nextHeight : undefined);
+    };
+
+    measure();
+    if (typeof ResizeObserver === "undefined") return undefined;
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      data-testid="add-backend-panel-height"
+      style={height === undefined ? undefined : { height }}
+      className="overflow-hidden transition-[height] duration-300 ease-in-out motion-reduce:transition-none"
+    >
+      <div ref={contentRef}>{children}</div>
+    </div>
+  );
+}
+
+/**
+ * Collects every setup instruction for the selected location into one
+ * collapsible note.
+ *
+ * All of the guidance lives here — the intro, the example command (local) or
+ * the host formats to use with a tunnel (remote), and the docs link — so users
+ * never have to leave the modal to find out what belongs in the host field.
+ * It starts collapsed so the connection form remains compact; users can
+ * reveal the complete instructions without leaving the modal.
+ *
+ * Open/close uses a `grid-template-rows` transition (`0fr` ↔ `1fr`) so the
+ * height animates without a fixed `max-height` guess. Content stays mounted
+ * so the toggle does not remount the docs link on every expand.
+ */
+function AgentServerGuidance({ location }: { location: AgentServerLocation }) {
+  const { t } = useTranslation("openhands");
+  const [isExpanded, setIsExpanded] = React.useState(false);
+  const isRemote = location === "remote";
+  const title = isRemote
+    ? t(I18nKey.BACKEND$REMOTE_SETUP_TITLE)
+    : t(I18nKey.BACKEND$BEFORE_CONNECT_TITLE);
+  const description = isRemote
+    ? t(I18nKey.BACKEND$REMOTE_SETUP_DESCRIPTION)
+    : t(I18nKey.BACKEND$LOCAL_SETUP_DESCRIPTION);
+  const docsHref = isRemote
+    ? REMOTE_AGENT_SERVER_DOCS_URL
+    : LOCAL_AGENT_SERVER_DOCS_URL;
+  const docsLabel = isRemote
+    ? t(I18nKey.BACKEND$REMOTE_SETUP_DOCS)
+    : t(I18nKey.BACKEND$LOCAL_SETUP_DOCS);
+  const testIdRoot = isRemote ? "add-backend-remote" : "add-backend-local";
+  const toggleId = `${testIdRoot}-guidance-toggle`;
+  const bodyId = `${testIdRoot}-guidance-body`;
+
+  return (
+    <aside
+      data-testid={`${testIdRoot}-guidance`}
+      className="rounded-lg bg-surface-raised text-sm text-muted"
+    >
+      {/* Heading wraps the button so the accordion keeps a real heading in the
+          document outline while the whole row stays clickable. */}
+      <h4 className="text-contrast">
+        <button
+          id={toggleId}
+          type="button"
+          onClick={() => setIsExpanded((expanded) => !expanded)}
+          aria-expanded={isExpanded}
+          aria-controls={bodyId}
+          data-testid={toggleId}
+          className={cn(
+            // Padding lives on the button rather than the card so the hover
+            // fill spans the full row.
+            "flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-3 py-2 text-left font-medium",
+            "transition-colors hover:bg-interactive-hover",
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
+          )}
+        >
+          <span className="flex min-w-0 items-center gap-2">
+            <Info className="size-4 shrink-0 text-muted" aria-hidden />
+            <span className="truncate">{title}</span>
+          </span>
+          <ChevronDown
             className={cn(
-              "pt-2",
-              !advancedOpen && "pointer-events-none invisible",
+              "size-5 shrink-0 text-muted transition-transform duration-200 ease-out",
+              isExpanded && "rotate-180",
             )}
-            aria-hidden={!advancedOpen}
+            aria-hidden
+          />
+        </button>
+      </h4>
+
+      {/* Outer grid owns the height animation; the inner overflow clip is
+          required so `1fr` measures the content while `0fr` fully collapses. */}
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
+          isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        )}
+      >
+        <div className="overflow-hidden">
+          <div
+            id={bodyId}
+            data-testid={bodyId}
+            role="region"
+            aria-labelledby={toggleId}
+            aria-hidden={!isExpanded}
+            inert={!isExpanded ? true : undefined}
+            className={cn(
+              "flex flex-col gap-2 px-3 pb-3 transition-opacity duration-200 ease-out motion-reduce:transition-none",
+              isExpanded ? "opacity-100" : "opacity-0",
+            )}
           >
-            <SettingsInput
-              testId={`${testIdRoot}-cloud-host`}
-              name={`${testIdRoot}-cloud-host`}
-              type="text"
-              label={t(I18nKey.BACKEND$HOST_LABEL)}
-              value={customHost}
-              onChange={setCustomHost}
-              placeholder={DEFAULT_OPENHANDS_CLOUD_HOST}
-              className="w-full"
-            />
-            <p className="mt-1 text-xs text-[var(--oh-muted)]">
-              {t(I18nKey.BACKEND$LOGIN_CLOUD_HINT)}
-            </p>
+            <p className="leading-5">{description}</p>
+
+            {isRemote ? (
+              <div>
+                <h5 className="font-medium text-contrast">
+                  {t(I18nKey.BACKEND$REMOTE_CONNECTION_TITLE)}
+                </h5>
+                <p className="mt-1 leading-5">
+                  {t(I18nKey.BACKEND$REMOTE_CONNECTION_DESCRIPTION)}
+                </p>
+              </div>
+            ) : (
+              <code className="block break-words font-mono text-xs text-contrast">
+                {LOCAL_BACKEND_COMMAND}
+              </code>
+            )}
+
+            <a
+              href={docsHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid={`${testIdRoot}-docs-link`}
+              tabIndex={isExpanded ? undefined : -1}
+              className="inline-flex w-fit items-center gap-1.5 text-primary hover:underline"
+            >
+              <span>{docsLabel}</span>
+              <ExternalLinkIcon className="size-4 shrink-0" aria-hidden />
+            </a>
           </div>
         </div>
-      )}
+      </div>
+    </aside>
+  );
+}
+
+function AddBackendChooser({
+  onConnected,
+  onSelectProvider,
+  source,
+}: {
+  onConnected: (
+    payload: BackendFormSubmitPayload,
+    connectionMethod: BackendConnectionMethod,
+    metadata?: BackendConnectionTestMetadata,
+  ) => void;
+  onSelectProvider: () => void;
+  source: BackendAddedSource;
+}) {
+  const { t } = useTranslation("openhands");
+  const [selectedOption, setSelectedOption] =
+    React.useState<AddBackendOption>("cloud");
+  const [agentServerLocation, setAgentServerLocation] =
+    React.useState<AgentServerLocation>("local");
+  const panelId = "add-backend-selected-panel";
+  const selectedTabId = `add-backend-option-${selectedOption}-tab`;
+  const isCloudSelected = selectedOption === "cloud";
+  const canUseDigitalOcean = getMarsBridge() !== null;
+
+  let panel: React.ReactNode;
+  if (selectedOption === "providers") {
+    panel = (
+      <div
+        data-testid="add-backend-providers-panel"
+        className="flex flex-col gap-4"
+      >
+        <button
+          type="button"
+          data-testid="add-backend-provider-digitalocean"
+          onClick={onSelectProvider}
+          className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-border bg-base-secondary px-4 py-3 text-left transition-colors hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+        >
+          <span
+            className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface-raised"
+            aria-hidden
+          >
+            <DigitalOceanLogo width={32} height={32} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-medium text-contrast">
+              {t(I18nKey.DO_AGENTS$BADGE)}
+            </span>
+            <span className="mt-0.5 block text-xs leading-tight text-muted">
+              {t(I18nKey.DO_AGENTS$TAB_DESCRIPTION)}
+            </span>
+          </span>
+          <ChevronRight className="size-4 shrink-0 text-muted" aria-hidden />
+        </button>
+        <p className="text-xs text-muted">
+          {t(I18nKey.BACKEND$PROVIDERS_COMING_SOON)}
+        </p>
+      </div>
+    );
+  } else if (isCloudSelected) {
+    /* Padding keeps the CTA and Advanced host field from hugging the
+       border; when Advanced expands the panel grows with the content
+       instead of squeezing it into the reserved min-height. */
+    panel = (
+      <div
+        data-testid="add-backend-cloud-panel"
+        className={cn(
+          "relative isolate flex min-h-[13.5rem] w-full items-center justify-center rounded-xl border border-border px-5 py-6",
+          // A soft greyscale halo sits behind the CTA; -z-10 keeps it under the
+          // content rather than washing over it.
+          "before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:rounded-xl",
+          "before:bg-[radial-gradient(75%_75%_at_50%_50%,rgba(255,255,255,0.1)_0%,rgba(255,255,255,0)_70%)]",
+        )}
+      >
+        <CloudLoginColumn
+          onConnected={onConnected}
+          testIdRoot="add-backend"
+          analyticsSource={source}
+          showBranding={false}
+        />
+      </div>
+    );
+  } else {
+    panel = (
+      <div
+        data-testid="add-backend-agent-server-panel"
+        className="mx-auto w-full max-w-xl"
+      >
+        {/* Rules on either side center the toggle and read as a
+            divider between the chooser and the connection form. */}
+        <div className="flex items-center gap-3">
+          <span className="h-px flex-1 bg-border" aria-hidden />
+          <SegmentedToggle<AgentServerLocation>
+            value={agentServerLocation}
+            options={[
+              {
+                value: "local",
+                label: t(I18nKey.BACKEND$KIND_LOCAL),
+                icon: <Monitor aria-hidden />,
+              },
+              {
+                value: "remote",
+                label: t(I18nKey.BACKEND$KIND_REMOTE),
+                icon: <Globe aria-hidden />,
+              },
+            ]}
+            onChange={setAgentServerLocation}
+            ariaLabel={t(I18nKey.BACKEND$AGENT_SERVER_LOCATION)}
+            testId="add-backend-location"
+          />
+          <span className="h-px flex-1 bg-border" aria-hidden />
+        </div>
+
+        <div className="mt-4 flex flex-col gap-4">
+          <AgentServerGuidance
+            key={agentServerLocation}
+            location={agentServerLocation}
+          />
+          <ManualConnectionColumn
+            onConnected={onConnected}
+            testIdRoot="add-backend"
+            requireApiKey={agentServerLocation === "remote"}
+            submitLabel={t(I18nKey.BACKEND$CONNECT)}
+            submittingLabel={t(I18nKey.ONBOARDING$BACKEND_STATUS_CHECKING)}
+            fixedKind="local"
+            showKindSelector={false}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div data-testid="add-backend-chooser" className="flex flex-col">
+      <div
+        role="tablist"
+        aria-label={t(I18nKey.BACKEND$CHOOSER_TITLE)}
+        className={cn(
+          "grid overflow-hidden rounded-lg border border-border",
+          canUseDigitalOcean ? "grid-cols-3" : "grid-cols-2",
+        )}
+      >
+        <BackendOptionTab
+          value="cloud"
+          selectedValue={selectedOption}
+          title={t(I18nKey.BACKEND$CLOUD_TITLE)}
+          description={t(I18nKey.BACKEND$CLOUD_OPTION_DESCRIPTION)}
+          icon={
+            <OpenHandsLogoWhite
+              width={32}
+              height={32}
+              data-testid="add-backend-option-cloud-logo"
+              className="text-contrast [&_path:not([fill=transparent])]:fill-current"
+            />
+          }
+          onSelect={setSelectedOption}
+          panelId={panelId}
+          testId="add-backend-option-cloud"
+        />
+        <BackendOptionTab
+          value="agent-server"
+          selectedValue={selectedOption}
+          title={t(I18nKey.BACKEND$AGENT_SERVER_TITLE)}
+          description={t(I18nKey.BACKEND$AGENT_SERVER_OPTION_DESCRIPTION)}
+          icon={<ServerIcon className="size-6" />}
+          onSelect={setSelectedOption}
+          panelId={panelId}
+          testId="add-backend-option-agent-server"
+        />
+        {canUseDigitalOcean ? (
+          <BackendOptionTab
+            value="providers"
+            selectedValue={selectedOption}
+            title={t(I18nKey.BACKEND$PROVIDERS_TITLE)}
+            description={t(I18nKey.BACKEND$PROVIDERS_OPTION_DESCRIPTION)}
+            icon={<CloudCog className="size-6" aria-hidden />}
+            onSelect={setSelectedOption}
+            panelId={panelId}
+            testId="add-backend-option-providers"
+          />
+        ) : null}
+      </div>
+
+      <div className="mt-6">
+        <AnimatedPanelHeight>
+          <section
+            id={panelId}
+            role="tabpanel"
+            aria-labelledby={selectedTabId}
+            className="min-w-0"
+          >
+            {panel}
+          </section>
+        </AnimatedPanelHeight>
+      </div>
     </div>
   );
 }
@@ -1059,13 +1537,18 @@ function CloudLoginColumn({
 function AddBackendConnectionOptions({
   onClose,
   source,
+  onSelectProvider,
 }: {
   onClose: () => void;
   source: BackendAddedSource;
+  onSelectProvider: () => void;
 }) {
   const { addBackend } = useActiveBackendContext();
-  const redirectAfterAdd = useRedirectAfterAddBackend();
+  // @spec BM-002 — Adding a backend auto-switches the active selection to it
+  // (BM-001), so leave any detail page that belongs to the previous backend.
+  const redirectAfterAdd = useBackendSwitchRedirect();
   const { trackBackendAdded } = useTracking();
+  const lockedCloudHost = getLockedCloudHost();
 
   const handleConnected = React.useCallback(
     (
@@ -1087,11 +1570,136 @@ function AddBackendConnectionOptions({
     [addBackend, redirectAfterAdd, onClose, trackBackendAdded, source],
   );
 
+  if (lockedCloudHost) {
+    return (
+      <CloudLoginColumn
+        onConnected={handleConnected}
+        testIdRoot="add-backend"
+        lockedHost={lockedCloudHost}
+        analyticsSource={source}
+      />
+    );
+  }
+
   return (
-    <BackendConnectionOptions
+    <AddBackendChooser
       onConnected={handleConnected}
-      analyticsSource={source}
+      onSelectProvider={onSelectProvider}
+      source={source}
     />
+  );
+}
+
+function AddBackendAddModeBody({
+  hideCloseButton,
+  onClose,
+  source,
+}: {
+  hideCloseButton: boolean;
+  onClose: () => void;
+  source: BackendAddedSource;
+}) {
+  const { t } = useTranslation("openhands");
+  const [providerOpen, setProviderOpen] = React.useState(false);
+  const railRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const focusTarget = providerOpen
+      ? "add-backend-providers-back"
+      : "add-backend-provider-digitalocean";
+    railRef.current
+      ?.querySelector<HTMLButtonElement>(`[data-testid="${focusTarget}"]`)
+      ?.focus();
+  }, [providerOpen]);
+
+  const goBack = () => setProviderOpen(false);
+
+  return (
+    <AnimatedPanelHeight>
+      <div
+        ref={railRef}
+        data-testid="add-backend-slide-rail"
+        className="relative overflow-hidden"
+      >
+        <div
+          aria-hidden={providerOpen}
+          inert={providerOpen ? true : undefined}
+          className={cn(
+            "w-full transition-transform duration-300 ease-out motion-reduce:transition-none",
+            providerOpen ? "-translate-x-full" : "translate-x-0",
+            providerOpen && "pointer-events-none absolute inset-0",
+          )}
+        >
+          {hideCloseButton ? null : (
+            <div className="pr-8">
+              <h2 className={modalTitleLgClassName}>
+                {t(I18nKey.BACKEND$CHOOSER_TITLE)}
+              </h2>
+              <p
+                className="mt-2 text-sm leading-6 text-muted"
+                data-testid="add-backend-description"
+              >
+                {t(I18nKey.BACKEND$CHOOSER_DESCRIPTION)}{" "}
+                <a
+                  href={DEPLOYMENT_OPTIONS_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={t(I18nKey.BACKEND$DEPLOYMENT_OPTIONS)}
+                  data-testid="add-backend-deployment-options-link"
+                  className="text-primary hover:underline"
+                >
+                  {t(I18nKey.CTA$LEARN_MORE)}
+                  <ExternalLinkIcon
+                    className="ml-1 inline size-3.5 align-[-0.125em]"
+                    aria-hidden
+                  />
+                </a>
+              </p>
+            </div>
+          )}
+
+          <div className={hideCloseButton ? undefined : "mt-5"}>
+            <AddBackendConnectionOptions
+              onClose={onClose}
+              source={source}
+              onSelectProvider={() => setProviderOpen(true)}
+            />
+          </div>
+        </div>
+        <div
+          aria-hidden={!providerOpen}
+          inert={!providerOpen ? true : undefined}
+          className={cn(
+            "w-full transition-transform duration-300 ease-out motion-reduce:transition-none",
+            providerOpen ? "translate-x-0" : "translate-x-full",
+            !providerOpen && "pointer-events-none absolute inset-0",
+          )}
+        >
+          {providerOpen ? (
+            <div className="flex flex-col gap-4">
+              <BackNavButton
+                onClick={goBack}
+                testId="add-backend-providers-back"
+              >
+                {t(I18nKey.BUTTON$BACK)}
+              </BackNavButton>
+              <div className="flex min-w-0 items-center gap-3 pr-8">
+                <span
+                  className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface-raised"
+                  aria-hidden
+                >
+                  <DigitalOceanLogo width={32} height={32} />
+                </span>
+                <h2 className={modalTitleLgMediumClassName}>
+                  {t(I18nKey.DO_AGENTS$BADGE)}
+                </h2>
+              </div>
+              <DigitalOceanConnectPanel onConnected={onClose} />
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </AnimatedPanelHeight>
   );
 }
 
@@ -1124,32 +1732,24 @@ export function BackendFormModal({
             hideCloseButton ? "onboarding-modal" : "add-backend-modal"
           }
           className={cn(
-            "relative rounded-xl border border-[var(--oh-border)] bg-base-secondary",
-            modalWidthClassName("xl"),
+            "relative max-h-[92vh] w-180 overflow-x-hidden overflow-y-auto rounded-xl border border-border bg-base-secondary p-6",
             MODAL_MAX_WIDTH_VIEWPORT,
           )}
         >
           {hideCloseButton ? null : (
             <ModalCloseButton onClose={onClose} testId="add-backend-close" />
           )}
-          {/* Header - hide in locked Cloud first-run mode for cleaner UX */}
-          {hideCloseButton ? null : (
-            <div className="px-6 pt-6 pb-2 pr-12">
-              <h2 className={modalTitleLgClassName}>
-                {t(I18nKey.BACKEND$ADD_TITLE)}
-              </h2>
-            </div>
-          )}
-
-          <div className={cn("px-6 pb-6", hideCloseButton ? "pt-6" : "pt-2")}>
-            <AddBackendConnectionOptions onClose={onClose} source={source} />
-          </div>
+          <AddBackendAddModeBody
+            hideCloseButton={hideCloseButton}
+            onClose={onClose}
+            source={source}
+          />
         </div>
       </ModalBackdrop>
     );
   }
 
-  // Edit mode — single-column form (unchanged)
+  // Edit mode — keep the header visible while a tall form scrolls.
   const testIdRoot = "edit-backend";
   return (
     <ModalBackdrop
@@ -1160,20 +1760,23 @@ export function BackendFormModal({
       <div
         data-testid={`${testIdRoot}-modal`}
         className={cn(
-          "relative bg-base-secondary p-6 rounded-xl flex flex-col gap-4 border border-[var(--oh-border)]",
+          "relative max-h-[92dvh] bg-base-secondary p-6 rounded-xl flex flex-col gap-4 border border-border",
           modalWidthClassName("md"),
+          MODAL_MAX_WIDTH_VIEWPORT,
         )}
       >
         <ModalCloseButton onClose={onClose} testId={`${testIdRoot}-close`} />
-        <h2 className={cn("pr-6", modalTitleLgClassName)}>
+        <h2 className={cn("shrink-0 pr-6", modalTitleLgClassName)}>
           {t(I18nKey.BACKEND$EDIT_TITLE)}
         </h2>
-        <BackendForm
-          mode="edit"
-          backend={backend}
-          onSubmitted={onClose}
-          testIdRoot={testIdRoot}
-        />
+        <div className="min-h-0 overflow-y-auto">
+          <BackendForm
+            mode="edit"
+            backend={backend}
+            onSubmitted={onClose}
+            testIdRoot={testIdRoot}
+          />
+        </div>
       </div>
     </ModalBackdrop>
   );

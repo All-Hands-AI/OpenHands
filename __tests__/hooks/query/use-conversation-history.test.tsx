@@ -1,13 +1,22 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
 import React from "react";
-import { renderHook, waitFor } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { act, renderHook, waitFor } from "@testing-library/react";
+import {
+  QueryClient,
+  QueryClientProvider,
+  onlineManager,
+} from "@tanstack/react-query";
 
 import {
   INITIAL_HISTORY_PAGE_SIZE,
   useConversationHistory,
 } from "#/hooks/query/use-conversation-history";
 import EventService from "#/api/event-service/event-service.api";
+import {
+  __resetActiveStoreForTests,
+  setActiveSelection,
+  setRegisteredBackends,
+} from "#/api/backend-registry/active-store";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import type { Conversation } from "#/api/open-hands.types";
 import type { OpenHandsEvent } from "#/types/agent-server/core";
@@ -193,15 +202,85 @@ describe("useConversationHistory", () => {
       { wrapper },
     );
 
-    await waitFor(() => {
-      expect(result.current.error).toBeInstanceOf(Error);
-    });
+    // The hook sets `retry: 1` (overriding this file's `retry: false` client
+    // default), so the error only settles after one ~1s retry delay.
+    await waitFor(
+      () => {
+        expect(result.current.error).toBeInstanceOf(Error);
+      },
+      { timeout: 5000 },
+    );
 
     expect((result.current.error as Error).message).toBe(
       "Invalid conversation history response: expected page.items to be an array.",
     );
   });
 
+  it("retries a failed initial load exactly once before surfacing the error", async () => {
+    vi.mocked(useUserConversation).mockReturnValue({
+      data: makeConversation("V1"),
+      isLoading: false,
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    } as any);
+
+    const searchEventsSpy = vi
+      .spyOn(EventService, "searchEvents")
+      .mockRejectedValue(new Error("network down"));
+
+    const { result } = renderHook(() => useConversationHistory("conv-retry"), {
+      wrapper,
+    });
+
+    await waitFor(
+      () => {
+        expect(result.current.isError).toBe(true);
+      },
+      { timeout: 5000 },
+    );
+
+    // Exactly one retry: enough to absorb a transient blip, but a bad first
+    // load can't hold the WebSocket gate closed for a long retry chain.
+    expect(searchEventsSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not refetch when the browser comes back online", async () => {
+    vi.mocked(useUserConversation).mockReturnValue({
+      data: makeConversation("V1"),
+      isLoading: false,
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    } as any);
+
+    const searchEventsSpy = vi
+      .spyOn(EventService, "searchEvents")
+      .mockResolvedValue(makePage([makeEvent()]));
+
+    const { result } = renderHook(
+      () => useConversationHistory("conv-online-flap"),
+      { wrapper },
+    );
+    await waitFor(() => {
+      expect(result.current.data).toBeDefined();
+    });
+
+    // Act: an online/offline flap, as flaky links produce continuously. The
+    // events missed while offline arrive over the WebSocket `since` replay,
+    // so the query must not refetch (each refetch used to drop the socket).
+    await act(async () => {
+      onlineManager.setOnline(false);
+      onlineManager.setOnline(true);
+      await new Promise((resolve) => {
+        setTimeout(resolve, 150);
+      });
+    });
+
+    expect(searchEventsSpy).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("useConversationHistory cache key stability", () => {
@@ -383,5 +462,133 @@ describe("useConversationHistory cache key stability", () => {
     });
     expect(queries).toHaveLength(1);
     expect(queries[0].options.gcTime).toBeGreaterThanOrEqual(30 * 60 * 1000);
+  });
+
+  describe("session-socket resume cursor (afterSeq)", () => {
+    const withUrl = () =>
+      vi.mocked(useUserConversation).mockReturnValue({
+        data: {
+          ...makeConversation("V1"),
+          conversation_url: "http://localhost:18000/api/conversations/conv-seq",
+        },
+        isLoading: false,
+        isPending: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      } as any);
+
+    it("derives afterSeq from the count read before the page", async () => {
+      withUrl();
+      const calls: string[] = [];
+      vi.spyOn(EventService, "getEventCount").mockImplementation(async () => {
+        calls.push("count");
+        return 120;
+      });
+      vi.spyOn(EventService, "searchEvents").mockImplementation(async () => {
+        calls.push("search");
+        return makePage([makeEvent()]);
+      });
+
+      const { result } = renderHook(() => useConversationHistory("conv-seq"), {
+        wrapper,
+      });
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+      // Count first: anything appended between the two reads has
+      // seq >= count, so it is replayed rather than skipped.
+      expect(calls).toEqual(["count", "search"]);
+      expect(result.current.data?.afterSeq).toBe(119);
+    });
+
+    it("still loads the page, without a cursor, when the count fails", async () => {
+      withUrl();
+      vi.spyOn(EventService, "getEventCount").mockRejectedValue(
+        new Error("boom"),
+      );
+      vi.spyOn(EventService, "searchEvents").mockResolvedValue(
+        makePage([makeEvent("evt-a")]),
+      );
+
+      const { result } = renderHook(
+        () => useConversationHistory("conv-seq-2"),
+        {
+          wrapper,
+        },
+      );
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+      expect(result.current.data?.events).toHaveLength(1);
+      expect(result.current.data?.afterSeq).toBeNull();
+    });
+
+    describe("on a Cloud backend", () => {
+      // The count is the runtime's log, but the page comes from the App
+      // API's webhook-fed copy of it, which can lag the runtime.
+      beforeEach(() => {
+        setRegisteredBackends([
+          {
+            id: "cloud-1",
+            name: "OpenHands Cloud",
+            host: "https://app.all-hands.dev",
+            apiKey: "k",
+            kind: "cloud",
+          },
+        ]);
+        setActiveSelection({ backendId: "cloud-1" });
+      });
+
+      afterEach(() => {
+        window.localStorage.clear();
+        __resetActiveStoreForTests();
+      });
+
+      it("does not resume past runtime events the lagging page lacks", async () => {
+        // Arrange: the runtime holds 6 events (seq 0..5) and the user's
+        // first message is seq 3, but the App API page has only seq 0..2.
+        withUrl();
+        vi.spyOn(EventService, "getEventCount").mockResolvedValue(6);
+        vi.spyOn(EventService, "searchEvents").mockResolvedValue(
+          makePage([
+            makeEvent("evt-2"),
+            makeEvent("evt-1"),
+            makeEvent("evt-0"),
+          ]),
+        );
+
+        // Act
+        const { result } = renderHook(
+          () => useConversationHistory("conv-cloud-lag"),
+          { wrapper },
+        );
+        await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+        // Assert: the socket replays the whole short log (deduped by id)
+        // instead of resuming after seq 5 and losing the message.
+        expect(result.current.data?.afterSeq).toBe(-1);
+      });
+
+      it("replays only one page-width of a long runtime log", async () => {
+        // Arrange
+        withUrl();
+        vi.spyOn(EventService, "getEventCount").mockResolvedValue(120);
+        vi.spyOn(EventService, "searchEvents").mockResolvedValue(
+          makePage([makeEvent()]),
+        );
+
+        // Act
+        const { result } = renderHook(
+          () => useConversationHistory("conv-cloud-long"),
+          { wrapper },
+        );
+        await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+        // Assert: the newest INITIAL_HISTORY_PAGE_SIZE runtime events are
+        // replayed, not the whole log.
+        expect(result.current.data?.afterSeq).toBe(
+          119 - INITIAL_HISTORY_PAGE_SIZE,
+        );
+      });
+    });
   });
 });

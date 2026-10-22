@@ -25,6 +25,6 @@ export async function getSandboxSelectionOptions(
     backend,
     method: "GET",
     path: SANDBOX_SELECTION_PATH,
-    headers: { "X-Org-Id": orgId },
+    orgId,
   });
 }

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AgentServerConversationService from "#/api/conversation-service/agent-server-conversation-service.api";
 import type { AppConversationStartTask } from "#/api/conversation-service/agent-server-conversation-service.types";
 import {
@@ -22,6 +22,7 @@ import {
   linkPendingTaskMessages,
   schedulePendingTaskMessageReassign,
 } from "#/utils/pending-task-message-link";
+import { useBackendScopedPath } from "#/hooks/use-backend-scoped-path";
 
 const storeTaskPlugins = (
   task: AppConversationStartTask,
@@ -113,6 +114,8 @@ export const useTaskPollingController = () => {
   const { task, taskId } = polling;
   const { conversationId } = useOptionalConversationId();
   const { navigate } = useNavigation();
+  const backendScopedPath = useBackendScopedPath();
+  const queryClient = useQueryClient();
   const handledReadyTaskIdRef = useRef<string | null>(null);
 
   // Reassign optimistic pending messages before paint on the real conversation
@@ -154,6 +157,13 @@ export const useTaskPollingController = () => {
     trackCloudConversationReady(taskId, appConversationId);
     storeTaskPlugins(task, appConversationId);
 
+    // The create mutation invalidated the conversation list before the
+    // conversation row existed (cloud returns the start task first). The row
+    // is persisted by the time the task is READY, so refetch now so the
+    // sidebar shows the new conversation without waiting for the 30s poll.
+    queryClient.invalidateQueries({ queryKey: ["user", "conversations"] });
+    queryClient.invalidateQueries({ queryKey: ["start-tasks"] });
+
     void (async () => {
       await flushPendingTaskAttachments(taskId, appConversationId);
 
@@ -168,9 +178,11 @@ export const useTaskPollingController = () => {
         });
       }
 
-      navigate(`/conversations/${appConversationId}`, { replace: true });
+      navigate(backendScopedPath(`/conversations/${appConversationId}`), {
+        replace: true,
+      });
     })();
-  }, [task, taskId, navigate]);
+  }, [backendScopedPath, task, taskId, navigate, queryClient]);
 
   return polling;
 };

@@ -51,14 +51,20 @@ describe("AgentServerConversationService cloud branch", () => {
   });
   it("sends the template ID only when explicitly selected", async () => {
     fetchMock.mockImplementation(async () => mockJsonResponse({ id: "task" }));
-    await AgentServerConversationService.createConversation(
-      "hello", undefined, undefined, undefined, undefined, undefined,
-      undefined, undefined, undefined, undefined, undefined, "monorepo_large",
+    await AgentServerConversationService.createConversation({
+      initialUserMsg: "hello",
+      sandboxSpecId: "monorepo_large",
+    });
+    expect(getJsonBody(getFetchCall(fetchMock)[1]).sandbox_spec_id).toBe(
+      "monorepo_large",
     );
-    expect(getJsonBody(getFetchCall(fetchMock)[1]).sandbox_spec_id).toBe("monorepo_large");
     fetchMock.mockClear();
-    await AgentServerConversationService.createConversation("hello");
-    expect(getJsonBody(getFetchCall(fetchMock)[1])).not.toHaveProperty("sandbox_spec_id");
+    await AgentServerConversationService.createConversation({
+      initialUserMsg: "hello",
+    });
+    expect(getJsonBody(getFetchCall(fetchMock)[1])).not.toHaveProperty(
+      "sandbox_spec_id",
+    );
   });
   it("createConversation POSTs the cloud payload directly and returns a WORKING task", async () => {
     fetchMock.mockResolvedValue(
@@ -75,17 +81,16 @@ describe("AgentServerConversationService cloud branch", () => {
       }),
     );
 
-    const result = await AgentServerConversationService.createConversation(
-      "fix the bug",
-      "Optional title",
-      undefined,
-      {
+    const result = await AgentServerConversationService.createConversation({
+      initialUserMsg: "fix the bug",
+      conversationInstructions: "Optional title",
+      metadata: {
         selected_repository: "user/repo",
         selected_branch: "main",
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         git_provider: "github" as any,
       },
-    );
+    });
 
     expect(fetchMock).toHaveBeenCalledOnce();
     const [url, init] = getFetchCall(fetchMock);
@@ -113,6 +118,93 @@ describe("AgentServerConversationService cloud branch", () => {
     expect(result.id).toBe("task-123");
     expect(result.status).toBe("WORKING");
     expect(result.app_conversation_id).toBeNull();
+  });
+
+  it("createConversation forwards the route-at-start suffix as agent_launch_additions on the cloud path", async () => {
+    fetchMock.mockResolvedValue(
+      mockJsonResponse({
+        id: "task-124",
+        created_by_user_id: null,
+        status: "WORKING",
+        detail: null,
+        app_conversation_id: null,
+        agent_server_url: null,
+        request: {},
+        created_at: "2026-05-06T00:00:00Z",
+        updated_at: "2026-05-06T00:00:00Z",
+      }),
+    );
+
+    await AgentServerConversationService.createConversation({
+      initialUserMsg: "fix the bug",
+      runRouterAtConversationStart: true,
+      hasActiveMetaProfile: true,
+    });
+
+    const [, init] = getFetchCall(fetchMock);
+    const requestBody = getJsonBody(init) as {
+      agent_launch_additions?: { system_message_suffix_append?: string };
+    };
+
+    expect(requestBody.agent_launch_additions).toBeDefined();
+    expect(
+      requestBody.agent_launch_additions?.system_message_suffix_append,
+    ).toContain("ROUTE_AT_CONVERSATION_START");
+  });
+
+  it("createConversation omits agent_launch_additions on the cloud path when the toggle is off", async () => {
+    fetchMock.mockResolvedValue(
+      mockJsonResponse({
+        id: "task-125",
+        created_by_user_id: null,
+        status: "WORKING",
+        detail: null,
+        app_conversation_id: null,
+        agent_server_url: null,
+        request: {},
+        created_at: "2026-05-06T00:00:00Z",
+        updated_at: "2026-05-06T00:00:00Z",
+      }),
+    );
+
+    await AgentServerConversationService.createConversation({
+      initialUserMsg: "fix the bug",
+    });
+
+    const [, init] = getFetchCall(fetchMock);
+    const requestBody = getJsonBody(init);
+
+    expect(requestBody).not.toHaveProperty("agent_launch_additions");
+  });
+
+  it("createConversation omits agent_launch_additions on the cloud path when no meta-profile is active", async () => {
+    // The toggle is on, but with no active meta-profile the agent-server
+    // does not attach `route_task_to_model`, so the instruction must not be
+    // emitted (the router would have nothing to call).
+    fetchMock.mockResolvedValue(
+      mockJsonResponse({
+        id: "task-126",
+        created_by_user_id: null,
+        status: "WORKING",
+        detail: null,
+        app_conversation_id: null,
+        agent_server_url: null,
+        request: {},
+        created_at: "2026-05-06T00:00:00Z",
+        updated_at: "2026-05-06T00:00:00Z",
+      }),
+    );
+
+    await AgentServerConversationService.createConversation({
+      initialUserMsg: "fix the bug",
+      runRouterAtConversationStart: true,
+      hasActiveMetaProfile: false,
+    });
+
+    const [, init] = getFetchCall(fetchMock);
+    const requestBody = getJsonBody(init);
+
+    expect(requestBody).not.toHaveProperty("agent_launch_additions");
   });
 
   it("getStartTask polls /api/v1/app-conversations/start-tasks?ids= directly", async () => {

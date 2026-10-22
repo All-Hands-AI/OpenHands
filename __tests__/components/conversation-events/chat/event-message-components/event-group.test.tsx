@@ -5,10 +5,15 @@ import { renderWithProviders } from "test-utils";
 import { EventGroup } from "#/components/conversation-events/chat/event-message-components/event-group";
 import {
   ActionEvent,
+  AgentErrorEvent,
   ObservationEvent,
   SecurityRisk,
+  UserRejectObservation,
 } from "#/types/agent-server/core";
-import { ExecuteBashAction } from "#/types/agent-server/core/base/action";
+import {
+  ExecuteBashAction,
+  FileEditorAction,
+} from "#/types/agent-server/core/base/action";
 import { ExecuteBashObservation } from "#/types/agent-server/core/base/observation";
 
 const makeBashAction = (
@@ -61,6 +66,32 @@ const makeBashObservation = (
     timeout: false,
     metadata: {} as never,
   },
+});
+
+const makeUserRejectObservation = (
+  id: string,
+  actionId: string,
+): UserRejectObservation => ({
+  id,
+  timestamp: new Date().toISOString(),
+  source: "environment",
+  tool_name: "execute_bash",
+  tool_call_id: `call_${actionId}`,
+  action_id: actionId,
+  rejection_reason: "User rejected the action",
+});
+
+const makeAgentErrorEvent = (
+  id: string,
+  actionId: string,
+): AgentErrorEvent => ({
+  id,
+  timestamp: new Date().toISOString(),
+  kind: "AgentErrorEvent",
+  source: "agent",
+  tool_name: "execute_bash",
+  tool_call_id: `call_${actionId}`,
+  error: "boom",
 });
 
 describe("EventGroup", () => {
@@ -192,6 +223,44 @@ describe("EventGroup", () => {
     expect(screen.queryByTestId("status-icon")).not.toBeInTheDocument();
   });
 
+  it("titles a settled group after its rejected action", () => {
+    const events = [
+      makeBashObservation("o1", "a1", "ls"),
+      makeUserRejectObservation("r2", "a2"),
+    ];
+    const allEvents = [makeBashAction("a2", "pwd"), ...events];
+
+    renderWithProviders(
+      <EventGroup events={events} allEvents={allEvents}>
+        <div>child</div>
+      </EventGroup>,
+    );
+
+    expect(screen.getByText(/ACTION_MESSAGE\$RUN/)).toBeInTheDocument();
+    expect(
+      screen.getByText("EVENT_GROUP$ACTIONS_COMPLETED"),
+    ).toBeInTheDocument();
+  });
+
+  it("counts an action resolved by an AgentErrorEvent as resolved instead of running", () => {
+    const events = [
+      makeBashObservation("o1", "a1", "ls"),
+      makeBashAction("a2", "pwd"),
+    ];
+    const allEvents = [...events, makeAgentErrorEvent("e2", "a2")];
+
+    renderWithProviders(
+      <EventGroup events={events} allEvents={allEvents}>
+        <div>child</div>
+      </EventGroup>,
+    );
+
+    expect(screen.queryByTestId("spinner-icon")).not.toBeInTheDocument();
+    expect(
+      screen.getByText("EVENT_GROUP$ACTIONS_COMPLETED"),
+    ).toBeInTheDocument();
+  });
+
   it("updates accessibility state while toggling the group", async () => {
     const events = [
       makeBashObservation("o1", "a1", "ls"),
@@ -227,5 +296,52 @@ describe("EventGroup", () => {
     expect(toggle).toHaveAttribute("aria-label", "EVENT_GROUP$EXPAND");
     expect(screen.queryByRole("region")).not.toBeInTheDocument();
     expect(screen.queryByTestId("child")).not.toBeInTheDocument();
+  });
+
+  it("keeps grouped file-action titles non-interactive inside the toggle", () => {
+    const fileAction: ActionEvent<FileEditorAction> = {
+      id: "a-file",
+      timestamp: new Date().toISOString(),
+      source: "agent",
+      thought: [],
+      thinking_blocks: [],
+      action: {
+        kind: "FileEditorAction",
+        command: "str_replace",
+        path: "src/app.ts",
+        file_text: null,
+        old_str: "a",
+        new_str: "b",
+        insert_line: null,
+        view_range: null,
+      },
+      tool_name: "file_editor",
+      tool_call_id: "call_a-file",
+      tool_call: {
+        id: "call_a-file",
+        type: "function",
+        function: {
+          name: "file_editor",
+          arguments: JSON.stringify({
+            command: "str_replace",
+            path: "src/app.ts",
+          }),
+        },
+      },
+      llm_response_id: "response_a-file",
+      security_risk: SecurityRisk.UNKNOWN,
+    };
+
+    renderWithProviders(
+      <EventGroup events={[fileAction]}>
+        <div>child</div>
+      </EventGroup>,
+    );
+
+    const toggle = screen.getByTestId("event-group-toggle");
+    expect(
+      toggle.querySelector('[data-testid="path-component-link"]'),
+    ).toBeNull();
+    expect(toggle.querySelectorAll("button")).toHaveLength(0);
   });
 });

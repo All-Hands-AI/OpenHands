@@ -2,13 +2,13 @@ import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 
 // Mock posthog-js before importing telemetry service
 let identifiedUserId: string | undefined;
+let anonymousDistinctId = "ph-test-distinct-id";
 let latestPostHogConfig:
-  | { before_send: (event: unknown) => unknown }
+  | (Record<string, unknown> & { before_send: (event: unknown) => unknown })
   | undefined;
 const mockPosthog = {
   init: vi.fn(),
   capture: vi.fn(),
-  captureException: vi.fn(),
   opt_in_capturing: vi.fn(),
   opt_out_capturing: vi.fn(),
   has_opted_out_capturing: vi.fn(() => false),
@@ -18,9 +18,12 @@ const mockPosthog = {
   get_property: vi.fn((property: string) =>
     property === "$user_id" ? identifiedUserId : undefined,
   ),
-  get_distinct_id: vi.fn(() => "ph-test-distinct-id"),
-  reset: vi.fn(() => {
+  get_distinct_id: vi.fn(() => identifiedUserId ?? anonymousDistinctId),
+  reset: vi.fn((resetDeviceId = false) => {
     identifiedUserId = undefined;
+    anonymousDistinctId = resetDeviceId
+      ? "ph-reset-device-id"
+      : "ph-reset-distinct-id";
   }),
 };
 mockPosthog.init.mockImplementation((_, config) => {
@@ -34,21 +37,25 @@ vi.mock("posthog-js", () => ({
 
 import {
   clearPendingCloudTelemetryConsent,
+  clearPendingLocalTelemetryRevocation,
+  clearTelemetryData,
   configureTelemetry,
+  getPendingCloudTelemetryConsent,
+  getPendingLocalTelemetryRevocationId,
   getTelemetryConsent,
   getTelemetryDistinctId,
-  getPendingCloudTelemetryConsent,
+  getTelemetryDistinctIdForConsentSync,
   initializePostHogClient,
-  setTelemetryConsent,
-  setTelemetryCloudContext,
-  setTelemetryBackendContext,
-  subscribeTelemetryConsent,
   isTelemetryEnabled,
+  setTelemetryBackendContext,
+  setTelemetryCloudContext,
+  setTelemetryConsent,
+  setTelemetryWebsiteAttribution,
+  setTelemetryIdentity,
+  subscribeTelemetryConsent,
+  trackEvent,
   trackInstall,
   trackSessionStart,
-  trackEvent,
-  trackException,
-  clearTelemetryData,
 } from "#/services/telemetry";
 
 // Mock import.meta.env for tests
@@ -60,18 +67,25 @@ vi.stubGlobal("import.meta", {
 });
 
 describe("Telemetry Service", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     // Clear localStorage before each test
     localStorage.clear();
     sessionStorage.clear();
     delete (window as unknown as Record<string, unknown>)
       .__AGENT_CANVAS_LOCK_TO_CLOUD__;
+    delete (window as unknown as Record<string, unknown>)
+      .__AGENT_CANVAS_DO_NOT_TRACK__;
     // Reset mock
     vi.clearAllMocks();
     identifiedUserId = undefined;
+    anonymousDistinctId = "ph-test-distinct-id";
     mockPosthog.has_opted_out_capturing.mockReturnValue(false);
-    mockPosthog.get_distinct_id.mockReturnValue("ph-test-distinct-id");
+    mockPosthog.get_distinct_id.mockImplementation(
+      () => identifiedUserId ?? anonymousDistinctId,
+    );
+    await setTelemetryIdentity(null);
     setTelemetryBackendContext({});
+    setTelemetryWebsiteAttribution(undefined);
   });
 
   afterEach(() => {
@@ -80,6 +94,8 @@ describe("Telemetry Service", () => {
     sessionStorage.clear();
     delete (window as unknown as Record<string, unknown>)
       .__AGENT_CANVAS_LOCK_TO_CLOUD__;
+    delete (window as unknown as Record<string, unknown>)
+      .__AGENT_CANVAS_DO_NOT_TRACK__;
   });
 
   describe("PostHog ownership", () => {
@@ -107,6 +123,8 @@ describe("Telemetry Service", () => {
           persistence_name: "agent-canvas",
           consent_persistence_name: "agent-canvas-consent",
           person_profiles: "always",
+          capture_pageview: "history_change",
+          autocapture: false,
         }),
         "agent-canvas",
       );
@@ -125,6 +143,7 @@ describe("Telemetry Service", () => {
           package_name: "@openhands/agent-canvas",
           package_version: expect.any(String),
           backend_kind: null,
+          deployment_kind: null,
           agent_server_version: "unknown",
           automation_sdk_version: "unknown",
           backend_version: "unknown",
@@ -137,6 +156,15 @@ describe("Telemetry Service", () => {
         agentServerVersion: "1.36.2",
         automationSdkVersion: "1.36.3",
       });
+      setTelemetryWebsiteAttribution({
+        utm_source: "newsletter",
+        utm_medium: "email",
+        utm_campaign: "launch",
+        landing_page_category: "home",
+        cta_id: "hero-cloud",
+        cta_surface: "homepage_hero",
+        referring_domain_category: "search",
+      });
       expect(
         config.before_send({
           event: "backend_context_event",
@@ -146,17 +174,25 @@ describe("Telemetry Service", () => {
         event: "backend_context_event",
         properties: expect.objectContaining({
           backend_kind: "cloud",
+          deployment_kind: "remote",
           agent_server_version: "1.36.2",
           automation_sdk_version: "1.36.3",
           backend_version: "1.36.2",
+          utm_source: "newsletter",
+          utm_medium: "email",
+          utm_campaign: "launch",
+          landing_page_category: "home",
+          cta_id: "hero-cloud",
+          cta_surface: "homepage_hero",
+          referring_domain_category: "search",
           custom: "value",
         }),
       });
     });
   });
 
-  describe("Cloud context", () => {
-    it("adds Cloud user context without identifying PostHog as the Cloud user", async () => {
+  describe("Cloud identity and context", () => {
+    it("identifies a consented Cloud user and adds Cloud event context", async () => {
       await setTelemetryConsent("granted");
 
       setTelemetryCloudContext({
@@ -164,8 +200,12 @@ describe("Telemetry Service", () => {
         email: "a@example.com",
         orgId: "org-a",
       });
+      await setTelemetryIdentity("user-a", { email: "a@example.com" });
 
-      expect(mockPosthog.identify).not.toHaveBeenCalled();
+      expect(mockPosthog.identify).toHaveBeenCalledWith("user-a", {
+        email: "a@example.com",
+      });
+      await expect(getTelemetryDistinctId()).resolves.toBe("user-a");
       expect(latestPostHogConfig).toBeDefined();
       expect(
         latestPostHogConfig!.before_send({
@@ -180,6 +220,62 @@ describe("Telemetry Service", () => {
           cloud_org_id: "org-a",
         }),
       });
+    });
+
+    it("resets before switching Cloud accounts and restores consent", async () => {
+      await setTelemetryConsent("granted");
+      await setTelemetryIdentity("user-a");
+      vi.clearAllMocks();
+
+      await setTelemetryIdentity("user-b");
+
+      expect(mockPosthog.reset).toHaveBeenCalledWith(false);
+      expect(mockPosthog.opt_in_capturing).toHaveBeenCalledOnce();
+      expect(mockPosthog.identify).toHaveBeenCalledWith("user-b", {});
+    });
+
+    it("clears identity on logout without changing the device", async () => {
+      await setTelemetryConsent("granted");
+      await setTelemetryIdentity("user-a");
+      vi.clearAllMocks();
+
+      await setTelemetryIdentity(null);
+
+      expect(mockPosthog.reset).toHaveBeenCalledWith(false);
+      expect(mockPosthog.opt_in_capturing).toHaveBeenCalledOnce();
+      expect(mockPosthog.identify).not.toHaveBeenCalled();
+    });
+
+    it("removes identity on denial and reapplies it after consent returns", async () => {
+      await setTelemetryConsent("granted");
+      await setTelemetryIdentity("user-a");
+      vi.clearAllMocks();
+
+      await setTelemetryConsent("denied");
+
+      expect(mockPosthog.reset).toHaveBeenCalledWith(false);
+      expect(mockPosthog.opt_out_capturing).toHaveBeenCalled();
+
+      vi.clearAllMocks();
+      await setTelemetryConsent("granted");
+
+      expect(mockPosthog.identify).toHaveBeenCalledWith("user-a", {});
+    });
+
+    it("syncs denial for the actor that existed before PostHog reset", async () => {
+      await setTelemetryConsent("granted");
+      await setTelemetryIdentity("user-a");
+
+      await setTelemetryConsent("denied");
+
+      expect(mockPosthog.get_distinct_id()).toBe("ph-reset-distinct-id");
+      expect(getPendingLocalTelemetryRevocationId()).toBe("user-a");
+      await expect(getTelemetryDistinctIdForConsentSync()).resolves.toBe(
+        "user-a",
+      );
+
+      clearPendingLocalTelemetryRevocation("user-a");
+      expect(getPendingLocalTelemetryRevocationId()).toBeNull();
     });
 
     it("clears Cloud user context for local events", async () => {
@@ -383,6 +479,59 @@ describe("Telemetry Service", () => {
     });
   });
 
+  describe("runtime do-not-track global", () => {
+    it("reports consent as denied when the global is set", () => {
+      (
+        window as unknown as Record<string, unknown>
+      ).__AGENT_CANVAS_DO_NOT_TRACK__ = true;
+
+      expect(getTelemetryConsent()).toBe("denied");
+      expect(isTelemetryEnabled()).toBe(false);
+    });
+
+    it("suppresses the install event even without consent", async () => {
+      (
+        window as unknown as Record<string, unknown>
+      ).__AGENT_CANVAS_DO_NOT_TRACK__ = true;
+
+      await trackInstall();
+
+      expect(mockPosthog.capture).not.toHaveBeenCalled();
+    });
+
+    it("does not suppress tracking when the global is not true", async () => {
+      (
+        window as unknown as Record<string, unknown>
+      ).__AGENT_CANVAS_DO_NOT_TRACK__ = false;
+
+      await trackInstall();
+
+      expect(mockPosthog.capture).toHaveBeenCalledWith(
+        "canvas_install",
+        expect.any(Object),
+      );
+    });
+  });
+
+  describe("build-time do-not-track", () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it("never initializes PostHog, even when the provider asks", async () => {
+      vi.stubEnv("VITE_DO_NOT_TRACK", "1");
+      vi.resetModules();
+      const telemetry = await import("#/services/telemetry");
+
+      await expect(telemetry.initializePostHogClient()).resolves.toBeNull();
+      await telemetry.trackInstall();
+      await telemetry.setTelemetryConsent("granted");
+
+      expect(telemetry.getTelemetryConsent()).toBe("denied");
+      expect(mockPosthog.init).not.toHaveBeenCalled();
+    });
+  });
+
   describe("getTelemetryDistinctId", () => {
     it("returns null when consent is not granted", async () => {
       await expect(getTelemetryDistinctId()).resolves.toBeNull();
@@ -472,31 +621,39 @@ describe("Telemetry Service", () => {
     });
   });
 
-  describe("trackException", () => {
-    it("uses the consent-aware boundary", async () => {
-      await setTelemetryConsent("granted");
-      const error = new Error("failure");
-
-      await trackException(error, { error_source: "test" });
-
-      expect(mockPosthog.captureException).toHaveBeenCalledWith(error, {
-        error_source: "test",
-      });
-    });
-  });
-
   describe("clearTelemetryData", () => {
-    it("clears all telemetry data from localStorage", async () => {
+    it("clears all telemetry data from browser storage", async () => {
       await setTelemetryConsent("granted");
+      await setTelemetryIdentity("user-a");
       localStorage.setItem("openhands-telemetry-first-use", "true");
+      localStorage.setItem(
+        "posthog_bootstrap:consumed_nonces",
+        JSON.stringify({ "nonce-a": Date.now() + 60_000 }),
+      );
+      localStorage.setItem("posthog_bootstrap:legacy", "legacy");
+      sessionStorage.setItem(
+        "posthog_bootstrap",
+        JSON.stringify({
+          bootstrap: { distinctID: "website-anon", sessionID: "session-a" },
+          attribution: { cta_surface: "docs_link" },
+        }),
+      );
 
       await clearTelemetryData();
 
       expect(localStorage.getItem("openhands-telemetry-consent")).toBeNull();
       expect(getPendingCloudTelemetryConsent()).toBeNull();
       expect(localStorage.getItem("openhands-telemetry-first-use")).toBeNull();
+      expect(
+        localStorage.getItem("posthog_bootstrap:consumed_nonces"),
+      ).toBeNull();
+      expect(localStorage.getItem("posthog_bootstrap:legacy")).toBeNull();
+      expect(sessionStorage.getItem("posthog_bootstrap")).toBeNull();
       expect(mockPosthog.reset).toHaveBeenCalledWith(true);
       expect(mockPosthog.opt_out_capturing).toHaveBeenCalled();
+      await expect(getTelemetryDistinctIdForConsentSync()).resolves.toBe(
+        "user-a",
+      );
     });
 
     it("falls back to opting out if the SDK cannot reset", async () => {

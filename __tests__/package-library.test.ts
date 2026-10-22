@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -11,6 +12,7 @@ const packageJson = JSON.parse(
   module: string;
   types: string;
   exports: Record<string, unknown>;
+  sideEffects?: unknown;
   scripts: Record<string, string>;
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
@@ -56,7 +58,11 @@ describe("package library metadata", () => {
         import: "./dist/i18n/index.js",
         require: "./dist/i18n/index.cjs",
       },
+      "./styles.css": "./dist/styles.css",
     });
+    // A `sideEffects` list would let bundlers drop `import ".../styles.css"`
+    // unless it names the stylesheet.
+    expect(packageJson.sideEffects).toBeUndefined();
   });
 
   // Git dependencies break `npm install -g` because npm clones the repo and
@@ -102,6 +108,31 @@ describe("package library metadata", () => {
     );
 
     expect(violations).toEqual([]);
+  });
+
+  it("prints startup guidance only for global installs", () => {
+    const runPostinstall = (isGlobal: boolean) => {
+      const env = { ...process.env };
+      if (isGlobal) {
+        env.npm_config_global = "true";
+      } else {
+        delete env.npm_config_global;
+      }
+
+      return spawnSync(packageJson.scripts.postinstall, {
+        encoding: "utf8",
+        env,
+        shell: true,
+      });
+    };
+
+    const dependencyInstall = runPostinstall(false);
+    const globalInstall = runPostinstall(true);
+
+    expect(dependencyInstall.status).toBe(0);
+    expect(dependencyInstall.stdout).toBe("");
+    expect(globalInstall.status).toBe(0);
+    expect(globalInstall.stdout).toContain("To start Agent Canvas, run:");
   });
 
   it("ships runtime logger dependencies for the published CLI", () => {

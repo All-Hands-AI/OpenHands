@@ -2,7 +2,9 @@ import type { BackendKind } from "#/api/backend-registry/types";
 
 export const UNKNOWN_TELEMETRY_VERSION = "unknown";
 
-export type BackendConnectionMethod = "manual" | "cloud_login";
+export type DeploymentKind = "local" | "remote";
+
+export type BackendConnectionMethod = "manual" | "cloud_login" | "cloud_cookie";
 
 export interface CloudTelemetryContextInput {
   userId?: string | null;
@@ -30,6 +32,14 @@ function normalizeOptionalProperty(
   return trimmed || null;
 }
 
+export function getDeploymentKindForBackend(
+  backendKind: BackendKind | null | undefined,
+): DeploymentKind | null {
+  if (backendKind === "cloud") return "remote";
+  if (backendKind === "local") return "local";
+  return null;
+}
+
 export function getBackendTelemetryProperties({
   backendKind,
   agentServerVersion,
@@ -48,6 +58,7 @@ export function getBackendTelemetryProperties({
 
   return {
     backend_kind: backendKind ?? null,
+    deployment_kind: getDeploymentKindForBackend(backendKind),
     agent_server_version: resolvedAgentServerVersion,
     automation_sdk_version: resolvedAutomationSdkVersion,
     backend_version: resolvedBackendVersion,

@@ -1,4 +1,7 @@
+import { AUTOMATION_FORM_UPDATE_ACTION_KIND } from "#/constants/automation-form";
 import { CANVAS_UI_CLIENT_ACTION_KIND } from "#/constants/canvas-ui";
+import { LAUNCH_CHILD_CONVERSATION_ACTION_KIND } from "#/constants/child-conversation";
+import { REQUEST_SECRET_ACTION_KIND } from "#/constants/secret-request";
 import { ActionBase } from "./base";
 import { TaskItem } from "./common";
 
@@ -321,6 +324,48 @@ export interface CanvasUIAction extends ActionBase<
   tab?: string | null;
 }
 
+/**
+ * Request to patch the active automation setup form from an agent tool call.
+ * The concrete fields are normalized by the draft store because the SDK only
+ * validates the JSON schema at the client-tool boundary.
+ */
+export interface AutomationFormUpdateAction extends ActionBase<
+  typeof AUTOMATION_FORM_UPDATE_ACTION_KIND
+> {
+  fields: Record<string, unknown>;
+  overwrite_user_edits?: boolean | null;
+}
+
+/**
+ * Request to launch a child conversation, emitted over the existing WebSocket
+ * and intercepted by handleLaunchChildConversationAction. The agent-server
+ * validates the parameter *names* and types against the tool schema but not
+ * `enum` values, so the fields stay loosely typed here and the dispatcher
+ * narrows them (returning corrective guidance on a mismatch).
+ */
+export interface LaunchChildConversationAction extends ActionBase<
+  typeof LAUNCH_CHILD_CONVERSATION_ACTION_KIND
+> {
+  target: string;
+  task: string;
+  title?: string | null;
+  repository?: string | null;
+  branch?: string | null;
+  isolation?: string | null;
+}
+
+/**
+ * Request for the user to provide a secret, emitted over the existing
+ * WebSocket and intercepted by handleRequestSecretAction. Carries the secret's
+ * name and purpose only — the value never passes through the agent.
+ */
+export interface RequestSecretAction extends ActionBase<
+  typeof REQUEST_SECRET_ACTION_KIND
+> {
+  name: string;
+  reason?: string | null;
+}
+
 export type Action =
   | MCPToolAction
   | FinishAction
@@ -346,4 +391,7 @@ export type Action =
   | InvokeSkillAction
   | TaskAction
   | SwitchLLMAction
-  | CanvasUIAction;
+  | CanvasUIAction
+  | AutomationFormUpdateAction
+  | LaunchChildConversationAction
+  | RequestSecretAction;

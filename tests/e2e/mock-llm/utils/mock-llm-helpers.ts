@@ -70,7 +70,31 @@ export const SESSION_API_KEY = (() => {
  *  localStorage no longer needs this seeding to reach onboarding.  See
  *  `auth mode: fresh install with runtime-injected key` in
  *  `mock-llm-auth-modes.spec.ts` for the test that covers that path. */
+export async function seedBackendAnalyticsConsent(
+  backendUrl = BACKEND_URL,
+  apiKey = SESSION_API_KEY,
+) {
+  const response = await fetch(`${backendUrl}/api/settings`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Session-API-Key": apiKey,
+    },
+    body: JSON.stringify({
+      misc_settings_diff: {
+        app_preferences: { user_consents_to_analytics: false },
+      },
+    }),
+  });
+
+  expect(
+    response.ok,
+    `failed to seed analytics consent on ${backendUrl}: ${response.status}`,
+  ).toBe(true);
+}
+
 export async function seedLocalStorage(page: Page) {
+  await seedBackendAnalyticsConsent();
   await page.addInitScript(
     ({ apiKey }) => {
       window.localStorage.setItem("analytics-consent", "false");
@@ -141,7 +165,7 @@ export async function dismissAnalyticsModal(page: Page) {
   // pointer events (e.g. the delete-profile confirmation left by a prior
   // test).
   try {
-    const form = page.getByTestId("user-capture-consent-form");
+    const form = page.getByTestId("telemetry-consent-form");
     await form.waitFor({ state: "visible", timeout: 5_000 });
     await form.getByRole("button", { name: "Confirm preferences" }).click();
     // Wait for the modal to fully close so the backdrop no longer
@@ -526,6 +550,8 @@ export async function ensureMockLLMAgentProfile(
       data: {
         agent_kind: "openhands",
         llm_profile_ref: llmProfileRef,
+        // Keep the deterministic mock harness from resolving CI ambient secrets.
+        secret_refs: [],
       },
     },
   );
@@ -608,7 +634,12 @@ async function fillLlmProfileEditorAndSave(
   await apiKeyInput.click();
   await apiKeyInput.fill(apiKey);
 
-  await page.getByTestId("save-profile-btn").click();
+  const saveButton = page.getByTestId("save-profile-btn");
+  if (await saveButton.isEnabled()) {
+    await saveButton.click();
+  } else {
+    await page.getByTestId("back-to-profiles").click();
+  }
   await waitForTestId(page, "add-llm-profile");
 }
 
@@ -675,6 +706,12 @@ export async function deleteProfileIfExists(page: Page, profileName: string) {
     const confirmBtn = page.getByTestId("delete-profile-confirm");
     await confirmBtn.waitFor({ state: "visible", timeout: 5_000 });
     await confirmBtn.click();
+    // The profile list remains visible behind the modal, so merely waiting for
+    // `add-llm-profile` does not prove the delete mutation has finished. Wait
+    // for both the modal and the exact row to disappear before a caller tries
+    // to delete or create another profile.
+    await expect(confirmBtn).toBeHidden({ timeout: 30_000 });
+    await expect(row).toHaveCount(0, { timeout: 30_000 });
     await waitForTestId(page, "add-llm-profile");
   } else {
     await page.keyboard.press("Escape");
@@ -892,9 +929,7 @@ export async function setChatInput(
   // dismissAnalyticsModal's give-up window to paint the composer on a
   // loaded CI runner, and the querySelector below would throw. Wait for
   // the input the way a locator action would before setting text.
-  await page
-    .getByTestId(testId)
-    .waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByTestId(testId).waitFor({ state: "visible", timeout: 30_000 });
   await page.evaluate(
     ({ tid, inputText }) => {
       const el = document.querySelector(`[data-testid="${tid}"]`);

@@ -5,11 +5,13 @@ import {
 } from "#/api/backend-registry/active-store";
 import type { Backend } from "#/api/backend-registry/types";
 import type { Automation, AutomationSpec } from "#/types/automation";
+import type { GitSyncStatus } from "#/types/git-sync";
 import AutomationService from "./automation-service.api";
 
 const {
   localAxios,
   callCloudProxy,
+  clearPendingLocalTelemetryRevocation,
   getTelemetryConsent,
   getTelemetryDistinctId,
   getTelemetryDistinctIdForConsentSync,
@@ -18,10 +20,12 @@ const {
     interceptors: { request: { use: vi.fn() } },
     get: vi.fn(),
     post: vi.fn(),
+    put: vi.fn(),
     patch: vi.fn(),
     delete: vi.fn(),
   },
   callCloudProxy: vi.fn(),
+  clearPendingLocalTelemetryRevocation: vi.fn(),
   getTelemetryConsent: vi.fn(),
   getTelemetryDistinctId: vi.fn(),
   getTelemetryDistinctIdForConsentSync: vi.fn(),
@@ -39,6 +43,7 @@ vi.mock("#/api/cloud/proxy", () => ({
 }));
 
 vi.mock("#/services/telemetry", () => ({
+  clearPendingLocalTelemetryRevocation,
   getTelemetryConsent,
   getTelemetryDistinctId,
   getTelemetryDistinctIdForConsentSync,
@@ -175,6 +180,19 @@ describe("AutomationService.syncTelemetryConsent", () => {
       },
       { timeout: 5000 },
     );
+    expect(clearPendingLocalTelemetryRevocation).toHaveBeenCalledWith(
+      "ph-fe-sync",
+    );
+  });
+
+  it("keeps a pending local revocation when consent sync fails", async () => {
+    localAxios.post.mockRejectedValueOnce(new Error("automation unavailable"));
+
+    await expect(
+      AutomationService.syncTelemetryConsent("denied"),
+    ).rejects.toThrow("automation unavailable");
+
+    expect(clearPendingLocalTelemetryRevocation).not.toHaveBeenCalled();
   });
 
   it("skips cloud backends because cloud consent is handled by auth", async () => {
@@ -346,6 +364,134 @@ describe("AutomationService.createAutomation", () => {
       "/api/automation/v1/preset/plugin",
       expect.objectContaining({ timeout: 1200 }),
       expect.any(Object),
+    );
+  });
+});
+
+const gitSyncStatus: GitSyncStatus = {
+  enabled: true,
+  repo_url: "https://example.com/org/repo.git",
+  branch: "main",
+  path: "automations",
+  encryption_enabled: false,
+  interval_seconds: 0,
+  last_synced_commit: "abc123",
+  last_synced_at: "2026-07-10T00:00:00Z",
+  last_error: null,
+  last_error_at: null,
+  dirty_count: 0,
+};
+
+describe("AutomationService git sync", () => {
+  beforeEach(() => {
+    setRegisteredBackends([localBackend]);
+    setActiveSelection({ backendId: localBackend.id });
+  });
+
+  afterEach(() => {
+    setActiveSelection(null);
+    setRegisteredBackends([]);
+    vi.clearAllMocks();
+  });
+
+  it("fetches status from the local automation backend", async () => {
+    localAxios.get.mockResolvedValueOnce({ data: gitSyncStatus });
+
+    await expect(AutomationService.getGitSyncStatus()).resolves.toEqual(
+      gitSyncStatus,
+    );
+
+    expect(localAxios.get).toHaveBeenCalledWith(
+      "/api/automation/v1/git-sync/status",
+    );
+  });
+
+  it("fetches status through the cloud proxy", async () => {
+    setRegisteredBackends([cloudBackend]);
+    setActiveSelection({ backendId: cloudBackend.id, orgId: "org-1" });
+    callCloudProxy.mockResolvedValueOnce(gitSyncStatus);
+
+    await expect(AutomationService.getGitSyncStatus()).resolves.toEqual(
+      gitSyncStatus,
+    );
+
+    expect(callCloudProxy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        backend: cloudBackend,
+        method: "GET",
+        path: "/api/automation/v1/git-sync/status",
+        headers: expect.objectContaining({
+          "X-OpenHands-Client": "agent_canvas",
+        }),
+      }),
+    );
+  });
+
+  it("sends a partial config update", async () => {
+    localAxios.put.mockResolvedValueOnce({ data: gitSyncStatus });
+
+    await expect(
+      AutomationService.updateGitSyncConfig({ branch: "develop" }),
+    ).resolves.toEqual(gitSyncStatus);
+
+    expect(localAxios.put).toHaveBeenCalledWith(
+      "/api/automation/v1/git-sync/config",
+      { branch: "develop" },
+    );
+  });
+
+  it("sends a null override through the cloud proxy", async () => {
+    setRegisteredBackends([cloudBackend]);
+    setActiveSelection({ backendId: cloudBackend.id, orgId: "org-1" });
+    callCloudProxy.mockResolvedValueOnce(gitSyncStatus);
+
+    await AutomationService.updateGitSyncConfig({ token: null });
+
+    expect(callCloudProxy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        backend: cloudBackend,
+        method: "PUT",
+        path: "/api/automation/v1/git-sync/config",
+        body: { token: null },
+        headers: expect.objectContaining({
+          "X-OpenHands-Client": "agent_canvas",
+        }),
+      }),
+    );
+  });
+
+  it("checks a candidate configuration through the cloud proxy", async () => {
+    setRegisteredBackends([cloudBackend]);
+    setActiveSelection({ backendId: cloudBackend.id, orgId: "org-1" });
+    const check = { ok: true, branch_exists: true, detail: null };
+    callCloudProxy.mockResolvedValueOnce(check);
+
+    await expect(
+      AutomationService.checkGitSyncConfig({ branch: "develop" }),
+    ).resolves.toEqual(check);
+
+    expect(callCloudProxy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        backend: cloudBackend,
+        method: "POST",
+        path: "/api/automation/v1/git-sync/check",
+        body: { branch: "develop" },
+        headers: expect.objectContaining({
+          "X-OpenHands-Client": "agent_canvas",
+        }),
+      }),
+    );
+  });
+
+  it("triggers a sync cycle", async () => {
+    localAxios.post.mockResolvedValueOnce({ data: { triggered: true } });
+
+    await expect(AutomationService.triggerGitSync()).resolves.toEqual({
+      triggered: true,
+    });
+
+    expect(localAxios.post).toHaveBeenCalledWith(
+      "/api/automation/v1/git-sync/sync",
     );
   });
 });

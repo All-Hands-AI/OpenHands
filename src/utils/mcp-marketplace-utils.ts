@@ -110,7 +110,17 @@ export function getMcpOAuthAuthenticationConfig(
 export function getMcpMarketplaceCatalog(
   catalog: MarketplaceEntry[],
 ): MarketplaceEntry[] {
-  return catalog.filter((entry) => !!getDefaultMcpConnectionOption(entry));
+  return catalog.filter(isMcpInstallableEntry);
+}
+
+/**
+ * Whether this backend can install/configure the entry as an MCP server.
+ * Entries whose only connection options use another provider or transport
+ * (e.g. Jira's HTTP/OpenAPI option) exist in the catalog but cannot go
+ * through the local MCP install flow.
+ */
+export function isMcpInstallableEntry(entry: MarketplaceEntry): boolean {
+  return !!getDefaultMcpConnectionOption(entry);
 }
 
 const tryUrl = (raw: string): URL | null => {
@@ -191,8 +201,17 @@ function transportMatchesServer(
     );
   }
 
-  // stdio: match on the registered server name.
-  return server.type === "stdio" && server.name === transport.serverName;
+  // stdio: match on what the server runs, not its settings key. A repeated
+  // library install is stored under a suffixed key (`time_1`) and users can
+  // rename a copy, but both keep the catalog command and leading args;
+  // `argFields` tokens (paths, `--repository <path>`) are appended after them.
+  const serverArgs = server.args ?? [];
+  return (
+    server.type === "stdio" &&
+    server.command === transport.command &&
+    transport.args.length <= serverArgs.length &&
+    transport.args.every((arg, index) => serverArgs[index] === arg)
+  );
 }
 
 function normalize(query: string): string {
