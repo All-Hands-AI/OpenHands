@@ -1,0 +1,100 @@
+{
+  "label": "after",
+  "guestPreserved": true,
+  "rootRecovered": true,
+  "activeGuest": true,
+  "guestKeyEmpty": true,
+  "guestHost": "http://127.0.0.1:18640/mars/sessions/01a16026-ecf4-7e1d-b214-addaf61b2e12",
+  "guestName": "openhands-do-test-9l71qg",
+  "backendCount": 2,
+  "events": [
+    {
+      "path": "/mars/sessions/01a16026-ecf4-7e1d-b214-addaf61b2e12/api/settings",
+      "status": 200
+    },
+    {
+      "path": "/mars/sessions/01a16026-ecf4-7e1d-b214-addaf61b2e12/server_info",
+      "status": 200
+    },
+    {
+      "path": "/mars/sessions/01a16026-ecf4-7e1d-b214-addaf61b2e12/server_info",
+      "status": 200
+    },
+    {
+      "path": "/mars/sessions/01a16026-ecf4-7e1d-b214-addaf61b2e12/api/settings",
+      "status": 200
+    },
+    {
+      "path": "/api/settings",
+      "status": 200
+    },
+    {
+      "path": "/mars/sessions/01a16026-ecf4-7e1d-b214-addaf61b2e12/api/settings",
+      "status": 200
+    },
+    {
+      "path": "/mars/sessions/01a16026-ecf4-7e1d-b214-addaf61b2e12/server_info",
+      "status": 200
+    },
+    {
+      "path": "/server_info",
+      "status": 200
+    },
+    {
+      "path": "/mars/sessions/01a16026-ecf4-7e1d-b214-addaf61b2e12/api/settings",
+      "status": 200
+    },
+    {
+      "path": "/mars/sessions/01a16026-ecf4-7e1d-b214-addaf61b2e12/server_info",
+      "status": 200
+    },
+    {
+      "path": "/mars/sessions/01a16026-ecf4-7e1d-b214-addaf61b2e12/server_info",
+      "status": 401
+    },
+    {
+      "path": "/api/settings",
+      "status": 200
+    },
+    {
+      "path": "/mars/sessions/01a16026-ecf4-7e1d-b214-addaf61b2e12/api/settings",
+      "status": 200
+    },
+    {
+      "path": "/mars/sessions/01a16026-ecf4-7e1d-b214-addaf61b2e12/server_info",
+      "status": 200
+    },
+    {
+      "path": "/mars/sessions/01a16026-ecf4-7e1d-b214-addaf61b2e12/server_info",
+      "status": 200
+    },
+    {
+      "path": "/mars/sessions/01a16026-ecf4-7e1d-b214-addaf61b2e12/api/settings",
+      "status": 200
+    },
+    {
+      "path": "/mars/sessions/01a16026-ecf4-7e1d-b214-addaf61b2e12/api/settings",
+      "status": 200
+    },
+    {
+      "path": "/api/settings",
+      "status": 200
+    },
+    {
+      "path": "/mars/sessions/01a16026-ecf4-7e1d-b214-addaf61b2e12/api/settings",
+      "status": 200
+    },
+    {
+      "path": "/server_info",
+      "status": 200
+    },
+    {
+      "path": "/mars/sessions/01a16026-ecf4-7e1d-b214-addaf61b2e12/server_info",
+      "status": 200
+    },
+    {
+      "path": "/mars/sessions/01a16026-ecf4-7e1d-b214-addaf61b2e12/server_info",
+      "status": 200
+    }
+  ]
+}
