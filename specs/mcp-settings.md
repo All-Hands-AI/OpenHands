@@ -51,3 +51,6 @@
       authentication are not sent.
 - [x] When no option can be installed, the dialog says so and Install is
       disabled. Install never does nothing silently.
+- [x] When the person does not finish an OAuth sign-in in the pop-up, the
+      dialog says the sign-in was not completed and asks them to try again; it
+      does not report a connection timeout or blame the URL.

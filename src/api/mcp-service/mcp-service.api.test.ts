@@ -983,8 +983,8 @@ describe("McpService.testServer", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: "OAuth authorization timed out",
-      error_kind: "timeout",
+      error: "OAuth authorization was not completed",
+      error_kind: "authorization",
     });
     expect(getOAuthStatus).toHaveBeenCalledTimes(141);
     expect(close).toHaveBeenCalledOnce();

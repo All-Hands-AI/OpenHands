@@ -362,10 +362,12 @@ class McpService {
         }
       }
 
+      // The server was never asked anything that could time out; the person
+      // did not finish the sign-in in the pop-up.
       return {
         ok: false,
-        error: "OAuth authorization timed out",
-        error_kind: "timeout",
+        error: "OAuth authorization was not completed",
+        error_kind: "authorization",
       };
     } catch (err) {
       popup?.close();
