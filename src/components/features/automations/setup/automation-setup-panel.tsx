@@ -63,6 +63,7 @@ import { AutomationSetupPromptStack } from "#/components/features/automations/se
 import { ContextMenuListItem } from "#/components/features/context-menu/context-menu-list-item";
 import { formatTriggerSourceLabel } from "#/components/features/home/featured-automations/automation-run-health";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
+import { useSettings } from "#/hooks/query/use-settings";
 import { usePromptTextareaResize } from "#/hooks/use-prompt-textarea-resize";
 import { useSendMessage } from "#/hooks/use-send-message";
 import {
@@ -117,6 +118,7 @@ import {
 import { setupDraftFromAutomation } from "#/utils/automation-edit-draft";
 import { withPresetSources } from "#/utils/automation-preset-sources";
 import {
+  automationCloneProviders,
   automationRepositoriesChanged,
   buildAutomationRepoSources,
 } from "#/utils/automation-repo-sources";
@@ -658,6 +660,13 @@ export function AutomationSetupPanel({
   const { t } = useTranslation("openhands");
   const { navigate } = useNavigation();
   const deploymentCapabilities = useDeploymentCapabilities();
+  // Connected self-hosted providers name their hosts here; a repository on
+  // one of them is sent with its provider so the run can authenticate, as
+  // long as the service can clone from that provider at all.
+  const providerHosts = useSettings().data?.provider_tokens_set;
+  const cloneProviders = automationCloneProviders(
+    deploymentCapabilities.data?.repoProviders,
+  );
   const eventSourceOptions = deploymentCapabilities.data?.eventSources ?? [];
   const eventTypeOptions = deploymentCapabilities.data?.eventTypes ?? [];
   const initialDraft = conversationId
@@ -1247,7 +1256,12 @@ export function AutomationSetupPanel({
     } as SetupRequestBody;
     const repositories = parseAutomationSetupRepositories(repository);
     if (repositories.length > 0) {
-      body.repos = buildAutomationRepoSources(repositories);
+      body.repos = buildAutomationRepoSources(
+        repositories,
+        [],
+        providerHosts,
+        cloneProviders,
+      );
     }
     if (showTimeout && timeoutSeconds.trim())
       body.timeout = Number(timeoutSeconds);
@@ -1746,6 +1760,8 @@ export function AutomationSetupPanel({
       body.repos = buildAutomationRepoSources(
         repositories,
         existingRepositories,
+        providerHosts,
+        cloneProviders,
       );
     }
     return body as Partial<Automation>;

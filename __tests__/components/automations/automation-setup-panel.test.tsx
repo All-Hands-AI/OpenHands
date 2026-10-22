@@ -42,6 +42,7 @@ import { AUTOMATIONS_QUERY_KEY } from "#/hooks/query/use-automations";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import type { AutomationDraftApiResponse } from "#/manifests/types";
 import type { Automation } from "#/types/automation";
+import type { Provider } from "#/types/settings";
 
 const mockNavigate = vi.fn();
 const mockToastSuccess = vi.fn();
@@ -75,10 +76,39 @@ const createGitRepositoriesQueryResult = () => ({
   fetchNextPage: vi.fn(),
   onLoadMore: vi.fn(),
 });
-const mockUseGitRepositories = vi.fn(createGitRepositoriesQueryResult);
+/** One private repository listed by another provider than GitHub. */
+const createProviderRepositoriesQueryResult = (
+  provider: Provider,
+  fullName: string,
+) => ({
+  ...createGitRepositoriesQueryResult(),
+  data: {
+    pages: [
+      {
+        items: [
+          {
+            id: `${provider}-1`,
+            full_name: fullName,
+            git_provider: provider,
+            is_public: false,
+          },
+        ],
+        missing_token: false,
+        next_page_id: null,
+      },
+    ],
+  },
+});
+const mockUseGitRepositories = vi.fn(
+  (_options?: { provider?: Provider | null }) =>
+    createGitRepositoriesQueryResult(),
+);
 const mockUseSearchRepositories = vi.fn((..._args: unknown[]) => ({
   data: undefined as { full_name: string }[] | undefined,
   isFetching: false,
+}));
+const mockUseSettings = vi.fn(() => ({
+  data: { provider_tokens_set: {} as Record<string, string | null> },
 }));
 
 const { mockSendMessage } = vi.hoisted(() => ({
@@ -178,7 +208,12 @@ vi.mock("#/hooks/use-user-providers", () => ({
 }));
 
 vi.mock("#/hooks/query/use-git-repositories", () => ({
-  useGitRepositories: () => mockUseGitRepositories(),
+  useGitRepositories: (options: { provider?: Provider | null }) =>
+    mockUseGitRepositories(options),
+}));
+
+vi.mock("#/hooks/query/use-settings", () => ({
+  useSettings: () => mockUseSettings(),
 }));
 
 vi.mock("#/hooks/query/use-search-repositories", () => ({
@@ -322,6 +357,7 @@ describe("AutomationSetupPanel", () => {
       providers: ["github"],
       isLoadingSettings: false,
     });
+    mockUseSettings.mockReturnValue({ data: { provider_tokens_set: {} } });
   });
 
   afterEach(() => {
@@ -861,6 +897,320 @@ describe("AutomationSetupPanel", () => {
     expect(
       screen.queryByTestId("automation-setup-repository-value"),
     ).not.toBeInTheDocument();
+  });
+
+  it("adds a GitLab repository by its URL and sends it without a provider", async () => {
+    vi.mocked(AutomationService.createServerDraft).mockRejectedValue({
+      response: { status: 404 },
+    });
+    vi.mocked(AutomationService.validateDraft).mockResolvedValue({
+      valid: true,
+      errors: [],
+    });
+    mockUseUserProviders.mockReturnValue({
+      providers: ["gitlab"],
+      isLoadingSettings: false,
+    });
+    // The server names the connection's host; gitlab.com is the hosted service.
+    mockUseSettings.mockReturnValue({
+      data: { provider_tokens_set: { gitlab: "gitlab.com" } },
+    });
+    mockUseGitRepositories.mockReturnValue(
+      createProviderRepositoriesQueryResult("gitlab", "acme/tools"),
+    );
+
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(screen.getByTestId("automation-setup-repository-add"));
+    // One cloneable provider needs no provider choice.
+    expect(
+      screen.queryByTestId("automation-setup-repository-provider"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("automation-setup-repository-unsupported"),
+    ).not.toBeInTheDocument();
+    await user.click(
+      screen.getByTestId("automation-setup-repository-option-acme/tools"),
+    );
+
+    expect(
+      screen.getByTestId("automation-setup-repository-value"),
+    ).toHaveTextContent("https://gitlab.com/acme/tools");
+
+    await user.click(screen.getByTestId("automation-setup-test"));
+
+    // gitlab.com is a hosted service the run recognizes on its own.
+    await waitFor(() =>
+      expect(AutomationService.validateDraft).toHaveBeenCalledWith(
+        expect.objectContaining({
+          draft: expect.objectContaining({
+            repos: [{ url: "https://gitlab.com/acme/tools" }],
+          }),
+        }),
+      ),
+    );
+  });
+
+  it("keeps GitLab repositories disabled when the server reports no host", async () => {
+    // The same name covers gitlab.com and a self-managed instance, so without
+    // the host the form cannot address the repository and must not guess.
+    mockUseUserProviders.mockReturnValue({
+      providers: ["gitlab"],
+      isLoadingSettings: false,
+    });
+    mockUseSettings.mockReturnValue({
+      data: { provider_tokens_set: { gitlab: null } },
+    });
+    mockUseGitRepositories.mockReturnValue(
+      createProviderRepositoriesQueryResult("gitlab", "acme/tools"),
+    );
+
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(screen.getByTestId("automation-setup-repository-add"));
+
+    expect(
+      screen.queryByTestId("automation-setup-repository-provider"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByTestId("automation-setup-repository-unsupported"),
+    ).toHaveTextContent("AUTOMATION_SETUP$REPOSITORY_PROVIDER_UNSUPPORTED");
+    const option = screen.getByTestId(
+      "automation-setup-repository-option-acme/tools",
+    );
+    expect(option).toBeDisabled();
+    await user.click(option);
+    expect(
+      screen.queryByTestId("automation-setup-repository-value"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("names the provider of a repository on a connected self-hosted host", async () => {
+    vi.mocked(AutomationService.createServerDraft).mockRejectedValue({
+      response: { status: 404 },
+    });
+    vi.mocked(AutomationService.validateDraft).mockResolvedValue({
+      valid: true,
+      errors: [],
+    });
+    mockUseUserProviders.mockReturnValue({
+      providers: ["gitlab"],
+      isLoadingSettings: false,
+    });
+    mockUseSettings.mockReturnValue({
+      data: { provider_tokens_set: { gitlab: "https://gitlab.example.com" } },
+    });
+    mockUseGitRepositories.mockReturnValue(
+      createProviderRepositoriesQueryResult("gitlab", "acme/tools"),
+    );
+
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(screen.getByTestId("automation-setup-repository-add"));
+    await user.click(
+      screen.getByTestId("automation-setup-repository-option-acme/tools"),
+    );
+
+    expect(
+      screen.getByTestId("automation-setup-repository-value"),
+    ).toHaveTextContent("https://gitlab.example.com/acme/tools");
+
+    await user.click(screen.getByTestId("automation-setup-test"));
+
+    // The run cannot tell whose host this is, so the provider goes along.
+    await waitFor(() =>
+      expect(AutomationService.validateDraft).toHaveBeenCalledWith(
+        expect.objectContaining({
+          draft: expect.objectContaining({
+            repos: [
+              {
+                url: "https://gitlab.example.com/acme/tools",
+                provider: "gitlab",
+              },
+            ],
+          }),
+        }),
+      ),
+    );
+  });
+
+  it("sends no provider for a pasted URL on a host the run cannot clone from", async () => {
+    vi.mocked(AutomationService.createServerDraft).mockRejectedValue({
+      response: { status: 404 },
+    });
+    vi.mocked(AutomationService.validateDraft).mockResolvedValue({
+      valid: true,
+      errors: [],
+    });
+    mockUseUserProviders.mockReturnValue({
+      providers: ["github", "bitbucket_data_center"],
+      isLoadingSettings: false,
+    });
+    mockUseSettings.mockReturnValue({
+      data: {
+        provider_tokens_set: {
+          github: "",
+          bitbucket_data_center: "https://bb.example.com",
+        },
+      },
+    });
+
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(screen.getByTestId("automation-setup-repository-add"));
+    // Only GitHub is cloneable here, so there is no provider choice to make.
+    expect(
+      screen.queryByTestId("automation-setup-repository-provider"),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByTestId("automation-setup-repository-custom"));
+    await user.type(
+      screen.getByTestId("automation-setup-repository-address"),
+      "https://bb.example.com/PROJ/repo",
+    );
+    await user.click(screen.getByTestId("automation-setup-repository-submit"));
+    await user.click(screen.getByTestId("automation-setup-test"));
+
+    // The service's schema does not know bitbucket_data_center, so the URL
+    // goes alone rather than failing the whole request.
+    await waitFor(() =>
+      expect(AutomationService.validateDraft).toHaveBeenCalledWith(
+        expect.objectContaining({
+          draft: expect.objectContaining({
+            repos: [{ url: "https://bb.example.com/PROJ/repo" }],
+          }),
+        }),
+      ),
+    );
+  });
+
+  it("lets a user with several providers choose whose repositories to list", async () => {
+    mockUseUserProviders.mockReturnValue({
+      providers: ["github", "gitlab"],
+      isLoadingSettings: false,
+    });
+    mockUseSettings.mockReturnValue({
+      data: { provider_tokens_set: { github: null, gitlab: "gitlab.com" } },
+    });
+    mockUseGitRepositories.mockImplementation((options) =>
+      options?.provider === "gitlab"
+        ? createProviderRepositoriesQueryResult("gitlab", "acme/tools")
+        : createGitRepositoriesQueryResult(),
+    );
+
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(screen.getByTestId("automation-setup-repository-add"));
+    const providerSelect = screen.getByTestId(
+      "automation-setup-repository-provider",
+    );
+    expect(providerSelect).toHaveValue("github");
+    expect(
+      within(providerSelect)
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual(["GitHub", "GitLab"]);
+    expect(
+      screen.getByTestId(
+        "automation-setup-repository-option-OpenHands/OpenHands",
+      ),
+    ).toBeInTheDocument();
+
+    await user.selectOptions(providerSelect, "gitlab");
+
+    expect(
+      await screen.findByTestId(
+        "automation-setup-repository-option-acme/tools",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId(
+        "automation-setup-repository-option-OpenHands/OpenHands",
+      ),
+    ).not.toBeInTheDocument();
+    expect(mockUseSearchRepositories).toHaveBeenLastCalledWith(
+      "",
+      "gitlab",
+      false,
+    );
+
+    await user.click(
+      screen.getByTestId("automation-setup-repository-option-acme/tools"),
+    );
+    expect(
+      screen.getByTestId("automation-setup-repository-value"),
+    ).toHaveTextContent("https://gitlab.com/acme/tools");
+  });
+
+  it("offers Azure DevOps repositories when the service clones them", async () => {
+    vi.mocked(useDeploymentCapabilities).mockReturnValue({
+      data: {
+        ready: true,
+        features: [],
+        triggerKinds: ["cron"],
+        eventSources: [],
+        eventTypes: [],
+        triggers: {},
+        repoProviders: ["azure_devops", "github"],
+      },
+      isLoading: false,
+    } as never);
+    vi.mocked(AutomationService.createServerDraft).mockRejectedValue({
+      response: { status: 404 },
+    });
+    vi.mocked(AutomationService.validateDraft).mockResolvedValue({
+      valid: true,
+      errors: [],
+    });
+    mockUseUserProviders.mockReturnValue({
+      providers: ["azure_devops"],
+      isLoadingSettings: false,
+    });
+    mockUseGitRepositories.mockReturnValue(
+      createProviderRepositoriesQueryResult(
+        "azure_devops",
+        "fabrikam/Fabrikam Fiber/fabrikam-web",
+      ),
+    );
+
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(screen.getByTestId("automation-setup-repository-add"));
+    expect(
+      screen.queryByTestId("automation-setup-repository-unsupported"),
+    ).not.toBeInTheDocument();
+    const option = screen.getByTestId(
+      "automation-setup-repository-option-fabrikam/Fabrikam Fiber/fabrikam-web",
+    );
+    expect(option).not.toBeDisabled();
+    await user.click(option);
+
+    expect(
+      screen.getByTestId("automation-setup-repository-value"),
+    ).toHaveTextContent(
+      "https://dev.azure.com/fabrikam/Fabrikam%20Fiber/_git/fabrikam-web",
+    );
+
+    await user.click(screen.getByTestId("automation-setup-test"));
+
+    await waitFor(() =>
+      expect(AutomationService.validateDraft).toHaveBeenCalledWith(
+        expect.objectContaining({
+          draft: expect.objectContaining({
+            repos: [
+              {
+                url: "https://dev.azure.com/fabrikam/Fabrikam%20Fiber/_git/fabrikam-web",
+              },
+            ],
+          }),
+        }),
+      ),
+    );
   });
 
   it("streams agent form updates field by field without overwriting user edits", async () => {

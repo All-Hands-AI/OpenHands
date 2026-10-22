@@ -33,6 +33,7 @@ const CAPABILITIES: DeploymentCapabilities = {
     // Changing a preset's repositories with PATCH is newer than the fixture too.
     "repoUpdate",
   ],
+  repoProviders: ["bitbucket", "github", "gitlab"],
 };
 
 interface DraftTrigger {

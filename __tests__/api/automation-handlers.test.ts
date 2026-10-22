@@ -88,6 +88,9 @@ describe("Automation MSW Handlers", () => {
             "automationDrafts",
             "repoUpdate",
           ],
+          // Newer than the pinned fixture as well: the providers whose
+          // repositories a run clones.
+          repoProviders: ["bitbucket", "github", "gitlab"],
         },
       });
     });
