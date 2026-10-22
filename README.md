@@ -126,12 +126,18 @@ This setting isolates conversation execution; it does not move the entire Canvas
 > [!WARNING]
 > This runs the agent-server directly on the machine you're installing on — the agent will have full access to your filesystem!
 
-**Prerequisites**: [Node.js](https://nodejs.org/) 24 or later, `npm`, `uv` (for running the agent server via `uvx`)
+**Prerequisites**: [Node.js](https://nodejs.org/) 24 or later, npm 11.12.1 (the repository pin), `uv` (for running the agent server via `uvx`)
+
+Check `npm --version` before resolving dependencies. The seven-day release-age
+filter (`npm install --min-release-age=7`) requires npm >=11.10; older versions
+do not enforce it. Use `npm ci` to replay the committed lockfile. This npm
+requirement is for contributor dependency resolution, not for installing the
+published Canvas package.
 
 ```sh
 git clone https://github.com/OpenHands/OpenHands.git
 cd OpenHands
-npm install
+npm ci
 npm run dev
 ```
 
