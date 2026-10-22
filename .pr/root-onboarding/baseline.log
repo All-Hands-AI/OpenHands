@@ -1,0 +1,183 @@
+
+> @openhands/agent-canvas@1.30.0 test
+> npm run make-i18n && vitest run __tests__/root.test.tsx
+
+
+> @openhands/agent-canvas@1.30.0 make-i18n
+> node scripts/make-i18n-translations.cjs
+
+
+ RUN  v5.0.0 /mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a
+
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/clients.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/acp-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/http-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/agent-profiles-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/conversation-event-stream.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/server-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/bash-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/runtime-transport.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/agent-server-compatibility.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/canvas-extensions-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/conversation-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/file-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/hooks-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/git-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/llm-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/mcp-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/profiles-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/meta-profiles-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/settings-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/skills-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/sub-agents-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/plugins-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/tool-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/vscode-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/shared-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/workspaces-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/openhands-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/cloud-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/client/device-flow-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/index.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/conversation/remote-conversation.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/events/websocket-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/events/global-websocket.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/conversation/remote-state.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/events/remote-events-list.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/workspace/remote-workspace.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/conversation/local-conversation.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/workspace/local-workspace.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/prompts/index.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/prompts/system-prompt.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/conversation/secret-registry.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/conversation/stuck-detector.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/events/types.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/security/confirmation-policy.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/conversation/conversation.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/conversation/conversation-manager.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/workspace/workspace.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/security/security-analyzer.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/hooks/index.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/hooks/types.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/hooks/config.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/agent/agent.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/llm/index.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/llm/openrouter-llm.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/llm/llm.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/events/bash-websocket-client.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/types/base.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/models/conversation.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/models/acp.js" points to missing source files
+Sourcemap for "/mnt/statusquo_block_storage/workspace/project/root-onboarding-ci-c48a/node_modules/@openhands/typescript-client/dist/profiles/derive-switch-plan.js" points to missing source files
+ ❯ |jsdom| __tests__/root.test.tsx (24 tests | 1 failed) 4835ms
+   ❯ App root agent-server availability guard (22)
+     × shows first-run onboarding before the recovery modal when locked to Cloud with no backend 1570ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |jsdom| __tests__/root.test.tsx > App root agent-server availability guard > shows first-run onboarding before the recovery modal when locked to Cloud with no backend
+TestingLibraryElementError: Unable to find an element by: [data-testid="onboarding-modal"]
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"min-h-screen bg-canvas-base"[39m
+      [33mdata-testid[39m=[32m"first-run-onboarding-screen"[39m
+    [36m>[39m
+      [36m<main[39m
+        [33mclass[39m=[32m"min-h-screen bg-canvas-base px-6 py-10 text-contrast"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"mx-auto flex min-h-screen max-w-6xl items-center justify-center"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-3xl border border-contrast/10 bg-canvas-base/80 px-8 py-10 shadow-2xl"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"relative w-12.5 h-12.5"[39m
+              [33mdata-testid[39m=[32m"loading-spinner"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mclass[39m=[32m"absolute animate-spin w-12.5 h-12.5"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"66"[39m
+                [33mviewBox[39m=[32m"0 0 66 66"[39m
+                [33mwidth[39m=[32m"66"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M63 33C63 16.4315 49.5685 3 33 3C16.4315 3 3 16.4315 3 33C3 49.5685 16.4315 63 33 63"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"6"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</main>[39m
+    [36m</main>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"min-h-screen bg-canvas-base"[39m
+      [33mdata-testid[39m=[32m"first-run-onboarding-screen"[39m
+    [36m>[39m
+      [36m<main[39m
+        [33mclass[39m=[32m"min-h-screen bg-canvas-base px-6 py-10 text-contrast"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"mx-auto flex min-h-screen max-w-6xl items-center justify-center"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"rounded-3xl border border-contrast/10 bg-canvas-base/80 px-8 py-10 shadow-2xl"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"relative w-12.5 h-12.5"[39m
+              [33mdata-testid[39m=[32m"loading-spinner"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mclass[39m=[32m"absolute animate-spin w-12.5 h-12.5"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"66"[39m
+                [33mviewBox[39m=[32m"0 0 66 66"[39m
+                [33mwidth[39m=[32m"66"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M63 33C63 16.4315 49.5685 3 33 3C16.4315 3 3 16.4315 3 33C3 49.5685 16.4315 63 33 63"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"6"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</main>[39m
+    [36m</main>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ __tests__/root.test.tsx:247:25
+    245|       ).toBeInTheDocument();
+    246|     });
+    247|     expect(await screen.findByTestId("onboarding-modal")).toBeInTheDoc…
+       |                         ^
+    248|     expect(
+    249|       screen.queryByTestId("agent-server-onboarding-screen"),
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 passed (24)
+   Start at  02:28:21
+   Duration  37.93s (transform 41%, environment 25%, import 14%, tests 13%, setup 7%)
+
