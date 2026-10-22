@@ -59,6 +59,7 @@ import {
   buildAgentServerEnv,
   buildNpmScriptCommand,
   buildRuntimeServicesInfo,
+  buildUvxPythonArgs,
   formatMissingUvxGuidance,
   validateFrontendDependencies,
   validateLocalAgentServerPath,
@@ -320,6 +321,9 @@ function validateLocalAutomationPath(localPath) {
  * If none are set, defaults to the released version specified by
  * DEFAULT_AUTOMATION_VERSION. Set OH_AUTOMATION_GIT_REF to use a
  * git branch or commit instead.
+ *
+ * UV_PYTHON, when set, replaces the default interpreter request (the
+ * python.uvxRequest range in config/defaults.json) given to uvx.
  */
 function buildAutomationCommand(env = process.env) {
   const localPath = env.OH_AUTOMATION_LOCAL_PATH;
@@ -327,7 +331,7 @@ function buildAutomationCommand(env = process.env) {
   const version = env.OH_AUTOMATION_VERSION;
   const repoUrl = env.OH_AUTOMATION_REPO || DEFAULT_AUTOMATION_REPO;
 
-  const uvxArgs = [];
+  const uvxArgs = buildUvxPythonArgs(env);
   let source = "";
 
   if (localPath) {

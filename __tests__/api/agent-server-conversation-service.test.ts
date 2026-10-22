@@ -8,6 +8,7 @@ import {
 import { http, HttpResponse } from "msw";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { server } from "#/mocks/node";
+import { WORKSPACE_TAG_KEY } from "#/api/agent-server-adapter";
 import {
   __resetActiveStoreForTests,
   setActiveSelection,
@@ -650,6 +651,7 @@ describe("AgentServerConversationService", () => {
       });
 
       await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
         agentLlmProfileRef: "powerful",
       });
 
@@ -696,6 +698,7 @@ describe("AgentServerConversationService", () => {
       });
 
       await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
         agentLlmProfileRef: "powerful",
       });
 
@@ -739,6 +742,7 @@ describe("AgentServerConversationService", () => {
       // must degrade to the account-wide active profile instead of sending an
       // unresolvable name.
       await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
         agentLlmProfileRef: "powerful",
       });
 
@@ -766,8 +770,12 @@ describe("AgentServerConversationService", () => {
         },
       });
 
-      await AgentServerConversationService.createConversation();
-      await AgentServerConversationService.createConversation();
+      await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
+      });
+      await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
+      });
 
       // The first conversation on a cold agent-server can exceed the client's
       // default timeout, so createConversation constructs its ConversationClient
@@ -839,7 +847,9 @@ describe("AgentServerConversationService", () => {
         },
       });
 
-      await AgentServerConversationService.createConversation();
+      await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
+      });
 
       const [payloadCall] = mockHttpPost.mock.calls;
       const payload = payloadCall[1] as {
@@ -873,6 +883,7 @@ describe("AgentServerConversationService", () => {
       });
 
       await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
         workingDirOverride: "/Users/jane/projects/foo",
       });
 
@@ -883,6 +894,68 @@ describe("AgentServerConversationService", () => {
       };
       expect(payload.workspace.working_dir).toBe("/Users/jane/projects/foo");
       expect(payload.worktree).toBe(false);
+    });
+
+    it("stamps the selected workspace as a server-valid conversation tag (#17386)", async () => {
+      mockGetSettings.mockResolvedValue({
+        agent_settings: { llm: { model: "gpt-4o" } },
+        conversation_settings: {},
+      });
+      mockGetSettingsForConversation.mockResolvedValue({
+        agentSettings: { llm: { model: "gpt-4o" } },
+        conversationSettings: {},
+        secretsEncrypted: true,
+      });
+      mockHttpPost.mockResolvedValue({
+        data: {
+          id: "ignored-server-id",
+          created_at: "2024-01-01",
+          updated_at: "2024-01-01",
+        },
+      });
+
+      await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
+        workingDirOverride: "/Users/jane/projects/foo/",
+      });
+
+      const [payloadCall] = mockHttpPost.mock.calls;
+      const payload = payloadCall[1] as { tags?: Record<string, string> };
+      // Normalized path, under a key the agent-server's `^[a-z0-9]+$`
+      // validator accepts (an underscored key would 422 the create).
+      expect(payload.tags).toMatchObject({
+        [WORKSPACE_TAG_KEY]: "/Users/jane/projects/foo",
+      });
+      for (const key of Object.keys(payload.tags ?? {})) {
+        expect(key).toMatch(/^[a-z0-9]+$/);
+      }
+    });
+
+    it("sends no workspace tag when no workspace was selected (#17386)", async () => {
+      mockGetSettings.mockResolvedValue({
+        agent_settings: { llm: { model: "gpt-4o" } },
+        conversation_settings: {},
+      });
+      mockGetSettingsForConversation.mockResolvedValue({
+        agentSettings: { llm: { model: "gpt-4o" } },
+        conversationSettings: {},
+        secretsEncrypted: true,
+      });
+      mockHttpPost.mockResolvedValue({
+        data: {
+          id: "ignored-server-id",
+          created_at: "2024-01-01",
+          updated_at: "2024-01-01",
+        },
+      });
+
+      await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
+      });
+
+      const [payloadCall] = mockHttpPost.mock.calls;
+      const payload = payloadCall[1] as { tags?: Record<string, string> };
+      expect(payload.tags?.[WORKSPACE_TAG_KEY]).toBeUndefined();
     });
 
     it("honors an explicit new-worktree mode for a selected workspace", async () => {
@@ -904,6 +977,7 @@ describe("AgentServerConversationService", () => {
       });
 
       await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
         workingDirOverride: "/Users/jane/projects/foo",
         workspaceMode: "new_worktree",
       });
@@ -1502,6 +1576,26 @@ describe("AgentServerConversationService", () => {
         agent_type: "plan",
         sandbox_id: "sandbox-9",
       });
+    });
+
+    it("sends a picked LLM profile as llm_profile on the cloud start request", async () => {
+      const requests = captureRequests(["post"], {
+        id: "task-1",
+        status: "WORKING",
+        app_conversation_id: null,
+        agent_server_url: null,
+        request: {},
+        created_at: "2024-01-01",
+        updated_at: "2024-01-01",
+      });
+
+      await AgentServerConversationService.createConversation({
+        metadata: null,
+        llmProfile: "ops55",
+      });
+
+      expect(requests).toHaveLength(1);
+      expect(requests[0].body).toMatchObject({ llm_profile: "ops55" });
     });
 
     it("forwards automation client tools and setup tag to cloud OpenHands conversations", async () => {
@@ -2494,6 +2588,7 @@ describe("AgentServerConversationService", () => {
       });
 
       await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
         initialUserMsg: "Inspect the repository",
         metadata: {
           selected_repository: "OpenHands/agent-canvas",
@@ -2533,7 +2628,9 @@ describe("AgentServerConversationService", () => {
       });
 
       await expect(
-        AgentServerConversationService.createConversation(),
+        AgentServerConversationService.createConversation({
+          agentProfileId: "profile-1",
+        }),
       ).rejects.toThrow("No backend is configured");
     });
 
@@ -3163,6 +3260,7 @@ describe("AgentServerConversationService", () => {
       ];
 
       const result = await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
         initialUserMsg: "Inspect the repository",
         plugins,
         workingDirOverride: "/Users/jane/projects/canvas",
@@ -3198,7 +3296,9 @@ describe("AgentServerConversationService", () => {
     it("does not persist empty metadata for a conversation without a selected source", async () => {
       arrangeLocalCreate("conv-unselected");
 
-      await AgentServerConversationService.createConversation();
+      await AgentServerConversationService.createConversation({
+        agentProfileId: "profile-1",
+      });
 
       expect(getStoredConversationMetadata("conv-unselected")).toBeNull();
       expect(window.localStorage.getItem(metadataStorageKey)).toBeNull();
