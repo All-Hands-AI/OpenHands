@@ -1,7 +1,15 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRoutesStub } from "react-router";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import { http, HttpResponse } from "msw";
 import App, { links } from "#/root";
 import { server } from "#/mocks/node";
@@ -139,6 +147,11 @@ function mockLockedCookieDeployment() {
 }
 
 describe("App root agent-server availability guard", () => {
+  beforeAll(async () => {
+    // Compile the real lazy form before the one-second DOM query budget starts.
+    await import("#/components/features/backends/backend-form-modal");
+  });
+
   beforeEach(() => {
     window.localStorage.clear();
     __resetHealthStoreForTests();
