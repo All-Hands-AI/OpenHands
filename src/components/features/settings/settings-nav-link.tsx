@@ -39,7 +39,7 @@ export function SettingsNavLink({ item, onClick }: SettingsNavLinkProps) {
             "transition-transform duration-300 motion-reduce:transition-none group-hover:translate-x-1",
           )}
         >
-          {t(text as I18nKey)}
+          {item.isSchemaDefined ? text : t(text as I18nKey)}
         </Typography.Text>
       </div>
     </NavigationLink>

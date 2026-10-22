@@ -51,7 +51,7 @@ export type SettingsFieldSchema = {
   depends_on: string[];
   prominence: SettingProminence;
   secret: boolean;
-  required: boolean;
+  required?: boolean;
 };
 
 export type SettingsSectionSchema = {

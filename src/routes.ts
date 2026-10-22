@@ -31,6 +31,7 @@ export default [
       route("agent-context", "routes/agent-context-settings.tsx"),
       route("verification", "routes/verification-settings.tsx"),
       route("app", "routes/app-settings.tsx"),
+      route("document/:sectionKey?", "routes/settings-document.tsx"),
       route("secrets", "routes/secrets-settings.tsx"),
     ]),
     route("oauth/device/verify", "routes/device-verify.tsx"),

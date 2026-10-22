@@ -60,18 +60,30 @@ function SettingsScreen() {
   const isMobile = useBreakpoint(SETTINGS_COMPACT_MAX_WIDTH);
   const [hideSectionHeader, setHideSectionHeader] = useState(false);
 
-  const { currentSectionTitle, currentSectionSubtitle } = useMemo(() => {
+  const {
+    currentSectionTitle,
+    currentSectionSubtitle,
+    isSchemaDefinedSection,
+  } = useMemo(() => {
     // Resolve from the full list, not the listed subset, so a page that is
     // reachable but unlisted still gets its own title.
-    const currentItem = OSS_NAV_ITEMS.find(
-      (item) =>
-        item.to === location.pathname ||
-        location.pathname.startsWith(`${item.to}/`),
+    const dynamicCurrentItem = navItems.find(
+      (item) => item.type === "item" && item.item.to === location.pathname,
     );
+    const currentItem =
+      OSS_NAV_ITEMS.find(
+        (item) =>
+          item.to === location.pathname ||
+          location.pathname.startsWith(`${item.to}/`),
+      ) ??
+      (dynamicCurrentItem?.type === "item"
+        ? dynamicCurrentItem.item
+        : undefined);
     if (currentItem) {
       return {
         currentSectionTitle: currentItem.text,
         currentSectionSubtitle: currentItem.subtitle,
+        isSchemaDefinedSection: currentItem.isSchemaDefined === true,
       };
     }
     const firstItem = navItems.find((item) => item.type === "item");
@@ -79,11 +91,13 @@ function SettingsScreen() {
       return {
         currentSectionTitle: firstItem.item.text,
         currentSectionSubtitle: firstItem.item.subtitle,
+        isSchemaDefinedSection: firstItem.item.isSchemaDefined === true,
       };
     }
     return {
       currentSectionTitle: "SETTINGS$TITLE",
       currentSectionSubtitle: null as string | null,
+      isSchemaDefinedSection: false,
     };
   }, [navItems, location.pathname]);
 
@@ -117,7 +131,11 @@ function SettingsScreen() {
           <div className="flex flex-col gap-6 pb-8">
             {!shouldHideTitle && (
               <header className="space-y-1">
-                <Typography.H2>{t(currentSectionTitle)}</Typography.H2>
+                <Typography.H2>
+                  {isSchemaDefinedSection
+                    ? currentSectionTitle
+                    : t(currentSectionTitle)}
+                </Typography.H2>
                 {currentSectionSubtitle ? (
                   <p
                     data-testid="settings-page-subtitle"

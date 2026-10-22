@@ -18,11 +18,22 @@ import { queryClient } from "#/query-client-config";
 
 vi.mock("#/hooks/use-settings-nav-items", () => ({
   // Mirror the real navigation: LLM + Application (which the title test
-  // navigates to via `/settings/app`).
-  useSettingsNavItems: () =>
-    OSS_NAV_ITEMS.filter((item) =>
+  // navigates to via `/settings/app`) plus one schema-defined page.
+  useSettingsNavItems: () => [
+    ...OSS_NAV_ITEMS.filter((item) =>
       ["/settings/llm", "/settings/app"].includes(item.to),
-    ).map((item) => ({ type: "item", item })),
+    ).map((item) => ({ type: "item" as const, item })),
+    {
+      type: "item" as const,
+      item: {
+        icon: <span />,
+        to: "/settings/document/product.prototype",
+        text: "Prototype settings",
+        subtitle: null,
+        isSchemaDefined: true,
+      },
+    },
+  ],
 }));
 
 describe("settings route", () => {
@@ -136,6 +147,36 @@ describe("settings route", () => {
       expect(screen.getByTestId("app-settings-screen")).toBeInTheDocument();
     },
   );
+
+  it("renders a schema-defined page title from the live settings schema", () => {
+    const RouterStub = createRoutesStub([
+      {
+        path: "/settings",
+        Component: SettingsScreen,
+        children: [
+          {
+            path: "/settings/document/:sectionKey",
+            Component: () => <div data-testid="dynamic-settings-screen" />,
+          },
+        ],
+      },
+    ]);
+
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <ActiveBackendProvider>
+          <RouterStub
+            initialEntries={["/settings/document/product.prototype"]}
+          />
+        </ActiveBackendProvider>
+      </QueryClientProvider>,
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Prototype settings" }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("dynamic-settings-screen")).toBeInTheDocument();
+  });
 
   it("exposes a single main landmark that holds the settings page", () => {
     // Arrange

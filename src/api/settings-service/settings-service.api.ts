@@ -16,9 +16,17 @@ import { getActiveBackend } from "../backend-registry/active-store";
 import {
   fetchCloudConversationSettingsSchema,
   fetchCloudSettings,
+  fetchCloudSettingsDocument,
+  fetchCloudSettingsDocumentSchema,
   fetchCloudSettingsSchema,
   saveCloudSettings,
+  saveCloudSettingsDocument,
 } from "../cloud/settings-service.api";
+import type {
+  SettingsDocument,
+  SettingsDocumentPatch,
+  SettingsDocumentSchema,
+} from "#/types/settings-document";
 import {
   getAgentServerClientOptions,
   type AgentServerClientOptions,
@@ -574,6 +582,18 @@ const syncDerivedSettings = (settings: Partial<Settings>): Settings => {
   return merged;
 };
 
+type CanonicalSettingsClient = SettingsClient & {
+  getDocument: () => Promise<SettingsDocument>;
+  getDocumentSchema: () => Promise<SettingsDocumentSchema>;
+  updateDocument: (patch: SettingsDocumentPatch) => Promise<SettingsDocument>;
+};
+
+function getCanonicalSettingsClient(): CanonicalSettingsClient {
+  return new SettingsClient(
+    getAgentServerClientOptions(),
+  ) as CanonicalSettingsClient;
+}
+
 class SettingsService {
   /**
    * Fetch settings from the agent server API with retry logic.
@@ -703,6 +723,37 @@ class SettingsService {
     return (await new SettingsClient(
       getAgentServerClientOptions(),
     ).getConversationSchema()) as SettingsSchema;
+  }
+
+  static async getSettingsDocument(): Promise<SettingsDocument> {
+    if (getActiveBackend().backend.kind === "cloud") {
+      return withRetry(() => fetchCloudSettingsDocument());
+    }
+    return (await withRetry(() =>
+      getCanonicalSettingsClient().getDocument(),
+    )) as unknown as SettingsDocument;
+  }
+
+  static async getSettingsDocumentSchema(): Promise<SettingsDocumentSchema> {
+    if (getActiveBackend().backend.kind === "cloud") {
+      return withRetry(() => fetchCloudSettingsDocumentSchema());
+    }
+    return (await withRetry(() =>
+      getCanonicalSettingsClient().getDocumentSchema(),
+    )) as unknown as SettingsDocumentSchema;
+  }
+
+  static async saveSettingsDocument(
+    patch: SettingsDocumentPatch,
+  ): Promise<SettingsDocument> {
+    const document =
+      getActiveBackend().backend.kind === "cloud"
+        ? await withRetry(() => saveCloudSettingsDocument(patch))
+        : await withRetry(() =>
+            getCanonicalSettingsClient().updateDocument(patch),
+          );
+    clearCache();
+    return document;
   }
 
   /**

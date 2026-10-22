@@ -18,12 +18,20 @@ import { DEFAULT_FILE_DISCOVERY } from "#/utils/workspace-file-discovery";
 
 const mockSaveCloudSettings = vi.fn();
 const mockFetchCloudSettings = vi.fn();
+const mockFetchCloudSettingsDocument = vi.fn();
+const mockFetchCloudSettingsDocumentSchema = vi.fn();
+const mockSaveCloudSettingsDocument = vi.fn();
 
 vi.mock("#/api/cloud/settings-service.api", () => ({
   saveCloudSettings: (args: unknown) => mockSaveCloudSettings(args),
   fetchCloudSettings: () => mockFetchCloudSettings(),
   fetchCloudSettingsSchema: vi.fn(),
   fetchCloudConversationSettingsSchema: vi.fn(),
+  fetchCloudSettingsDocument: () => mockFetchCloudSettingsDocument(),
+  fetchCloudSettingsDocumentSchema: () =>
+    mockFetchCloudSettingsDocumentSchema(),
+  saveCloudSettingsDocument: (patch: unknown) =>
+    mockSaveCloudSettingsDocument(patch),
 }));
 
 const cloudBackend: Backend = {
@@ -66,6 +74,9 @@ describe("SettingsService", () => {
     __resetActiveStoreForTests();
     mockSaveCloudSettings.mockReset().mockResolvedValue(undefined);
     mockFetchCloudSettings.mockReset();
+    mockFetchCloudSettingsDocument.mockReset();
+    mockFetchCloudSettingsDocumentSchema.mockReset();
+    mockSaveCloudSettingsDocument.mockReset();
     // Invalidate the in-memory cache
     SettingsService.invalidateCache();
   });
@@ -83,6 +94,46 @@ describe("SettingsService", () => {
     expect(settings.llm_model).toBe("openai/gpt-5.6-sol");
     expect(settings.confirmation_mode).toBe(false);
     expect(settings.security_analyzer).toBe("llm");
+  });
+
+  it("routes canonical settings documents through the active cloud backend", async () => {
+    setRegisteredBackends([cloudBackend]);
+    setActiveSelection({ backendId: cloudBackend.id });
+    const document = {
+      schema_version: 1 as const,
+      agent: {},
+      conversation: {},
+      product: { language: "en" },
+      resources: {
+        llm_profiles: {},
+        agent_profiles: {},
+        provider_connections: {},
+        model_routers: {},
+        marketplaces: [],
+        credentials: {},
+        pointers: {},
+      },
+    };
+    const schema = { model_name: "SettingsDocument", sections: [] };
+    mockFetchCloudSettingsDocument.mockResolvedValue(document);
+    mockFetchCloudSettingsDocumentSchema.mockResolvedValue(schema);
+    mockSaveCloudSettingsDocument.mockResolvedValue({
+      ...document,
+      product: { language: "fr" },
+    });
+
+    await expect(SettingsService.getSettingsDocument()).resolves.toEqual(
+      document,
+    );
+    await expect(SettingsService.getSettingsDocumentSchema()).resolves.toEqual(
+      schema,
+    );
+    await expect(
+      SettingsService.saveSettingsDocument({ product: { language: "fr" } }),
+    ).resolves.toMatchObject({ product: { language: "fr" } });
+    expect(mockSaveCloudSettingsDocument).toHaveBeenCalledWith({
+      product: { language: "fr" },
+    });
   });
 
   // @spec BM-003 — Removing the last backend leaves an explicit empty state
