@@ -37,6 +37,8 @@ import { AUTOMATION_FORM_UPDATE_ACTION_KIND } from "#/constants/automation-form"
 import { AUTOMATION_SETUP_SHOW_AGENT_EVENT } from "#/components/features/automations/setup/automation-setup-agent-request";
 import { setupDraftFromAutomation } from "#/utils/automation-edit-draft";
 import { useDeploymentCapabilities } from "#/hooks/query/use-manifest-capabilities";
+import { AUTOMATION_DETAIL_QUERY_KEY } from "#/hooks/query/use-automation-detail";
+import { AUTOMATIONS_QUERY_KEY } from "#/hooks/query/use-automations";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import type { AutomationDraftApiResponse } from "#/manifests/types";
 import type { Automation } from "#/types/automation";
@@ -229,6 +231,9 @@ function renderPanel(
   },
   conversationId = "conv-1",
   conversationTags: Record<string, string> | null | undefined = null,
+  queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  }),
 ) {
   const value: NavigationContextValue = {
     currentPath: `/conversations/${conversationId}`,
@@ -236,9 +241,6 @@ function renderPanel(
     isNavigating: false,
     navigate: mockNavigate,
   };
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  });
 
   return render(
     <QueryClientProvider client={queryClient}>
@@ -2596,6 +2598,73 @@ describe("AutomationSetupPanel", () => {
       repos: [{ url: "OpenHands/OpenHands", ref: "main", provider: "github" }],
     });
     clearAutomationFormSession(PENDING_AUTOMATION_SETUP_ID);
+  });
+
+  it("refreshes the cached automation after a save, so Edit from its page starts from the saved repositories", async () => {
+    vi.mocked(useDeploymentCapabilities).mockReturnValue({
+      data: {
+        ready: true,
+        features: ["repoUpdate"],
+        triggerKinds: ["cron"],
+        eventSources: [],
+        eventTypes: [],
+        triggers: {},
+      },
+      isLoading: false,
+    } as never);
+    vi.mocked(AutomationService.updateAutomation).mockImplementation(
+      async (_id, body) =>
+        savedReviewer({
+          preset_metadata: {
+            preset_type: "prompt",
+            repos: (body as { repos: unknown }).repos,
+          },
+        }),
+    );
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    // The automation's page keeps its copy for five minutes and opens Edit from it.
+    const detailKey = [
+      ...AUTOMATION_DETAIL_QUERY_KEY,
+      "auto-1",
+      "cloud",
+      "org-1",
+    ];
+    const listKey = [...AUTOMATIONS_QUERY_KEY, "cloud", "org-1"];
+    queryClient.setQueryData(detailKey, savedReviewer());
+    queryClient.setQueryData(listKey, { automations: [savedReviewer()] });
+
+    const user = userEvent.setup();
+    renderPanel(
+      setupDraftFromAutomation(savedReviewer()),
+      "conv-1",
+      null,
+      queryClient,
+    );
+    await user.click(screen.getByTestId("automation-setup-repository-add"));
+    await user.click(
+      await screen.findByTestId(
+        "automation-setup-repository-option-OpenHands/software-agent-sdk",
+      ),
+    );
+    await user.click(screen.getByTestId("automation-setup-save"));
+    await waitFor(() =>
+      expect(AutomationService.updateAutomation).toHaveBeenCalledTimes(1),
+    );
+
+    await waitFor(() =>
+      expect(
+        setupDraftFromAutomation(
+          queryClient.getQueryData<Automation>(detailKey)!,
+        ).form?.repository,
+      ).toBe("OpenHands/OpenHands, OpenHands/software-agent-sdk"),
+    );
+    expect(queryClient.getQueryState(detailKey)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(listKey)?.isInvalidated).toBe(true);
   });
 
   it("shows existing custom bundle metadata without replacing it on save", async () => {

@@ -78,6 +78,8 @@ import {
 import { Divider } from "#/ui/divider";
 import { cn } from "#/utils/utils";
 import { useDeploymentCapabilities } from "#/hooks/query/use-manifest-capabilities";
+import { AUTOMATION_DETAIL_QUERY_KEY } from "#/hooks/query/use-automation-detail";
+import { AUTOMATIONS_QUERY_KEY } from "#/hooks/query/use-automations";
 import {
   invalidateConversationQueries,
   patchConversationInCache,
@@ -1759,13 +1761,20 @@ export function AutomationSetupPanel({
         editingAutomationId,
         buildExistingAutomationBody(),
       );
-      const savedRepositories = withPresetSources(updated).repositories ?? [];
+      const saved = withPresetSources(updated);
+      const savedRepositories = saved.repositories ?? [];
       // The session re-supplies this draft on every edit, so it must hold the
       // saved list too, or the next change is compared with the old one.
       if (conversationId) {
         setAutomationFormSessionRepositories(conversationId, savedRepositories);
       }
       setExistingRepositories(savedRepositories);
+      // The automation's page opens Edit from its cached copy, so replace that
+      // copy with the saved automation before anything can reopen it.
+      const detailKey = [...AUTOMATION_DETAIL_QUERY_KEY, editingAutomationId];
+      queryClient.setQueriesData({ queryKey: detailKey }, saved);
+      queryClient.invalidateQueries({ queryKey: detailKey });
+      queryClient.invalidateQueries({ queryKey: AUTOMATIONS_QUERY_KEY });
       setSaveState("saved");
       toast.success(t(I18nKey.AUTOMATIONS$EDIT_SUCCESS));
     } catch (error) {
