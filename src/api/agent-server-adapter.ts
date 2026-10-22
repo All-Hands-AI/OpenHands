@@ -365,14 +365,20 @@ export function buildRuntimeServicesSystemSuffix(
  * consistent regardless of how the toggle was persisted, so a stale ``true``
  * (e.g. the active profile was just deleted) can never reach the prompt.
  *
+ * Also suppressed when the launch runs an explicitly picked LLM profile
+ * (``hasLlmPick``): an explicit user selection outranks the router's
+ * first-message routing, which would otherwise switch the conversation away
+ * from the just-picked model (#18773).
+ *
  * Returns `undefined` when disabled so no prompt noise is added — the default
  * "everything works as normal" path is byte-identical to before.
  */
 export function buildRouterAtStartSystemSuffix(
   runAtStart: boolean,
   hasActiveRouter: boolean,
+  hasLlmPick = true,
 ): string | undefined {
-  if (!runAtStart || !hasActiveRouter) return undefined;
+  if (!runAtStart || !hasActiveRouter || !hasLlmPick) return undefined;
   return [
     "<ROUTE_AT_CONVERSATION_START>",
     "Before responding to the FIRST user message of this conversation, call",
@@ -1075,6 +1081,9 @@ export function buildStartConversationRequest(
     buildRouterAtStartSystemSuffix(
       options.settings.run_router_at_conversation_start ?? false,
       options.profileHasRouter ?? false,
+      // An explicit LLM pick outranks the router's first-message
+      // routing (#18773), so it suppresses the suffix.
+      !options.llmProfileOverride,
     ),
   ]
     .filter((suffix): suffix is string => Boolean(suffix))

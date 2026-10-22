@@ -1213,6 +1213,24 @@ describe("profile launch additions", () => {
     },
   );
 
+  it("skips first-message routing when the user explicitly picked an LLM profile (#18773)", () => {
+    const payload = buildStartConversationRequest({
+      ...PROFILE,
+      settings: {
+        ...DEFAULT_SETTINGS,
+        run_router_at_conversation_start: true,
+      },
+      profileHasRouter: true,
+      llmProfileOverride: "claude-opus",
+      query: "hello",
+    });
+
+    const appended = additionsOf(payload)?.system_message_suffix_append;
+    expect(appended ?? "").not.toContain("ROUTE_AT_CONVERSATION_START");
+    // The pick itself still lands on the launch.
+    expect(additionsOf(payload)?.llm_profile_ref).toBe("claude-opus");
+  });
+
   it("adds a catalog skill the opening message invokes", () => {
     const [entry] = SKILLS_CATALOG;
     const payload = buildStartConversationRequest({

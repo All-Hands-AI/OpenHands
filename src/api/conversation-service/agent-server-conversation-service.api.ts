@@ -552,6 +552,10 @@ class AgentServerConversationService {
       const routerAtStartSuffix = buildRouterAtStartSystemSuffix(
         options.runRouterAtConversationStart ?? false,
         options.hasActiveMetaProfile ?? false,
+        // An explicit LLM pick outranks the router's first-message
+        // routing (#18773); see the same gate in
+        // buildStartConversationRequest for the local path.
+        !options.llmProfile,
       );
       const request: AppConversationStartRequest = {
         initial_message: initialUserMsg
