@@ -23,6 +23,7 @@ import { describe, expect, it, afterEach } from "vitest";
 import {
   buildAgentServerAutomationEnv,
   buildAutomationCommand,
+  buildAutomationLogArgs,
   buildAutomationTelemetryEnv,
   buildAutomationRuntimeServicesInfo,
   buildConfig,
@@ -43,6 +44,7 @@ import {
 } from "../../scripts/dev-with-automation.mjs";
 import {
   buildAgentServerEnv,
+  buildBackendLogEnv,
   buildSafeDevConfig,
   resetPersistedSessionApiKeyCache,
 } from "../../scripts/dev-safe.mjs";
@@ -1492,6 +1494,110 @@ describe("dev-with-automation CLI", () => {
     expect(exitResult.timedOut).toBe(false);
     expect(exitResult.code).toBe(1);
     expect(output).toContain("uvx");
+  });
+});
+
+describe("backend logging defaults", () => {
+  // Minimal SafeDevConfig for buildAgentServerEnv; only the fields it reads
+  // matter, but it accesses them directly rather than via optional chaining.
+  const baseConfig = () => ({
+    cwd: process.cwd(),
+    backendPort: 18000,
+    vscodePort: 18001,
+    vscodeBasePath: "/vscode",
+    stateDir: "/tmp/state",
+    tmuxTmpDir: "/tmp/tmux",
+    conversationsPath: "/tmp/conversations",
+    workspacesPath: "/tmp/workspaces",
+    bashEventsDir: "/tmp/bash-events",
+    backendBaseUrl: "http://127.0.0.1:18000",
+    backendHost: "127.0.0.1",
+    workingDir: process.cwd(),
+    secretKey: "secret",
+    sessionApiKey: "session",
+    canvasToolsDir: "/tmp/tools",
+    extensionsDir: null,
+  });
+
+  it("quiets the automation service by default", () => {
+    const env = buildBackendLogEnv({ automation: true, env: {} });
+
+    expect(env.LOG_LEVEL).toBe("WARNING");
+    expect(env.AUTOMATION_LOG_LEVEL).toBe("WARNING");
+  });
+
+  it("leaves AUTOMATION_LOG_LEVEL unset for the agent-server", () => {
+    // The agent-server does not read AUTOMATION_LOG_LEVEL; setting it there
+    // would suggest it has an effect it does not.
+    const env = buildBackendLogEnv({ env: {} });
+
+    expect(env.LOG_LEVEL).toBe("WARNING");
+    expect(env).not.toHaveProperty("AUTOMATION_LOG_LEVEL");
+  });
+
+  it("honors an explicit LOG_LEVEL from the caller's environment", () => {
+    const env = buildBackendLogEnv({
+      automation: true,
+      env: { LOG_LEVEL: "INFO" },
+    });
+
+    expect(env.LOG_LEVEL).toBe("INFO");
+    expect(env.AUTOMATION_LOG_LEVEL).toBe("INFO");
+  });
+
+  it("lets AUTOMATION_LOG_LEVEL diverge from LOG_LEVEL", () => {
+    const env = buildBackendLogEnv({
+      automation: true,
+      env: { LOG_LEVEL: "ERROR", AUTOMATION_LOG_LEVEL: "DEBUG" },
+    });
+
+    expect(env.LOG_LEVEL).toBe("ERROR");
+    expect(env.AUTOMATION_LOG_LEVEL).toBe("DEBUG");
+  });
+
+  it("raises both services to DEBUG under --verbose, overriding the environment", () => {
+    const env = buildBackendLogEnv({
+      verbose: true,
+      automation: true,
+      env: { LOG_LEVEL: "ERROR" },
+    });
+
+    expect(env.LOG_LEVEL).toBe("DEBUG");
+    expect(env.AUTOMATION_LOG_LEVEL).toBe("DEBUG");
+  });
+
+  it("passes the same level to uvicorn as to the automation service", () => {
+    const args = buildAutomationLogArgs({ autoBackendPort: 18001 }, {});
+
+    expect(args).toEqual([
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "18001",
+      "--log-level",
+      "warning",
+    ]);
+  });
+
+  it("passes debug to uvicorn under --verbose", () => {
+    const args = buildAutomationLogArgs(
+      { autoBackendPort: 18001, verbose: true },
+      {},
+    );
+
+    expect(args.at(-1)).toBe("debug");
+  });
+
+  it("gives the agent-server the quiet default without an opt-out needed", () => {
+    const env = buildAgentServerEnv(baseConfig(), { env: {} });
+
+    expect(env.LOG_LEVEL).toBe("WARNING");
+  });
+
+  it("raises the agent-server to DEBUG under --verbose", () => {
+    const env = buildAgentServerEnv(baseConfig(), { env: {}, verbose: true });
+
+    expect(env.LOG_LEVEL).toBe("DEBUG");
   });
 });
 

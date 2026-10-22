@@ -57,6 +57,8 @@ import {
   buildAgentServerCommand,
   buildSafeDevConfig,
   buildAgentServerEnv,
+  buildBackendLogEnv,
+  backendLogLevel,
   buildNpmScriptCommand,
   buildRuntimeServicesInfo,
   buildUvxPythonArgs,
@@ -260,7 +262,7 @@ OPTIONS:
   --dynamic                   Force Vite dev server when a wrapper defaults static
   --frontend-only             Start only the frontend behind ingress
   --backend-only              Start only agent-server + automation behind ingress
-  -v, --verbose               Show detailed output
+  -v, --verbose               Set backend log level to DEBUG (default: WARNING)
   -h, --help                  Show this help
 
 ENVIRONMENT VARIABLES:
@@ -967,6 +969,7 @@ function startAgentServer(config) {
     // advertises resolves to the editor port on the canvas origin.
     ...buildAgentServerEnv(safeConfig, {
       vscodeBasePath: config.vscodeBasePath,
+      verbose: config.verbose,
     }),
     ...buildAgentServerAutomationEnv(config),
     OPENHANDS_REMOTE_WS_READY_REQUIRED:
@@ -1000,6 +1003,30 @@ function startAgentServer(config) {
   );
 }
 
+/**
+ * Extra CLI arguments for the automation service, on top of the uvicorn
+ * invocation the command builder already produced.
+ *
+ * `--log-level` is Uvicorn's own level, separate from the app's `LOG_LEVEL`: it
+ * governs the startup banner and per-request access lines. Keeping it in step
+ * with the service level means a default launch is quiet while `--verbose`
+ * still shows request traffic.
+ *
+ * @param {{autoBackendPort: number, verbose?: boolean}} config
+ * @param {Record<string, string | undefined>} [env]
+ * @returns {string[]}
+ */
+export function buildAutomationLogArgs(config, env = process.env) {
+  return [
+    "--host",
+    "127.0.0.1",
+    "--port",
+    config.autoBackendPort.toString(),
+    "--log-level",
+    backendLogLevel({ verbose: config.verbose, env }).toLowerCase(),
+  ];
+}
+
 function startAutomationBackend(config) {
   logService(
     "automation",
@@ -1010,22 +1037,23 @@ function startAutomationBackend(config) {
   const automationCmd = buildAutomationCommand(process.env);
   logService("automation", `Using ${automationCmd.source}`, c.dim);
 
+  // Quiet the automation service by default; see buildBackendLogEnv.
+  const logEnv = buildBackendLogEnv({
+    verbose: config.verbose,
+    automation: true,
+  });
+
   return spawnService(
     "automation",
     automationCmd.command,
-    [
-      ...automationCmd.args,
-      "--host",
-      "127.0.0.1",
-      "--port",
-      config.autoBackendPort.toString(),
-    ],
+    [...automationCmd.args, ...buildAutomationLogArgs(config)],
     {
       cwd: config.stateDir,
       env: {
         // Force UTF-8 for all Python file I/O (same reason as agent-server;
         // see buildAgentServerEnv in dev-safe.mjs).
         PYTHONUTF8: "1",
+        ...logEnv,
         OPENHANDS_REMOTE_WS_READY_REQUIRED:
           process.env.OPENHANDS_REMOTE_WS_READY_REQUIRED || "false",
         // The URL the automation backend itself uses to call the

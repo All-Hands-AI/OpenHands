@@ -296,6 +296,19 @@ export OH_EXTRA_PYTHON_PATH="${OH_EXTRA_PYTHON_PATH:-/opt/agent-canvas/tools}"
 export EXTENSIONS_PATH="${EXTENSIONS_PATH:-/opt/agent-canvas/node_modules/@openhands/extensions}"
 AGENT_SERVER_IMPORT_MODULES="canvas_ui_tool"
 
+# Both backends default LOG_LEVEL to INFO, at which level they emit
+# library-internal startup chatter — the automation service alone prints
+# several hundred lines of SQLAlchemy ORM model-mapping output — that buries
+# the service URLs and readiness lines a user actually needs. Default to
+# WARNING so a plain `docker run` is readable, while an explicit LOG_LEVEL
+# still raises verbosity for troubleshooting.
+#
+# >>> backend-log-level: extracted by __tests__/scripts/docker-log-level.test.ts
+# >>> — keep the markers.
+export LOG_LEVEL="${LOG_LEVEL:-WARNING}"
+export AUTOMATION_LOG_LEVEL="${AUTOMATION_LOG_LEVEL:-${LOG_LEVEL}}"
+# <<< backend-log-level
+
 # Track child PIDs so we can clean up on exit.
 PIDS=()
 
@@ -360,12 +373,14 @@ fi
 if command -v uvicorn >/dev/null 2>&1; then
   uvicorn openhands.automation.app:app \
     --host 0.0.0.0 \
-    --port "$AUTOMATION_PORT" &
+    --port "$AUTOMATION_PORT" \
+    --log-level "$(echo "${LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')" &
   PIDS+=($!)
 elif python -c "import openhands.automation" 2>/dev/null; then
   python -m uvicorn openhands.automation.app:app \
     --host 0.0.0.0 \
-    --port "$AUTOMATION_PORT" &
+    --port "$AUTOMATION_PORT" \
+    --log-level "$(echo "${LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')" &
   PIDS+=($!)
 else
   log "WARNING: Automation server not found, skipping."

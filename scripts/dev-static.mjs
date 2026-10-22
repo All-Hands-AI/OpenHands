@@ -47,6 +47,8 @@ import {
   buildAgentServerCommand,
   buildSafeDevConfig,
   buildAgentServerEnv,
+  backendLogLevel,
+  buildBackendLogEnv,
   formatMissingUvxGuidance,
   isPortBusy,
   releaseStaleConversationLeases,
@@ -171,7 +173,7 @@ OPTIONS:
   --automation-ref <ref>      Git ref for automation backend (default: main)
   --automation-repo <url>     Git repo URL for automation
   --skip-build                Reuse existing build/ directory (faster restart)
-  -v, --verbose               Show detailed output
+  -v, --verbose               Set backend log level to DEBUG (default: WARNING)
   -h, --help                  Show this help
 
 ENVIRONMENT VARIABLES:
@@ -341,6 +343,7 @@ function startAgentServer(config) {
     // same prefix against `config.vscodePort`.
     ...buildAgentServerEnv(safeConfig, {
       vscodeBasePath: config.vscodeBasePath,
+      verbose: config.verbose,
     }),
     ...buildAgentServerAutomationEnv(config),
   };
@@ -373,6 +376,8 @@ function buildAutomationBackendEnv(config, env = process.env) {
     AUTOMATION_WORKSPACE_BASE: join(config.stateDir, "workspaces"),
     AUTOMATION_LOCAL_API_KEY: config.sessionApiKey,
     ...buildAutomationTelemetryEnv(env),
+    // Quiet the automation service by default; see buildBackendLogEnv.
+    ...buildBackendLogEnv({ verbose: config.verbose, automation: true, env }),
     AUTOMATION_CORS_ORIGINS: `http://localhost:${config.ingressPort},http://127.0.0.1:${config.ingressPort},http://localhost:3001,http://127.0.0.1:3001`,
     FILE_STORE: "local",
     LOCAL_STORAGE_PATH: join(config.stateDir, "storage"),
@@ -399,6 +404,9 @@ function startAutomationBackend(config) {
       "0.0.0.0",
       "--port",
       config.autoBackendPort.toString(),
+      // Uvicorn's own level; see backendLogLevel.
+      "--log-level",
+      backendLogLevel({ verbose: config.verbose }).toLowerCase(),
     ],
     {
       cwd: config.stateDir,

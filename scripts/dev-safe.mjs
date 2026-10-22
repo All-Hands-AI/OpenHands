@@ -807,6 +807,69 @@ export function buildAgentServerTelemetryEnv(env = process.env) {
 }
 
 /**
+ * Default log level for the backends Canvas launches.
+ *
+ * Both the agent-server and the automation service read `LOG_LEVEL` and default
+ * it to `INFO`. At `INFO` they emit library-internal startup chatter — most
+ * visibly SQLAlchemy's ORM model-mapping output, several hundred lines of it
+ * from the automation service alone — that buries the few lines a user needs
+ * (service URLs, readiness, real warnings). `WARNING` keeps actionable signals
+ * such as the automation workspace-retention warning while dropping the rest.
+ */
+export const DEFAULT_BACKEND_LOG_LEVEL = "WARNING";
+
+/**
+ * The log level to use for a backend Canvas spawns, before it is applied to
+ * any particular variable.
+ *
+ * Exported so the Uvicorn `--log-level` flag (which takes a lowercase name and
+ * governs the startup banner and per-request access lines, separately from the
+ * app's `LOG_LEVEL`) can be kept in step with the service level.
+ *
+ * @param {object} [options]
+ * @param {boolean} [options.verbose] - Raise to DEBUG.
+ * @param {Record<string, string | undefined>} [options.env] - Source environment.
+ * @returns {string} An uppercase logging level name
+ */
+export function backendLogLevel(options = {}) {
+  const { verbose = false, env = process.env } = options;
+  return verbose ? "DEBUG" : env.LOG_LEVEL || DEFAULT_BACKEND_LOG_LEVEL;
+}
+
+/**
+ * Logging environment for a backend Canvas spawns.
+ *
+ * Defaults to {@link DEFAULT_BACKEND_LOG_LEVEL} so a plain launch is readable,
+ * while any explicit `LOG_LEVEL` / `AUTOMATION_LOG_LEVEL` in the caller's
+ * environment still wins, so troubleshooting needs no code change. `--verbose`
+ * opts back into `DEBUG`.
+ *
+ * `AUTOMATION_LOG_LEVEL` is set only for the automation service: the
+ * agent-server does not read it, and setting it there would be misleading.
+ *
+ * @param {object} [options]
+ * @param {boolean} [options.verbose] - Raise both services to DEBUG.
+ * @param {boolean} [options.automation] - Also set AUTOMATION_LOG_LEVEL.
+ * @param {Record<string, string | undefined>} [options.env] - Source environment.
+ * @returns {Record<string, string>} Logging env vars for the backend process
+ */
+export function buildBackendLogEnv(options = {}) {
+  const { verbose = false, automation = false, env = process.env } = options;
+  const level = backendLogLevel({ verbose, env });
+
+  return {
+    LOG_LEVEL: level,
+    ...(automation
+      ? {
+          AUTOMATION_LOG_LEVEL: verbose
+            ? "DEBUG"
+            : env.AUTOMATION_LOG_LEVEL || level,
+        }
+      : {}),
+  };
+}
+
+/**
  * Build the environment variables object for spawning the agent-server process.
  *
  * This is exported so downstream consumers (e.g., automation service) can use
@@ -826,15 +889,17 @@ export function buildAgentServerTelemetryEnv(env = process.env) {
  * opts in without one.
  *
  * @param {ReturnType<typeof buildSafeDevConfig>} config - Config from buildSafeDevConfig
- * @param {{vscodeBasePath?: string | null, env?: Record<string, string | undefined>}} [options]
+ * @param {{vscodeBasePath?: string | null, env?: Record<string, string | undefined>, verbose?: boolean}} [options]
  * @param {string | null} [options.vscodeBasePath] - Opt into prefix-mode by
  *   passing the path prefix the caller also routes to `config.vscodePort`.
  * @param {Record<string, string | undefined>} [options.env] - Source
  *   environment for the telemetry mapping (defaults to `process.env`).
+ * @param {boolean} [options.verbose] - Raise the agent-server to DEBUG
+ *   logging instead of the default `WARNING` (see buildBackendLogEnv).
  * @returns {Record<string, string>} Environment variables for agent-server
  */
 export function buildAgentServerEnv(config, options = {}) {
-  const { vscodeBasePath = null, env = process.env } = options;
+  const { vscodeBasePath = null, env = process.env, verbose = false } = options;
   const conversationRuntimeEnv = Object.fromEntries(
     [
       "OH_CONVERSATION_RUNTIME",
@@ -850,6 +915,7 @@ export function buildAgentServerEnv(config, options = {}) {
   );
   return {
     ...buildAgentServerTelemetryEnv(env),
+    ...buildBackendLogEnv({ verbose, env }),
     ...conversationRuntimeEnv,
     ...(env.VITE_ENABLE_BROWSER_TOOLS === "false"
       ? { OH_ENABLE_BROWSER: env.OH_ENABLE_BROWSER || "false" }
