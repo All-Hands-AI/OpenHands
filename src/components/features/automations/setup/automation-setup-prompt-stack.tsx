@@ -32,6 +32,7 @@ import { formatModelNameForDisplay } from "#/utils/format-model-name";
 import {
   automationCloneProviders,
   automationRepositoryAddress,
+  providerHostKnown,
 } from "#/utils/automation-repo-sources";
 import type { Provider } from "#/types/settings";
 
@@ -298,9 +299,13 @@ export function AutomationSetupPromptStack({
   const cloneProviders = automationCloneProviders(
     deploymentCapabilities.data?.repoProviders,
   );
-  const connectedCloneProviders = providers.filter((provider) =>
-    cloneProviders.includes(provider),
-  );
+  // Whose repositories the picker can offer: a connected provider the runs
+  // clone from, whose host is known (a GitLab connection needs the server to
+  // report its host, or the form could not tell gitlab.com from an instance).
+  const canListProvider = (provider: Provider) =>
+    cloneProviders.includes(provider) &&
+    providerHostKnown(provider, providerHosts[provider]);
+  const connectedCloneProviders = providers.filter(canListProvider);
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(
     null,
   );
@@ -317,7 +322,7 @@ export function AutomationSetupPromptStack({
       : defaultProvider;
   // What the form stores for a listed repository: GitHub's shorthand, or the
   // full URL on the provider's host for anything else.
-  const addressFor = (name: string) =>
+  const addressFor = (name: string): string | null =>
     repositoryProvider
       ? automationRepositoryAddress(
           repositoryProvider,
@@ -361,10 +366,13 @@ export function AutomationSetupPromptStack({
   const listedRepositoryNames = [
     ...repositoryNames,
     ...searchedRepositoryNames,
-  ].filter(
-    (name, index, names) =>
-      !repositories.includes(addressFor(name)) && names.indexOf(name) === index,
-  );
+  ].filter((name, index, names) => {
+    const address = addressFor(name);
+    return (
+      (address === null || !repositories.includes(address)) &&
+      names.indexOf(name) === index
+    );
+  });
   const visibleRepositoryNames = repositorySearchText
     ? listedRepositoryNames.filter((name) =>
         name.toLowerCase().includes(repositorySearchText),
@@ -372,7 +380,7 @@ export function AutomationSetupPromptStack({
     : listedRepositoryNames;
   const addLabel = `${t(I18nKey.BUTTON$ADD)} ${t(I18nKey.AUTOMATIONS$DETAIL$REPOSITORIES)}`;
   const isRepositoryProviderUnsupported =
-    repositoryProvider !== null && !cloneProviders.includes(repositoryProvider);
+    repositoryProvider !== null && !canListProvider(repositoryProvider);
 
   const writeRepositories = (next: string[]) => {
     onRepositoryChange(next.join(", "));
@@ -607,7 +615,7 @@ export function AutomationSetupPromptStack({
                               event.preventDefault();
                               event.stopPropagation();
                               const address = addressFor(name);
-                              if (!repositories.includes(address)) {
+                              if (address && !repositories.includes(address)) {
                                 writeRepositories([...repositories, address]);
                               }
                               setIsRepositoryMenuOpen(false);

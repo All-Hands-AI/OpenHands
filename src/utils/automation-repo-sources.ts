@@ -61,8 +61,30 @@ function hostedBaseUrl(provider: Provider): string | null {
   return providerBaseUrl(getGitProviderBaseUrl(provider));
 }
 
+// One provider name covers the hosted service and self-managed instances alike
+// for these, so a connection whose host the server does not report cannot be
+// addressed: the hosted URL would silently point a self-managed repository at
+// the public service. Bitbucket and Azure DevOps name their self-managed
+// products separately, so a missing host there is the hosted service.
+const HOST_REQUIRED_PROVIDERS: Provider[] = ["gitlab", "forgejo"];
+
 /**
- * The repository field entry for a repository picked from a provider.
+ * Whether a connected provider's listed repositories can be addressed: GitHub
+ * by its shorthand, the others on the reported host or on their hosted
+ * service, unless the name also covers self-managed instances and no host was
+ * reported.
+ */
+export function providerHostKnown(
+  provider: Provider,
+  host?: string | null,
+): boolean {
+  if (providerBaseUrl(host)) return true;
+  return provider === "github" || !HOST_REQUIRED_PROVIDERS.includes(provider);
+}
+
+/**
+ * The repository field entry for a repository picked from a provider, or null
+ * when the connection's host is unknown (see `providerHostKnown`).
  *
  * GitHub keeps its `owner/repo` shorthand. Other providers, and a GitHub
  * Enterprise host, get the full URL on the connected host or on the provider's
@@ -72,9 +94,10 @@ export function automationRepositoryAddress(
   provider: Provider,
   fullName: string,
   host?: string | null,
-): string {
+): string | null {
   const configured = providerBaseUrl(host);
   if (provider === "github" && !configured) return fullName;
+  if (!providerHostKnown(provider, host)) return null;
   const base = configured ?? hostedBaseUrl(provider);
   if (!base) return fullName;
   if (provider === "azure_devops") {

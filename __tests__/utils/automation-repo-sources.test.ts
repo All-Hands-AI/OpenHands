@@ -4,6 +4,7 @@ import {
   buildAutomationRepoSources,
   providerBaseUrl,
   providerForAddress,
+  providerHostKnown,
 } from "#/utils/automation-repo-sources";
 
 describe("automationRepositoryAddress", () => {
@@ -16,13 +17,21 @@ describe("automationRepositoryAddress", () => {
     ).toBe("OpenHands/OpenHands");
   });
 
-  it("uses the provider's hosted service for GitLab and Bitbucket", () => {
-    expect(automationRepositoryAddress("gitlab", "acme/tools")).toBe(
-      "https://gitlab.com/acme/tools",
-    );
+  it("uses the hosted service for a connection the server reports on it", () => {
+    expect(
+      automationRepositoryAddress("gitlab", "acme/tools", "gitlab.com"),
+    ).toBe("https://gitlab.com/acme/tools");
     expect(automationRepositoryAddress("bitbucket", "acme/tools")).toBe(
       "https://bitbucket.org/acme/tools",
     );
+  });
+
+  it("builds no address for a GitLab or Forgejo connection without a host", () => {
+    // The same name covers gitlab.com and a self-managed instance, so an
+    // unreported host must not become the public service.
+    expect(automationRepositoryAddress("gitlab", "acme/tools")).toBeNull();
+    expect(automationRepositoryAddress("gitlab", "acme/tools", "")).toBeNull();
+    expect(automationRepositoryAddress("forgejo", "acme/tools")).toBeNull();
   });
 
   it("uses a connected self-hosted host, with or without a scheme", () => {
@@ -81,6 +90,22 @@ describe("automationRepositoryAddress", () => {
     expect(
       automationRepositoryAddress("bitbucket_data_center", "PROJ/repo"),
     ).toBe("PROJ/repo");
+  });
+});
+
+describe("providerHostKnown", () => {
+  it("needs a reported host only where one name covers self-managed instances", () => {
+    expect(providerHostKnown("github")).toBe(true);
+    expect(providerHostKnown("bitbucket")).toBe(true);
+    expect(providerHostKnown("azure_devops", null)).toBe(true);
+    expect(providerHostKnown("gitlab")).toBe(false);
+    expect(providerHostKnown("gitlab", "")).toBe(false);
+    expect(providerHostKnown("gitlab", "gitlab.com")).toBe(true);
+    expect(providerHostKnown("gitlab", "https://gitlab.example.com")).toBe(
+      true,
+    );
+    expect(providerHostKnown("forgejo")).toBe(false);
+    expect(providerHostKnown("forgejo", "codeberg.org")).toBe(true);
   });
 });
 

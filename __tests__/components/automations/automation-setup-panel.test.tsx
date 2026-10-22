@@ -911,6 +911,10 @@ describe("AutomationSetupPanel", () => {
       providers: ["gitlab"],
       isLoadingSettings: false,
     });
+    // The server names the connection's host; gitlab.com is the hosted service.
+    mockUseSettings.mockReturnValue({
+      data: { provider_tokens_set: { gitlab: "gitlab.com" } },
+    });
     mockUseGitRepositories.mockReturnValue(
       createProviderRepositoriesQueryResult("gitlab", "acme/tools"),
     );
@@ -946,6 +950,41 @@ describe("AutomationSetupPanel", () => {
         }),
       ),
     );
+  });
+
+  it("keeps GitLab repositories disabled when the server reports no host", async () => {
+    // The same name covers gitlab.com and a self-managed instance, so without
+    // the host the form cannot address the repository and must not guess.
+    mockUseUserProviders.mockReturnValue({
+      providers: ["gitlab"],
+      isLoadingSettings: false,
+    });
+    mockUseSettings.mockReturnValue({
+      data: { provider_tokens_set: { gitlab: null } },
+    });
+    mockUseGitRepositories.mockReturnValue(
+      createProviderRepositoriesQueryResult("gitlab", "acme/tools"),
+    );
+
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(screen.getByTestId("automation-setup-repository-add"));
+
+    expect(
+      screen.queryByTestId("automation-setup-repository-provider"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByTestId("automation-setup-repository-unsupported"),
+    ).toHaveTextContent("AUTOMATION_SETUP$REPOSITORY_PROVIDER_UNSUPPORTED");
+    const option = screen.getByTestId(
+      "automation-setup-repository-option-acme/tools",
+    );
+    expect(option).toBeDisabled();
+    await user.click(option);
+    expect(
+      screen.queryByTestId("automation-setup-repository-value"),
+    ).not.toBeInTheDocument();
   });
 
   it("names the provider of a repository on a connected self-hosted host", async () => {
@@ -1052,6 +1091,9 @@ describe("AutomationSetupPanel", () => {
     mockUseUserProviders.mockReturnValue({
       providers: ["github", "gitlab"],
       isLoadingSettings: false,
+    });
+    mockUseSettings.mockReturnValue({
+      data: { provider_tokens_set: { github: null, gitlab: "gitlab.com" } },
     });
     mockUseGitRepositories.mockImplementation((options) =>
       options?.provider === "gitlab"
