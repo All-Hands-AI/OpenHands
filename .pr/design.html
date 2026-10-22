@@ -120,7 +120,7 @@
   Both backends that Canvas spawns read <code>LOG_LEVEL</code> and default it to <code>INFO</code>.
   At <code>INFO</code> the automation service's logging setup raises <em>every</em> registered logger —
   including <code>sqlalchemy.orm</code> — so the SQLAlchemy model mapper narrates its own construction
-  and prints 334 lines before the service is even reachable. The launcher never set a level, so that
+  and prints 338 lines before the service is even reachable. The launcher never set a level, so that
   was the default experience.
 </p>
 
@@ -145,15 +145,15 @@
 <div class="stats">
   <div class="stat">
     <div class="k">Automation lines</div>
-    <div class="v"><span class="from">422</span> → <span class="to">4</span></div>
+    <div class="v"><span class="from">431</span> → <span class="to">7</span></div>
   </div>
   <div class="stat">
     <div class="k">SQLAlchemy ORM lines</div>
-    <div class="v"><span class="from">334</span> → <span class="to">0</span></div>
+    <div class="v"><span class="from">338</span> → <span class="to">0</span></div>
   </div>
   <div class="stat">
     <div class="k">With <code>--verbose</code></div>
-    <div class="v">1686 / 334</div>
+    <div class="v">1344 / 338</div>
   </div>
 </div>
 
@@ -196,7 +196,7 @@
 
   <rect x="806" y="26" width="142" height="68" rx="8" fill="#fbeceb" stroke="#e0b4b2"/>
   <text x="818" y="48" font-size="12" font-family="monospace" fill="#a83232">sqlalchemy.orm</text>
-  <text x="818" y="66" font-size="11" font-family="monospace" fill="#a83232">334 lines</text>
+  <text x="818" y="66" font-size="11" font-family="monospace" fill="#a83232">338 lines</text>
   <text x="818" y="83" font-size="11" font-family="monospace" fill="#a83232">of mapper output</text>
 
   <!-- AFTER -->
@@ -239,7 +239,7 @@
 <span class="c">[automation]</span> {"name": "sqlalchemy.orm.mapper.Mapper",
   "message": "(Automation|automations)
      _configure_property(runs, …)"}
-<span class="x">… 334 lines like the above …</span>
+<span class="x">… 338 lines like the above …</span>
 <span class="c">[automation]</span> Ready at http://127.0.0.1:18901/…</pre>
   </div>
   <div class="panel good">
@@ -333,9 +333,9 @@
 
 <table>
   <tr><th>Run</th><th>Automation lines</th><th>ORM lines</th><th>Ready-at line</th></tr>
-  <tr><td><code>LOG_LEVEL=INFO</code> (previous default)</td><td>422</td><td>334</td><td>present</td></tr>
-  <tr><td>default (this PR)</td><td><strong>4</strong></td><td><strong>0</strong></td><td>present</td></tr>
-  <tr><td><code>--verbose</code></td><td>1686</td><td>334</td><td>present</td></tr>
+  <tr><td><code>LOG_LEVEL=INFO</code> (previous default)</td><td>431</td><td>338</td><td>present</td></tr>
+  <tr><td>default (this PR)</td><td><strong>7</strong></td><td><strong>0</strong></td><td>present</td></tr>
+  <tr><td><code>--verbose</code></td><td>1344</td><td>338</td><td>present</td></tr>
 </table>
 
 <p>
