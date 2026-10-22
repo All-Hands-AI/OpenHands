@@ -362,12 +362,20 @@ class McpService {
         }
       }
 
-      // The server was never asked anything that could time out; the person
-      // did not finish the sign-in in the pop-up.
+      // With a pop-up, nothing on the server timed out: the person did not
+      // finish the sign-in. Without one, the app server was still probing the
+      // stored tokens, which is a plain timeout.
+      if (start.authorization_url) {
+        return {
+          ok: false,
+          error: "OAuth authorization was not completed",
+          error_kind: "authorization",
+        };
+      }
       return {
         ok: false,
-        error: "OAuth authorization was not completed",
-        error_kind: "authorization",
+        error: "OAuth authorization timed out",
+        error_kind: "timeout",
       };
     } catch (err) {
       popup?.close();

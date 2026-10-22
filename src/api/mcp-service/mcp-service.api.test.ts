@@ -989,6 +989,28 @@ describe("McpService.testServer", () => {
     expect(getOAuthStatus).toHaveBeenCalledTimes(141);
     expect(close).toHaveBeenCalledOnce();
   });
+
+  it("reports a plain timeout when no sign-in pop-up was ever shown", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(window, "open").mockReturnValue(null);
+    // No authorization URL: the app server probes the stored tokens itself.
+    startOAuth.mockResolvedValueOnce({ ok: true, job_id: "job-1" });
+    getOAuthStatus.mockResolvedValue({
+      ok: true,
+      status: "pending",
+      job_id: "job-1",
+      callback_ready: false,
+    });
+
+    const authorization = McpService.authorizeOAuth(oauthServer());
+    await vi.runAllTimersAsync();
+
+    await expect(authorization).resolves.toEqual({
+      ok: false,
+      error: "OAuth authorization timed out",
+      error_kind: "timeout",
+    });
+  });
 });
 
 describe("McpService.authorizeOAuth on cloud backends", () => {
