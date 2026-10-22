@@ -23,7 +23,11 @@ import {
   getBakedSessionApiKey,
   isServedOriginHost,
 } from "#/api/agent-server-config";
-import { readStoredBackends } from "#/api/backend-registry/storage";
+import {
+  getEffectiveLocalBackend,
+  getRegisteredBackends,
+} from "#/api/backend-registry/active-store";
+import type { Backend } from "#/api/backend-registry/types";
 import type { MarsBridge } from "./mars-tunnel-backend";
 
 export const MARS_WEB_HEALTH_PATH = "/mars/health";
@@ -46,6 +50,15 @@ export class MarsWebBridgeError extends Error {
   }
 }
 
+/** A local backend for the page's served origin that carries a typed key. */
+function holdsServedOriginKey(backend: Backend): boolean {
+  return (
+    backend.kind === "local" &&
+    isServedOriginHost(backend.host) &&
+    backend.apiKey.trim().length > 0
+  );
+}
+
 /**
  * Return headers required to authenticate with the Agent Canvas MARS web bridge.
  *
@@ -66,13 +79,13 @@ export function getMarsBridgeHeaders(baseUrl = ""): Record<string, string> {
     return { "X-Session-API-Key": bakedKey };
   }
 
-  const backends = readStoredBackends();
-  const servedBackend = backends.find(
-    (b) =>
-      b.kind === "local" &&
-      isServedOriginHost(b.host) &&
-      b.apiKey.trim().length > 0,
-  );
+  // Prefer the active backend when it holds the served-origin key, so an older
+  // key saved for the same origin cannot shadow the one in use.
+  const active = getEffectiveLocalBackend();
+  const servedBackend =
+    active && holdsServedOriginKey(active)
+      ? active
+      : getRegisteredBackends().find(holdsServedOriginKey);
 
   if (servedBackend) {
     return { "X-Session-API-Key": servedBackend.apiKey.trim() };

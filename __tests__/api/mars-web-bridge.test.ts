@@ -10,23 +10,24 @@ import {
 import type { Backend } from "#/api/backend-registry/types";
 
 const bakedSessionApiKey = vi.hoisted(() => ({ value: null as string | null }));
-const storedBackends = vi.hoisted(() => ({ value: [] as Backend[] }));
+const registeredBackends = vi.hoisted(() => ({ value: [] as Backend[] }));
+const activeLocalBackend = vi.hoisted(() => ({
+  value: null as Backend | null,
+}));
 
-vi.mock("#/api/agent-server-config", () => ({
+// Only the baked key is faked: `isServedOriginHost` is the real one, so the
+// tests exercise the actual origin match against the jsdom page origin.
+vi.mock("#/api/agent-server-config", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("#/api/agent-server-config")>()),
   getBakedSessionApiKey: () => bakedSessionApiKey.value,
-  isServedOriginHost: (host?: string | null) =>
-    !host ||
-    host === "http://localhost:3000" ||
-    host === "http://127.0.0.1:18960",
-  getAgentServerHeaders: (): Record<string, string> =>
-    bakedSessionApiKey.value
-      ? { "X-Session-API-Key": bakedSessionApiKey.value }
-      : {},
 }));
 
-vi.mock("#/api/backend-registry/storage", () => ({
-  readStoredBackends: () => storedBackends.value,
+vi.mock("#/api/backend-registry/active-store", () => ({
+  getEffectiveLocalBackend: () => activeLocalBackend.value,
+  getRegisteredBackends: () => registeredBackends.value,
 }));
+
+const PAGE_ORIGIN = window.location.origin;
 
 function jsonResponse(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -39,7 +40,8 @@ afterEach(() => {
   vi.unstubAllGlobals();
   delete window.marsBridge;
   bakedSessionApiKey.value = null;
-  storedBackends.value = [];
+  registeredBackends.value = [];
+  activeLocalBackend.value = null;
 });
 
 describe("createMarsWebBridge", () => {
@@ -117,11 +119,11 @@ describe("createMarsWebBridge", () => {
 
   it("sends the typed session key when no baked key exists on the page", async () => {
     bakedSessionApiKey.value = null;
-    storedBackends.value = [
+    registeredBackends.value = [
       {
         id: "default-local",
         name: "Local",
-        host: "http://127.0.0.1:18960",
+        host: PAGE_ORIGIN,
         apiKey: "qa-typed-session-key",
         kind: "local",
       },
@@ -149,9 +151,48 @@ describe("createMarsWebBridge", () => {
     });
   });
 
-  it("never sends a session key stored for a different backend host or when baseUrl is foreign", async () => {
-    bakedSessionApiKey.value = null;
-    storedBackends.value = [
+  it("prefers the active backend's key over an older one saved for the same origin", () => {
+    const current: Backend = {
+      id: "current",
+      name: "Current",
+      host: PAGE_ORIGIN,
+      apiKey: "current-key",
+      kind: "local",
+    };
+    registeredBackends.value = [
+      {
+        id: "stale",
+        name: "Stale",
+        host: PAGE_ORIGIN,
+        apiKey: "stale-key",
+        kind: "local",
+      },
+      current,
+    ];
+    activeLocalBackend.value = current;
+
+    expect(getMarsBridgeHeaders()).toEqual({
+      "X-Session-API-Key": "current-key",
+    });
+  });
+
+  it("never sends a key stored for another host, a DigitalOcean session or a cloud backend", async () => {
+    const marsSession: Backend = {
+      id: "mars-1",
+      name: "MARS Session",
+      host: `${PAGE_ORIGIN}/mars/sessions/s1`,
+      apiKey: "session-token",
+      kind: "local",
+      marsSessionId: "s1",
+    };
+    registeredBackends.value = [
+      {
+        id: "cloud-1",
+        name: "Cloud",
+        host: PAGE_ORIGIN,
+        apiKey: "cloud-key",
+        kind: "cloud",
+      },
       {
         id: "remote-1",
         name: "Remote",
@@ -159,14 +200,9 @@ describe("createMarsWebBridge", () => {
         apiKey: "remote-key",
         kind: "local",
       },
-      {
-        id: "mars-1",
-        name: "MARS Session",
-        host: "http://127.0.0.1:18960/mars/sessions/s1",
-        apiKey: "session-token",
-        kind: "cloud",
-      },
+      marsSession,
     ];
+    activeLocalBackend.value = marsSession;
     const fetchImpl = vi.fn(async () => jsonResponse(200, { result: null }));
     const bridge = createMarsWebBridge(
       "",
@@ -182,12 +218,18 @@ describe("createMarsWebBridge", () => {
       },
       body: JSON.stringify({ args: ["s1"] }),
     });
+  });
 
+  it("never sends the page's key to a bridge on a foreign host", async () => {
+    bakedSessionApiKey.value = "sk-page";
+    const fetchImpl = vi.fn(async () => jsonResponse(200, { result: null }));
     const foreignBridge = createMarsWebBridge(
       "https://foreign-host.com",
       fetchImpl as unknown as typeof fetch,
     );
+
     await foreignBridge.pauseSession("s2");
+
     expect(fetchImpl).toHaveBeenCalledWith(
       "https://foreign-host.com/mars/rpc/pauseSession",
       {
