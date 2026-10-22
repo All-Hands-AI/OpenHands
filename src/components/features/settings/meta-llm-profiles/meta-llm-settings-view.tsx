@@ -380,13 +380,11 @@ export function MetaLlmSettingsView() {
           data-testid="meta-profile-run-at-conversation-start"
         >
           <SettingsSwitch
-            testId="meta-profile-run-at-conversation-start-switch"
-            isToggled={
-              canRunRouterAtStart ? runRouterAtConversationStart : false
-            }
-            isDisabled={!canRunRouterAtStart}
-            onToggle={handleToggleRunAtConversationStart}
-          >
+  testId="meta-profile-run-at-conversation-start-switch"
+  isToggled={runRouterAtConversationStart}
+  isDisabled={!canRunRouterAtStart}
+  onToggle={handleToggleRunAtConversationStart}
+>
             {t(I18nKey.SETTINGS$META_PROFILE_RUN_AT_CONVERSATION_START)}
           </SettingsSwitch>
           <p className="text-xs leading-4 text-tertiary-light">
