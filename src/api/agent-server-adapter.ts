@@ -44,6 +44,7 @@ import {
   buildSkillEnablementFilter,
   findInvokedCatalogSkill,
   profileSkillEnablement,
+  toSkillEnablement,
   type SkillEnablement,
 } from "#/utils/skill-enablement";
 import type { StoredOpenHandsProfile } from "./agent-profiles-service/profile-behavior";
@@ -1080,20 +1081,23 @@ export function buildStartConversationRequest(
     .filter((suffix): suffix is string => Boolean(suffix))
     .join("\n\n");
   // A catalog skill the opening message invokes loads for this conversation
-  // even when the profile does not select it.
-  const invokedSkillName =
-    options.agentProfileKind === "openhands"
-      ? findInvokedCatalogSkill(options.query)
-      : undefined;
-  const invokedSkill = invokedSkillName
-    ? buildBundledSkills().find((skill) => skill.name === invokedSkillName)
-    : undefined;
+  // even when the profile does not select it. An ACP profile has no skill
+  // selection, so it also gets every skill enabled in Settings.
+  const invokedSkillName = findInvokedCatalogSkill(options.query);
+  const isEnabled = buildSkillEnablementFilter(
+    toSkillEnablement(options.settings),
+  );
+  const launchSkills = buildBundledSkills().filter(
+    (skill) =>
+      skill.name === invokedSkillName ||
+      (options.agentProfileKind === "acp" && isEnabled(skill.name)),
+  );
   const launchAdditions = {
     ...(launchSuffix ? { system_message_suffix_append: launchSuffix } : {}),
     ...(options.llmProfileOverride
       ? { llm_profile_ref: options.llmProfileOverride }
       : {}),
-    ...(invokedSkill ? { skills: [invokedSkill] } : {}),
+    ...(launchSkills.length > 0 ? { skills: launchSkills } : {}),
   };
 
   const sourceConversationOptions = options.encryptedConversationSettings
