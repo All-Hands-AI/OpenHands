@@ -35,6 +35,7 @@ import { pathToFileURL } from "node:url";
 import sirv from "sirv";
 
 import { applySessionKeyPolicy, DEFAULT_BIND_HOST } from "./bind-host.mjs";
+import { resolveFeaturePolicy } from "./feature-policy.mjs";
 import { mountMarsWebBridge } from "./mars-web-bridge.mjs";
 import {
   createProxyHandlers,
@@ -102,6 +103,8 @@ export function parseArgs(argv = process.argv.slice(2), env = process.env) {
     vscodeBasePath: null,
     // Also settable via the --disable-telemetry flag below.
     disableTelemetry: isEnvFlagEnabled(env.AGENT_CANVAS_DISABLE_TELEMETRY),
+    // Throws on an invalid policy so startup fails instead of serving full Canvas.
+    featurePolicy: resolveFeaturePolicy(env),
   };
 
   for (let i = 0; i < argv.length; i++) {
@@ -291,6 +294,14 @@ OPTIONS:
                                mode to cleanly reject API paths.
   -h, --help                   Show this help
 
+ENVIRONMENT:
+  AGENT_CANVAS_FEATURES        Inline JSON feature policy, e.g.
+                               {"version":1,"disabled":["backends.add"]}.
+                               IDs are listed in config/features.json.
+  AGENT_CANVAS_FEATURES_FILE   Path to a JSON file with the same policy.
+                               Setting both, or an invalid policy, is a
+                               startup error.
+
 ROUTING:
   • Routes are matched by longest prefix first (most-specific wins).
   • Reject prefixes are checked before SPA fallback — matching requests
@@ -355,6 +366,10 @@ ROUTING:
  *   event) at runtime without VITE_DO_NOT_TRACK baked in. Read by
  *   `isDoNotTrackEnabled()` in `#/services/telemetry`. Enabled by
  *   AGENT_CANVAS_DISABLE_TELEMETRY=1 or the --disable-telemetry flag.
+ *
+ * - `featurePolicy`: the operator's resolved feature policy (see
+ *   `feature-policy.mjs`), exposed as `window.__AGENT_CANVAS_FEATURE_POLICY__`.
+ *   Read by `readInjectedFeaturePolicy()` in `#/feature-policy/feature-policy`.
  */
 export function serializeForInlineScript(value) {
   return JSON.stringify(value)
@@ -372,6 +387,7 @@ function makeConfigInjectionScript(
   basePath,
   vscodeBasePath,
   disableTelemetry,
+  featurePolicy,
 ) {
   const parts = [];
 
@@ -431,6 +447,12 @@ function makeConfigInjectionScript(
     parts.push(`window.__AGENT_CANVAS_DO_NOT_TRACK__=true;`);
   }
 
+  if (featurePolicy) {
+    parts.push(
+      `window.__AGENT_CANVAS_FEATURE_POLICY__=${serializeForInlineScript(featurePolicy)};`,
+    );
+  }
+
   if (parts.length === 0) return "";
 
   return `<script>(function(){${parts.join("")}}());</script>`;
@@ -452,6 +474,7 @@ async function serveInjectedIndexHtml(
     basePath,
     vscodeBasePath,
     disableTelemetry,
+    featurePolicy,
   } = {},
 ) {
   let content;
@@ -469,6 +492,7 @@ async function serveInjectedIndexHtml(
     basePath,
     vscodeBasePath,
     disableTelemetry,
+    featurePolicy,
   );
   // Inject right before </head> so the key is available before any app code runs.
   // replace() targets the first (and only) </head> in well-formed HTML.
@@ -519,6 +543,7 @@ function needsRuntimeInjection(injectionOpts) {
     injectionOpts.lockToCloud ||
     injectionOpts.vscodeBasePath ||
     injectionOpts.disableTelemetry ||
+    injectionOpts.featurePolicy ||
     (injectionOpts.basePath && injectionOpts.basePath !== "/"),
   );
 }
@@ -673,6 +698,7 @@ export function startStaticServer(config) {
     basePath: normalizeBasePath(config.basePath),
     vscodeBasePath: config.vscodeBasePath || null,
     disableTelemetry: config.disableTelemetry || false,
+    featurePolicy: config.featurePolicy || null,
   };
   const basePath = injectionOpts.basePath;
   const rejectPrefixes = config.rejectPrefixes ?? [];
@@ -768,6 +794,11 @@ export function startStaticServer(config) {
       }
       if (config.lockToCloud) {
         console.log(`  Backend setup locked to Cloud: ${config.lockToCloud}`);
+      }
+      if (config.featurePolicy?.disabled.length) {
+        console.log(
+          `  Features disabled: ${config.featurePolicy.disabled.join(", ")}`,
+        );
       }
       console.log("  * (default) -> static files + SPA fallback");
       console.log("");
