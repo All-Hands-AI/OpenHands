@@ -1,4 +1,5 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, renderHook, screen, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -9,6 +10,7 @@ import AgentServerConversationService from "#/api/conversation-service/agent-ser
 import WorkspacesService from "#/api/workspaces-service/workspaces-service.api";
 import * as SandboxTemplateService from "#/api/cloud/sandbox-template-service.api";
 import * as ActiveBackendStore from "#/api/backend-registry/active-store";
+import { useSandboxTemplates } from "#/hooks/query/use-sandbox-templates";
 
 const mockNavigate = vi.fn();
 const mockUseActiveBackend = vi.fn();
@@ -355,6 +357,21 @@ describe("HomeChatLauncher", () => {
     renderLauncher();
     await waitFor(() => expect(SandboxTemplateService.getSandboxSelectionOptions).toHaveBeenCalled());
     expect(screen.queryByTestId("sandbox-selector")).not.toBeInTheDocument();
+  });
+
+  it("refreshes revoked choices on remount despite the application's long default cache", async () => {
+    mockUseActiveBackend.mockReturnValue({ ...cloudBackend, orgId: "org-a" });
+    const service = vi.mocked(SandboxTemplateService.getSandboxSelectionOptions);
+    service.mockResolvedValue({ enabled: true, items: [{ id: "large", display_name: "Large" }] });
+    const client = new QueryClient({ defaultOptions: { queries: { staleTime: 300_000, retry: false } } });
+    const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    const first = renderHook(() => useSandboxTemplates(), { wrapper });
+    await waitFor(() => expect(first.result.current.data?.items).toHaveLength(1));
+    first.unmount();
+    service.mockResolvedValue({ enabled: true, items: [] });
+    const second = renderHook(() => useSandboxTemplates(), { wrapper });
+    await waitFor(() => expect(second.result.current.data?.items).toEqual([]));
+    expect(service).toHaveBeenCalledTimes(2);
   });
 
   it("creates a conversation with just the typed query and navigates when no workspace is selected", async () => {

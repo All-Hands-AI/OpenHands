@@ -11,6 +11,8 @@ export function useSandboxTemplates() {
     queryFn: ({ queryKey }) =>
       getSandboxSelectionOptions(queryKey[1], queryKey[2]!),
     enabled: backend.kind === "cloud" && Boolean(orgId),
+    staleTime: 0,
+    refetchOnWindowFocus: true,
     retry: false,
     // Older backends have no selector endpoint; keep their launch UI unchanged.
     meta: { disableToast: true },

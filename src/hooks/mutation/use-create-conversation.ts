@@ -20,6 +20,7 @@ import {
   LLM_PROFILES_QUERY_KEYS,
   AGENT_PROFILES_QUERY_KEYS,
   AGENT_PROFILES_RETRY_OPTIONS,
+  SANDBOX_TEMPLATES_QUERY_KEYS,
 } from "#/hooks/query/query-keys";
 import { pluginReferenceKey } from "#/utils/plugin-display";
 import { getActiveBackend } from "#/api/backend-registry/active-store";
@@ -338,6 +339,13 @@ export const useCreateConversation = () => {
       };
     },
     onSuccess: async (data, variables) => {
+      if (variables.sandboxSpecId) {
+        // Start tasks may fail asynchronously after creation. Refresh the
+        // menu now so a revoked choice isn't offered again on return home.
+        queryClient.invalidateQueries({
+          queryKey: [...SANDBOX_TEMPLATES_QUERY_KEYS.all, backend.id, orgId],
+        });
+      }
       trackConversationCreated({
         conversationId: data.conversation_id,
         taskId: data.task_id,
