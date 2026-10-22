@@ -165,9 +165,13 @@ automatically a bug and a zero difference does not prove behavior.
   (reproduced <date>, #<issue>)` note to the bullet that reproduces it, next to
   the expected result, or a `Known issue #<issue>` Gotchas entry when no recipe
   can drive it.
-- **Bugs filed outside the pass**: open `bug` issues opened since BASE that
-  name a mapped feature are repro candidates too. Reproduce each and add its
+- **Bugs filed outside the pass**: open `bug` issues without a supported
+  map or ledger outcome are repro candidates too, regardless of creation date.
+  Include newly opened, reopened and newly bug-labeled reports. Reproduce each and add its
   note; when one does not reproduce, comment on the issue with the run instead.
+  `ready-for-dev` prioritizes live work but does not exclude older actionable
+  reports. [bug-backfill.md](bug-backfill.md) defines the inventory outcomes and
+  their optional GitHub labels; a label must have a map note or report behind it.
 - **Undocumented or contradictory change**: cite the PR and the observed
   difference; ask the maintainer instead of rewriting the expectation.
 - **Known issues** linked in Gotchas are repro candidates: retest, link fresh
