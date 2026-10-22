@@ -19133,6 +19133,24 @@
     "ca": "Afegeix un servidor personalitzat",
     "id": "Tambah server khusus"
   },
+  "MCP$INSTALL_UNAVAILABLE": {
+    "en": "{{name}} can't be installed from the library here. Add it as a custom server instead.",
+    "ja": "{{name}} はここではライブラリからインストールできません。代わりにカスタムサーバーとして追加してください。",
+    "zh-CN": "无法在此处从库中安装 {{name}}。请改为将其添加为自定义服务器。",
+    "zh-TW": "無法在此處從資料庫安裝 {{name}}。請改為將其新增為自訂伺服器。",
+    "ko-KR": "{{name}}은(는) 여기에서 라이브러리로 설치할 수 없습니다. 대신 사용자 지정 서버로 추가하세요.",
+    "no": "{{name}} kan ikke installeres fra biblioteket her. Legg den til som en egendefinert server i stedet.",
+    "it": "{{name}} non può essere installato dalla libreria qui. Aggiungilo invece come server personalizzato.",
+    "pt": "{{name}} não pode ser instalado pela biblioteca aqui. Adicione-o como servidor personalizado.",
+    "es": "{{name}} no se puede instalar desde la biblioteca aquí. Añádelo como servidor personalizado.",
+    "ar": "لا يمكن تثبيت {{name}} من المكتبة هنا. أضفه كخادم مخصص بدلاً من ذلك.",
+    "fr": "{{name}} ne peut pas être installé depuis la bibliothèque ici. Ajoutez-le plutôt comme serveur personnalisé.",
+    "tr": "{{name}} burada kütüphaneden yüklenemez. Bunun yerine özel sunucu olarak ekleyin.",
+    "de": "{{name}} kann hier nicht aus der Bibliothek installiert werden. Füge ihn stattdessen als benutzerdefinierten Server hinzu.",
+    "uk": "{{name}} не можна встановити з бібліотеки тут. Натомість додайте його як власний сервер.",
+    "ca": "{{name}} no es pot instal·lar des de la biblioteca aquí. Afegeix-lo com a servidor personalitzat.",
+    "id": "{{name}} tidak dapat dipasang dari pustaka di sini. Tambahkan sebagai server khusus."
+  },
   "MCP$ADD_CUSTOM_TITLE": {
     "en": "Add custom MCP server",
     "ja": "カスタム MCP サーバーを追加",
