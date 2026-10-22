@@ -181,6 +181,9 @@ ENVIRONMENT VARIABLES:
   OH_AUTOMATION_GIT_REF       Alternative to --automation-ref
   OH_AGENT_SERVER_GIT_REF     Git ref for agent-server SDK
   OH_SECRET_KEY               Secret key for sessions
+  LOG_LEVEL                   Log level for both backends (default: WARNING)
+  AUTOMATION_LOG_LEVEL        Log level for the automation service only
+                              (default: LOG_LEVEL)
 
 ACCESS POINTS:
   Main UI:      http://localhost:PORT/

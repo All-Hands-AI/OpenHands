@@ -275,6 +275,9 @@ ENVIRONMENT VARIABLES:
   OH_AGENT_SERVER_GIT_REF     Git ref for agent-server SDK (overrides default version)
   OH_AGENT_SERVER_VERSION     Specific PyPI version for agent-server
   OH_SECRET_KEY               Secret key for sessions
+  LOG_LEVEL                   Log level for both backends (default: WARNING)
+  AUTOMATION_LOG_LEVEL        Log level for the automation service only
+                              (default: LOG_LEVEL)
 
 SECRETS:
   The session API key is automatically seeded into agent-server secrets
