@@ -7,6 +7,8 @@ import toast from "react-hot-toast";
 import { HomeChatLauncher } from "#/components/features/home/home-chat-launcher";
 import AgentServerConversationService from "#/api/conversation-service/agent-server-conversation-service.api";
 import WorkspacesService from "#/api/workspaces-service/workspaces-service.api";
+import * as SandboxTemplateService from "#/api/cloud/sandbox-template-service.api";
+import * as ActiveBackendStore from "#/api/backend-registry/active-store";
 
 const mockNavigate = vi.fn();
 const mockUseActiveBackend = vi.fn();
@@ -302,10 +304,57 @@ describe("HomeChatLauncher", () => {
       workspaces: [],
       workspaceParents: [],
     });
+    vi.spyOn(SandboxTemplateService, "getSandboxSelectionOptions").mockResolvedValue({ enabled: false, items: [] });
   });
 
   afterEach(() => {
     toast.remove();
+  });
+
+  it("offers Default and org templates and sends a one-conversation template override", async () => {
+    mockUseActiveBackend.mockReturnValue({ ...cloudBackend, orgId: "org-a" });
+    vi.spyOn(ActiveBackendStore, "getActiveBackend").mockReturnValue({ ...cloudBackend, orgId: "org-a" });
+    vi.mocked(SandboxTemplateService.getSandboxSelectionOptions).mockResolvedValue({
+      enabled: true,
+      items: [{ id: "monorepo_large", display_name: "Monorepo Large" }, { id: "testing_small", display_name: "Testing Small" }],
+    });
+    const create = vi.spyOn(AgentServerConversationService, "createConversation").mockResolvedValue(makeConversationResponse());
+    renderLauncher();
+    const user = userEvent.setup();
+    const selector = await screen.findByRole("combobox", { name: "HOME$SANDBOX_LABEL" });
+    expect(selector).toHaveValue("");
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual(["HOME$SANDBOX_DEFAULT", "Monorepo Large", "Testing Small"]);
+    await user.selectOptions(selector, "monorepo_large");
+    await user.click(screen.getByTestId("stub-chat-submit"));
+    await waitFor(() => expect(create).toHaveBeenCalledOnce());
+    expect(create.mock.lastCall?.[11]).toBe("monorepo_large");
+  });
+
+  it("resets the one-off selection and replaces the catalog on an organization switch", async () => {
+    mockUseActiveBackend.mockReturnValue({ ...cloudBackend, orgId: "org-a" });
+    vi.mocked(SandboxTemplateService.getSandboxSelectionOptions).mockImplementation(async (_backend, orgId) => ({
+      enabled: true,
+      items: orgId === "org-a" ? [{ id: "large", display_name: "Monorepo Large" }] : [{ id: "testing", display_name: "Testing Small" }],
+    }));
+    const create = vi.spyOn(AgentServerConversationService, "createConversation").mockResolvedValue(makeConversationResponse());
+    const view = renderLauncher();
+    const user = userEvent.setup();
+    await user.selectOptions(await screen.findByTestId("sandbox-selector"), "large");
+    mockUseActiveBackend.mockReturnValue({ ...cloudBackend, orgId: "org-b" });
+    view.rerender(<HomeChatLauncher />);
+    await screen.findByRole("option", { name: "Testing Small" });
+    expect(screen.getByTestId("sandbox-selector")).toHaveValue("");
+    expect(screen.queryByRole("option", { name: "Monorepo Large" })).not.toBeInTheDocument();
+    await user.click(screen.getByTestId("stub-chat-submit"));
+    await waitFor(() => expect(create).toHaveBeenCalledOnce());
+    expect(create.mock.lastCall?.[11]).toBeUndefined();
+  });
+
+  it("keeps the selector hidden when the org feature flag is off", async () => {
+    mockUseActiveBackend.mockReturnValue({ ...cloudBackend, orgId: "org-a" });
+    renderLauncher();
+    await waitFor(() => expect(SandboxTemplateService.getSandboxSelectionOptions).toHaveBeenCalled());
+    expect(screen.queryByTestId("sandbox-selector")).not.toBeInTheDocument();
   });
 
   it("creates a conversation with just the typed query and navigates when no workspace is selected", async () => {

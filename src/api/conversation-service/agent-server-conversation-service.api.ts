@@ -382,6 +382,7 @@ class AgentServerConversationService {
     // encrypted-settings builder; cloud sends it as a flat request field.
     agentProfileId?: string,
     agentProfileKind?: AgentKind,
+    sandboxSpecId?: string,
   ): Promise<AppConversationStartTask> {
     if (getActiveBackend().backend.kind === "cloud") {
       // Cloud path mirrors OpenHands' frontend: build a flat
@@ -407,6 +408,7 @@ class AgentServerConversationService {
         agent_type: agentType,
         sandbox_id: sandboxId ?? null,
         agent_profile_id: agentProfileId ?? null,
+        ...(sandboxSpecId ? { sandbox_spec_id: sandboxSpecId } : {}),
       };
       return createCloudAppConversation(request);
     }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { CustomChatInput } from "#/components/features/chat/custom-chat-input";
@@ -33,10 +33,12 @@ import { OpenLauncherButton } from "./open-launcher-button";
 import { OpenWorkspaceDialog } from "./open-workspace-dialog";
 import { OpenRepositoryDialog } from "./open-repository-dialog";
 import { HomeGitControlBarPreview } from "./home-git-control-bar-preview";
+import { SandboxSelector } from "./sandbox-selector";
+import { useSandboxTemplates } from "#/hooks/query/use-sandbox-templates";
 
 export function HomeChatLauncher() {
   const { t } = useTranslation("openhands");
-  const { backend } = useActiveBackend();
+  const { backend, orgId } = useActiveBackend();
   const { navigate } = useNavigation();
   const isLocal = backend.kind === "local";
 
@@ -51,6 +53,21 @@ export function HomeChatLauncher() {
     useState<WorkspaceMode>("local_repo");
   const [selectedPlugins, setSelectedPlugins] = useState<PluginSpec[]>([]);
   const [isPluginPickerOpen, setIsPluginPickerOpen] = useState(false);
+  const { data: sandboxOptions } = useSandboxTemplates();
+  const [sandboxSelection, setSandboxSelection] = useState<{
+    backendId: string;
+    orgId: string | null;
+    templateId: string;
+  } | null>(null);
+  useEffect(() => setSandboxSelection(null), [backend.id, orgId]);
+  const selectedSandboxId =
+    !isLocal &&
+    sandboxOptions?.enabled &&
+    sandboxSelection?.backendId === backend.id &&
+    sandboxSelection.orgId === orgId &&
+    sandboxOptions.items.some((item) => item.id === sandboxSelection.templateId)
+      ? sandboxSelection.templateId
+      : "";
 
   const { mutateAsync: createConversation, isPending } =
     useCreateConversation();
@@ -98,6 +115,9 @@ export function HomeChatLauncher() {
       query: hasAttachments ? undefined : trimmed || undefined,
       entryPoint: "home_chat_launcher",
     };
+    if (selectedSandboxId) {
+      variables.sandboxSpecId = selectedSandboxId;
+    }
     if (isLocal && pendingWorkspace) {
       variables = {
         ...variables,
@@ -231,7 +251,7 @@ export function HomeChatLauncher() {
         />
       </div>
 
-      <div className="flex items-center justify-start gap-2">
+      <div className="flex flex-wrap items-center justify-start gap-2">
         {hasSelection ? (
           <HomeGitControlBarPreview
             workspace={pendingWorkspace}
@@ -256,6 +276,16 @@ export function HomeChatLauncher() {
           onClick={() => setIsPluginPickerOpen(true)}
           disabled={isCreating}
         />
+        {!isLocal && sandboxOptions?.enabled && (
+          <SandboxSelector
+            items={sandboxOptions.items}
+            value={selectedSandboxId}
+            onChange={(templateId) =>
+              setSandboxSelection({ backendId: backend.id, orgId, templateId })
+            }
+            disabled={isCreating}
+          />
+        )}
       </div>
 
       {isLocal ? (

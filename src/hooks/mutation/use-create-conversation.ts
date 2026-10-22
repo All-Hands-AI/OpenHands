@@ -22,6 +22,9 @@ import {
   AGENT_PROFILES_RETRY_OPTIONS,
 } from "#/hooks/query/query-keys";
 import { pluginReferenceKey } from "#/utils/plugin-display";
+import { getActiveBackend } from "#/api/backend-registry/active-store";
+import i18n from "#/i18n";
+import { I18nKey } from "#/i18n/declaration";
 import {
   getStoredConversationMetadata,
   setStoredConversationMetadata,
@@ -47,6 +50,7 @@ export interface CreateConversationVariables {
   // active AgentProfile (if any) is used so home-composed conversations
   // launch from the user's selected profile (#3727).
   agentProfileId?: string;
+  sandboxSpecId?: string;
   entryPoint?: string; // analytics only; not forwarded to the service
 }
 
@@ -90,6 +94,7 @@ export const useCreateConversation = () => {
         parentConversationId,
         agentType,
         agentProfileId,
+        sandboxSpecId,
       } = variables;
 
       // The active AgentProfile is the default launch profile for new
@@ -199,14 +204,35 @@ export const useCreateConversation = () => {
       // TODO(#1587): createConversation has grown to 11 positional params;
       // refactor it to an options object so this position-skipping tail isn't
       // needed.
-      const profileArgs: [undefined, string, AgentKind | undefined] | [] =
-        effectiveAgentProfileId
+      const profileArgs:
+        | [undefined, string | undefined, AgentKind | undefined, string]
+        | [undefined, string, AgentKind | undefined]
+        | [] =
+        sandboxSpecId && backend.kind === "cloud"
           ? [
               undefined,
               effectiveAgentProfileId,
               resolvedAgentProfile?.agent_kind,
+              sandboxSpecId,
             ]
-          : [];
+          : effectiveAgentProfileId
+            ? [
+                undefined,
+                effectiveAgentProfileId,
+                resolvedAgentProfile?.agent_kind,
+              ]
+            : [];
+
+      // Profile/plugin loading above can await. Never launch an org-scoped
+      // template against a different org selected while those requests ran.
+      if (sandboxSpecId) {
+        const current = getActiveBackend();
+        if (current.backend.id !== backend.id || current.orgId !== orgId) {
+          throw new Error(
+            i18n.t(I18nKey.CONVERSATION$ERROR_STARTING_CONVERSATION),
+          );
+        }
+      }
 
       const conversation =
         await AgentServerConversationService.createConversation(
