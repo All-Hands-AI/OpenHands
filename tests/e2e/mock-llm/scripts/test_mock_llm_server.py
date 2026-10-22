@@ -90,8 +90,9 @@ def test_title_generation_leaves_the_trajectory_intact(url, as_parts):
         },
     ]
 
-    assert complete(url, messages)["content"] == server.MOCK_TITLE
+    reply = complete(url, messages)
     assert recorded(url) == []
+    assert reply["content"] == server.MOCK_TITLE
     conversation = [{"role": "user", "content": "Run the scripted command."}]
     tool_call = complete(url, conversation)["tool_calls"][0]["function"]
     assert server.BASH_TOKEN in tool_call["arguments"]
