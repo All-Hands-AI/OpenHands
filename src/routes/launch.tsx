@@ -11,6 +11,11 @@ import {
   automationDetailPath,
   hasAutomationInterface,
 } from "#/manifests/automation-interface";
+import {
+  configSchemaToFormFields,
+  pluginSpecTemplateId,
+  pluginSpecTemplateVersion,
+} from "#/utils/plugin-launch-preflight";
 
 type ErrorType =
   | "no_plugins"
@@ -179,6 +184,53 @@ export default function LaunchRoute() {
     hasAutomationInterface() &&
     parseResult.plugins.length === 1;
 
+  // Preflight (OpenHands/automation#630): fetch the manifest's config schema
+  // and suggested trigger so the modal renders typed fields and an editable
+  // trigger. Any failure means the backend predates the endpoint — the modal
+  // silently falls back to the free-text-parameter flow, and the create
+  // request still works (the service applies manifest defaults itself).
+  const [preflight, setPreflight] = React.useState<
+    | {
+        description?: string | null;
+        resolvedRef?: string | null;
+        fields: ReturnType<typeof configSchemaToFormFields>;
+        suggestedTrigger?: {
+          type: string;
+          schedule?: string;
+          timezone?: string;
+        } | null;
+      }
+    | null
+    | undefined
+  >(automationMode ? undefined : null);
+
+  React.useEffect(() => {
+    if (!automationMode) return;
+    const plugin = parseResult.plugins[0];
+    let cancelled = false;
+    AutomationService.pluginSpecPreflight({
+      source: plugin.source,
+      ref: plugin.ref,
+      repo_path: plugin.repo_path,
+    })
+      .then((response) => {
+        if (cancelled) return;
+        setPreflight({
+          description: response.manifest.description ?? null,
+          resolvedRef: response.resolved_ref ?? null,
+          fields: configSchemaToFormFields(response),
+          suggestedTrigger: response.suggested_trigger ?? null,
+        });
+      })
+      .catch(() => {
+        // Endpoint absent or unreachable: fall back to the plain flow.
+        if (!cancelled) setPreflight(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [automationMode]);
+
   const handleStartConversation = async (
     plugins: PluginSpec[],
     initialMessage?: string,
@@ -212,7 +264,10 @@ export default function LaunchRoute() {
     return owner ? `${repo} (${owner})` : repo;
   };
 
-  const handleInstallAutomation = async (plugins: PluginSpec[]) => {
+  const handleInstallAutomation = async (
+    plugins: PluginSpec[],
+    trigger?: { type: "cron"; schedule: string; timezone: string } | null,
+  ) => {
     const plugin = plugins[0];
     setCreationError(null);
     setIsInstalling(true);
@@ -227,6 +282,13 @@ export default function LaunchRoute() {
         config: (plugin.parameters ?? undefined) as
           | Record<string, unknown>
           | undefined,
+        trigger,
+        // Dedupe repeated badge clicks: the service returns the existing
+        // automation (HTTP 200) when this template id is already installed.
+        template: {
+          id: pluginSpecTemplateId(plugin),
+          version: pluginSpecTemplateVersion(preflight?.resolvedRef, plugin),
+        },
         enabled: true,
       });
       navigate(automationDetailPath(created.id));
@@ -282,6 +344,7 @@ export default function LaunchRoute() {
         message={parseResult.message}
         isLoading={createConversation.isPending || isInstalling}
         mode={automationMode ? "automation" : "conversation"}
+        preflight={automationMode ? (preflight ?? null) : null}
         onStartConversation={handleStartConversation}
         onInstallAutomation={
           automationMode ? handleInstallAutomation : undefined

@@ -4,6 +4,7 @@ import { I18nKey } from "#/i18n/declaration";
 import { PluginSpec } from "#/api/conversation-service/agent-server-conversation-service.types";
 import { Typography } from "#/ui/typography";
 import { PluginLaunchParameterInput } from "./plugin-launch-parameter-input";
+import type { SchemaFormField } from "#/utils/plugin-launch-preflight";
 
 export interface PluginLaunchPluginSectionProps {
   plugin: PluginSpec;
@@ -11,6 +12,8 @@ export interface PluginLaunchPluginSectionProps {
   isExpanded: boolean;
   onToggle: () => void;
   getPluginDisplayName: (plugin: PluginSpec) => string;
+  /** Manifest schema fields (automation mode with preflight), if available. */
+  schemaFields?: SchemaFormField[];
   onParameterChange: (
     pluginIndex: number,
     paramKey: string,
@@ -24,6 +27,7 @@ export function PluginLaunchPluginSection({
   isExpanded,
   onToggle,
   getPluginDisplayName,
+  schemaFields,
   onParameterChange,
 }: PluginLaunchPluginSectionProps) {
   const { t } = useTranslation("openhands");
@@ -71,6 +75,12 @@ export function PluginLaunchPluginSection({
                 pluginIndex={originalIndex}
                 paramKey={key}
                 paramValue={value}
+                options={
+                  schemaFields?.find((field) => field.key === key)?.options
+                }
+                helpText={
+                  schemaFields?.find((field) => field.key === key)?.helpText
+                }
                 onParameterChange={onParameterChange}
               />
             ))}

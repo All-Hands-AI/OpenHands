@@ -13,6 +13,10 @@ import { Typography } from "#/ui/typography";
 import { cn } from "#/utils/utils";
 import { hasPluginParameters } from "#/utils/plugin-parameters";
 import { PluginLaunchPluginSection } from "./plugin-launch-plugin-section";
+import {
+  SchemaFormField,
+  applySchemaDefaults,
+} from "#/utils/plugin-launch-preflight";
 
 interface PluginLaunchModalProps {
   plugins: PluginSpec[];
@@ -21,9 +25,23 @@ interface PluginLaunchModalProps {
   isLoading?: boolean;
   /** Submit target: start a conversation (default) or install an automation. */
   mode?: "conversation" | "automation";
+  /** Preflight response for the (single) plugin, when the backend serves one. */
+  preflight?: {
+    description?: string | null;
+    resolvedRef?: string | null;
+    fields: SchemaFormField[];
+    suggestedTrigger?: {
+      type: string;
+      schedule?: string;
+      timezone?: string;
+    } | null;
+  } | null;
   onStartConversation: (plugins: PluginSpec[], initialMessage?: string) => void;
   /** Required when mode === "automation". */
-  onInstallAutomation?: (plugins: PluginSpec[]) => void;
+  onInstallAutomation?: (
+    plugins: PluginSpec[],
+    trigger?: { type: "cron"; schedule: string; timezone: string } | null,
+  ) => void;
   onClose: () => void;
 }
 
@@ -37,6 +55,7 @@ export function PluginLaunchModal({
   message,
   isLoading = false,
   mode = "conversation",
+  preflight = null,
   onStartConversation,
   onInstallAutomation,
   onClose,
@@ -57,6 +76,43 @@ export function PluginLaunchModal({
     },
   );
   const [trustConfirmed, setTrustConfirmed] = React.useState(false);
+
+  // Manifest-aware automation install (OpenHands#18793): when the backend
+  // serves a plugin-spec preflight, seed typed fields from the schema and
+  // offer an editable trigger defaulted from the manifest suggestion.
+  const isAutomationInstall = mode === "automation";
+  const preflightFields = isAutomationInstall ? (preflight?.fields ?? []) : [];
+
+  // Seed defaults once when the preflight arrives; later user edits win.
+  React.useEffect(() => {
+    if (isAutomationInstall && preflight && preflight.fields.length > 0) {
+      setPluginConfigs((prev) =>
+        prev.map((plugin) => ({
+          ...plugin,
+          parameters: applySchemaDefaults(
+            plugin.parameters ?? {},
+            preflight.fields,
+          ),
+        })),
+      );
+    }
+  }, [isAutomationInstall, preflight]);
+
+  const suggestedTrigger = isAutomationInstall
+    ? (preflight?.suggestedTrigger ?? null)
+    : null;
+  const isCronSuggestion = suggestedTrigger?.type === "cron";
+  const [triggerSchedule, setTriggerSchedule] = React.useState("");
+  const [triggerTimezone, setTriggerTimezone] = React.useState("UTC");
+
+  // The preflight arrives asynchronously; sync the editable inputs once when
+  // its cron suggestion lands. Later user edits win over the suggestion.
+  React.useEffect(() => {
+    if (isCronSuggestion && suggestedTrigger) {
+      setTriggerSchedule(suggestedTrigger.schedule ?? "");
+      setTriggerTimezone(suggestedTrigger.timezone ?? "UTC");
+    }
+  }, [preflight]);
 
   const pluginsWithParams = pluginConfigs.filter(
     (p) => p.parameters && Object.keys(p.parameters).length > 0,
@@ -136,6 +192,14 @@ export function PluginLaunchModal({
   const handleStartConversation = () => {
     if (unsupportedParameters) return;
     if (mode === "automation") {
+      if (isCronSuggestion) {
+        onInstallAutomation?.(pluginConfigs, {
+          type: "cron",
+          schedule: triggerSchedule,
+          timezone: triggerTimezone,
+        });
+        return;
+      }
       onInstallAutomation?.(pluginConfigs);
       return;
     }
@@ -175,6 +239,7 @@ export function PluginLaunchModal({
                   isExpanded={!!expandedSections[index]}
                   onToggle={() => toggleSection(index)}
                   getPluginDisplayName={getPluginDisplayName}
+                  schemaFields={preflightFields}
                   onParameterChange={updateParameter}
                 />
               ))}
@@ -221,6 +286,59 @@ export function PluginLaunchModal({
           >
             {t(I18nKey.LAUNCH$PARAMETERS_UNSUPPORTED_LOCAL)}
           </p>
+        )}
+
+        {isAutomationInstall && preflight?.description && (
+          <p
+            data-testid="plugin-preflight-description"
+            className="text-sm text-contrast"
+          >
+            {preflight.description}
+          </p>
+        )}
+
+        {isAutomationInstall && isCronSuggestion && (
+          <div
+            data-testid="plugin-trigger-section"
+            className="space-y-2 rounded-md bg-tertiary p-3"
+          >
+            <label
+              htmlFor="plugin-trigger-schedule"
+              className="text-sm font-medium text-contrast"
+            >
+              {t(I18nKey.LAUNCH$TRIGGER_SCHEDULE_LABEL)}
+            </label>
+            <input
+              id="plugin-trigger-schedule"
+              data-testid="plugin-trigger-schedule"
+              type="text"
+              value={triggerSchedule}
+              onChange={(e) => setTriggerSchedule(e.target.value)}
+              placeholder={t(I18nKey.LAUNCH$TRIGGER_SCHEDULE_PLACEHOLDER)}
+              className="w-full rounded-md border border-border bg-basic px-3 py-2 text-sm"
+            />
+            <label
+              htmlFor="plugin-trigger-timezone"
+              className="text-sm font-medium text-contrast"
+            >
+              {t(I18nKey.LAUNCH$TRIGGER_TIMEZONE_LABEL)}
+            </label>
+            <input
+              id="plugin-trigger-timezone"
+              data-testid="plugin-trigger-timezone"
+              type="text"
+              value={triggerTimezone}
+              onChange={(e) => setTriggerTimezone(e.target.value)}
+              placeholder={t(I18nKey.LAUNCH$TRIGGER_TIMEZONE_PLACEHOLDER)}
+              className="w-full rounded-md border border-border bg-basic px-3 py-2 text-sm"
+            />
+            <p className="text-xs text-contrast">
+              {t(I18nKey.LAUNCH$TRIGGER_EDIT_HINT, {
+                schedule: suggestedTrigger?.schedule ?? "",
+                interpolation: { escapeValue: false },
+              })}
+            </p>
+          </div>
         )}
 
         <div className="pt-4 border-t border-border-subtle">
