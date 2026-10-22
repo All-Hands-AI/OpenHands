@@ -264,30 +264,33 @@ export function createMarsTunnelBridge({
     });
 
   /**
-   * Sandbox preparation per session, remembered once it succeeds: the fixes
-   * it makes persist with the sandbox, and concurrent connects share one run.
+   * Sessions whose sandbox is prepared: the fixes persist with the sandbox.
+   * Only success is remembered; an unreachable guest, or one still booting
+   * when a step failed, is tried again next time.
    */
-  const prepared = new Map();
+  const preparedSessions = new Set();
+  /**
+   * Runs in flight, shared by concurrent connects. Keyed by listener too: a
+   * run probing a listener that has since closed must not answer for the
+   * tunnel that replaced it on another port.
+   */
+  const preparing = new Map();
 
   function prepareOnce(sessionId, localPort) {
-    let run = prepared.get(sessionId);
+    if (preparedSessions.has(sessionId)) return Promise.resolve("prepared");
+    const runKey = `${sessionId}@${localPort}`;
+    let run = preparing.get(runKey);
     if (!run) {
       run = prepare({
         baseUrl: buildTunnelHost(localPort),
         readFailure: () => registry.get(sessionId)?.upstreamFailure,
-      }).then(
-        (result) => {
-          // Only a prepared sandbox is remembered. An unreachable guest, or
-          // one still booting when a step failed, is tried again next time.
-          if (result !== "prepared") prepared.delete(sessionId);
+      })
+        .then((result) => {
+          if (result === "prepared") preparedSessions.add(sessionId);
           return result;
-        },
-        (error) => {
-          prepared.delete(sessionId);
-          throw error;
-        },
-      );
-      prepared.set(sessionId, run);
+        })
+        .finally(() => preparing.delete(runKey));
+      preparing.set(runKey, run);
     }
     return run;
   }
@@ -319,12 +322,23 @@ export function createMarsTunnelBridge({
       readyAt.delete(sessionId);
       throw error;
     }
-    // Every caller gets a prepared sandbox, not just the Canvas page.
+    // Every caller gets a prepared sandbox, not just the Canvas page, and
+    // learns how that went: `sandbox` is the outcome of prepareSandbox.
+    let sandbox;
     if (tunnel.status === "connected" && tunnel.localPort !== undefined) {
-      await prepareOnce(sessionId, tunnel.localPort);
+      sandbox = await prepareOnce(sessionId, tunnel.localPort);
+      // Preparing can take a minute; answer with the tunnel as it is now,
+      // since it may have been closed or replaced meanwhile.
+      tunnel = registry.get(sessionId) ?? {
+        ...tunnel,
+        status: "error",
+        localPort: undefined,
+        error: "The session was disconnected while its sandbox was prepared.",
+      };
     }
     return {
       ...tunnel,
+      sandbox,
       transport: "tunnel",
       host:
         tunnel.localPort === undefined

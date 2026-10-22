@@ -29,6 +29,8 @@ import { server as mswServer } from "#/mocks/node";
 
 import { createMarsTunnelBridge } from "../../scripts/mars-tunnel-bridge.mjs";
 import {
+  FIRST_MESSAGE_AUTH_MAX_BYTES,
+  FIRST_MESSAGE_AUTH_MAX_PENDING,
   RPC_METHODS,
   createMarsWebBridge,
   mountMarsWebBridge,
@@ -137,8 +139,70 @@ async function startFakeAgentServer() {
     },
     openSockets: () =>
       [...wss.clients].filter((c) => c.readyState === WebSocket.OPEN).length,
+    /** Pings every client; resolves once each has ponged back. */
+    ping: (data: string) =>
+      Promise.all(
+        [...wss.clients].map(
+          (c) =>
+            new Promise<void>((resolve) => {
+              c.once("pong", () => resolve());
+              c.ping(data);
+            }),
+        ),
+      ),
     close: () => closeServer(server),
   };
+}
+
+/**
+ * Opens a WebSocket upgrade by hand, for what `ws` refuses to send (a
+ * fragment in the path, a frame after the close). Resolves with the status
+ * line and the raw socket.
+ */
+function rawUpgrade(
+  origin: string,
+  path: string,
+): Promise<{ status: string; socket: net.Socket }> {
+  const { port } = new URL(origin);
+  return new Promise((resolve, reject) => {
+    const socket = net.connect(Number(port), "127.0.0.1", () => {
+      socket.write(
+        `GET ${path} HTTP/1.1\r\nHost: 127.0.0.1:${port}\r\n` +
+          "Upgrade: websocket\r\nConnection: Upgrade\r\n" +
+          "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n" +
+          "Sec-WebSocket-Version: 13\r\n\r\n",
+      );
+    });
+    socket.once("error", reject);
+    socket.once("data", (data) =>
+      resolve({ status: data.toString("latin1").split("\r\n")[0], socket }),
+    );
+  });
+}
+
+/** A masked client text frame (payload under 126 bytes). */
+function clientTextFrame(text: string): Buffer {
+  const payload = Buffer.from(text);
+  const mask = Buffer.from([1, 2, 3, 4]);
+  const masked = payload.map((byte, i) => byte ^ mask[i % 4]);
+  return Buffer.concat([
+    Buffer.from([0x81, 0x80 | payload.length]),
+    mask,
+    Buffer.from(masked),
+  ]);
+}
+
+/** The status an upgrade was refused with, or 101 if it went through. */
+function upgradeStatus(url: string, headers: Record<string, string> = {}) {
+  return new Promise<number>((resolve) => {
+    const ws = new WebSocket(url, { headers });
+    ws.on("error", () => {});
+    ws.on("unexpected-response", (_req, res) => resolve(res.statusCode ?? 0));
+    ws.on("open", () => {
+      resolve(101);
+      ws.close();
+    });
+  });
 }
 
 /**
@@ -820,6 +884,82 @@ describe("createMarsWebBridge with a session key", () => {
     expect(await closed).toBe(4001);
     expect(upstream.seen.ws).toHaveLength(0);
   });
+
+  it.each<{ what: string; headers: Record<string, string> }>([
+    { what: "a wrong key", headers: { "X-Session-API-Key": "wrong" } },
+    { what: "a stale cookie", headers: { Cookie: "mars_web_auth=stale" } },
+  ])(
+    "refuses $what on the socket upgrade at once, without a login window",
+    async ({ headers }) => {
+      await rpc(web.origin, "openTunnel", [{ sessionId: SESSION_ID }], {
+        headers: { "X-Session-API-Key": KEY },
+      });
+      const url = `${web.origin.replace("http", "ws")}/mars/sessions/${SESSION_ID}/mars-upstream/socket`;
+
+      expect(await upgradeStatus(url, headers)).toBe(401);
+      expect(upstream.seen.ws).toHaveLength(0);
+    },
+  );
+
+  it("drops a socket that sends more than a login's worth before logging in", async () => {
+    const { ws, closed } = await openBare();
+
+    ws.send("x".repeat(FIRST_MESSAGE_AUTH_MAX_BYTES + 1));
+
+    expect(await closed).toBe(1006);
+    expect(upstream.seen.ws).toHaveLength(0);
+    expect((await fetch(`${web.origin}/mars/health`)).status).toBe(200);
+  });
+
+  it("refuses more sockets waiting to log in than it allows, and frees a place when one goes", async () => {
+    await rpc(web.origin, "openTunnel", [{ sessionId: SESSION_ID }], {
+      headers: { "X-Session-API-Key": KEY },
+    });
+    const url = `${web.origin.replace("http", "ws")}/mars/sessions/${SESSION_ID}/mars-upstream/socket`;
+    const waiting = await Promise.all(
+      Array.from(
+        { length: FIRST_MESSAGE_AUTH_MAX_PENDING },
+        () =>
+          new Promise<WebSocket>((resolve, reject) => {
+            const ws = new WebSocket(url);
+            ws.on("open", () => resolve(ws));
+            ws.on("error", reject);
+          }),
+      ),
+    );
+
+    expect(await upgradeStatus(url)).toBe(503);
+
+    waiting[0].close();
+    await vi.waitFor(async () => expect(await upgradeStatus(url)).toBe(101));
+    waiting.forEach((ws) => ws.terminate());
+  });
+
+  it("answers 400 to a socket path with a fragment, and stays up", async () => {
+    const { status, socket } = await rawUpgrade(
+      web.origin,
+      `/mars/sessions/${SESSION_ID}/sockets/events/c1#x`,
+    );
+    socket.destroy();
+
+    expect(status).toBe("HTTP/1.1 400 Bad Request");
+    expect((await fetch(`${web.origin}/mars/health`)).status).toBe(200);
+  });
+
+  it("passes the session's pings to the agent and the agent's pongs back", async () => {
+    const { ws } = await openBare();
+    ws.send(JSON.stringify({ type: "auth", session_api_key: KEY }));
+    await vi.waitFor(() => expect(upstream.openSockets()).toBe(1));
+    const pinged = new Promise<string>((resolve) =>
+      ws.once("ping", (data) => resolve(data.toString())),
+    );
+
+    // Resolves only once the agent's own pong has reached the session.
+    await upstream.ping("are-you-there");
+
+    expect(await pinged).toBe("are-you-there");
+    ws.close();
+  });
 });
 
 describe("createMarsWebBridge first-message login window", () => {
@@ -847,6 +987,43 @@ describe("createMarsWebBridge first-message login window", () => {
 
     expect(code).toBe(4001);
     expect(upstream.seen.ws).toHaveLength(0);
+    await marsWeb.dispose();
+    web.close();
+    upstream.close();
+  });
+
+  it("ignores a key that arrives after the window has closed", async () => {
+    const upstream = await startFakeAgentServer();
+    const marsWeb = createMarsWebBridge({
+      bridge: fakeBridge(upstream.origin) as never,
+      env: {},
+      key: "k",
+      authTimeoutMs: 20,
+      log: () => {},
+    });
+    const web = await startWebServer(marsWeb);
+    await rpc(web.origin, "openTunnel", [{ sessionId: SESSION_ID }], {
+      headers: { "X-Session-API-Key": "k" },
+    });
+    const { status, socket } = await rawUpgrade(
+      web.origin,
+      `/mars/sessions/${SESSION_ID}/x`,
+    );
+    expect(status).toBe("HTTP/1.1 101 Switching Protocols");
+
+    // The server has sent its close by now; a raw client can still write.
+    await new Promise((resolve) => {
+      setTimeout(resolve, 100);
+    });
+    socket.write(
+      clientTextFrame(JSON.stringify({ type: "auth", session_api_key: "k" })),
+    );
+    await new Promise((resolve) => {
+      setTimeout(resolve, 100);
+    });
+
+    expect(upstream.seen.ws).toHaveLength(0);
+    socket.destroy();
     await marsWeb.dispose();
     web.close();
     upstream.close();
