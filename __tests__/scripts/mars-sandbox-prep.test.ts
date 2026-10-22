@@ -119,4 +119,20 @@ describe("prepareSandbox", () => {
     expect(result).toBe("unreachable");
     expect(guest.calls).toHaveLength(1);
   });
+
+  it.each([401, 403])(
+    "stops waiting as soon as the guest itself answers %i",
+    async (status) => {
+      const guest = fakeGuest({ "GET /server_info": status });
+
+      const result = await prepareSandbox({
+        baseUrl: BASE,
+        readFailure: () => null,
+        timing: { ...FAST, budgetMs: 60_000 },
+      });
+
+      expect(result).toBe("unreachable");
+      expect(guest.calls).toHaveLength(1);
+    },
+  );
 });
