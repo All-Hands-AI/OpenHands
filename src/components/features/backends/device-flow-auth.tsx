@@ -121,6 +121,15 @@ export function DeviceFlowAuth({
     }
   }, [deviceFlow.status, deviceFlow.verificationUrl]);
 
+  // A failed flow has nothing left to show in its popup; Try again opens a
+  // fresh one.
+  React.useEffect(() => {
+    if (deviceFlow.status === "error") {
+      popupRef.current?.close();
+      popupRef.current = null;
+    }
+  }, [deviceFlow.status]);
+
   // Call onSuccess when authentication completes
   React.useEffect(() => {
     if (deviceFlow.status === "success" && deviceFlow.apiKey) {

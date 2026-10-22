@@ -27,7 +27,13 @@ import {
   observeWebSocket,
   isWebSocketObservation,
 } from "./lib/websocket-events.mjs";
-import { SECRET_KEY, SECRET_PATH, redactBody } from "./lib/network-bodies.mjs";
+import {
+  SECRET_KEY,
+  SECRET_PATH,
+  redactBody,
+  redactBodyFields,
+  networkEntryForOutput,
+} from "./lib/network-bodies.mjs";
 import { buildLocator, toCss } from "./lib/selectors.mjs";
 import {
   RECORD_DEFAULTS,
@@ -264,12 +270,16 @@ function watch(page) {
     // The body of an app-origin write, redacted (see lib/network-bodies.mjs);
     // `network --bodies` shows it, so a recipe can prove what the page sent.
     let body;
+    let bodyDetails = {};
     if (
       origin === baseUrl.origin &&
       /^(POST|PUT|PATCH|DELETE)$/.test(request.method())
     ) {
       try {
-        body = redactBody(request.postData(), { all: SECRET_PATH.test(path) });
+        const rawBody = request.postData();
+        const options = { all: SECRET_PATH.test(path) };
+        body = redactBody(rawBody, options);
+        bodyDetails = redactBodyFields(rawBody, options);
       } catch {
         body = undefined;
       }
@@ -283,6 +293,7 @@ function watch(page) {
       type: request.resourceType(),
       app: origin === baseUrl.origin,
       body,
+      ...bodyDetails,
     };
     requestEntries.set(request, entry);
     requests.push(entry);
@@ -1209,7 +1220,7 @@ const handlers = {
       byOrigin,
       recent: list
         .slice(-Number(last ?? 15))
-        .map(({ body, ...rest }) => (bodies ? { ...rest, body } : rest)),
+        .map((entry) => networkEntryForOutput(entry, bodies)),
     };
     if (clear) requests.length = 0;
     return result;
@@ -1399,13 +1410,25 @@ const handlers = {
       value: await input.inputValue().catch(() => undefined),
     };
   },
-  async media({ clear }) {
+  async media({ clear, reducedMotion }) {
+    if (reducedMotion !== undefined) {
+      if (!["reduce", "no-preference"].includes(reducedMotion))
+        throw new Error("media reduced-motion needs reduce | no-preference");
+      await activePage.emulateMedia({ reducedMotion });
+    }
     const plays = await activePage.evaluate((reset) => {
       const list = window.__ohMediaPlays ?? [];
       if (reset) window.__ohMediaPlays = [];
       return list;
     }, Boolean(clear));
-    return { plays };
+    return {
+      plays,
+      reducedMotion: await activePage.evaluate(() =>
+        matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "reduce"
+          : "no-preference",
+      ),
+    };
   },
   async uiprobe({ target, timeout }) {
     // Read-only health probe in a throwaway tab: the driving tab keeps its URL.

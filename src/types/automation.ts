@@ -30,6 +30,8 @@ export interface AutomationRepository {
   url: string;
   /** Branch, tag or commit to check out; absent uses the default branch. */
   ref?: string;
+  /** Git provider that authenticates the clone; required for the shorthand. */
+  provider?: string;
 }
 
 export type AutomationState = "ACTIVE" | "INACTIVE" | "DRAFT";

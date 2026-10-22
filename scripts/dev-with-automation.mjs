@@ -59,6 +59,7 @@ import {
   buildAgentServerEnv,
   buildNpmScriptCommand,
   buildRuntimeServicesInfo,
+  buildUvxPythonArgs,
   formatMissingUvxGuidance,
   validateFrontendDependencies,
   validateLocalAgentServerPath,
@@ -320,6 +321,9 @@ function validateLocalAutomationPath(localPath) {
  * If none are set, defaults to the released version specified by
  * DEFAULT_AUTOMATION_VERSION. Set OH_AUTOMATION_GIT_REF to use a
  * git branch or commit instead.
+ *
+ * UV_PYTHON, when set, replaces the default interpreter request (the
+ * python.uvxRequest range in config/defaults.json) given to uvx.
  */
 function buildAutomationCommand(env = process.env) {
   const localPath = env.OH_AUTOMATION_LOCAL_PATH;
@@ -327,7 +331,7 @@ function buildAutomationCommand(env = process.env) {
   const version = env.OH_AUTOMATION_VERSION;
   const repoUrl = env.OH_AUTOMATION_REPO || DEFAULT_AUTOMATION_REPO;
 
-  const uvxArgs = [];
+  const uvxArgs = buildUvxPythonArgs(env);
   let source = "";
 
   if (localPath) {
@@ -524,6 +528,7 @@ async function buildConfig(args, env = process.env) {
 
     // Data directories (same as dev-safe.mjs)
     stateDir,
+    tmuxTmpDir: safeConfig.tmuxTmpDir,
     // Only bake the host-side workspace path when this launcher also starts
     // the agent-server that can read it. In frontend-only mode the backend may
     // be a tunnel/remote service, so leave VITE_WORKING_DIR unset unless the
@@ -608,6 +613,7 @@ function ensureDirectories(config) {
 
   if (config.launchAgentServer) {
     dirs.push(
+      config.tmuxTmpDir,
       join(config.stateDir, "dev_conversations"),
       join(config.stateDir, "workspaces"),
       join(config.stateDir, "bash_events"),
@@ -952,6 +958,7 @@ function startAgentServer(config) {
     OH_CANVAS_SAFE_STATE_DIR: config.stateDir,
     OH_CANVAS_SAFE_BACKEND_PORT: config.agentServerPort.toString(),
     OH_CANVAS_SAFE_VSCODE_PORT: config.vscodePort.toString(),
+    TMUX_TMPDIR: config.tmuxTmpDir,
   });
 
   const agentServerEnv = {

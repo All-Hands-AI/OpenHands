@@ -24,6 +24,8 @@ interface SecretFormProps {
   defaultName?: string;
   /** Keep the form open after a failed save so the user can retry. */
   keepOpenOnError?: boolean;
+  /** Visible height of the value field, in lines. */
+  valueRows?: number;
 }
 
 export function SecretForm({
@@ -33,6 +35,7 @@ export function SecretForm({
   onSaved,
   defaultName = "",
   keepOpenOnError = false,
+  valueRows = 8,
 }: SecretFormProps) {
   const queryClient = useQueryClient();
   const { t } = useTranslation("openhands");
@@ -204,7 +207,7 @@ export function SecretForm({
             "placeholder:italic",
             "disabled:bg-surface-raised disabled:border-border-subtle disabled:cursor-not-allowed",
           )}
-          rows={8}
+          rows={valueRows}
         />
       </label>
 
