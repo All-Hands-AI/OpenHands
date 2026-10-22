@@ -28,8 +28,9 @@ own DigitalOcean token with DigitalOcean directly
 (`doctl agents port-forward`).
 
 These calls are served by the browser build of Canvas (the `npx` launcher
-or Docker). The desktop app keeps its DigitalOcean bridge inside the app and
-doesn't serve them yet.
+or Docker), and only when it is started with `MARS_WEB=1`: the DigitalOcean
+integration is still experimental, so it is off by default. The desktop app
+keeps its DigitalOcean bridge inside the app and doesn't serve them yet.
 
 ## The calls
 

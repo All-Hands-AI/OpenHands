@@ -1224,7 +1224,6 @@ export function AutomationSetupPanel({
       body.plugins = configuredPlugins;
     }
     if (model.trim()) body.model = model.trim();
-    if (agentProfileId.trim()) body.agent_profile_id = agentProfileId.trim();
     return body;
   };
   const buildCustomBody = (tarballPath: string): SetupRequestBody =>
@@ -1701,11 +1700,12 @@ export function AutomationSetupPanel({
       name: normalizedName(),
       trigger: buildTrigger(),
       model: model.trim() || null,
-      agent_profile_id: agentProfileId.trim() || null,
       timeout:
         showTimeout && timeoutSeconds.trim() ? Number(timeoutSeconds) : null,
     };
-    if (kind !== "custom") body.prompt = prompt.trim();
+    if (kind === "custom")
+      body.agent_profile_id = agentProfileId.trim() || null;
+    else body.prompt = prompt.trim();
     return body as Partial<Automation>;
   };
 
@@ -2019,10 +2019,6 @@ export function AutomationSetupPanel({
                       }
                       model={model}
                       onModelChange={(value) => updateField("model", value)}
-                      agentProfileId={agentProfileId}
-                      onAgentProfileChange={(value) =>
-                        updateField("agentProfileId", value)
-                      }
                     />
                   ) : hasExistingCustomBundle ? (
                     <ExistingCustomBundleSummary
