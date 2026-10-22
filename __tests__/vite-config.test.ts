@@ -5,6 +5,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtemp, writeFile, symlink, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { Script } from "node:vm";
 import { afterEach, describe, expect, it } from "vitest";
 
 afterEach(() => {
@@ -149,6 +150,46 @@ describe("vite library build", () => {
       ]),
     );
   });
+
+  it("emits the scoped Canvas stylesheet and a parseable CJS entry", async () => {
+    process.env.BUILD_LIB = "true";
+    const config = await viteConfig({ mode: "production", command: "build" });
+    const outputs = config.build?.rollupOptions?.output;
+    const cjsOutput = (Array.isArray(outputs) ? outputs : [outputs]).find(
+      (output) => output?.format === "cjs",
+    );
+    if (!cjsOutput) throw new Error("Expected a CJS library output");
+    const built = await build({
+      ...config,
+      configFile: false,
+      logLevel: "error",
+      build: {
+        ...config.build,
+        sourcemap: false,
+        write: false,
+        rollupOptions: { ...config.build?.rollupOptions, output: [cjsOutput] },
+      },
+    });
+    const [result] = Array.isArray(built) ? built : [built];
+    if (!("output" in result))
+      throw new Error("Expected a completed library build");
+    const file = (fileName: string) => {
+      const item = result.output.find((entry) => entry.fileName === fileName);
+      if (!item) throw new Error(`Missing ${fileName}`);
+      return String(item.type === "asset" ? item.source : item.code);
+    };
+
+    const css = file("styles.css");
+    // Scoped to the Canvas root so it never restyles the host page.
+    expect(css).toContain("[data-agent-server-ui] .flex{display:flex}");
+    expect(css).not.toMatch(/(^|[{},])\.flex\{/);
+    expect(css).toContain("[data-agent-server-ui] .xterm");
+    expect(css).toContain("fonts.googleapis.com");
+
+    // `package.json` routes `require` here; stripped CSS imports must not
+    // leave it unparseable.
+    expect(() => new Script(file("index.cjs"))).not.toThrow();
+  }, 180000);
 });
 
 it("emits browser-compatible ESM when a bundled CommonJS dependency requires a React peer", async () => {

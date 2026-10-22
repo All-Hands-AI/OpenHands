@@ -30,8 +30,9 @@
  *   The fix is the `afterPack` hook below: after electron-builder has
  *   finished copying files, we rm -rf the bundled Resources/app/node_modules/
  *   directory, then copy back the dependency closure of RUNTIME_PACKAGES
- *   (~200 KB). The build wastes a few seconds copying files we immediately
- *   delete, but the final artifact is correctly tiny (~10 MB vs ~600 MB).
+ *   (~6 MB, nearly all @openhands/extensions). The build wastes a few seconds
+ *   copying files we immediately delete, but the final artifact stays small
+ *   (~16 MB vs ~600 MB).
  *
  * Packaged app layout (Resources/app/ = electron/ contents):
  *   main.mjs        ← Electron entry point
@@ -79,6 +80,8 @@ const isUniversal = ELECTRON_ARCH === "universal";
 //   scripts/tunnel-client.mjs  → ws       (imported directly by main.mjs,
 //                                          not spawned — the MARS
 //                                          port-forward tunnel client)
+//   scripts/dev-safe.mjs       → @openhands/extensions (read from disk by
+//                                          the agent-server as EXTENSIONS_PATH)
 //   scripts/mars-sandbox-prep.mjs → @openhands/typescript-client
 //                                          (imported through the MARS bridge
 //                                          main.mjs loads)
@@ -92,6 +95,7 @@ const RUNTIME_PACKAGES = [
   "sirv",
   "httpxy",
   "ws",
+  "@openhands/extensions",
   "@openhands/typescript-client",
 ];
 
@@ -440,9 +444,7 @@ const config = {
     target: [
       {
         target: "dmg",
-        arch: [
-          ELECTRON_ARCH ?? (process.arch === "arm64" ? "arm64" : "x64"),
-        ],
+        arch: [ELECTRON_ARCH ?? (process.arch === "arm64" ? "arm64" : "x64")],
       },
     ],
     // Universal merge whitelist: the per-arch uv/node runtime binaries are
