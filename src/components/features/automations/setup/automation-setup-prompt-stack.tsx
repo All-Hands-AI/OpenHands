@@ -15,6 +15,8 @@ import { useLlmProfiles } from "#/hooks/query/use-llm-profiles";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { useDebounce } from "#/hooks/use-debounce";
 import { useUserProviders } from "#/hooks/use-user-providers";
+import { useDeploymentCapabilities } from "#/hooks/query/use-manifest-capabilities";
+import { useSettings } from "#/hooks/query/use-settings";
 import { usePromptTextareaResize } from "#/hooks/use-prompt-textarea-resize";
 import { I18nKey } from "#/i18n/declaration";
 import CheckIcon from "#/icons/checkmark.svg?react";
@@ -27,11 +29,12 @@ import { chatInputPillButtonClassName } from "#/utils/form-control-classes";
 import { modalTitleLgClassName } from "#/utils/modal-classes";
 import { cn, getProviderName } from "#/utils/utils";
 import { formatModelNameForDisplay } from "#/utils/format-model-name";
+import { automationRepositoryAddress } from "#/utils/automation-repo-sources";
 import type { Provider } from "#/types/settings";
 
 const PROFILE_LABEL_MAX_CHARS = 18;
-// Automations clone the picker's `owner/repo` names as GitHub repositories.
-const AUTOMATION_CLONE_PROVIDER: Provider = "github";
+// Providers whose repositories a run can clone when the service does not say.
+const DEFAULT_CLONE_PROVIDERS: Provider[] = ["github", "gitlab", "bitbucket"];
 const REPOSITORY_SEARCH_DEBOUNCE_MS = 300;
 
 function truncateLabel(label: string): string {
@@ -286,9 +289,41 @@ export function AutomationSetupPromptStack({
   );
   const isLocalBackend = getActiveBackend().backend.kind === "local";
   const { providers } = useUserProviders();
-  const repositoryProvider: Provider | null = providers.includes("github")
+  const { data: settings } = useSettings();
+  const providerHosts = settings?.provider_tokens_set ?? {};
+  const deploymentCapabilities = useDeploymentCapabilities();
+  // The service says whose repositories its runs clone; older services predate
+  // the field and clone from the three hosted providers.
+  const cloneProviders =
+    (deploymentCapabilities.data?.repoProviders as Provider[] | undefined) ??
+    DEFAULT_CLONE_PROVIDERS;
+  const connectedCloneProviders = providers.filter((provider) =>
+    cloneProviders.includes(provider),
+  );
+  const [selectedProvider, setSelectedProvider] = useState<Provider | null>(
+    null,
+  );
+  const defaultProvider: Provider | null = connectedCloneProviders.includes(
+    "github",
+  )
     ? "github"
-    : (providers[0] ?? (isLocalBackend ? "github" : null));
+    : (connectedCloneProviders[0] ??
+      providers[0] ??
+      (isLocalBackend ? "github" : null));
+  const repositoryProvider: Provider | null =
+    selectedProvider && connectedCloneProviders.includes(selectedProvider)
+      ? selectedProvider
+      : defaultProvider;
+  // What the form stores for a listed repository: GitHub's shorthand, or the
+  // full URL on the provider's host for anything else.
+  const addressFor = (name: string) =>
+    repositoryProvider
+      ? automationRepositoryAddress(
+          repositoryProvider,
+          name,
+          providerHosts[repositoryProvider],
+        )
+      : name;
   const repositoryQuery = useGitRepositories({
     provider: repositoryProvider,
     enabled: isRepositoryMenuOpen && repositoryProvider !== null,
@@ -327,7 +362,7 @@ export function AutomationSetupPromptStack({
     ...searchedRepositoryNames,
   ].filter(
     (name, index, names) =>
-      !repositories.includes(name) && names.indexOf(name) === index,
+      !repositories.includes(addressFor(name)) && names.indexOf(name) === index,
   );
   const visibleRepositoryNames = repositorySearchText
     ? listedRepositoryNames.filter((name) =>
@@ -336,8 +371,7 @@ export function AutomationSetupPromptStack({
     : listedRepositoryNames;
   const addLabel = `${t(I18nKey.BUTTON$ADD)} ${t(I18nKey.AUTOMATIONS$DETAIL$REPOSITORIES)}`;
   const isRepositoryProviderUnsupported =
-    repositoryProvider !== null &&
-    repositoryProvider !== AUTOMATION_CLONE_PROVIDER;
+    repositoryProvider !== null && !cloneProviders.includes(repositoryProvider);
 
   const writeRepositories = (next: string[]) => {
     onRepositoryChange(next.join(", "));
@@ -502,6 +536,27 @@ export function AutomationSetupPromptStack({
                         />
                       </div>
                     </div>
+                    {connectedCloneProviders.length > 1 ? (
+                      <div className="shrink-0 px-2 pb-1">
+                        <select
+                          data-testid="automation-setup-repository-provider"
+                          aria-label={t(I18nKey.CONVERSATION$GIT_PROVIDER)}
+                          value={repositoryProvider ?? ""}
+                          onChange={(event) => {
+                            setSelectedProvider(event.target.value as Provider);
+                            setRepositorySearch("");
+                          }}
+                          onKeyDown={(event) => event.stopPropagation()}
+                          className="w-full rounded-md border border-border-subtle bg-tertiary px-2 py-1 text-sm text-content outline-none"
+                        >
+                          {connectedCloneProviders.map((provider) => (
+                            <option key={provider} value={provider}>
+                              {getProviderName(provider)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : null}
                     <Divider inset="menu" />
                     <div
                       className="min-h-0 flex-1 overflow-y-auto px-1"
@@ -550,7 +605,10 @@ export function AutomationSetupPromptStack({
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
-                              writeRepositories([...repositories, name]);
+                              const address = addressFor(name);
+                              if (!repositories.includes(address)) {
+                                writeRepositories([...repositories, address]);
+                              }
                               setIsRepositoryMenuOpen(false);
                             }}
                             isDisabled={isRepositoryProviderUnsupported}
