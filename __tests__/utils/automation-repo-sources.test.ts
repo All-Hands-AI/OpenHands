@@ -117,11 +117,33 @@ describe("providerForAddress", () => {
       providerForAddress("https://git.example.com:8443/acme/tools", hosts),
     ).toBe("gitlab");
     expect(
+      providerForAddress("https://devops.example.com/o/p/_git/r", hosts, [
+        "github",
+        "azure_devops",
+      ]),
+    ).toBe("azure_devops");
+  });
+
+  it("names only providers the run can clone", () => {
+    // The service's schema accepts the names it advertises and no others, so
+    // a connected Bitbucket Data Center or Forgejo host gets no provider.
+    expect(
       providerForAddress("https://example.com/bitbucket/PROJ/repo", hosts),
-    ).toBe("bitbucket_data_center");
+    ).toBe(undefined);
     expect(
       providerForAddress("https://devops.example.com/o/p/_git/r", hosts),
-    ).toBe("azure_devops");
+    ).toBe(undefined);
+    expect(
+      providerForAddress("https://forge.example.com/acme/tools", {
+        forgejo: "https://forge.example.com",
+      }),
+    ).toBe(undefined);
+    expect(
+      providerForAddress("https://example.com/bitbucket/PROJ/repo", hosts, [
+        "github",
+        "bitbucket_data_center",
+      ]),
+    ).toBe("bitbucket_data_center");
   });
 
   it("leaves hosted services and unknown hosts without a provider", () => {
@@ -175,6 +197,37 @@ describe("buildAutomationRepoSources", () => {
       ),
     ).toEqual([
       { url: "https://git.example.com:8443/acme/tools", provider: "gitlab" },
+    ]);
+  });
+
+  it("sends no provider for a host the run cannot clone from", () => {
+    const hosts = {
+      bitbucket_data_center: "https://bb.example.com",
+      forgejo: "https://forge.example.com",
+    };
+    expect(
+      buildAutomationRepoSources(
+        ["https://bb.example.com/PROJ/repo", "https://forge.example.com/a/b"],
+        [],
+        hosts,
+      ),
+    ).toEqual([
+      { url: "https://bb.example.com/PROJ/repo" },
+      { url: "https://forge.example.com/a/b" },
+    ]);
+    // Once the service advertises the provider, the name goes along.
+    expect(
+      buildAutomationRepoSources(
+        ["https://bb.example.com/PROJ/repo"],
+        [],
+        hosts,
+        ["github", "bitbucket_data_center"],
+      ),
+    ).toEqual([
+      {
+        url: "https://bb.example.com/PROJ/repo",
+        provider: "bitbucket_data_center",
+      },
     ]);
   });
 

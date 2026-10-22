@@ -118,6 +118,7 @@ import {
 import { setupDraftFromAutomation } from "#/utils/automation-edit-draft";
 import { withPresetSources } from "#/utils/automation-preset-sources";
 import {
+  automationCloneProviders,
   automationRepositoriesChanged,
   buildAutomationRepoSources,
 } from "#/utils/automation-repo-sources";
@@ -660,8 +661,12 @@ export function AutomationSetupPanel({
   const { navigate } = useNavigation();
   const deploymentCapabilities = useDeploymentCapabilities();
   // Connected self-hosted providers name their hosts here; a repository on
-  // one of them is sent with its provider so the run can authenticate.
+  // one of them is sent with its provider so the run can authenticate, as
+  // long as the service can clone from that provider at all.
   const providerHosts = useSettings().data?.provider_tokens_set;
+  const cloneProviders = automationCloneProviders(
+    deploymentCapabilities.data?.repoProviders,
+  );
   const eventSourceOptions = deploymentCapabilities.data?.eventSources ?? [];
   const eventTypeOptions = deploymentCapabilities.data?.eventTypes ?? [];
   const initialDraft = conversationId
@@ -1251,7 +1256,12 @@ export function AutomationSetupPanel({
     } as SetupRequestBody;
     const repositories = parseAutomationSetupRepositories(repository);
     if (repositories.length > 0) {
-      body.repos = buildAutomationRepoSources(repositories, [], providerHosts);
+      body.repos = buildAutomationRepoSources(
+        repositories,
+        [],
+        providerHosts,
+        cloneProviders,
+      );
     }
     if (showTimeout && timeoutSeconds.trim())
       body.timeout = Number(timeoutSeconds);
@@ -1751,6 +1761,7 @@ export function AutomationSetupPanel({
         repositories,
         existingRepositories,
         providerHosts,
+        cloneProviders,
       );
     }
     return body as Partial<Automation>;

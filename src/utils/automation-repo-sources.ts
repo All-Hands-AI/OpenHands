@@ -14,6 +14,27 @@ export type AutomationRepoSource = {
 const SHORTHAND_PROVIDER = "github";
 const FULL_GIT_URL_PATTERN = /^(?:https?:\/\/|git@)/i;
 
+/** Providers whose repositories a run clones when the service does not say. */
+export const DEFAULT_CLONE_PROVIDERS: Provider[] = [
+  "github",
+  "gitlab",
+  "bitbucket",
+];
+
+/**
+ * The providers whose repositories the automation service's runs clone, from
+ * its `repoProviders` capability. An older service without the field clones
+ * from the three hosted providers. Only these names are valid as a `repos`
+ * entry's `provider`; the service rejects any other.
+ */
+export function automationCloneProviders(
+  repoProviders?: string[] | null,
+): Provider[] {
+  return repoProviders
+    ? (repoProviders as Provider[])
+    : DEFAULT_CLONE_PROVIDERS;
+}
+
 /**
  * The base URL a connected provider is served on: scheme, host, port and any
  * path prefix, without a trailing slash. A self-managed instance keeps its
@@ -71,11 +92,13 @@ export function automationRepositoryAddress(
  * The provider a full URL belongs to when it points at a connected
  * self-hosted instance, matched on the same base URL the address was built
  * from. A hosted service's URL needs no provider: the service recognizes
- * those hosts itself.
+ * those hosts itself. Only a provider the run can clone is named; a host of
+ * any other connected provider gets none, since the service rejects the name.
  */
 export function providerForAddress(
   url: string,
   hosts: Partial<Record<Provider, string | null>> = {},
+  cloneProviders: Provider[] = DEFAULT_CLONE_PROVIDERS,
 ): Provider | undefined {
   let address: string;
   try {
@@ -88,6 +111,7 @@ export function providerForAddress(
     Provider,
     string | null,
   ][]) {
+    if (!cloneProviders.includes(provider)) continue;
     const base = providerBaseUrl(host);
     if (
       base &&
@@ -112,6 +136,7 @@ export function buildAutomationRepoSources(
   repositories: string[],
   saved: AutomationRepository[] = [],
   hosts: Partial<Record<Provider, string | null>> = {},
+  cloneProviders: Provider[] = DEFAULT_CLONE_PROVIDERS,
 ): AutomationRepoSource[] {
   return repositories.map((url) => {
     const existing = saved.find((repo) => repo.url === url);
@@ -125,7 +150,7 @@ export function buildAutomationRepoSources(
     if (!FULL_GIT_URL_PATTERN.test(url)) {
       return { url, provider: SHORTHAND_PROVIDER };
     }
-    const provider = providerForAddress(url, hosts);
+    const provider = providerForAddress(url, hosts, cloneProviders);
     return provider ? { url, provider } : { url };
   });
 }

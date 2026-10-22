@@ -29,12 +29,13 @@ import { chatInputPillButtonClassName } from "#/utils/form-control-classes";
 import { modalTitleLgClassName } from "#/utils/modal-classes";
 import { cn, getProviderName } from "#/utils/utils";
 import { formatModelNameForDisplay } from "#/utils/format-model-name";
-import { automationRepositoryAddress } from "#/utils/automation-repo-sources";
+import {
+  automationCloneProviders,
+  automationRepositoryAddress,
+} from "#/utils/automation-repo-sources";
 import type { Provider } from "#/types/settings";
 
 const PROFILE_LABEL_MAX_CHARS = 18;
-// Providers whose repositories a run can clone when the service does not say.
-const DEFAULT_CLONE_PROVIDERS: Provider[] = ["github", "gitlab", "bitbucket"];
 const REPOSITORY_SEARCH_DEBOUNCE_MS = 300;
 
 function truncateLabel(label: string): string {
@@ -294,9 +295,9 @@ export function AutomationSetupPromptStack({
   const deploymentCapabilities = useDeploymentCapabilities();
   // The service says whose repositories its runs clone; older services predate
   // the field and clone from the three hosted providers.
-  const cloneProviders =
-    (deploymentCapabilities.data?.repoProviders as Provider[] | undefined) ??
-    DEFAULT_CLONE_PROVIDERS;
+  const cloneProviders = automationCloneProviders(
+    deploymentCapabilities.data?.repoProviders,
+  );
   const connectedCloneProviders = providers.filter((provider) =>
     cloneProviders.includes(provider),
   );

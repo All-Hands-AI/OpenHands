@@ -998,6 +998,56 @@ describe("AutomationSetupPanel", () => {
     );
   });
 
+  it("sends no provider for a pasted URL on a host the run cannot clone from", async () => {
+    vi.mocked(AutomationService.createServerDraft).mockRejectedValue({
+      response: { status: 404 },
+    });
+    vi.mocked(AutomationService.validateDraft).mockResolvedValue({
+      valid: true,
+      errors: [],
+    });
+    mockUseUserProviders.mockReturnValue({
+      providers: ["github", "bitbucket_data_center"],
+      isLoadingSettings: false,
+    });
+    mockUseSettings.mockReturnValue({
+      data: {
+        provider_tokens_set: {
+          github: "",
+          bitbucket_data_center: "https://bb.example.com",
+        },
+      },
+    });
+
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(screen.getByTestId("automation-setup-repository-add"));
+    // Only GitHub is cloneable here, so there is no provider choice to make.
+    expect(
+      screen.queryByTestId("automation-setup-repository-provider"),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByTestId("automation-setup-repository-custom"));
+    await user.type(
+      screen.getByTestId("automation-setup-repository-address"),
+      "https://bb.example.com/PROJ/repo",
+    );
+    await user.click(screen.getByTestId("automation-setup-repository-submit"));
+    await user.click(screen.getByTestId("automation-setup-test"));
+
+    // The service's schema does not know bitbucket_data_center, so the URL
+    // goes alone rather than failing the whole request.
+    await waitFor(() =>
+      expect(AutomationService.validateDraft).toHaveBeenCalledWith(
+        expect.objectContaining({
+          draft: expect.objectContaining({
+            repos: [{ url: "https://bb.example.com/PROJ/repo" }],
+          }),
+        }),
+      ),
+    );
+  });
+
   it("lets a user with several providers choose whose repositories to list", async () => {
     mockUseUserProviders.mockReturnValue({
       providers: ["github", "gitlab"],
