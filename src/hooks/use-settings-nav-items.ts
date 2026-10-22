@@ -1,10 +1,17 @@
+import { createElement } from "react";
+import { SlidersHorizontal } from "lucide-react";
 import { useConfig } from "#/hooks/query/use-config";
+import { useSettingsDocumentSchema } from "#/hooks/query/use-settings-document";
 import {
   LOCKED_CLOUD_SETTINGS_NAV_PATH,
   OSS_NAV_ITEMS,
   SettingsNavItem,
 } from "#/constants/settings-nav";
 import { isSettingsPageHidden } from "#/utils/settings-utils";
+import {
+  getDynamicSettingsSections,
+  getSettingsDocumentSectionPath,
+} from "#/utils/settings-document-pages";
 import { I18nKey } from "#/i18n/declaration";
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import { getLockedCloudHost } from "#/api/agent-server-config";
@@ -22,13 +29,14 @@ const PROFILE_OWNED_SETTINGS_PATHS = new Set(["/settings/condenser"]);
 
 export function useSettingsNavItems(): SettingsNavRenderedItem[] {
   const { data: config } = useConfig();
+  const { data: settingsDocumentSchema } = useSettingsDocumentSchema();
   const { backend } = useActiveBackend();
   const featureFlags = config?.feature_flags;
   // Locked-to-Cloud (SaaS / self-hosted OHE) lists only the Application page;
   // the OHE settings shell behind "All Cloud Settings" owns the rest (OHE-3168).
   const isLockedToCloud = getLockedCloudHost() !== null;
 
-  return OSS_NAV_ITEMS.filter(
+  const builtInItems: SettingsNavRenderedItem[] = OSS_NAV_ITEMS.filter(
     (item) =>
       !isSettingsPageHidden(item.to, featureFlags) &&
       (!isLockedToCloud || item.to === LOCKED_CLOUD_SETTINGS_NAV_PATH) &&
@@ -51,4 +59,24 @@ export function useSettingsNavItems(): SettingsNavRenderedItem[] {
 
     return { type: "item", item: renamedItem };
   });
+
+  if (isLockedToCloud) return builtInItems;
+
+  const dynamicItems: SettingsNavRenderedItem[] = getDynamicSettingsSections(
+    settingsDocumentSchema,
+  ).map((section) => ({
+    type: "item",
+    item: {
+      icon: createElement(SlidersHorizontal, {
+        className: "size-4",
+        "aria-hidden": true,
+      }),
+      to: getSettingsDocumentSectionPath(section.key),
+      text: section.label,
+      subtitle: null,
+      isSchemaDefined: true,
+    },
+  }));
+
+  return [...builtInItems, ...dynamicItems];
 }

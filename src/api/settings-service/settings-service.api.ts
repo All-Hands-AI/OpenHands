@@ -728,14 +728,18 @@ class SettingsService {
     if (getActiveBackend().backend.kind === "cloud") {
       return withRetry(() => fetchCloudSettingsDocument());
     }
-    return withRetry(() => getCanonicalSettingsClient().getDocument());
+    return (await withRetry(() =>
+      getCanonicalSettingsClient().getDocument(),
+    )) as unknown as SettingsDocument;
   }
 
   static async getSettingsDocumentSchema(): Promise<SettingsDocumentSchema> {
     if (getActiveBackend().backend.kind === "cloud") {
       return withRetry(() => fetchCloudSettingsDocumentSchema());
     }
-    return withRetry(() => getCanonicalSettingsClient().getDocumentSchema());
+    return (await withRetry(() =>
+      getCanonicalSettingsClient().getDocumentSchema(),
+    )) as unknown as SettingsDocumentSchema;
   }
 
   static async saveSettingsDocument(

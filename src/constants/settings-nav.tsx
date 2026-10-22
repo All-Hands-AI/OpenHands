@@ -9,7 +9,8 @@ export interface SettingsNavItem {
   to: string;
   text: string;
   /** Short grey subline under the page title (`settings.tsx`). */
-  subtitle: string;
+  subtitle: string | null;
+  isSchemaDefined?: boolean;
 }
 
 export const OSS_NAV_ITEMS: SettingsNavItem[] = [

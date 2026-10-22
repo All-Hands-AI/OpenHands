@@ -44,7 +44,8 @@ export const useSettingsDocumentSchema = () => {
     enabled: !!isAuthenticated && !isNoBackend(backend),
     retry: false,
     refetchOnWindowFocus: false,
-    staleTime: 1000 * 60 * 5,
+    refetchInterval: 1000,
+    staleTime: 0,
     meta: { disableToast: true },
   });
 };

@@ -6,6 +6,7 @@ import { WebClientConfig } from "#/api/option-service/option.types";
 
 const useConfigMock = vi.fn();
 const useSettingsMock = vi.fn();
+const useSettingsDocumentSchemaMock = vi.fn();
 const useActiveBackendMock = vi.fn<
   () => { backend: { kind: "local" | "cloud" }; orgId: string | null }
 >(() => ({
@@ -22,6 +23,10 @@ vi.mock("#/hooks/query/use-config", () => ({
 
 vi.mock("#/hooks/query/use-settings", () => ({
   useSettings: () => useSettingsMock(),
+}));
+
+vi.mock("#/hooks/query/use-settings-document", () => ({
+  useSettingsDocumentSchema: () => useSettingsDocumentSchemaMock(),
 }));
 
 vi.mock("#/contexts/active-backend-context", () => ({
@@ -56,6 +61,12 @@ describe("useSettingsNavItems", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useSettingsMock.mockReturnValue({ data: openHandsSettings });
+    useSettingsDocumentSchemaMock.mockReturnValue({
+      data: {
+        model_name: "SettingsDocument",
+        sections: [{ key: "resources", label: "Resources", fields: [] }],
+      },
+    });
     useActiveBackendMock.mockReturnValue({
       backend: { kind: "local" },
       orgId: null,
@@ -193,11 +204,57 @@ describe("useSettingsNavItems", () => {
     expect(paths()).toContain("/settings/condenser");
   });
 
+  it("lists schema extension sections as top-level settings pages", () => {
+    useConfigMock.mockReturnValue({ data: createConfig() });
+    useSettingsDocumentSchemaMock.mockReturnValue({
+      data: {
+        model_name: "SettingsDocument",
+        sections: [
+          { key: "resources", label: "Resources", fields: [] },
+          {
+            key: "product.prototype",
+            label: "Prototype settings",
+            fields: [],
+          },
+        ],
+      },
+    });
+
+    const { result } = renderHook(() => useSettingsNavItems());
+    const dynamicItem = result.current.find(
+      (item) =>
+        item.type === "item" &&
+        item.item.to === "/settings/document/product.prototype",
+    );
+
+    expect(dynamicItem).toMatchObject({
+      type: "item",
+      item: {
+        text: "Prototype settings",
+        subtitle: null,
+        isSchemaDefined: true,
+      },
+    });
+  });
+
   it("lists only the Application page when the canvas is locked to a Cloud host", () => {
     // Arrange — SaaS / self-hosted OHE serve the canvas with `--lock-to-cloud`;
     // the OHE settings shell ("All Cloud Settings") owns every other page.
     vi.stubEnv("VITE_LOCK_TO_CLOUD", "https://app.all-hands.dev");
     useConfigMock.mockReturnValue({ data: createConfig() });
+    useSettingsDocumentSchemaMock.mockReturnValue({
+      data: {
+        model_name: "SettingsDocument",
+        sections: [
+          { key: "resources", label: "Resources", fields: [] },
+          {
+            key: "product.prototype",
+            label: "Prototype settings",
+            fields: [],
+          },
+        ],
+      },
+    });
     useActiveBackendMock.mockReturnValue({
       backend: { kind: "cloud" },
       orgId: "org-123",

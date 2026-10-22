@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useParams } from "react-router";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { LlmSettingsInputsSkeleton } from "#/components/features/settings/llm-settings/llm-settings-inputs-skeleton";
 import { SchemaField } from "#/components/features/settings/sdk-settings/schema-field";
@@ -24,6 +25,7 @@ const isManagedResourceField = (key: string) =>
 
 export default function SettingsDocumentRoute() {
   const { t } = useTranslation("openhands");
+  const { sectionKey } = useParams();
   const documentQuery = useSettingsDocument();
   const schemaQuery = useSettingsDocumentSchema();
   const saveMutation = useSaveSettingsDocument();
@@ -62,6 +64,17 @@ export default function SettingsDocumentRoute() {
     );
   }
 
+  const sections = sectionKey
+    ? schemaQuery.data.sections.filter((section) => section.key === sectionKey)
+    : schemaQuery.data.sections;
+  if (sectionKey && sections.length === 0) {
+    return (
+      <div className="text-danger p-6" data-testid="settings-document-error">
+        {t(I18nKey.ERROR$GENERIC)}
+      </div>
+    );
+  }
+
   const isDirty = Object.values(dirty).some(Boolean);
   const save = () => {
     const patch = buildSdkSettingsPayload(
@@ -79,11 +92,15 @@ export default function SettingsDocumentRoute() {
       className="flex flex-col gap-8 p-6"
       data-testid="settings-document-page"
     >
-      <h1 className="text-2xl font-semibold">{t(I18nKey.SETTINGS$TITLE)}</h1>
+      {!sectionKey && (
+        <h1 className="text-2xl font-semibold">{t(I18nKey.SETTINGS$TITLE)}</h1>
+      )}
 
-      {schemaQuery.data.sections.map((section) => (
+      {sections.map((section) => (
         <section key={section.key} className="flex flex-col gap-4">
-          <h2 className="text-lg font-medium">{section.label}</h2>
+          {!sectionKey && (
+            <h2 className="text-lg font-medium">{section.label}</h2>
+          )}
           <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
             {section.fields.map((field) => (
               <SchemaField
