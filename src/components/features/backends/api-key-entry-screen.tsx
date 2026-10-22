@@ -4,7 +4,7 @@ import { SettingsClient } from "@openhands/typescript-client/clients";
 import { I18nKey } from "#/i18n/declaration";
 import { isSdkHttpStatusError } from "#/api/agent-server-compatibility";
 import { getAgentServerClientOptions } from "#/api/agent-server-client-options";
-import { NO_BACKEND } from "#/api/backend-registry/active-store";
+import { isServedOriginHost } from "#/api/agent-server-config";
 import type { Backend } from "#/api/backend-registry/types";
 import { useActiveBackendContext } from "#/contexts/active-backend-context";
 import { BrandButton } from "#/components/features/settings/brand-button";
@@ -19,14 +19,16 @@ import {
   type BackendFormSubmitPayload,
 } from "./backend-form-modal";
 
-/** Whether `host` is this page's origin itself, with no path. */
-function isOriginRoot(host: string, origin: string): boolean {
-  try {
-    const url = new URL(host);
-    return url.origin === origin && url.pathname === "/";
-  } catch {
-    return false;
-  }
+/**
+ * The record holding the hosting Canvas key: the same served-origin match the
+ * MARS web bridge reads it back with (`getMarsBridgeHeaders`).
+ */
+function isCanvasRoot(backend: Backend): boolean {
+  return (
+    backend.kind === "local" &&
+    !backend.marsSessionId &&
+    isServedOriginHost(backend.host)
+  );
 }
 
 /** A DigitalOcean guest the web build proxies under `/mars/sessions/<id>`. */
@@ -54,10 +56,6 @@ export default function ApiKeyEntryScreen() {
     useActiveBackendContext();
 
   const host = window.location.origin;
-  const isCanvasRoot = (backend: Backend) =>
-    backend.kind === "local" &&
-    !backend.marsSessionId &&
-    isOriginRoot(backend.host, host);
   // Prefer the active record when it is a root, so a duplicate earlier in the
   // list cannot take the key while the selected one stays stale.
   const rootBackend = isCanvasRoot(active.backend)
@@ -146,12 +144,7 @@ export default function ApiKeyEntryScreen() {
         <div className="px-6 pb-6 pt-2">
           <BackendForm
             mode="add"
-            backend={{
-              ...(rootBackend ?? NO_BACKEND),
-              host,
-              apiKey: "",
-              name: "",
-            }}
+            backend={{ ...active.backend, host, apiKey: "", name: "" }}
             onSubmitted={() => {}}
             testIdRoot="api-key-entry"
             hostReadOnly
