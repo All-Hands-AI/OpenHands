@@ -4,7 +4,8 @@ import { SettingsClient } from "@openhands/typescript-client/clients";
 import { I18nKey } from "#/i18n/declaration";
 import { isSdkHttpStatusError } from "#/api/agent-server-compatibility";
 import { getAgentServerClientOptions } from "#/api/agent-server-client-options";
-import { isNoBackend, NO_BACKEND } from "#/api/backend-registry/active-store";
+import { NO_BACKEND } from "#/api/backend-registry/active-store";
+import type { Backend } from "#/api/backend-registry/types";
 import { useActiveBackendContext } from "#/contexts/active-backend-context";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import {
@@ -17,6 +18,26 @@ import {
   BackendForm,
   type BackendFormSubmitPayload,
 } from "./backend-form-modal";
+
+/** Whether `host` is this page's origin itself, with no path. */
+function isOriginRoot(host: string, origin: string): boolean {
+  try {
+    const url = new URL(host);
+    return url.origin === origin && url.pathname === "/";
+  } catch {
+    return false;
+  }
+}
+
+/** A DigitalOcean guest the web build proxies under `/mars/sessions/<id>`. */
+function isLiveMarsGuest(backend: Backend): boolean {
+  if (!backend.marsSessionId) return false;
+  try {
+    return new URL(backend.host).pathname.startsWith("/mars/sessions/");
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Full-screen prompt shown when the server is in public mode
@@ -33,15 +54,16 @@ export default function ApiKeyEntryScreen() {
     useActiveBackendContext();
 
   const host = window.location.origin;
-  const rootBackend = backends.find((backend) => {
-    if (backend.kind !== "local" || backend.marsSessionId) return false;
-    try {
-      const url = new URL(backend.host);
-      return url.origin === host && url.pathname === "/";
-    } catch {
-      return false;
-    }
-  });
+  const isCanvasRoot = (backend: Backend) =>
+    backend.kind === "local" &&
+    !backend.marsSessionId &&
+    isOriginRoot(backend.host, host);
+  // Prefer the active record when it is a root, so a duplicate earlier in the
+  // list cannot take the key while the selected one stays stale.
+  const rootBackend = isCanvasRoot(active.backend)
+    ? active.backend
+    : backends.find(isCanvasRoot);
+  const keepGuest = isLiveMarsGuest(active.backend);
 
   const [isValidating, setIsValidating] = React.useState(false);
   const [connectionStatus, setConnectionStatus] = React.useState<
@@ -66,19 +88,23 @@ export default function ApiKeyEntryScreen() {
 
         setConnectionStatus("success");
 
-        // This form authenticates the serving Canvas, even when a DigitalOcean
-        // guest is active. Its host, credentials, and session metadata must stay
-        // on their own record so a reload can reconnect to the same session.
+        // This form authenticates the serving Canvas, so the key goes on the
+        // Canvas root's own record. A live DigitalOcean guest stays selected so
+        // a reload reconnects to the same session; any other backend that
+        // tripped the gate is left as it is and the root is selected, or the
+        // gate would come straight back.
         // Validation above uses the local Agent Server protocol even when
         // the Canvas hostname resembles an OpenHands Cloud deployment.
         const rootPayload = { ...payload, kind: "local" as const };
         if (rootBackend) {
           updateBackend(rootBackend.id, rootPayload);
-        } else {
-          addBackend(rootPayload);
-          if (!isNoBackend(active.backend)) {
-            setActive(active.backend.id, active.orgId);
+          if (!keepGuest && rootBackend.id !== active.backend.id) {
+            setActive(rootBackend.id);
           }
+        } else {
+          // addBackend selects the new root (BM-001).
+          addBackend(rootPayload);
+          if (keepGuest) setActive(active.backend.id, active.orgId);
         }
 
         window.location.reload();
@@ -96,7 +122,7 @@ export default function ApiKeyEntryScreen() {
         setIsValidating(false);
       }
     },
-    [active, rootBackend, addBackend, updateBackend, setActive, t],
+    [active, rootBackend, keepGuest, addBackend, updateBackend, setActive, t],
   );
 
   return (

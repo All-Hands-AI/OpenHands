@@ -316,6 +316,110 @@ describe("ApiKeyEntryScreen", () => {
     expect(reloadMock).not.toHaveBeenCalled();
   });
 
+  async function recoverWith(records: Backend[], activeId: string) {
+    window.localStorage.setItem(BACKENDS_STORAGE_KEY, JSON.stringify(records));
+    writeStoredActiveBackend({ backendId: activeId });
+    __resetActiveStoreForTests();
+    getSettingsMock.mockResolvedValueOnce({});
+    renderScreen();
+    const user = userEvent.setup();
+    await fillRequiredFields(user, { name: "My Canvas", apiKey: "new-key" });
+    await user.click(screen.getByTestId("api-key-entry-submit"));
+    await waitFor(() => expect(reloadMock).toHaveBeenCalled());
+    const stored: Backend[] = JSON.parse(
+      window.localStorage.getItem(BACKENDS_STORAGE_KEY) ?? "[]",
+    );
+    const activeAfter = stored.find(
+      (backend) => backend.id === readStoredActiveBackend()?.backendId,
+    );
+    return { stored, activeAfter };
+  }
+
+  it.each([{ hasRootBackend: true }, { hasRootBackend: false }])(
+    "selects the Canvas root instead of a remote agent-server that tripped the gate (root exists: $hasRootBackend)",
+    async ({ hasRootBackend }) => {
+      const remote: Backend = {
+        id: "remote-server",
+        name: "Remote server",
+        host: "https://other.example.test",
+        apiKey: "",
+        kind: "local",
+      };
+      const root: Backend = {
+        id: "canvas",
+        name: "Canvas",
+        host: `${window.location.origin}/`,
+        apiKey: "stale-key",
+        kind: "local",
+      };
+
+      const { stored, activeAfter } = await recoverWith(
+        hasRootBackend ? [remote, root] : [remote],
+        remote.id,
+      );
+
+      expect(activeAfter).toMatchObject({
+        ...(hasRootBackend ? { id: root.id } : {}),
+        apiKey: "new-key",
+        kind: "local",
+      });
+      expect(new URL(activeAfter!.host).origin).toBe(window.location.origin);
+      expect(stored.find((backend) => backend.id === remote.id)).toEqual(
+        remote,
+      );
+    },
+  );
+
+  it("updates the active root when the origin has more than one root entry", async () => {
+    const first: Backend = {
+      id: "root-a",
+      name: "Root A",
+      host: window.location.origin,
+      apiKey: "stale-a",
+      kind: "local",
+    };
+    const active: Backend = {
+      id: "root-b",
+      name: "Root B",
+      host: `${window.location.origin}/`,
+      apiKey: "stale-b",
+      kind: "local",
+    };
+
+    const { stored, activeAfter } = await recoverWith(
+      [first, active],
+      active.id,
+    );
+
+    expect(activeAfter).toMatchObject({ id: active.id, apiKey: "new-key" });
+    expect(stored.find((backend) => backend.id === first.id)).toEqual(first);
+  });
+
+  it("selects the root when the active record is a DigitalOcean entry an older recovery rewrote to the origin", async () => {
+    // Before this screen kept the hosting key on its own record, recovery
+    // overwrote the active guest's host and key but kept its marsSessionId.
+    const rewritten: Backend = {
+      id: "mars-session",
+      name: "My DigitalOcean agent",
+      host: window.location.origin,
+      apiKey: "stale-key",
+      kind: "local",
+      marsSessionId: "test-session",
+    };
+
+    const { stored, activeAfter } = await recoverWith(
+      [rewritten],
+      rewritten.id,
+    );
+
+    expect(activeAfter).toMatchObject({ apiKey: "new-key", kind: "local" });
+    expect(activeAfter?.marsSessionId).toBeUndefined();
+    expect(new URL(activeAfter!.host).origin).toBe(window.location.origin);
+    expect(stored.find((backend) => backend.id === rewritten.id)).toEqual(
+      rewritten,
+    );
+  });
+
   // @spec — 401 shows "Invalid API key", does NOT persist or reload
   it("shows 'Invalid API key' when the key is rejected with 401", async () => {
     getSettingsMock.mockRejectedValueOnce(
