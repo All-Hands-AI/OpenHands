@@ -519,7 +519,13 @@ export function InstallServerModal({
     if (template?.kind === "shttp" || template?.kind === "sse") {
       return handleHttpServerSubmit();
     }
-    return handleStdioSubmit();
+    if (template?.kind === "stdio") {
+      return handleStdioSubmit();
+    }
+    // @spec MCP-006 — Library installs never dead-end
+    return setGlobalError(
+      t(I18nKey.MCP$INSTALL_UNAVAILABLE, { name: entry.name }),
+    );
   };
 
   // @spec MCP-004 — Form feedback follows readable theme text roles
@@ -812,6 +818,18 @@ export function InstallServerModal({
 
               <div className="flex flex-col gap-3">{renderFields()}</div>
 
+              {/* @spec MCP-006 — Library installs never dead-end */}
+              {!option && (
+                <div
+                  data-testid="mcp-install-unavailable"
+                  className="flex flex-col gap-2 p-3 rounded-lg border border-border bg-tertiary"
+                >
+                  <p className="text-sm text-text-secondary">
+                    {t(I18nKey.MCP$INSTALL_UNAVAILABLE, { name: entry.name })}
+                  </p>
+                </div>
+              )}
+
               {/* @spec MCP-004 — Form feedback follows readable theme text roles */}
               {globalError && (
                 <p
@@ -835,7 +853,7 @@ export function InstallServerModal({
                 <BrandButton
                   type="submit"
                   variant="primary"
-                  isDisabled={isPending}
+                  isDisabled={isPending || !option}
                   testId="mcp-install-submit"
                 >
                   {isTesting || isAuthorizingOAuth

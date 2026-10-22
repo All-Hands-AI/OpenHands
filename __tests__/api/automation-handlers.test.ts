@@ -86,6 +86,7 @@ describe("Automation MSW Handlers", () => {
           features: [
             ...(capabilitiesFixture.responses.supported.body.features ?? []),
             "automationDrafts",
+            "repoUpdate",
           ],
         },
       });

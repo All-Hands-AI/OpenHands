@@ -12,34 +12,52 @@ import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalCloseButton } from "#/components/shared/modals/modal-close-button";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { McpLogoBadge } from "#/components/features/mcp-logo-badge";
-import { BrandBadge } from "#/components/shared/badge";
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
+import { extensionModuleCardPillClassName } from "#/utils/extension-module-card-classes";
 import { modalTitleLgClassName } from "#/utils/modal-classes";
+
+/**
+ * Whether the current user has already connected the built-in integration
+ * (`connected`) or still has to (`connect`).
+ */
+export type BuiltInIntegrationState = "connected" | "connect";
+
+/**
+ * How a connected user asks OpenHands for work from inside the integration.
+ * An instruction to the agent rather than UI copy, so it is intentionally in
+ * English and not localized.
+ */
+const USAGE_EXAMPLE = "@openhands Please complete this task!";
 
 interface BuiltInIntegrationChoiceModalProps {
   /** The built-in integration that already covers the selected automation. */
   integration: IntegrationCatalogEntry;
+  state: BuiltInIntegrationState;
   onClose: () => void;
-  /** Fired for the "Use the integration" action. */
+  /** Fired for the "Connect to the integration" action. */
   onUseBuiltIn: () => void;
   /** Fired for the "Continue with polling setup" action. */
   onContinuePolling: () => void;
 }
 
 /**
- * Shown before an 'Issue to PR' automation is set up on a cloud instance whose
- * built-in integration (Settings > Integrations) provides the same workflow:
- * the user picks between that integration and the polling automation.
+ * Shown before an automation is set up on a cloud instance whose built-in
+ * integration (Settings > Integrations) provides the same workflow. A user
+ * who has connected that integration is shown how to use it; one who has not
+ * is offered to connect it. The polling automation is the alternative either
+ * way.
  */
 export function BuiltInIntegrationChoiceModal({
   integration,
+  state,
   onClose,
   onUseBuiltIn,
   onContinuePolling,
 }: BuiltInIntegrationChoiceModalProps) {
   const { t } = useTranslation("openhands");
   const { name } = integration;
+  const isConnected = state === "connected";
 
   const builtInFeatures = [
     t(I18nKey.AUTOMATION_SETUP_CHOICE$BUILT_IN_FEATURE_READY),
@@ -79,19 +97,24 @@ export function BuiltInIntegrationChoiceModal({
             {t(I18nKey.AUTOMATION_SETUP_CHOICE$TITLE)}
           </h2>
           <p className="mt-2 text-sm text-muted">
-            {t(I18nKey.AUTOMATION_SETUP_CHOICE$DESCRIPTION, { name })}
+            {t(
+              isConnected
+                ? I18nKey.AUTOMATION_SETUP_CHOICE$CONNECTED_DESCRIPTION
+                : I18nKey.AUTOMATION_SETUP_CHOICE$DESCRIPTION,
+              { name },
+            )}
           </p>
         </header>
         <div className="flex flex-col gap-3 px-6 pb-6 sm:flex-row">
           <div
             data-testid="built-in-integration-choice-option-built-in"
-            className="flex flex-1 flex-col gap-3 rounded-xl border border-primary bg-surface-raised p-4"
+            className="flex flex-1 flex-col gap-3 rounded-xl border border-border bg-surface-raised p-4"
           >
             <div className="flex items-start justify-between gap-2">
               <McpLogoBadge entry={integration} />
-              <BrandBadge className="shrink-0 whitespace-nowrap px-2.5 py-1 text-xs">
+              <span className={extensionModuleCardPillClassName}>
                 {t(I18nKey.SETTINGS$SKILLS_RECOMMENDED)}
-              </BrandBadge>
+              </span>
             </div>
             <div className="flex flex-col gap-1">
               <h3 className="text-sm font-semibold text-contrast">
@@ -103,29 +126,42 @@ export function BuiltInIntegrationChoiceModal({
                 })}
               </p>
             </div>
-            <ul className="flex flex-col gap-2">
-              {builtInFeatures.map((feature) => (
-                <li
-                  key={feature}
-                  className="flex items-center gap-2 text-sm text-contrast"
-                >
-                  <CircleCheck
-                    className="size-4 shrink-0 text-primary"
-                    aria-hidden
-                  />
-                  {feature}
-                </li>
-              ))}
-            </ul>
+            {isConnected ? (
+              <code
+                data-testid="built-in-integration-choice-example"
+                className="block rounded-md border border-border-subtle bg-base-secondary px-3 py-2 font-mono text-xs text-contrast"
+              >
+                {USAGE_EXAMPLE}
+              </code>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {builtInFeatures.map((feature) => (
+                  <li
+                    key={feature}
+                    className="flex items-center gap-2 text-sm text-contrast"
+                  >
+                    <CircleCheck
+                      className="size-4 shrink-0 text-tertiary-light"
+                      aria-hidden
+                    />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            )}
             <BrandButton
               type="button"
               variant="primary"
-              className="mt-auto flex items-center justify-center gap-2"
+              className="mt-auto flex items-center justify-center gap-2 bg-contrast text-contrast-foreground"
               testId="built-in-integration-choice-use-built-in"
-              onClick={onUseBuiltIn}
+              onClick={isConnected ? onClose : onUseBuiltIn}
             >
-              {t(I18nKey.AUTOMATION_SETUP_CHOICE$BUILT_IN_ACTION, { name })}
-              <ArrowRight className="size-4 shrink-0" aria-hidden />
+              {isConnected
+                ? t(I18nKey.CHAT_INTERFACE$BTW_GOT_IT)
+                : t(I18nKey.AUTOMATION_SETUP_CHOICE$CONNECT_ACTION, { name })}
+              {!isConnected && (
+                <ArrowRight className="size-4 shrink-0" aria-hidden />
+              )}
             </BrandButton>
           </div>
 

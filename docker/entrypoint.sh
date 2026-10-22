@@ -32,6 +32,13 @@
 #                          the proxy route.
 #   PUBLIC_MODE_PORT     – If set, starts a second static server on this port
 #                          with --auth-required (no session key injected)
+#   MARS_WEB             – Set to exactly 1 to opt in to the experimental
+#                          DigitalOcean web bridge on $PORT (off by default).
+#                          The public-mode server never hosts it.
+#   MARS_WEB_KEY         – Key the bridge's /mars/* routes require (defaults to
+#                          the session API key)
+#   MARS_TOKEN           – DigitalOcean personal access token to sign the bridge
+#                          in with at start (needs MARS_WEB=1)
 #   AGENT_CANVAS_ALLOW_LAN_SESSION_KEY – Set to true only when the published
 #                          host port is restricted to loopback and you accept
 #                          embedding the session key in the served HTML
@@ -283,6 +290,10 @@ export AUTOMATION_AGENT_SERVER_URL="${AUTOMATION_AGENT_SERVER_URL:-http://127.0.
 # FinishTool registration lets automation runs resolve the tool on their
 # remote conversations (see the note at the bottom of tools/canvas_ui_tool.py).
 export OH_EXTRA_PYTHON_PATH="${OH_EXTRA_PYTHON_PATH:-/opt/agent-canvas/tools}"
+
+# Read public skills from the extensions package the frontend was built with,
+# so Canvas and the agent-server see the same catalog and nothing is cloned.
+export EXTENSIONS_PATH="${EXTENSIONS_PATH:-/opt/agent-canvas/node_modules/@openhands/extensions}"
 AGENT_SERVER_IMPORT_MODULES="canvas_ui_tool"
 
 # Track child PIDs so we can clean up on exit.
@@ -466,9 +477,14 @@ PIDS+=("$STATIC_PID")
 # The token's scope is upstream's to fix and is tracked in
 # OpenHands/software-agent-sdk#4317; if the editor gets a credential of its own,
 # this exclusion and the --no-referrer-prefix below can both be revisited.
+#
+# MARS_WEB=0 keeps the DigitalOcean bridge on the main instance only. This one
+# binds every interface with no key, so an opted-in container would otherwise
+# warn on every start, or, with MARS_WEB_KEY set, host a second bridge with its
+# own sign-in state.
 if [ -n "${PUBLIC_MODE_PORT:-}" ]; then
   log "Starting public-mode frontend on port $PUBLIC_MODE_PORT (--auth-required)..."
-  node /opt/agent-canvas/static-server.mjs \
+  MARS_WEB=0 node /opt/agent-canvas/static-server.mjs \
     --port "$PUBLIC_MODE_PORT" \
     --host "$STATIC_SERVER_BIND_HOST" \
     --dir /opt/agent-canvas/frontend \
