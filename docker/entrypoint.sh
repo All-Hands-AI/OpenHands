@@ -307,6 +307,42 @@ AGENT_SERVER_IMPORT_MODULES="canvas_ui_tool"
 # >>> — keep the markers.
 export LOG_LEVEL="${LOG_LEVEL:-WARNING}"
 export AUTOMATION_LOG_LEVEL="${AUTOMATION_LOG_LEVEL:-${LOG_LEVEL}}"
+
+# Narrow a logging level to something Uvicorn's `--log-level` accepts.
+#
+# The app reads LOG_LEVEL through Python's logging module, which also
+# understands the aliases WARN/FATAL/NOTSET and numeric levels; Uvicorn
+# validates the flag with a click.Choice over the names below and exits 2 on
+# anything else, which would take the automation service down. Unrepresentable
+# values fall back to `info`, Uvicorn's own default.
+uvicorn_log_level() {
+  local _uvicorn_level
+  _uvicorn_level="$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')"
+  case "${_uvicorn_level}" in
+    critical | error | warning | info | debug | trace) printf '%s' "${_uvicorn_level}" ;;
+    warn) printf 'warning' ;;
+    fatal) printf 'critical' ;;
+    '' | *[!0-9]*) printf 'info' ;;
+    *)
+      # Strip leading zeros so `030` reads as 30. Only two digits can fall
+      # below 50, so anything longer is clamped — `[` compares as a signed
+      # integer and errors out on a value it cannot hold.
+      while [ "${#_uvicorn_level}" -gt 1 ] && [ "${_uvicorn_level#0}" != "${_uvicorn_level}" ]; do
+        _uvicorn_level="${_uvicorn_level#0}"
+      done
+      # Python's NOTSET is 0 and means "inherit", not "most verbose".
+      if [ "${_uvicorn_level}" = "0" ]; then printf 'info'
+      elif [ "${#_uvicorn_level}" -gt 2 ]; then printf 'critical'
+      elif [ "${_uvicorn_level}" -ge 50 ]; then printf 'critical'
+      elif [ "${_uvicorn_level}" -ge 40 ]; then printf 'error'
+      elif [ "${_uvicorn_level}" -ge 30 ]; then printf 'warning'
+      elif [ "${_uvicorn_level}" -ge 20 ]; then printf 'info'
+      elif [ "${_uvicorn_level}" -ge 10 ]; then printf 'debug'
+      else printf 'trace'
+      fi
+      ;;
+  esac
+}
 # <<< backend-log-level
 
 # Track child PIDs so we can clean up on exit.
@@ -374,13 +410,13 @@ if command -v uvicorn >/dev/null 2>&1; then
   uvicorn openhands.automation.app:app \
     --host 0.0.0.0 \
     --port "$AUTOMATION_PORT" \
-    --log-level "$(echo "${LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')" &
+    --log-level "$(uvicorn_log_level "${LOG_LEVEL}")" &
   PIDS+=($!)
 elif python -c "import openhands.automation" 2>/dev/null; then
   python -m uvicorn openhands.automation.app:app \
     --host 0.0.0.0 \
     --port "$AUTOMATION_PORT" \
-    --log-level "$(echo "${LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')" &
+    --log-level "$(uvicorn_log_level "${LOG_LEVEL}")" &
   PIDS+=($!)
 else
   log "WARNING: Automation server not found, skipping."

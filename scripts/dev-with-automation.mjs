@@ -59,6 +59,7 @@ import {
   buildAgentServerEnv,
   buildBackendLogEnv,
   backendLogLevel,
+  uvicornLogLevel,
   buildNpmScriptCommand,
   buildRuntimeServicesInfo,
   buildUvxPythonArgs,
@@ -276,6 +277,8 @@ ENVIRONMENT VARIABLES:
   OH_AGENT_SERVER_VERSION     Specific PyPI version for agent-server
   OH_SECRET_KEY               Secret key for sessions
   LOG_LEVEL                   Log level for both backends (default: WARNING)
+                              Python names and aliases both work; aliases and
+                              numbers are mapped onto Uvicorn's own set.
   AUTOMATION_LOG_LEVEL        Log level for the automation service only
                               (default: LOG_LEVEL)
 
@@ -1013,7 +1016,9 @@ function startAgentServer(config) {
  * `--log-level` is Uvicorn's own level, separate from the app's `LOG_LEVEL`: it
  * governs the startup banner and per-request access lines. Keeping it in step
  * with the service level means a default launch is quiet while `--verbose`
- * still shows request traffic.
+ * still shows request traffic. The value is narrowed by
+ * {@link uvicornLogLevel}, since Uvicorn rejects the Python aliases and numeric
+ * levels the app itself accepts.
  *
  * @param {{autoBackendPort: number, verbose?: boolean}} config
  * @param {Record<string, string | undefined>} [env]
@@ -1026,7 +1031,7 @@ export function buildAutomationLogArgs(config, env = process.env) {
     "--port",
     config.autoBackendPort.toString(),
     "--log-level",
-    backendLogLevel({ verbose: config.verbose, env }).toLowerCase(),
+    uvicornLogLevel(backendLogLevel({ verbose: config.verbose, env })),
   ];
 }
 

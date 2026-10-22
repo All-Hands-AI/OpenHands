@@ -836,6 +836,67 @@ export function backendLogLevel(options = {}) {
   return verbose ? "DEBUG" : env.LOG_LEVEL || DEFAULT_BACKEND_LOG_LEVEL;
 }
 
+/** The only names Uvicorn's `--log-level` accepts; anything else exits 2. */
+export const UVICORN_LOG_LEVELS = [
+  "critical",
+  "error",
+  "warning",
+  "info",
+  "debug",
+  "trace",
+];
+
+// Python logging aliases that `logging.getLevelNamesMapping()` accepts but
+// Uvicorn does not.
+const UVICORN_LEVEL_ALIASES = { warn: "warning", fatal: "critical" };
+
+// Python level numbers, highest first, mapped to the Uvicorn name at or below
+// them (Uvicorn's `trace` sits below `debug`).
+const UVICORN_LEVEL_BY_NUMBER = [
+  [50, "critical"],
+  [40, "error"],
+  [30, "warning"],
+  [20, "info"],
+  [10, "debug"],
+  [5, "trace"],
+];
+
+/**
+ * Narrow a logging level to something Uvicorn's `--log-level` accepts.
+ *
+ * The app reads `LOG_LEVEL` through Python's logging module, which also
+ * understands `WARN`, `FATAL`, numeric levels and `NOTSET`; Uvicorn validates
+ * the flag with a `click.Choice` over {@link UVICORN_LOG_LEVELS} and exits 2 on
+ * anything else, taking the service — and with it the dev stack — down. So the
+ * env value keeps its raw form and only the Uvicorn argument is narrowed here.
+ *
+ * Values Uvicorn cannot represent fall back to `info`, Uvicorn's own default,
+ * which is what the launchers passed before they set the flag at all.
+ *
+ * @param {string | number | undefined} level
+ * @returns {string} A name from {@link UVICORN_LOG_LEVELS}
+ */
+export function uvicornLogLevel(level) {
+  const name = String(level ?? "")
+    .trim()
+    .toLowerCase();
+
+  if (UVICORN_LOG_LEVELS.includes(name)) return name;
+  if (UVICORN_LEVEL_ALIASES[name]) return UVICORN_LEVEL_ALIASES[name];
+
+  if (/^\d+$/.test(name)) {
+    const numeric = Number(name);
+    // Python's NOTSET is 0 and means "inherit", not "most verbose"; treat it
+    // like the `notset` name and fall back to Uvicorn's own default. Uvicorn's
+    // lowest name is `trace`, which covers everything below `debug`.
+    if (numeric === 0) return "info";
+    const match = UVICORN_LEVEL_BY_NUMBER.find(([value]) => numeric >= value);
+    return match ? match[1] : "trace";
+  }
+
+  return "info";
+}
+
 /**
  * Logging environment for a backend Canvas spawns.
  *

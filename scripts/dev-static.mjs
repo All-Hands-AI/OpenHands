@@ -48,6 +48,7 @@ import {
   buildSafeDevConfig,
   buildAgentServerEnv,
   backendLogLevel,
+  uvicornLogLevel,
   buildBackendLogEnv,
   formatMissingUvxGuidance,
   isPortBusy,
@@ -182,6 +183,8 @@ ENVIRONMENT VARIABLES:
   OH_AGENT_SERVER_GIT_REF     Git ref for agent-server SDK
   OH_SECRET_KEY               Secret key for sessions
   LOG_LEVEL                   Log level for both backends (default: WARNING)
+                              Python names and aliases both work; aliases and
+                              numbers are mapped onto Uvicorn's own set.
   AUTOMATION_LOG_LEVEL        Log level for the automation service only
                               (default: LOG_LEVEL)
 
@@ -407,9 +410,10 @@ function startAutomationBackend(config) {
       "0.0.0.0",
       "--port",
       config.autoBackendPort.toString(),
-      // Uvicorn's own level; see backendLogLevel.
+      // Uvicorn's own level; see uvicornLogLevel. Uvicorn rejects the Python
+      // aliases and numeric levels the app itself accepts, so narrow it.
       "--log-level",
-      backendLogLevel({ verbose: config.verbose }).toLowerCase(),
+      uvicornLogLevel(backendLogLevel({ verbose: config.verbose })),
     ],
     {
       cwd: config.stateDir,

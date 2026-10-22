@@ -109,8 +109,8 @@
   <div class="meta">
     PR <a href="https://github.com/OpenHands/OpenHands/pull/18830">#18830</a> ·
     Fixes <a href="https://github.com/OpenHands/OpenHands/issues/18823">#18823</a> ·
-    7 files · <span class="a">+347</span> / <span class="r">−13</span> ·
-    head <code>20549f64</code> · base <code>c69d5291</code>
+    7 files · <span class="a">+624</span> / <span class="r">−13</span> ·
+    head <code>02d279d6c</code> · base <code>c69d5291b</code>
   </div>
 </header>
 
@@ -253,13 +253,13 @@
 <h2><span class="n">03</span>Files changed</h2>
 
 <div class="files">
-  <div class="row"><span class="badge changed">✏️</span><span class="p">scripts/dev-safe.mjs</span><span class="d"><span class="a">+68</span> <span class="r">−2</span></span></div>
-  <div class="row"><span class="badge changed">✏️</span><span class="p">scripts/dev-with-automation.mjs</span><span class="d"><span class="a">+39</span> <span class="r">−8</span></span></div>
-  <div class="row"><span class="badge changed">✏️</span><span class="p">scripts/dev-static.mjs</span><span class="d"><span class="a">+12</span> <span class="r">−1</span></span></div>
-  <div class="row"><span class="badge changed">✏️</span><span class="p">docker/entrypoint.sh</span><span class="d"><span class="a">+17</span> <span class="r">−2</span></span></div>
-  <div class="row"><span class="badge changed">✏️</span><span class="p">__tests__/scripts/dev-with-automation.test.ts</span><span class="d"><span class="a">+106</span></span></div>
-  <div class="row"><span class="badge added">＋</span><span class="p">__tests__/scripts/docker-log-level.test.ts</span><span class="d"><span class="a">+104</span></span></div>
-  <div class="row"><span class="badge changed">✏️ </span><span class="p">.agents/skills/local-stack-runtime/references/guide.md</span><span class="d"><span class="a">+1</span></span></div>
+  <div class="row"><span class="badge changed">✏️</span><span class="p">scripts/dev-safe.mjs</span><span class="d"><span class="a">+129</span> <span class="r">−2</span></span></div>
+  <div class="row"><span class="badge changed">✏️</span><span class="p">scripts/dev-with-automation.mjs</span><span class="d"><span class="a">+44</span> <span class="r">−8</span></span></div>
+  <div class="row"><span class="badge changed">✏️</span><span class="p">scripts/dev-static.mjs</span><span class="d"><span class="a">+16</span> <span class="r">−1</span></span></div>
+  <div class="row"><span class="badge changed">✏️</span><span class="p">docker/entrypoint.sh</span><span class="d"><span class="a">+53</span> <span class="r">−2</span></span></div>
+  <div class="row"><span class="badge changed">✏️</span><span class="p">__tests__/scripts/dev-with-automation.test.ts</span><span class="d"><span class="a">+196</span></span></div>
+  <div class="row"><span class="badge added">＋</span><span class="p">__tests__/scripts/docker-log-level.test.ts</span><span class="d"><span class="a">+184</span></span></div>
+  <div class="row"><span class="badge changed">✏️ </span><span class="p">.agents/skills/local-stack-runtime/references/guide.md</span><span class="d"><span class="a">+2</span></span></div>
 </div>
 
 <h3>The launcher gains one shared helper</h3>
@@ -314,8 +314,29 @@
 <span class="k">export</span> LOG_LEVEL=<span class="s">"${LOG_LEVEL:-WARNING}"</span>
 <span class="k">export</span> AUTOMATION_LOG_LEVEL=<span class="s">"${AUTOMATION_LOG_LEVEL:-${LOG_LEVEL}}"</span>
 
-<span class="c"># :377 and :383 — both uvicorn invocations</span>
---log-level <span class="s">"$(echo "${LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')"</span></pre>
+<span class="c"># :403 and :409 — both uvicorn invocations</span>
+--log-level <span class="s">"$(uvicorn_log_level "${LOG_LEVEL}")"</span></pre>
+
+<h3>The two sides accept different vocabularies</h3>
+<p>
+  Narrowing the value is not cosmetic. The application reads <code>LOG_LEVEL</code> through Python's
+  <code>logging</code> module, which also understands the aliases <code>WARN</code> and <code>FATAL</code>,
+  numeric levels, and <code>NOTSET</code>. Uvicorn validates <code>--log-level</code> with a
+  <code>click.Choice</code> over <code>critical | error | warning | info | debug | trace</code> and exits
+  <code>2</code> on anything else — before the service ever binds. Forwarding the env value verbatim would
+  therefore turn a documented override into a crash:
+</p>
+<pre><span class="c">$ LOG_LEVEL=WARN npm run dev        # before this fix</span>
+<span class="r">Invalid value for '--log-level': 'warn' is not one of 'critical', 'error', 'warning', …</span>
+<span class="r">The automation backend exited during startup</span></pre>
+<p>
+  A single normalizer — <code>uvicornLogLevel()</code> in JS, <code>uvicorn_log_level()</code> in the
+  entrypoint — maps aliases to their equivalents (<code>WARN</code> → <code>warning</code>,
+  <code>FATAL</code> → <code>critical</code>), numeric levels to the nearest name, and everything with no
+  Uvicorn equivalent (<code>NOTSET</code>, <code>0</code>, an unrecognized string) to <code>info</code>,
+  which is what Uvicorn defaulted to before this PR set the flag at all. The environment value keeps its
+  raw form, so the application still sees exactly what the user asked for; only the CLI argument is narrowed.
+</p>
 
 <h3>A latent bug fixed along the way</h3>
 <p>

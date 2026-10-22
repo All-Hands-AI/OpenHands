@@ -55,6 +55,25 @@ function resolveLogLevels(env: Record<string, string>): {
   return parsed;
 }
 
+/** Narrow a level exactly as the entrypoint does, via the marked block. */
+function uvicornLogLevel(level: string): string {
+  const script = [
+    "set -uo pipefail",
+    logLevelBlock(),
+    'uvicorn_log_level "$1"',
+  ].join("\n");
+
+  const result = spawnSync("bash", ["-c", script, "bash", level], {
+    env: { PATH: process.env.PATH ?? "" },
+    encoding: "utf-8",
+  });
+
+  if (result.status !== 0) {
+    throw new Error(`bash failed: ${result.stderr}`);
+  }
+  return result.stdout;
+}
+
 describe("Docker backend log level", () => {
   it("quiets both backends by default", () => {
     const levels = resolveLogLevels({});
@@ -82,9 +101,9 @@ describe("Docker backend log level", () => {
 
   it("passes the resolved level to every uvicorn invocation", () => {
     // The automation service's --log-level governs the startup banner and
-    // per-request access lines, which LOG_LEVEL alone does not cover. Uvicorn
-    // takes a lowercase name and rejects an uppercase one, so the entrypoint
-    // must lowercase it.
+    // per-request access lines, which LOG_LEVEL alone does not cover. The
+    // invocation must route the level through uvicorn_log_level, which both
+    // lowercases it and narrows it to a name Uvicorn accepts.
     const code = entrypoint
       .split("\n")
       .filter((line) => !line.trimStart().startsWith("#"))
@@ -98,7 +117,68 @@ describe("Docker backend log level", () => {
     expect(invocations).toHaveLength(2);
     for (const invocation of invocations ?? []) {
       expect(invocation).toContain("--log-level");
-      expect(invocation).toContain("tr '[:upper:]' '[:lower:]'");
+      expect(invocation).toContain('uvicorn_log_level "${LOG_LEVEL}"');
     }
+  });
+
+  // Uvicorn validates --log-level with a click.Choice and exits 2 on anything
+  // outside its set; the entrypoint runs without `set -e`, so a rejected value
+  // would leave Canvas shipped with the automation service unavailable.
+  describe("narrows --log-level to a value Uvicorn accepts", () => {
+    const UVICORN_ACCEPTS = [
+      "critical",
+      "error",
+      "warning",
+      "info",
+      "debug",
+      "trace",
+    ];
+
+    it("keeps every level Uvicorn already accepts", () => {
+      for (const level of UVICORN_ACCEPTS) {
+        expect(uvicornLogLevel(level)).toBe(level);
+        expect(uvicornLogLevel(level.toUpperCase())).toBe(level);
+      }
+    });
+
+    it("maps the Python aliases Uvicorn rejects", () => {
+      expect(uvicornLogLevel("WARN")).toBe("warning");
+      expect(uvicornLogLevel("FATAL")).toBe("critical");
+    });
+
+    it("maps numeric levels onto the nearest Uvicorn name", () => {
+      expect(uvicornLogLevel("50")).toBe("critical");
+      expect(uvicornLogLevel("40")).toBe("error");
+      expect(uvicornLogLevel("30")).toBe("warning");
+      expect(uvicornLogLevel("20")).toBe("info");
+      expect(uvicornLogLevel("10")).toBe("debug");
+      expect(uvicornLogLevel("5")).toBe("trace");
+    });
+
+    it("falls back to Uvicorn's own default for unrepresentable values", () => {
+      expect(uvicornLogLevel("NOTSET")).toBe("info");
+      expect(uvicornLogLevel("0")).toBe("info");
+      expect(uvicornLogLevel("")).toBe("info");
+      expect(uvicornLogLevel("bogus")).toBe("info");
+    });
+
+    it("never returns a value outside Uvicorn's accepted set", () => {
+      // Includes a value too large for `[` to compare as a signed integer,
+      // which would otherwise error out and emit nothing.
+      const inputs = [
+        "WARN",
+        "FATAL",
+        "NOTSET",
+        "30",
+        "030",
+        "0",
+        "",
+        "bogus",
+        "999999999999999999999",
+      ];
+      for (const input of inputs) {
+        expect(UVICORN_ACCEPTS).toContain(uvicornLogLevel(input));
+      }
+    });
   });
 });

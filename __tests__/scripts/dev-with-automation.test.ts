@@ -47,6 +47,7 @@ import {
   buildBackendLogEnv,
   buildSafeDevConfig,
   resetPersistedSessionApiKeyCache,
+  uvicornLogLevel,
 } from "../../scripts/dev-safe.mjs";
 import { createRouter } from "../../scripts/proxy-utils.mjs";
 
@@ -1586,6 +1587,95 @@ describe("backend logging defaults", () => {
     );
 
     expect(args.at(-1)).toBe("debug");
+  });
+
+  // Uvicorn validates --log-level with a click.Choice and exits 2 on anything
+  // outside its set, which takes the whole dev stack down. The app accepts
+  // more than Uvicorn does, so an explicit override must be narrowed rather
+  // than forwarded verbatim.
+  describe("narrows the Uvicorn --log-level to a value Uvicorn accepts", () => {
+    const UVICORN_ACCEPTS = [
+      "critical",
+      "error",
+      "warning",
+      "info",
+      "debug",
+      "trace",
+    ];
+
+    it("keeps every level Uvicorn already accepts", () => {
+      for (const level of UVICORN_ACCEPTS) {
+        expect(uvicornLogLevel(level)).toBe(level);
+        expect(uvicornLogLevel(level.toUpperCase())).toBe(level);
+      }
+    });
+
+    it("maps the Python aliases Uvicorn rejects", () => {
+      expect(uvicornLogLevel("WARN")).toBe("warning");
+      expect(uvicornLogLevel("warn")).toBe("warning");
+      expect(uvicornLogLevel("FATAL")).toBe("critical");
+      expect(uvicornLogLevel("fatal")).toBe("critical");
+    });
+
+    it("maps numeric levels onto the nearest Uvicorn name", () => {
+      expect(uvicornLogLevel("50")).toBe("critical");
+      expect(uvicornLogLevel("40")).toBe("error");
+      expect(uvicornLogLevel("30")).toBe("warning");
+      expect(uvicornLogLevel("20")).toBe("info");
+      expect(uvicornLogLevel("10")).toBe("debug");
+      expect(uvicornLogLevel("5")).toBe("trace");
+    });
+
+    it("falls back to Uvicorn's own default for unrepresentable values", () => {
+      // `NOTSET` means "inherit", not "most verbose", and Uvicorn has no
+      // equivalent; the pre-PR launchers passed no --log-level at all, which
+      // left Uvicorn at `info`.
+      expect(uvicornLogLevel("NOTSET")).toBe("info");
+      expect(uvicornLogLevel("0")).toBe("info");
+      expect(uvicornLogLevel("")).toBe("info");
+      expect(uvicornLogLevel(undefined)).toBe("info");
+      expect(uvicornLogLevel("verbose")).toBe("info");
+    });
+
+    it("never returns a value outside Uvicorn's accepted set", () => {
+      const inputs = [
+        "WARN",
+        "FATAL",
+        "NOTSET",
+        "30",
+        "0",
+        "",
+        "bogus",
+        "999999999999999999999",
+        "  30  ",
+        "warning",
+      ];
+      for (const input of inputs) {
+        expect(UVICORN_ACCEPTS).toContain(uvicornLogLevel(input));
+      }
+    });
+
+    it("narrows an explicit LOG_LEVEL alias in the built args", () => {
+      // The regression: `LOG_LEVEL=WARN npm run dev` aborted Uvicorn.
+      const args = buildAutomationLogArgs(
+        { autoBackendPort: 18001 },
+        { LOG_LEVEL: "WARN" },
+      );
+
+      expect(args.at(-1)).toBe("warning");
+    });
+
+    it("leaves the app's LOG_LEVEL env untouched for an alias", () => {
+      // The app reads LOG_LEVEL through Python's logging module, which does
+      // accept WARN — only the Uvicorn argument is narrowed.
+      const env = buildBackendLogEnv({
+        automation: true,
+        env: { LOG_LEVEL: "WARN" },
+      });
+
+      expect(env.LOG_LEVEL).toBe("WARN");
+      expect(env.AUTOMATION_LOG_LEVEL).toBe("WARN");
+    });
   });
 
   it("gives the agent-server the quiet default without an opt-out needed", () => {
