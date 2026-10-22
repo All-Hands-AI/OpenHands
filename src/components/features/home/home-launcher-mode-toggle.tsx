@@ -153,9 +153,10 @@ export function HomeLauncherModeToggle({
                 className={cn(
                   "relative inline-flex items-center gap-2 rounded-full px-5 py-2",
                   "cursor-pointer transition-colors",
+                  // @spec HL-001 — Labels on the hover pill use the theme's high-emphasis ink
                   isActive
-                    ? "text-white"
-                    : "text-[var(--oh-muted)] hover:text-white",
+                    ? "text-contrast"
+                    : "text-[var(--oh-muted)] hover:text-contrast",
                   disableAnimation &&
                     isActive &&
                     "bg-[var(--oh-interactive-hover)]",

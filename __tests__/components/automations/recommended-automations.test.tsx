@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useState } from "react";
 import {
   act,
   fireEvent,
@@ -39,6 +40,7 @@ import {
 } from "@openhands/extensions/automations";
 import { INTEGRATION_CATALOG } from "@openhands/extensions/integrations";
 import { getAutomationLaunchPrompt } from "#/utils/automation-catalog";
+import { EMPTY_TEMPLATE_FILTERS } from "#/components/features/automations/template-filter-chips";
 
 const {
   mockCreateConversationMutate,
@@ -458,6 +460,111 @@ describe("recommended automations", () => {
         ).not.toBeInTheDocument();
       },
     );
+
+    it("keeps deployment-hidden cards excluded while searching and clearing", () => {
+      const props = {
+        backendKind: "local" as const,
+        installedServers: [],
+        hiddenAutomationIds: new Set([
+          "github-pr-reviewer",
+          "slack-standup-digest",
+        ]),
+        onSelect: vi.fn(),
+      };
+      const { rerender } = render(<RecommendedAutomationsSection {...props} />);
+      const cardIds = () =>
+        screen
+          .getAllByTestId(/^recommended-automation-card-/)
+          .map((card) => card.getAttribute("data-testid"));
+      const initialCardIds = cardIds();
+      expect(initialCardIds).toHaveLength(AUTOMATION_CATALOG.length - 2);
+      expect(
+        screen.queryByTestId("recommended-automation-card-github-pr-reviewer"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId(
+          "recommended-automation-card-slack-standup-digest",
+        ),
+      ).not.toBeInTheDocument();
+
+      rerender(
+        <RecommendedAutomationsSection
+          {...props}
+          query="cobaltneedle quartzneedle"
+        />,
+      );
+      expect(cardIds()).toEqual([
+        "recommended-automation-card-github-agents-md-maintainer",
+        "recommended-automation-card-linear-triage-assistant",
+      ]);
+
+      rerender(<RecommendedAutomationsSection {...props} query={" \t\n "} />);
+      expect(cardIds()).toEqual(initialCardIds);
+    });
+
+    it("combines keyword and chip filters and clears them without revealing hidden cards", () => {
+      function FilteredTemplates() {
+        const [query, setQuery] = useState("cobaltneedle quartzneedle");
+        const [filters, setFilters] = useState(EMPTY_TEMPLATE_FILTERS);
+        return (
+          <RecommendedAutomationsSection
+            backendKind="local"
+            installedServers={[]}
+            hiddenAutomationIds={
+              new Set(["github-pr-reviewer", "slack-standup-digest"])
+            }
+            query={query}
+            onClearQuery={() => setQuery("")}
+            filters={filters}
+            onFiltersChange={setFilters}
+            onSelect={vi.fn()}
+          />
+        );
+      }
+      render(<FilteredTemplates />);
+      const cardIds = () =>
+        screen
+          .queryAllByTestId(/^recommended-automation-card-/)
+          .map((card) => card.getAttribute("data-testid"));
+      expect(cardIds()).toEqual([
+        "recommended-automation-card-github-agents-md-maintainer",
+        "recommended-automation-card-linear-triage-assistant",
+      ]);
+
+      fireEvent.click(screen.getByTestId("template-filter-trigger-event"));
+      expect(cardIds()).toEqual([
+        "recommended-automation-card-linear-triage-assistant",
+      ]);
+      fireEvent.click(screen.getByTestId("template-filter-integration-github"));
+      expect(cardIds()).toEqual([]);
+      expect(
+        screen.getByTestId("automations-filtered-empty"),
+      ).toHaveTextContent(
+        I18nKey.RECOMMENDED_AUTOMATIONS$NO_MATCHING_TEMPLATES,
+      );
+      expect(
+        screen.getByTestId("template-filter-trigger-event"),
+      ).toHaveAttribute("aria-pressed", "true");
+      expect(
+        screen.getByTestId("template-filter-integration-github"),
+      ).toHaveAttribute("aria-pressed", "true");
+
+      fireEvent.click(screen.getByTestId("automations-clear-filters"));
+      expect(cardIds()).toHaveLength(AUTOMATION_CATALOG.length - 2);
+      expect(cardIds()).not.toContain(
+        "recommended-automation-card-github-pr-reviewer",
+      );
+      expect(cardIds()).not.toContain(
+        "recommended-automation-card-slack-standup-digest",
+      );
+      expect(
+        screen.queryByTestId("automations-filtered-empty"),
+      ).not.toBeInTheDocument();
+      expect(screen.getByTestId("template-filter-all")).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+    });
 
     it("preserves filtered group counts, connections and card selection", () => {
       const onSelect = vi.fn();

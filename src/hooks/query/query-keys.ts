@@ -41,6 +41,10 @@ export const TOOL_CATALOG_QUERY_KEYS = {
   all: ["tool-catalog"] as const,
 } as const;
 
+export const SKILL_CATALOG_QUERY_KEYS = {
+  all: ["skill-catalog"] as const,
+} as const;
+
 export const PROVIDER_CONNECTIONS_QUERY_KEYS = {
   all: ["provider-connections"] as const,
 } as const;
@@ -142,5 +146,3 @@ export const CONFIG_CACHE_OPTIONS = {
   staleTime: 1000 * 60 * 5, // 5 minutes
   gcTime: 1000 * 60 * 15, // 15 minutes
 } as const;
-
-export type QueryKeys = (typeof QUERY_KEYS)[keyof typeof QUERY_KEYS];

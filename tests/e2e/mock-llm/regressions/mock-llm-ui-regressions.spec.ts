@@ -450,6 +450,43 @@ test.describe("UI regressions", () => {
     );
   });
 
+  // @spec TN-001 — Toasts follow the embedding host's contrast ink
+  test("error and success toasts follow the host contrast color", async ({
+    page,
+  }) => {
+    await routeSessionApiKey(page);
+    // A host stylesheet override that survives full-page navigation.
+    await page.addInitScript(() => {
+      document.addEventListener("DOMContentLoaded", () => {
+        const style = document.createElement("style");
+        style.textContent =
+          "[data-agent-server-ui] { --oh-contrast: #8b1029 !important; }";
+        document.head.append(style);
+      });
+    });
+
+    await page.goto("/conversations/0123456789abcdef0123456789abcdef", {
+      waitUntil: "domcontentloaded",
+    });
+    await expect(
+      page.getByRole("status").filter({ hasText: "does not exist" }),
+    ).toHaveCSS("color", "rgb(139, 16, 41)");
+
+    await page.goto("/settings/app", { waitUntil: "domcontentloaded" });
+    const soundSwitch = page.getByText("Sound Notifications", { exact: true });
+    const saveButton = page.getByRole("button", { name: "Save Changes" });
+    await soundSwitch.click();
+    await saveButton.click();
+    await expect(
+      page.getByRole("status").filter({ hasText: "Settings saved" }),
+    ).toHaveCSS("color", "rgb(139, 16, 41)");
+
+    // Restore the original setting for later serial scenarios.
+    await soundSwitch.click();
+    await saveButton.click();
+    await expect(saveButton).toBeDisabled();
+  });
+
   // ── critic result rendering ──────────────────────────────────────
 
   test("renders critic results on agent messages and finish actions", async ({
@@ -756,5 +793,54 @@ test.describe("UI regressions", () => {
       );
     });
     await expect(notice).toHaveCSS("color", "rgb(139, 16, 41)");
+  });
+
+  // @spec HL-001 — Home mode labels follow the embedding host's contrast ink
+  test("home mode toggle labels follow the host contrast color", async ({
+    page,
+  }) => {
+    await routeSessionApiKey(page);
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    const toggle = page.getByTestId("home-launcher-mode-toggle");
+    const selected = toggle.getByRole("radio", { checked: true });
+    const unselected = toggle.getByRole("radio", { checked: false });
+    await expect(selected).toBeVisible();
+    await toggle.evaluate((element) => {
+      const scope = element.closest("[data-agent-server-ui]");
+      if (!scope) throw new Error("Agent Server UI theme scope not found");
+      (scope as HTMLElement).style.setProperty("--oh-contrast", "#8b1029");
+    });
+
+    await expect(selected).toHaveCSS("color", "rgb(139, 16, 41)");
+    await unselected.hover();
+    await expect(unselected).toHaveCSS("color", "rgb(139, 16, 41)");
+  });
+
+  test("backend keyboard focus follows the host focus role", async ({
+    page,
+  }) => {
+    await routeSessionApiKey(page);
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    const shell = page.locator("[data-agent-server-ui]").first();
+    await expect(shell).toBeVisible();
+    await shell.evaluate((el) => {
+      (el as HTMLElement).style.setProperty("--oh-focus", "#7314b9");
+    });
+    await page.getByTestId("backend-selector").click();
+    await page.getByTestId("add-backend-menu-item").click();
+    await page.getByTestId("add-backend-option-agent-server").click();
+
+    for (const id of [
+      "add-backend-option-agent-server",
+      "add-backend-local-guidance-toggle",
+    ]) {
+      const control = page.getByTestId(id);
+      await control.focus();
+      await page.keyboard.press("Space");
+      await page.keyboard.press("Tab");
+      await page.keyboard.press("Shift+Tab");
+      await expect(control).toBeFocused();
+      await expect(control).toHaveCSS("outline-color", "rgb(115, 20, 185)");
+    }
   });
 });
