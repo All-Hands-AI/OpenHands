@@ -1011,6 +1011,60 @@ describe("McpService.testServer", () => {
       error_kind: "timeout",
     });
   });
+
+  it("treats the backend probe giving up after the sign-in started as an incomplete sign-in", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(window, "open").mockReturnValue(null);
+    getOAuthStatus
+      .mockResolvedValueOnce({
+        ok: true,
+        status: "authorizing",
+        job_id: "job-1",
+        authorization_url: "https://auth.example/authorize",
+        callback_ready: true,
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: "failed",
+        job_id: "job-1",
+        authorization_url: "https://auth.example/authorize",
+        callback_ready: true,
+        error: "MCP tool listing timed out after 120.0 seconds.",
+        error_kind: "timeout",
+      });
+
+    const authorization = McpService.authorizeOAuth(oauthServer());
+    await vi.runAllTimersAsync();
+
+    await expect(authorization).resolves.toEqual({
+      ok: false,
+      error: "MCP tool listing timed out after 120.0 seconds.",
+      error_kind: "authorization",
+    });
+  });
+
+  it("keeps a backend timeout before any sign-in started as a timeout", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(window, "open").mockReturnValue(null);
+    startOAuth.mockResolvedValueOnce({ ok: true, job_id: "job-1" });
+    getOAuthStatus.mockResolvedValueOnce({
+      ok: false,
+      status: "failed",
+      job_id: "job-1",
+      callback_ready: false,
+      error: "MCP tool listing timed out after 120.0 seconds.",
+      error_kind: "timeout",
+    });
+
+    const authorization = McpService.authorizeOAuth(oauthServer());
+    await vi.runAllTimersAsync();
+
+    await expect(authorization).resolves.toEqual({
+      ok: false,
+      error: "MCP tool listing timed out after 120.0 seconds.",
+      error_kind: "timeout",
+    });
+  });
 });
 
 describe("McpService.authorizeOAuth on cloud backends", () => {
