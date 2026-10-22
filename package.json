@@ -17,7 +17,8 @@
     "agent-canvas": "bin/agent-canvas.mjs"
   },
   "engines": {
-    "node": ">=24"
+    "node": ">=24",
+    "npm": ">=11.10.0"
   },
   "dependencies": {
     "@heroui/react": "2.8.10",
@@ -179,9 +180,10 @@
     "vite-plugin-svgr": "5.2.0",
     "vitest": "5.0.0"
   },
-  "packageManager": "npm@10.5.0",
+  "packageManager": "npm@11.12.1",
   "volta": {
-    "node": "24.21.0"
+    "node": "24.21.0",
+    "npm": "11.12.1"
   },
   "msw": {
     "workerDirectory": [
