@@ -23,7 +23,11 @@ import {
   getAgentServerBaseUrl,
   getBakedSessionApiKey,
 } from "#/api/agent-server-config";
-import { readStoredBackends } from "#/api/backend-registry/storage";
+import {
+  getEffectiveLocalBackend,
+  getRegisteredBackends,
+} from "#/api/backend-registry/active-store";
+import type { Backend } from "#/api/backend-registry/types";
 import { isCanvasRootBackend, isPageOrigin } from "./canvas-root-backend";
 import type { MarsBridge } from "./mars-tunnel-backend";
 
@@ -45,6 +49,11 @@ export class MarsWebBridgeError extends Error {
     this.name = "MarsWebBridgeError";
     this.status = status;
   }
+}
+
+/** This page's own Canvas backend, holding a typed or paired key. */
+function holdsCanvasRootKey(backend: Backend): boolean {
+  return isCanvasRootBackend(backend) && backend.apiKey.trim().length > 0;
 }
 
 /**
@@ -69,9 +78,13 @@ export function getMarsBridgeHeaders(baseUrl = ""): Record<string, string> {
     return { "X-Session-API-Key": bakedKey };
   }
 
-  const rootBackend = readStoredBackends().find(
-    (b) => isCanvasRootBackend(b) && b.apiKey.trim().length > 0,
-  );
+  // Prefer the active backend when it holds this origin's key, so an older
+  // key saved for the same origin cannot shadow the one in use.
+  const active = getEffectiveLocalBackend();
+  const rootBackend =
+    active && holdsCanvasRootKey(active)
+      ? active
+      : getRegisteredBackends().find(holdsCanvasRootKey);
   if (rootBackend) {
     return { "X-Session-API-Key": rootBackend.apiKey.trim() };
   }
