@@ -372,16 +372,27 @@ class MockLLMHandler(BaseHTTPRequestHandler):
 def _is_preflight_ping(body: dict) -> bool:
     """Match the agent-server's profile pre-flight check.
 
-    It is a single user message saying "ping" with ``max_tokens=1`` (see
-    ``profiles_router.validate_profile`` in openhands-agent-server). The text
-    arrives either as a plain string or as OpenAI content parts.
+    It sends "ping" with ``max_tokens=1`` (see ``profiles_router.validate_profile``
+    in openhands-agent-server). The pinned agent-server also sends a
+    "Reply with one token." system instruction; older versions sent only the
+    user message. Match
+    that exact instruction so ordinary one-token conversations still consume
+    their scripted turns. Text can be a string or OpenAI content parts.
     """
     if body.get("max_tokens") != 1:
         return False
     messages = body.get("messages")
-    if not isinstance(messages, list) or len(messages) != 1:
+    if not isinstance(messages, list) or len(messages) not in (1, 2):
         return False
-    message = messages[0]
+    if len(messages) == 2:
+        system = messages[0]
+        if (
+            not isinstance(system, dict)
+            or system.get("role") != "system"
+            or _message_text(system).strip() != "Reply with one token."
+        ):
+            return False
+    message = messages[-1]
     if not isinstance(message, dict) or message.get("role") != "user":
         return False
     return _message_text(message).strip() == PREFLIGHT_PING_TEXT
