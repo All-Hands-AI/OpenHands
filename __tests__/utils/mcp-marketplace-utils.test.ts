@@ -16,13 +16,7 @@ import {
   marketplaceEntryMatchesQuery,
   urlsMatch,
 } from "#/utils/mcp-marketplace-utils";
-import {
-  INTEGRATION_CATALOG as MCP_MARKETPLACE,
-  type IntegrationCatalogEntry,
-} from "@openhands/extensions/integrations";
-// Sentry's entry from OpenHands/extensions#818, which adds the `mcp` and
-// `api` options; the released catalog pinned here does not carry it yet.
-import sentryWithTokenOption from "../fixtures/integrations/sentry.extensions-afb5930.json";
+import { INTEGRATION_CATALOG as MCP_MARKETPLACE } from "@openhands/extensions/integrations";
 
 const mcpMarketplace = getMcpMarketplaceCatalog(MCP_MARKETPLACE);
 const slackEntry = mcpMarketplace.find((e) => e.id === "slack")!;
@@ -209,32 +203,21 @@ describe("getInstallableMcpConnectionOption", () => {
 });
 
 describe("getInstallableMcpConnectionOptions", () => {
-  const sentryFixture = sentryWithTokenOption as IntegrationCatalogEntry;
-
   it("offers Sentry's OAuth and personal-token options, OAuth first", () => {
-    const options = getInstallableMcpConnectionOptions(sentryFixture);
+    const sentry = MCP_MARKETPLACE.find((e) => e.id === "sentry")!;
+    const options = getInstallableMcpConnectionOptions(sentry);
 
     expect(options.map((option) => option.id)).toEqual(["mcp", "api"]);
+    expect(options[0]).toMatchObject({
+      transport: { kind: "shttp", url: "https://mcp.sentry.dev/mcp" },
+      auth: { strategy: "oauth2" },
+    });
     expect(options[1].transport).toMatchObject({
       kind: "stdio",
       command: "npx",
       args: ["-y", "@sentry/mcp-server"],
     });
-    expect(getInstallableMcpConnectionOption(sentryFixture)).toBe(options[0]);
-  });
-
-  it("offers only installable options for Sentry in the real catalog", () => {
-    const sentry = MCP_MARKETPLACE.find((e) => e.id === "sentry")!;
-    const options = getInstallableMcpConnectionOptions(sentry);
-
-    expect(options[0]).toMatchObject({
-      transport: { kind: "shttp", url: "https://mcp.sentry.dev/mcp" },
-      auth: { strategy: "oauth2" },
-    });
-    for (const option of options) {
-      expect(option.auth.oauth?.authorizationUrl).toBeUndefined();
-      expect(option.auth.oauth?.tokenUrl).toBeUndefined();
-    }
+    expect(getInstallableMcpConnectionOption(sentry)).toBe(options[0]);
   });
 
   it("keeps a single option for entries with one installable option", () => {
