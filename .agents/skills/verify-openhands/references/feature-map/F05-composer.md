@@ -23,7 +23,7 @@ Source: `src/components/features/chat/`, `src/components/features/controls/tools
 - `F05.image-only-send`: an attached image alone, with an empty field, enables Send; the sent user message shows the thumbnail and carries the picture as an embedded data URL.
 - `F05.paste`: pasted clipboard text is inserted as plain text; pasted images and dropped files attach.
 - `F05.dictation`: the mic button dictates into the composer; without a microphone it toasts a failure and resets.
-- `F05.llm-profile-picker`: the model pill switches the running conversation's LLM profile; the next reply uses the new model.
+- `F05.llm-profile-picker`: the model pill switches the running conversation's LLM profile; the next reply uses the new model. On Home the pill picks the LLM profile the next conversation launches with, on a local backend and on a Cloud backend (where it lists the organization's LLM profiles, the pick persists after a reload, and the conversation started from Home runs on it).
 - `F05.profile-identity`: the pill names the profile the conversation was started with, also after a reload and when another profile uses the same model; changing the default profile in Settings changes the home pill, not an existing conversation's.
 - `F05.overflow-menu`: at very narrow widths the model pill collapses into a "More input actions" menu whose Model submenu fits the viewport and switches the profile; Escape closes the menu and returns focus to its trigger.
 - `F05.context-window-meter`: the ring shows context use; its popover opens the Usage tab and compacts the context. Above 70% the popover's percentage and bar fill use the theme's warning color and above 90% its error color, on a raised surface with a bordered track, readable in light and dark themes.
