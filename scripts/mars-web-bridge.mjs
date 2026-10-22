@@ -85,6 +85,19 @@ const AUTH_COOKIE = "mars_web_auth";
  * the Agent Server itself takes it. Nothing reaches the session before that.
  */
 const FIRST_MESSAGE_AUTH_TIMEOUT_MS = 10_000;
+/**
+ * Anyone who can reach the server can open such a socket before the key is
+ * checked, so bound what one may send until it logs in (the login frame, and
+ * anything a client sends right behind it in the same burst) and how many
+ * may wait to log in at once.
+ */
+export const FIRST_MESSAGE_AUTH_MAX_BYTES = 64 * 1024;
+export const FIRST_MESSAGE_AUTH_MAX_PENDING = 32;
+/**
+ * Unsent bytes a slow reader may leave before the relay pauses its sender;
+ * the sender resumes once that falls to a quarter.
+ */
+const RELAY_HIGH_WATER_BYTES = 1024 * 1024;
 /** What the Agent Server closes a socket with when its key is wrong. */
 const CLOSE_AUTH_FAILED = 4001;
 const CLOSE_UNREACHABLE = 1011;
@@ -265,6 +278,46 @@ function isAuthFrame(text, key) {
   );
 }
 
+/** Whether a request brought the key header or a bridge cookie, right or not. */
+function presentsCredentials(req) {
+  return (
+    req.headers[AUTH_HEADER] !== undefined ||
+    readCookie(req, AUTH_COOKIE) !== null
+  );
+}
+
+/**
+ * Forward `from`'s frames to `to`. Frames that arrive while `to` is still
+ * connecting wait in order, and `from` is paused while `to` has more than
+ * RELAY_HIGH_WATER_BYTES unsent, so a slow reader cannot make this process
+ * buffer without bound.
+ */
+function relayFrames(from, to) {
+  const early = [];
+  const forward = (data, isBinary) => {
+    to.send(data, { binary: isBinary }, () => {
+      if (from.isPaused && to.bufferedAmount < RELAY_HIGH_WATER_BYTES / 4) {
+        from.resume();
+      }
+    });
+    if (to.bufferedAmount > RELAY_HIGH_WATER_BYTES) from.pause();
+  };
+  from.on("message", (data, isBinary) => {
+    if (to.readyState === WebSocket.CONNECTING) {
+      early.push([data, isBinary]);
+      from.pause();
+    } else if (to.readyState === WebSocket.OPEN) {
+      forward(data, isBinary);
+    }
+  });
+  to.once("open", () => {
+    for (const [data, isBinary] of early.splice(0)) forward(data, isBinary);
+    if (from.isPaused && to.bufferedAmount < RELAY_HIGH_WATER_BYTES) {
+      from.resume();
+    }
+  });
+}
+
 function readCookie(req, name) {
   const header = req.headers.cookie;
   if (!header) return null;
@@ -411,6 +464,9 @@ class BadSessionPath extends Error {}
 
 function parseSessionPath(url) {
   if (!url.startsWith(SESSIONS_PREFIX)) return null;
+  // Browsers never send a fragment, and the relay's own client refuses to
+  // dial one, so it is a 400 here rather than an error later.
+  if (url.includes("#")) throw new BadSessionPath("fragment in session path");
   const rest = url.slice(SESSIONS_PREFIX.length);
   const slash = rest.indexOf("/");
   const queryStart = rest.search(/[?#]/);
@@ -632,6 +688,8 @@ export function createMarsWebBridge({
 
   /** Accepts upgrades that log in by their first message. */
   const firstMessageAuth = new WebSocketServer({ noServer: true });
+  /** Sockets taken but not yet logged in. */
+  let pendingLogins = 0;
 
   /**
    * Take the upgrade, wait for the key as the first message, and only then
@@ -639,6 +697,27 @@ export function createMarsWebBridge({
    * guest agent-server takes no key.
    */
   function acceptFirstMessageAuth(req, socket, head, session) {
+    if (pendingLogins >= FIRST_MESSAGE_AUTH_MAX_PENDING) {
+      socket.end("HTTP/1.1 503 Service Unavailable\r\n\r\n");
+      return;
+    }
+    pendingLogins += 1;
+    // ws buffers a whole frame before handing it over, so the bytes are
+    // counted off the raw socket rather than left to its payload limit.
+    let received = head.length;
+    const countBytes = (chunk) => {
+      received += chunk.length;
+      if (received > FIRST_MESSAGE_AUTH_MAX_BYTES) socket.destroy();
+    };
+    let waiting = true;
+    const loggedInOrGone = () => {
+      if (!waiting) return;
+      waiting = false;
+      pendingLogins -= 1;
+      socket.off("data", countBytes);
+    };
+    socket.on("data", countBytes);
+    socket.once("close", loggedInOrGone);
     track(socket);
     firstMessageAuth.handleUpgrade(req, socket, head, (client) => {
       client.on("error", () => {});
@@ -648,6 +727,9 @@ export function createMarsWebBridge({
       );
       client.once("message", (data, isBinary) => {
         clearTimeout(timer);
+        loggedInOrGone();
+        // A key that arrives after the window closed is too late.
+        if (client.readyState !== WebSocket.OPEN) return;
         if (isBinary || !isAuthFrame(data.toString("utf8"), key)) {
           client.close(CLOSE_AUTH_FAILED, "Authentication failed");
           return;
@@ -666,27 +748,27 @@ export function createMarsWebBridge({
       client.close(CLOSE_UNREACHABLE, "session is not connected");
       return;
     }
-    const upstream = new WebSocket(`${target.replace(/^http/, "ws")}${path}`);
+    let upstream;
+    try {
+      // The guest's pings are passed to the agent and its pongs back, so a
+      // dead agent connection is noticed instead of answered for here.
+      upstream = new WebSocket(`${target.replace(/^http/, "ws")}${path}`, {
+        autoPong: false,
+      });
+    } catch {
+      // ws refuses some URLs synchronously; that must not escape the handler.
+      client.close(CLOSE_UNREACHABLE, "session is not reachable");
+      return;
+    }
     track(upstream);
     upstream.on("error", () => {});
-    /** What the client sent while the session was still being dialed. */
-    const queued = [];
-    client.on("message", (data, isBinary) => {
-      if (upstream.readyState === WebSocket.OPEN) {
-        upstream.send(data, { binary: isBinary });
-      } else {
-        queued.push([data, isBinary]);
-      }
+    relayFrames(client, upstream);
+    relayFrames(upstream, client);
+    upstream.on("ping", (data) => {
+      if (client.readyState === WebSocket.OPEN) client.ping(data);
     });
-    upstream.on("open", () => {
-      for (const [data, isBinary] of queued.splice(0)) {
-        upstream.send(data, { binary: isBinary });
-      }
-    });
-    upstream.on("message", (data, isBinary) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(data, { binary: isBinary });
-      }
+    client.on("pong", (data) => {
+      if (upstream.readyState === WebSocket.OPEN) upstream.pong(data);
     });
     upstream.on("close", (code, reason) => {
       if (client.readyState === WebSocket.OPEN) {
@@ -785,8 +867,15 @@ export function createMarsWebBridge({
         );
         return true;
       }
-      if (allowed) proxyWebSocket(req, socket, head, session);
-      else acceptFirstMessageAuth(req, socket, head, session);
+      if (allowed) {
+        proxyWebSocket(req, socket, head, session);
+      } else if (presentsCredentials(req)) {
+        // A wrong key or a stale cookie (the key was rotated) is refused at
+        // once, as before; only a bare upgrade may log in by first message.
+        socket.end("HTTP/1.1 401 Unauthorized\r\n\r\n");
+      } else {
+        acceptFirstMessageAuth(req, socket, head, session);
+      }
       return true;
     },
 

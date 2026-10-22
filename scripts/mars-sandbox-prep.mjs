@@ -22,6 +22,10 @@ import {
   ServerClient,
   SettingsClient,
 } from "@openhands/typescript-client/clients";
+import {
+  TUNNEL_CLOSE_GUEST_DIAL_FAILED,
+  TUNNEL_CLOSE_SESSION_UNAVAILABLE,
+} from "./tunnel-client.mjs";
 
 // The guest agent-server takes no key: the DigitalOcean tunnel is the gate.
 const SCRIPT_TIMEOUT_S = 30;
@@ -36,8 +40,6 @@ const PROBE_INTERVAL_MS = 2_000;
  * a 4002 that outlasts this window means nothing will ever serve the port.
  */
 const GUEST_PORT_CLOSED_GRACE_MS = 20_000;
-const CLOSE_SESSION_UNAVAILABLE = 4001;
-const CLOSE_GUEST_DIAL_FAILED = 4002;
 
 /**
  * Prints `restarting` when it wrote a key the running server has not loaded,
@@ -112,19 +114,21 @@ export async function waitForGuest({
     try {
       await server.getServerInfo();
       return true;
-    } catch {
-      // Still waking, or the tunnel is still dialing.
+    } catch (error) {
+      // A guest that answers 401 or 403 will not let us in by waiting;
+      // anything else is still waking, or the tunnel still dialing.
+      if (error?.status === 401 || error?.status === 403) return false;
     }
     const failure = readFailure() ?? null;
     if (
-      failure?.closeCode === CLOSE_SESSION_UNAVAILABLE ||
+      failure?.closeCode === TUNNEL_CLOSE_SESSION_UNAVAILABLE ||
       failure?.httpStatus === 401 ||
       failure?.httpStatus === 403
     ) {
       return false;
     }
     const now = Date.now();
-    if (failure?.closeCode === CLOSE_GUEST_DIAL_FAILED) {
+    if (failure?.closeCode === TUNNEL_CLOSE_GUEST_DIAL_FAILED) {
       closedSince ??= now;
       if (now - closedSince >= GUEST_PORT_CLOSED_GRACE_MS) return false;
     } else {
