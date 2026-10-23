@@ -129,3 +129,15 @@ class TitleIsolationTest(unittest.TestCase):
         self.assertEqual(reply["choices"][0]["message"]["content"], "SECOND_AGENT_REPLY")
         with urlopen(url + "/admin/requests") as response:
             self.assertEqual(len(json.load(response)["requests"]), 2)
+
+
+@pytest.mark.parametrize("content", [None, [], [{"type": "image_url", "image_url": {"url": "unused"}}]])
+@pytest.mark.parametrize("message_index", [0, 1], ids=["system", "user"])
+def test_title_detection_rejects_missing_text(content, message_index):
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant that generates concise, descriptive titles for conversations with OpenHands."},
+        {"role": "user", "content": "Generate a title (maximum 50 characters) for this message"},
+    ]
+    messages[message_index]["content"] = content
+
+    assert server._is_title_request({"messages": messages}) is False

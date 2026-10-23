@@ -372,18 +372,6 @@ class MockLLMHandler(BaseHTTPRequestHandler):
         print(f"[mock-llm] {args[0]}", file=sys.stderr, flush=True)
 
 
-def _message_text(message: dict) -> str:
-    content = message.get("content")
-    if isinstance(content, str):
-        return content
-    if isinstance(content, list):
-        return "".join(
-            part.get("text", "") for part in content
-            if isinstance(part, dict) and part.get("type") == "text"
-        )
-    return ""
-
-
 def _is_title_request(body: dict) -> bool:
     """Match SDK conversation/title_utils.py, never an agent tool turn."""
     messages = body.get("messages")
@@ -432,7 +420,7 @@ def _is_preflight_ping(body: dict) -> bool:
     return _message_text(message) == PREFLIGHT_PING_TEXT
 
 
-def _message_text(message: dict) -> str | None:
+def _message_text(message: dict) -> str:
     content = message.get("content")
     if isinstance(content, list):
         content = "".join(
@@ -440,7 +428,7 @@ def _message_text(message: dict) -> str | None:
             for part in content
             if isinstance(part, dict) and part.get("type") == "text"
         )
-    return content.strip() if isinstance(content, str) else None
+    return content.strip() if isinstance(content, str) else ""
 
 
 def _preflight_pong(model: str | None) -> dict:
