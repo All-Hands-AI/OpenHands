@@ -547,6 +547,9 @@ async function buildConfig(args, env = process.env) {
 
     // Auth — single key for both backends
     sessionApiKey,
+    // Settings encryption key; the MARS web bridge also encrypts saved
+    // DigitalOcean sign-ins with it where the host has no keychain.
+    secretKey: safeConfig.secretKey,
 
     // Public mode — the session key should NOT be baked into the frontend
     isPublic,
@@ -1217,13 +1220,19 @@ process.on("SIGHUP", shutdown);
  * destroySession and savePat from any local process, the agent's shell
  * included, so a stack with no session key mounts nothing. Electron turns it
  * off altogether (`config.marsWebBridge`), its preload provides the bridge.
+ * The bridge keeps sign-ins under the stack's state directory, encrypted with
+ * its secret key where the host has no keychain.
  */
 export function buildMarsWebEnv(role, config) {
   if (role === "static" || config.marsWebBridge === false) {
     return { MARS_WEB: "0" };
   }
   return config.sessionApiKey
-    ? { MARS_WEB_KEY: config.sessionApiKey }
+    ? {
+        MARS_WEB_KEY: config.sessionApiKey,
+        ...(config.stateDir ? { MARS_STATE_DIR: config.stateDir } : {}),
+        ...(config.secretKey ? { OH_SECRET_KEY: config.secretKey } : {}),
+      }
     : { MARS_WEB: "0" };
 }
 
@@ -1799,6 +1808,13 @@ function startStaticFrontend(config, staticDir) {
     : null;
 
   const staticServerScript = join(projectRoot, "scripts", "static-server.mjs");
+  const keyPolicy = applySessionKeyPolicy({
+    host: config.bindHost,
+    sessionApiKey:
+      config.launchAgentServer && !config.isPublic ? config.sessionApiKey : null,
+    authRequired: Boolean(config.launchAgentServer && config.isPublic),
+    warn: (msg) => logService("static", msg, c.yellow),
+  });
   spawnService(
     "static",
     "node",
@@ -1812,28 +1828,8 @@ function startStaticFrontend(config, staticDir) {
       ...(process.env.VITE_BASE_PATH
         ? ["--base-path", process.env.VITE_BASE_PATH]
         : []),
-      // In local mode on loopback, inject the API key so the pre-built
-      // frontend can authenticate transparently. Off-loopback binds (and
-      // public mode) use the API key entry screen instead.
-      ...(() => {
-        const policy = applySessionKeyPolicy({
-          host: config.bindHost,
-          sessionApiKey:
-            config.launchAgentServer && !config.isPublic
-              ? config.sessionApiKey
-              : null,
-          authRequired: Boolean(config.launchAgentServer && config.isPublic),
-          warn: (msg) => logService("static", msg, c.yellow),
-        });
-        const flags = [];
-        if (policy.sessionApiKey) {
-          flags.push("--session-api-key", policy.sessionApiKey);
-        }
-        if (policy.authRequired) {
-          flags.push("--auth-required");
-        }
-        return flags;
-      })(),
+      // Off-loopback binds and public mode show the API key entry screen.
+      ...(keyPolicy.authRequired ? ["--auth-required"] : []),
       // Inject runtime-services info so the agent knows what's reachable.
       ...(runtimeServicesInfo
         ? ["--runtime-services-info", runtimeServicesInfo]
@@ -1853,7 +1849,11 @@ function startStaticFrontend(config, staticDir) {
     {
       cwd: config.canvasPath,
       color: c.magenta,
-      env: buildMarsWebEnv("static", config),
+      // Clear an inherited key in public or frontend-only mode.
+      env: {
+        ...buildMarsWebEnv("static", config),
+        SESSION_API_KEY: keyPolicy.sessionApiKey || "",
+      },
     },
   );
 }
