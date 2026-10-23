@@ -8,6 +8,7 @@ import {
   type AutomationRun,
 } from "#/types/automation";
 import type { InterfaceListInsights } from "#/manifests/types";
+import { I18nKey } from "#/i18n/declaration";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -20,8 +21,13 @@ vi.mock("#/context/navigation-context", () => ({
   useNavigation: () => ({ navigate: vi.fn(), currentPath: "/" }),
 }));
 
-vi.mock("#/hooks/use-has-permission", () => ({
-  useHasPermission: () => true,
+vi.mock("#/hooks/use-automation-permissions", () => ({
+  useAutomationPermissions: () => ({
+    canView: true,
+    canManage: true,
+    isLoading: false,
+  }),
+  useIsAutomationOwner: () => true,
 }));
 
 // The pinned package predates the `impact` field, so an entry carrying one is
@@ -114,6 +120,25 @@ describe("AutomationListRow", () => {
     expect(screen.getByTestId("automation-run-now-automation-1")).toHaveClass(
       "size-8",
     );
+  });
+
+  it("marks draft automations separately from inactive rows", () => {
+    render(
+      <AutomationListRow
+        automation={{ ...automation, enabled: false, state: "DRAFT" }}
+        onToggle={vi.fn()}
+        onRunNow={vi.fn()}
+        onExport={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("active-status-badge-draft")).toHaveTextContent(
+      I18nKey.AUTOMATIONS$DETAIL$DRAFT,
+    );
+    expect(
+      screen.queryByTestId("active-status-badge-inactive"),
+    ).not.toBeInTheDocument();
   });
 
   it("shows last-run status, relative time, and a sparkline when insights are present", () => {
