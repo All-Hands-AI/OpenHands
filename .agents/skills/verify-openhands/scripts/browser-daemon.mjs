@@ -27,7 +27,13 @@ import {
   observeWebSocket,
   isWebSocketObservation,
 } from "./lib/websocket-events.mjs";
-import { SECRET_KEY, SECRET_PATH, redactBody } from "./lib/network-bodies.mjs";
+import {
+  SECRET_KEY,
+  SECRET_PATH,
+  redactBody,
+  redactBodyFields,
+  networkEntryForOutput,
+} from "./lib/network-bodies.mjs";
 import { buildLocator, toCss } from "./lib/selectors.mjs";
 import {
   RECORD_DEFAULTS,
@@ -52,6 +58,14 @@ if (!runDir) {
 const privateDir = join(runDir, "private");
 const evidenceDir = join(runDir, "evidence");
 const baseUrl = new URL(process.env.OH_VERIFY_BASE_URL);
+// Other origins this run serves (`launch --lock-to-cloud`): its own pages too.
+const runOrigins = new Set([
+  baseUrl.origin,
+  ...(process.env.OH_VERIFY_EXTRA_ORIGINS ?? "")
+    .split(",")
+    .filter(Boolean)
+    .map((u) => new URL(u).origin),
+]);
 const eventsPath = join(privateDir, "browser-events.jsonl");
 const VIEWPORTS = {
   desktop: { width: 1440, height: 1000 },
@@ -219,7 +233,7 @@ function record(kind, page, detail) {
     ...detail,
   };
   const subject = entry.url || entry.page;
-  entry.appOrigin = originOf(subject) === baseUrl.origin;
+  entry.appOrigin = runOrigins.has(originOf(subject));
   events.push(entry);
   try {
     appendFileSync(eventsPath, `${JSON.stringify(entry)}\n`, { mode: 0o600 });
@@ -264,12 +278,16 @@ function watch(page) {
     // The body of an app-origin write, redacted (see lib/network-bodies.mjs);
     // `network --bodies` shows it, so a recipe can prove what the page sent.
     let body;
+    let bodyDetails = {};
     if (
       origin === baseUrl.origin &&
       /^(POST|PUT|PATCH|DELETE)$/.test(request.method())
     ) {
       try {
-        body = redactBody(request.postData(), { all: SECRET_PATH.test(path) });
+        const rawBody = request.postData();
+        const options = { all: SECRET_PATH.test(path) };
+        body = redactBody(rawBody, options);
+        bodyDetails = redactBodyFields(rawBody, options);
       } catch {
         body = undefined;
       }
@@ -281,8 +299,9 @@ function watch(page) {
       query: query || undefined,
       method: request.method(),
       type: request.resourceType(),
-      app: origin === baseUrl.origin,
+      app: runOrigins.has(origin),
       body,
+      ...bodyDetails,
     };
     requestEntries.set(request, entry);
     requests.push(entry);
@@ -526,9 +545,9 @@ function evidencePath(feature, name, ext) {
 
 function assertAppUrl(target, allowExternal) {
   const url = new URL(target, baseUrl);
-  if (!allowExternal && url.origin !== baseUrl.origin) {
+  if (!allowExternal && !runOrigins.has(url.origin)) {
     throw new Error(
-      `Refusing to navigate outside this run (${baseUrl.origin}); pass --allow-external for a deliberate external check`,
+      `Refusing to navigate outside this run (${[...runOrigins].join(", ")}); pass --allow-external for a deliberate external check`,
     );
   }
   return url.toString();
@@ -1209,7 +1228,7 @@ const handlers = {
       byOrigin,
       recent: list
         .slice(-Number(last ?? 15))
-        .map(({ body, ...rest }) => (bodies ? { ...rest, body } : rest)),
+        .map((entry) => networkEntryForOutput(entry, bodies)),
     };
     if (clear) requests.length = 0;
     return result;
@@ -1399,13 +1418,25 @@ const handlers = {
       value: await input.inputValue().catch(() => undefined),
     };
   },
-  async media({ clear }) {
+  async media({ clear, reducedMotion }) {
+    if (reducedMotion !== undefined) {
+      if (!["reduce", "no-preference"].includes(reducedMotion))
+        throw new Error("media reduced-motion needs reduce | no-preference");
+      await activePage.emulateMedia({ reducedMotion });
+    }
     const plays = await activePage.evaluate((reset) => {
       const list = window.__ohMediaPlays ?? [];
       if (reset) window.__ohMediaPlays = [];
       return list;
     }, Boolean(clear));
-    return { plays };
+    return {
+      plays,
+      reducedMotion: await activePage.evaluate(() =>
+        matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "reduce"
+          : "no-preference",
+      ),
+    };
   },
   async uiprobe({ target, timeout }) {
     // Read-only health probe in a throwaway tab: the driving tab keeps its URL.
