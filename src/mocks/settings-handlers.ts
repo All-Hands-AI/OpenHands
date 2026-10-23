@@ -47,23 +47,6 @@ const DEFAULT_MODEL =
     ? llmDefaults.model
     : "openhands/claude-opus-4-5-20251101";
 
-export const createMockWebClientConfig = (
-  overrides: Partial<WebClientConfig> = {},
-): WebClientConfig => ({
-  feature_flags: {
-    hide_llm_settings: false,
-    hide_users_page: false,
-    ...overrides.feature_flags,
-  },
-  providers_configured: [],
-  maintenance_start_time: null,
-  recaptcha_site_key: null,
-  faulty_models: [],
-  error_message: null,
-  updated_at: new Date().toISOString(),
-  ...overrides,
-});
-
 const MOCK_AGENT_SETTINGS_SCHEMA: NonNullable<
   Settings["agent_settings_schema"]
 > = {
@@ -73,21 +56,6 @@ const MOCK_AGENT_SETTINGS_SCHEMA: NonNullable<
       key: "general",
       label: "General",
       fields: [
-        {
-          key: "enable_sub_agents",
-          label: "Enable sub-agents",
-          description:
-            "Allow the agent to delegate work to specialized built-in sub-agents.",
-          section: "general",
-          section_label: "General",
-          value_type: "boolean",
-          default: false,
-          choices: [],
-          depends_on: [],
-          prominence: "major",
-          secret: false,
-          required: false,
-        },
         {
           key: "tool_concurrency_limit",
           label: "Parallel tool calls",
@@ -463,7 +431,6 @@ export const MOCK_DEFAULT_USER_SETTINGS: Settings = {
       enable_default_condenser: true,
       condenser_max_size: null,
     },
-    enable_sub_agents: false,
     tool_concurrency_limit: 1,
   },
   conversation_settings_schema: MOCK_CONVERSATION_SETTINGS_SCHEMA,
@@ -595,6 +562,9 @@ const MOCK_MODELS = [
   "openhands/claude-sonnet-4-5-20250929",
   "openhands/claude-haiku-4-5-20251001",
   "openhands/claude-opus-4-5-20251101",
+  "openai/gpt-5.6-sol",
+  "openai/gpt-6-astra",
+  "openhands/deepseek-v4-flash",
   "openhands/glm-5.2",
   "sambanova/Meta-Llama-3.1-8B-Instruct",
 ];
@@ -608,8 +578,17 @@ const MOCK_VERIFIED_MODELS = new Set([
   "openai/gpt-5.5",
   "openhands/claude-opus-4-5-20251101",
   "openhands/claude-sonnet-4-5-20250929",
+  "openai/gpt-5.6-sol",
+  "openai/gpt-6-astra",
+  "openhands/deepseek-v4-flash",
   "openhands/glm-5.2",
 ]);
+
+// DB-driven free / default flags for the OpenHands provider. Mirrors the
+// enterprise verified-models seed used to render the "Free" badge and preselect
+// the default model.
+const MOCK_FREE_MODELS = new Set(["openhands/glm-5.2"]);
+const MOCK_DEFAULT_MODEL = "openhands/glm-5.2";
 
 const MOCK_VERIFIED_PROVIDERS = [
   "openhands",
@@ -643,7 +622,9 @@ const MOCK_VERIFIED_MODELS_BY_PROVIDER = MOCK_MODELS.reduce<
   return acc;
 }, {});
 
-const MOCK_AGENT_SERVER_VERSION = "1.29.3";
+// Matches the pinned `@openhands/typescript-client`, so mock mode models a
+// server that actually ships this schema.
+const MOCK_AGENT_SERVER_VERSION = "1.55.0";
 
 // --- Handlers for options/config/settings ---
 // Uses wildcard "*" prefix to match both relative paths and absolute URLs
@@ -733,7 +714,7 @@ export const SETTINGS_HANDLERS = [
         "claude-sonnet-4-5-20250929",
       ],
       verified_providers: MOCK_VERIFIED_PROVIDERS,
-      default_model: "openhands/glm-5.2",
+      default_model: "openai/gpt-5.6-sol",
     }),
   ),
 
@@ -782,6 +763,8 @@ export const SETTINGS_HANDLERS = [
         provider: provider || null,
         name,
         verified: MOCK_VERIFIED_MODELS.has(m),
+        free: MOCK_FREE_MODELS.has(m),
+        default: m === MOCK_DEFAULT_MODEL,
       };
     });
 
@@ -943,6 +926,16 @@ export const SETTINGS_HANDLERS = [
 
     return HttpResponse.json(config);
   }),
+
+  // Built-in integration connection lookups of a cloud instance; the default
+  // user has linked neither Slack nor a Jira Cloud workspace (Jira answers
+  // 404 for "no link").
+  http.get("*/slack/status", () => HttpResponse.json({ connected: false })),
+
+  http.get(
+    "*/integration/jira/workspaces/link",
+    () => new HttpResponse(null, { status: 404 }),
+  ),
 
   http.get("*/api/settings/conversation-schema", async () => {
     await delay();

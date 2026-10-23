@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "test-utils";
 import { ConversationCardPreview } from "#/components/features/conversation-panel/conversation-card/conversation-card-preview";
+import { ExecutionStatus } from "#/types/agent-server/core/base/common";
 
 const PREVIEW_TITLE = "Conversation 1";
 
@@ -126,7 +127,27 @@ describe("ConversationCardPreview", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("omits blank tag values from the hovercard", () => {
+  it("infers the archive dot from a missing runtime when isArchived is omitted", () => {
+    // A hovercard that only knows the sandbox status must match the card's
+    // missing-runtime archive presentation.
+    renderWithProviders(
+      <ConversationCardPreview
+        title={PREVIEW_TITLE}
+        selectedRepository={null}
+        executionStatus={ExecutionStatus.FINISHED}
+        sandboxStatus="MISSING"
+      />,
+    );
+
+    expect(
+      screen.getByTestId("conversation-status-archived"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("conversation-status-check"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows bare tags (empty value) with an em dash in the hovercard", () => {
     renderWithProviders(
       <ConversationCardPreview
         title={PREVIEW_TITLE}
@@ -136,10 +157,12 @@ describe("ConversationCardPreview", () => {
     );
 
     const rows = screen.getAllByTestId("conversation-card-preview-tag-row");
-    expect(rows).toHaveLength(2);
+    expect(rows).toHaveLength(3);
     expect(rows[0]).toHaveAttribute("data-tag-key", "appmode");
     expect(rows[0]).toHaveTextContent("work");
-    expect(rows[1]).toHaveAttribute("data-tag-key", "workwsid");
-    expect(rows[1]).toHaveTextContent("abc");
+    expect(rows[1]).toHaveAttribute("data-tag-key", "worktools");
+    expect(rows[1]).toHaveTextContent("—");
+    expect(rows[2]).toHaveAttribute("data-tag-key", "workwsid");
+    expect(rows[2]).toHaveTextContent("abc");
   });
 });

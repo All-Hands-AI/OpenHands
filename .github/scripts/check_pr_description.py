@@ -7,6 +7,14 @@ Additional checks:
   checked.
 - If frontend code was touched, the description must include a screenshot or
   video.
+- Bug-fix and feature PRs require running-Canvas screenshots or video even
+  outside frontend paths. Reviewers verify before/after behavior and authenticity.
+- The body must reference at least one issue (e.g. `Fixes #123`) and at least
+  one referenced issue must carry the `ready-for-dev` label. The API lookup is
+  only performed in CI (when GITHUB_EVENT_PATH and GITHUB_TOKEN are available).
+- The PR's Type checkbox must match the linked issue's labels: a "Bug fix" PR
+  should link an issue with the `bug` label; a "Feature" PR should link one
+  with the `enhancement` label.
 
 Local usage example:
     python .github/scripts/check_pr_description.py --body-file /tmp/pr-body.md \
@@ -22,6 +30,8 @@ import re
 import sys
 from pathlib import Path
 
+from markdown_sections import find_headings, without_fenced_code_blocks
+
 
 # Reject placeholders while allowing a concise human-written sentence.
 MIN_HUMAN_NOTE_CHARS = 20
@@ -29,9 +39,12 @@ MIN_HUMAN_NOTE_CHARS = 20
 REQUIRED_TEMPLATE_FIELDS: tuple[str, ...] = ("Why", "Summary", "How to Test")
 
 HTML_COMMENT_RE = re.compile(r"<!--[\s\S]*?-->")
-HEADING_RE = re.compile(r"(?m)^##\s+(.+?)\s*$")
-HUMAN_HEADING_RE = re.compile(r"(?im)^\s*HUMAN:\s*$")
-AGENT_HEADING_RE = re.compile(r"(?im)^\s*AGENT:\s*$")
+HEADING_RE = re.compile(r"(?m)^##[ \t]+(.+?)[ \t]*$")
+# `\r?$` rather than `\s*$` for the same reason as HEADING_RE above: these run
+# against masked text too, and there is no capture group here to absorb the `\r`
+# of a CRLF body, so it has to be matched explicitly.
+HUMAN_HEADING_RE = re.compile(r"(?im)^[ \t]*HUMAN:[ \t]*\r?$")
+AGENT_HEADING_RE = re.compile(r"(?im)^[ \t]*AGENT:[ \t]*\r?$")
 
 # A file counts as frontend code if its path is under one of these prefixes or
 # has one of these extensions. This mirrors the paths the E2E workflows treat as
@@ -47,6 +60,8 @@ FRONTEND_FILE_EXTENSIONS: tuple[str, ...] = (
     ".sass",
     ".less",
 )
+# Docs carry no visual state, so a screenshot can't evidence a change to them.
+DOCUMENTATION_FILE_EXTENSIONS: tuple[str, ...] = (".md", ".mdx")
 FRONTEND_CONFIG_GLOBS: tuple[str, ...] = (
     "tailwind.config.*",
     "vite.config.*",
@@ -56,6 +71,28 @@ FRONTEND_CONFIG_GLOBS: tuple[str, ...] = (
 # The human-tested checkbox the HUMAN section asks contributors to tick.
 HUMAN_TESTED_RE = re.compile(
     r"(?im)^\s*[-*]\s*\[(?P<box>[ xX])\]\s*.*?human has tested these changes"
+)
+
+# Issue references in the PR body: "Fixes #123", "Closes #123", "Resolves #123",
+# or a bare "#123" in the Issue Number section. We capture the issue number.
+# GitHub auto-linking keywords: close, closes, closed, fix, fixes, fixed,
+# resolve, resolves, resolved (case-insensitive).
+ISSUE_REF_RE = re.compile(
+    r"(?i)(?:fix|clos|resolv)(?:e?(?:s|d)?|ing)?\s+#(\d+)"
+)
+BARE_ISSUE_REF_RE = re.compile(r"(?<!\w)#(\d+)")
+
+READY_FOR_DEV_LABEL = "ready-for-dev"
+BUG_LABEL = "bug"
+ENHANCEMENT_LABEL = "enhancement"
+
+# PR Type checkboxes in the `## Type` section. We capture which type the author
+# checked so we can cross-check it against the linked issue's labels.
+PR_TYPE_BUG_RE = re.compile(
+    r"(?im)^\s*[-*]\s*\[(?P<box>[ xX])\]\s*Bug fix"
+)
+PR_TYPE_FEATURE_RE = re.compile(
+    r"(?im)^\s*[-*]\s*\[(?P<box>[ xX])\]\s*Feature"
 )
 
 # Markdown image: ![alt](url)
@@ -98,7 +135,7 @@ def first_visible_line(text: str) -> str:
 
 
 def extract_sections(body: str) -> dict[str, str]:
-    matches = list(HEADING_RE.finditer(body))
+    matches = find_headings(body, HEADING_RE)
     sections: dict[str, str] = {}
     for index, match in enumerate(matches):
         start = match.end()
@@ -108,12 +145,19 @@ def extract_sections(body: str) -> dict[str, str]:
 
 
 def extract_human_note(body: str) -> str:
-    """Return human-written text in the required location before `AGENT:`."""
-    human_match = HUMAN_HEADING_RE.search(body)
+    """Return human-written text in the required location before `AGENT:`.
+
+    The markers are located outside fenced code blocks so that quoting the
+    template does not stand in for filling it out. Offsets are preserved by the
+    masking, so the note itself is still read from the original body.
+    """
+    outside_fences = without_fenced_code_blocks(body)
+
+    human_match = HUMAN_HEADING_RE.search(outside_fences)
     if human_match is None:
         return ""
 
-    agent_match = AGENT_HEADING_RE.search(body, human_match.end())
+    agent_match = AGENT_HEADING_RE.search(outside_fences, human_match.end())
     if agent_match is None:
         return ""
 
@@ -123,9 +167,11 @@ def extract_human_note(body: str) -> str:
 def is_frontend_file(path: str) -> bool:
     """Return True if a changed file should be treated as frontend code."""
     normalized = path.lstrip("./")
+    lower = normalized.lower()
+    if lower.endswith(DOCUMENTATION_FILE_EXTENSIONS):
+        return False
     if any(normalized.startswith(prefix) for prefix in FRONTEND_PATH_PREFIXES):
         return True
-    lower = normalized.lower()
     if any(lower.endswith(ext) for ext in FRONTEND_FILE_EXTENSIONS):
         return True
     name = normalized.split("/")[-1]
@@ -172,16 +218,154 @@ def validate_human_tested_checkbox(body: str) -> list[str]:
 
 
 def validate_frontend_screenshot(body: str, files: list[str]) -> list[str]:
-    """Require a screenshot/video in the body when frontend code was touched."""
-    if not touches_frontend(files):
+    """Require media for frontend edits and declared functional changes."""
+    frontend = touches_frontend(files)
+    if not frontend and extract_pr_type(body) not in (BUG_LABEL, ENHANCEMENT_LABEL):
         return []
     if has_screenshot_or_video(body):
         return []
+    change = "touches frontend code" if frontend else "declares a functional change"
     return [
-        "This PR touches frontend code but the description has no screenshot or "
-        "video. Add one under `## Video/Screenshots` (drag a file into the editor "
-        "or paste a video link)."
+        f"This PR {change} but the description has no screenshot or video. "
+        "Add evidence from a running Canvas under `## Video/Screenshots`; "
+        "for bug fixes, demonstrate failure before and success after the change."
     ]
+
+
+def extract_linked_issue_numbers(body: str) -> list[int]:
+    """Return issue numbers referenced in the PR body.
+
+    Looks for GitHub auto-close keywords (`Fixes #N`, `Closes #N`,
+    `Resolves #N`) anywhere in the body, plus bare `#N` references inside the
+    `## Issue Number` section.
+    """
+    numbers: list[int] = []
+    seen: set[int] = set()
+
+    for match in ISSUE_REF_RE.finditer(body):
+        number = int(match.group(1))
+        if number not in seen:
+            numbers.append(number)
+            seen.add(number)
+
+    sections = extract_sections(body)
+    issue_section = sections.get("Issue Number", "")
+    if visible_text(issue_section):
+        for match in BARE_ISSUE_REF_RE.finditer(issue_section):
+            number = int(match.group(1))
+            if number not in seen:
+                numbers.append(number)
+                seen.add(number)
+
+    return numbers
+
+
+def extract_pr_type(body: str) -> str | None:
+    """Return the checked PR type from the `## Type` section.
+
+    Returns "bug" if the "Bug fix" checkbox is checked, "enhancement" if the
+    "Feature" checkbox is checked, or None if neither is checked or the section
+    is absent.
+    """
+    bug_match = PR_TYPE_BUG_RE.search(body)
+    if bug_match and bug_match.group("box").strip().lower() == "x":
+        return BUG_LABEL
+    feature_match = PR_TYPE_FEATURE_RE.search(body)
+    if feature_match and feature_match.group("box").strip().lower() == "x":
+        return ENHANCEMENT_LABEL
+    return None
+
+
+def fetch_issue_labels(repo: str, issue_number: int, token: str) -> list[str]:
+    """Fetch label names for an issue via the GitHub REST API."""
+    import urllib.request
+
+    url = f"https://api.github.com/repos/{repo}/issues/{issue_number}/labels"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github+json",
+        },
+    )
+    with urllib.request.urlopen(req) as resp:  # noqa: S310 - trusted HTTPS API
+        data = json.loads(resp.read().decode())
+    return [label["name"] for label in data if isinstance(label, dict)]
+
+
+def validate_linked_issue_ready(
+    body: str, repo: str | None = None, token: str | None = None
+) -> list[str]:
+    """Require a linked issue carrying the `ready-for-dev` label.
+
+    Also cross-checks the PR's Type checkbox against the linked issue's labels:
+    a "Bug fix" PR must link an issue with the `bug` label, and a "Feature" PR
+    must link one with the `enhancement` label.
+
+    When `repo` and `token` are not provided (local `--body-file` mode), only
+    checks that the body references at least one issue — the API lookup is
+    skipped.
+    """
+    errors: list[str] = []
+
+    numbers = extract_linked_issue_numbers(body)
+    if not numbers:
+        errors.append(
+            "Link an issue in the `## Issue Number` section (e.g. `Fixes #123`). "
+            "The issue must carry the `ready-for-dev` label."
+        )
+        return errors
+
+    if not repo or not token:
+        return errors
+
+    import urllib.error
+
+    pr_type = extract_pr_type(body)
+
+    checked: list[int] = []
+    found_ready = False
+    found_type_match = False
+
+    for number in numbers:
+        try:
+            labels = fetch_issue_labels(repo, number, token)
+        except urllib.error.HTTPError as exc:
+            if exc.code == 404:
+                continue
+            raise
+        checked.append(number)
+
+        if READY_FOR_DEV_LABEL in labels:
+            found_ready = True
+
+        if pr_type and pr_type in [label.lower() for label in labels]:
+            found_type_match = True
+
+    if not found_ready:
+        if checked:
+            ref = ", ".join(f"#{n}" for n in checked)
+            errors.append(
+                f"None of the linked issues ({ref}) carry the `ready-for-dev` label. "
+                "The issue must meet the type-specific readiness criteria before a PR "
+                "can be opened against it."
+            )
+        else:
+            errors.append(
+                f"Referenced issue(s) {', '.join(f'#{n}' for n in numbers)} could not "
+                "be found in this repository. Link an issue in this repo."
+            )
+
+    if pr_type and not found_type_match and checked:
+        type_name = "bug" if pr_type == BUG_LABEL else "enhancement"
+        ref = ", ".join(f"#{n}" for n in checked)
+        errors.append(
+            f"This PR is marked as `{type_name}` but none of the linked issues "
+            f"({ref}) carry the `{pr_type}` label. Ensure the linked issue has the "
+            f"correct type label (`{pr_type}`)."
+        )
+
+    return errors
 
 
 def validate_pr_body(body: str, files: list[str] | None = None) -> list[str]:
@@ -194,7 +378,7 @@ def validate_pr_body(body: str, files: list[str] | None = None) -> list[str]:
     if len(human_note) < MIN_HUMAN_NOTE_CHARS:
         errors.append("Add a short human-written note between `HUMAN:` and `AGENT:`.")
 
-    if AGENT_HEADING_RE.search(body) is None:
+    if AGENT_HEADING_RE.search(without_fenced_code_blocks(body)) is None:
         errors.append("Keep the `AGENT:` marker from the PR template.")
 
     sections = extract_sections(body)
@@ -313,6 +497,15 @@ def main() -> int:
         files = []
 
     errors = validate_pr_body(body, files)
+
+    repo = None
+    token = os.environ.get("GITHUB_TOKEN")
+    if args.event_path is not None and args.body_file is None:
+        payload = json.loads(args.event_path.read_text())
+        repo = payload.get("repository", {}).get("full_name")
+
+    errors.extend(validate_linked_issue_ready(body, repo, token))
+
     for error in errors:
         print(f"::error::{error}")
 

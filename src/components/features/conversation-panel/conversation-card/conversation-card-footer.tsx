@@ -6,10 +6,13 @@ import { RepositorySelection } from "#/api/open-hands.types";
 import { ExecutionStatus } from "#/types/agent-server/core/base/common";
 import { isExecutionPaused } from "#/utils/status";
 import {
+  type ACPModelOption,
   getAcpProviderDisplayName,
   labelForAcpModel,
   resolveAcpProviderIcon,
 } from "#/constants/acp-providers";
+import { useFreeModels } from "#/hooks/query/use-free-models";
+import { useRememberedAcpModels } from "#/hooks/use-remembered-acp-models";
 import { formatNativeModelName } from "#/utils/format-model-name";
 import {
   AgentBrandIcon,
@@ -51,6 +54,8 @@ interface ConversationCardFooterProps {
    * useful chip.
    */
   acpServer?: string | null;
+  /** The models this conversation's session reported. */
+  acpModels?: readonly ACPModelOption[] | null;
   /**
    * Server-side conversation tags (``AppConversation.tags``). Non-reserved
    * entries render as value-only chips so API-/automation-born
@@ -62,6 +67,12 @@ interface ConversationCardFooterProps {
    * "Tags" toggle.
    */
   showTags?: boolean;
+  /**
+   * Marks the conversation as archived. Archived rows are hidden from the list
+   * unless the panel's "Show archived" toggle is on, so the chip is what tells
+   * the user why an otherwise ordinary row is visible.
+   */
+  isArchived?: boolean;
 }
 
 export function ConversationCardFooter({
@@ -76,10 +87,14 @@ export function ConversationCardFooter({
   showAgentChip = false,
   agentKind = null,
   acpServer = null,
+  acpModels = null,
   tags = null,
   showTags = false,
+  isArchived = false,
 }: ConversationCardFooterProps) {
   const { t } = useTranslation("openhands");
+  const freeModels = useFreeModels();
+  const rememberedModels = useRememberedAcpModels(acpServer);
 
   const isPaused = isExecutionPaused(executionStatus);
 
@@ -99,10 +114,12 @@ export function ConversationCardFooter({
       const providerName =
         getAcpProviderDisplayName(acpServer) ??
         t(I18nKey.CONVERSATION$ACP_AGENT_GENERIC);
-      // Prefer the provider's picker label (e.g. "Claude Opus 4.7") over the
-      // raw ``acp_model`` ID; falls back to the raw ID for custom overrides
-      // and to the provider name when there's no model at all.
-      const modelLabel = labelForAcpModel(acpServer, llmModel);
+      // Prefer the label the agent gave the model over its raw ID, and the
+      // provider name when there's no model at all.
+      const modelLabel = labelForAcpModel(
+        llmModel,
+        acpModels?.length ? acpModels : rememberedModels,
+      );
       const text = modelLabel ?? providerName;
       chip = {
         kind: resolveAcpProviderIcon(acpServer),
@@ -114,7 +131,7 @@ export function ConversationCardFooter({
       // the chip text; keep the full routing string in the tooltip.
       chip = {
         kind: "openhands",
-        text: formatNativeModelName(llmModel) ?? llmModel,
+        text: formatNativeModelName(llmModel, freeModels) ?? llmModel,
         tooltip: llmModel,
       };
     }
@@ -122,7 +139,7 @@ export function ConversationCardFooter({
 
   // Match title text start: 18px status column + gap-2 (8px).
   const metadataIndentClass =
-    executionStatus !== undefined ? "pl-[26px]" : undefined;
+    executionStatus !== undefined ? "pl-6.5" : undefined;
 
   const displayTags = showTags ? getDisplayConversationTags(tags) : [];
 
@@ -147,7 +164,7 @@ export function ConversationCardFooter({
           ))}
         <div className="flex items-center gap-2 shrink-0 ml-auto">
           {showTimestamp && (createdAt ?? lastUpdatedAt) && (
-            <p className="text-xs text-[var(--oh-muted)] text-right">
+            <p className="text-xs text-muted text-right">
               <time>
                 {`${formatTimeDelta(lastUpdatedAt ?? createdAt)} ${t(I18nKey.CONVERSATION$AGO)}`}
               </time>
@@ -170,6 +187,16 @@ export function ConversationCardFooter({
               <AgentBrandIcon kind={chip.kind} size={12} />
             </span>
             <span className="truncate leading-4">{chip.text}</span>
+          </span>
+        </div>
+      ) : null}
+      {isArchived ? (
+        <div className={metadataIndentClass}>
+          <span
+            data-testid="conversation-card-archived-chip"
+            className={CONVERSATION_CARD_META_CHIP_CLASSNAME}
+          >
+            {t(I18nKey.COMMON$ARCHIVED)}
           </span>
         </div>
       ) : null}
