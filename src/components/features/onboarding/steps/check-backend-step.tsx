@@ -30,6 +30,8 @@ import { OnboardingDigitalOceanConnect } from "./onboarding-digitalocean-connect
 interface CheckBackendStepProps {
   onBack?: () => void;
   onNext: () => void;
+  digitalOceanOpen: boolean;
+  onDigitalOceanOpenChange: (open: boolean) => void;
   /**
    * Dismisses the entire onboarding modal. Called when Cloud login succeeds
    * in locked-to-Cloud mode: there the Cloud login IS the onboarding
@@ -120,6 +122,8 @@ export function CheckBackendStep({
   onBack,
   onNext,
   onClose,
+  digitalOceanOpen,
+  onDigitalOceanOpenChange,
 }: CheckBackendStepProps) {
   const { t } = useTranslation("openhands");
   const { active, addBackend, setActive, updateBackend } =
@@ -164,7 +168,6 @@ export function CheckBackendStep({
     ? null
     : (healthByBackendId[backend.id]?.lastError ?? null);
   const [configurationOpen, setConfigurationOpen] = React.useState(false);
-  const [digitalOceanOpen, setDigitalOceanOpen] = React.useState(false);
   // Match the Manage Backends gate: the tunnel lives in the main process, so
   // only a page with `window.marsBridge` can offer DigitalOcean, and a
   // locked-to-Cloud deployment offers Cloud alone.
@@ -249,7 +252,7 @@ export function CheckBackendStep({
     >
       {digitalOceanOpen ? (
         <OnboardingDigitalOceanConnect
-          onBack={() => setDigitalOceanOpen(false)}
+          onBack={() => onDigitalOceanOpenChange(false)}
           onConnected={onNext}
         />
       ) : null}
@@ -317,7 +320,7 @@ export function CheckBackendStep({
           ) : null}
         </div>
 
-        {canUseDigitalOcean && treatAsNoBackend ? (
+        {canUseDigitalOcean ? (
           <div
             data-testid="onboarding-digitalocean-option"
             className="flex flex-col gap-2"
@@ -325,7 +328,7 @@ export function CheckBackendStep({
             <button
               type="button"
               data-testid="onboarding-digitalocean-button"
-              onClick={() => setDigitalOceanOpen(true)}
+              onClick={() => onDigitalOceanOpenChange(true)}
               className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-border bg-base-secondary px-4 py-3 text-left transition-colors hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
             >
               <span

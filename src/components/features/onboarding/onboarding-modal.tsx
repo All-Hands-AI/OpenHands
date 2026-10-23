@@ -164,7 +164,13 @@ export function OnboardingModal({
     lockedCloudHost !== null &&
     backend.kind === "cloud" &&
     isSameCloudHost(backend.host, lockedCloudHost);
+  // Once a provider is chosen, validating the hosting Canvas key must not
+  // complete backend selection before the person connects their DO session.
+  const [backendView, setBackendView] = React.useState<
+    "auto" | "options" | "digitalocean"
+  >("auto");
   const skipBackendStep =
+    backendView === "auto" &&
     !noBackendSelected &&
     healthByBackendId[backend.id]?.isConnected === true &&
     (lockedCloudHost === null || isActiveLockedCloudBackend);
@@ -340,7 +346,17 @@ export function OnboardingModal({
                   index={slideOrder.indexOf("backend")}
                   currentStep={currentStep}
                 >
-                  <CheckBackendStep onNext={goNext} onClose={onClose} />
+                  <CheckBackendStep
+                    onNext={() => {
+                      setBackendView("auto");
+                      goNext();
+                    }}
+                    onClose={onClose}
+                    digitalOceanOpen={backendView === "digitalocean"}
+                    onDigitalOceanOpenChange={(open) =>
+                      setBackendView(open ? "digitalocean" : "options")
+                    }
+                  />
                 </Slide>
               )}
               <Slide

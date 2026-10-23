@@ -8,9 +8,12 @@ import type { MockInstance } from "vitest";
 import {
   __resetActiveStoreForTests,
   getActiveSelection,
+  getActiveBackend,
+  getRegisteredBackends,
   setActiveSelection,
   setRegisteredBackends,
 } from "#/api/backend-registry/active-store";
+import { probeMarsWebBridge } from "#/api/mars/mars-web-bridge";
 import { ActiveBackendProvider } from "#/contexts/active-backend-context";
 import { OnboardingModal } from "#/components/features/onboarding/onboarding-modal";
 import { ONBOARDING_DEFAULT_LLM_MODEL } from "#/components/features/onboarding/steps/setup-llm-step";
@@ -50,7 +53,14 @@ vi.mock("@openhands/typescript-client/clients", () => ({
   SettingsClient: vi.fn(function SettingsClientMock() {
     return {
       getSettings: vi.fn(() => getSettingsMock()),
+      updateSettings: vi.fn(async () => ({})),
     };
+  }),
+  BashClient: vi.fn(function BashClientMock() {
+    return { executeCommand: vi.fn(async () => ({ stdout: "ready" })) };
+  }),
+  ConversationClient: vi.fn(function ConversationClientMock() {
+    return { searchConversations: vi.fn(async () => ({ items: [] })) };
   }),
   // The local LLM step edits the active LLM profile (none here, so a fresh
   // one) and saves the form as a profile.
@@ -280,7 +290,7 @@ beforeEach(() => {
     if (options?.host?.startsWith("https://127.0.0.1:8000")) {
       return Promise.reject(new Error("Failed to fetch"));
     }
-    return Promise.resolve({ version: "1.52.0" });
+    return Promise.resolve({ version: "1.56.0" });
   });
   // ChooseAgentStep's Next button now persists the selection via
   // saveSettings before advancing. Stub it so the rest of the flow
@@ -1379,7 +1389,12 @@ describe("OnboardingModal", () => {
       renderModal();
     }
 
-    afterEach(() => {
+    afterEach(async () => {
+      await probeMarsWebBridge(
+        "",
+        async () =>
+          new Response(JSON.stringify({ ok: true, authRequired: false })),
+      );
       delete window.marsBridge;
     });
 
@@ -1455,6 +1470,126 @@ describe("OnboardingModal", () => {
       ).toBeInTheDocument();
       expect(bridge.createSession).not.toHaveBeenCalled();
       expect(bridge.openTunnel).not.toHaveBeenCalled();
+    });
+
+    it("keeps DigitalOcean setup open after the hosting server becomes healthy", async () => {
+      // Arrange: a fresh hosted Canvas needs its own key before provider sign-in.
+      fakeMarsBridge();
+      await probeMarsWebBridge(
+        "",
+        async () =>
+          new Response(JSON.stringify({ ok: true, authRequired: true })),
+      );
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => new Response(JSON.stringify({ result: null }))),
+      );
+      const user = userEvent.setup();
+      renderNoBackendFirstRun();
+      await user.click(
+        await screen.findByTestId("onboarding-digitalocean-button"),
+      );
+
+      // Act: accept the Canvas key; this must not choose Canvas as the agent host.
+      await user.type(
+        screen.getByTestId("onboarding-digitalocean-hosting-key"),
+        "hosting-key",
+      );
+      await user.click(
+        screen.getByTestId("onboarding-digitalocean-hosting-submit"),
+      );
+
+      // Assert: the real registry and health hook settle, but provider setup stays open.
+      await screen.findByTestId("onboarding-backend-connected");
+      expect(screen.getByTestId("managed-agents-token")).toBeVisible();
+      expect(screen.getByTestId("onboarding-step-check-backend")).toBeVisible();
+    });
+
+    it("continues to LLM setup on the selected existing DigitalOcean session", async () => {
+      // Arrange: an existing signed-in provider session requires no provisioning.
+      fakeMarsBridge();
+      const bridge = window.marsBridge!;
+      const connection = {
+        id: "team",
+        kind: "pat" as const,
+        label: "Team",
+        teamName: "Team",
+        expiresAt: null,
+        isExpired: false,
+      };
+      const session = {
+        session_id: "existing-session",
+        config_id: "existing-agent",
+        name: "Existing session",
+        status: "SESSION_STATUS_READY",
+      };
+      vi.mocked(bridge.getAuthState).mockResolvedValue({
+        connections: [connection],
+        active: connection,
+        isPersistent: true,
+        canUseOAuth: false,
+      });
+      vi.mocked(bridge.listAgentConfigs).mockResolvedValue({
+        configs: [
+          { id: "existing-agent", name: "Existing agent", agent: "openhands" },
+        ],
+        nextPageToken: null,
+      });
+      vi.mocked(bridge.listConfigSessions).mockResolvedValue({
+        sessions: [session],
+        nextPageToken: null,
+      });
+      vi.mocked(bridge.openTunnel).mockResolvedValue({
+        sessionId: session.session_id,
+        status: "connected",
+        remotePort: 8000,
+        host: `${window.location.origin}/mars/sessions/${session.session_id}`,
+      });
+      await probeMarsWebBridge(
+        "",
+        async () =>
+          new Response(JSON.stringify({ ok: true, authRequired: true })),
+      );
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => new Response(JSON.stringify({ result: null }))),
+      );
+      const user = userEvent.setup();
+      renderNoBackendFirstRun();
+      await user.click(
+        await screen.findByTestId("onboarding-digitalocean-button"),
+      );
+      await user.type(
+        screen.getByTestId("onboarding-digitalocean-hosting-key"),
+        "hosting-key",
+      );
+      await user.click(
+        screen.getByTestId("onboarding-digitalocean-hosting-submit"),
+      );
+      await screen.findByTestId("onboarding-backend-connected");
+
+      // Act: select the existing session, then continue through the agent slide.
+      await user.click(
+        await screen.findByTestId("digitalocean-agent-open-existing-agent"),
+      );
+      await screen.findByTestId("onboarding-step-choose-agent");
+      await user.click(screen.getByTestId("onboarding-agent-next"));
+
+      // Assert: the guest stays active and only the root carries its hosting key.
+      expect(
+        await screen.findByTestId("onboarding-step-setup-llm"),
+      ).toBeVisible();
+      expect(getActiveBackend().backend).toMatchObject({
+        marsSessionId: session.session_id,
+        apiKey: "",
+      });
+      expect(
+        getRegisteredBackends().filter(
+          (backend) => backend.apiKey === "hosting-key",
+        ),
+      ).toEqual([expect.objectContaining({ host: window.location.origin })]);
+      expect(bridge.createSession).not.toHaveBeenCalled();
+      expect(bridge.createOpenHandsAgent).not.toHaveBeenCalled();
     });
 
     it("preserves entered manual host on back from the DigitalOcean view", async () => {

@@ -3,13 +3,15 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ActiveBackendProvider } from "#/contexts/active-backend-context";
+import { __resetActiveStoreForTests } from "#/api/backend-registry/active-store";
 import { OnboardingDigitalOceanConnect } from "#/components/features/onboarding/steps/onboarding-digitalocean-connect";
 
 const bridgeState = vi.hoisted(() => ({
   required: false,
   missing: false,
 }));
-const saveHostingSessionKeyMock = vi.hoisted(() => vi.fn());
+const validateHostingSessionKeyMock = vi.hoisted(() => vi.fn());
 
 vi.mock("#/api/mars/mars-web-bridge", () => ({
   getMarsWebBridgeAuthRequired: () => bridgeState.required,
@@ -17,7 +19,7 @@ vi.mock("#/api/mars/mars-web-bridge", () => ({
     required: bridgeState.required,
     missing: bridgeState.missing,
   }),
-  saveHostingSessionKey: saveHostingSessionKeyMock,
+  validateHostingSessionKey: validateHostingSessionKeyMock,
 }));
 
 // The DO panel renders the PAT field through ManagedAgentsSignIn; the hosting
@@ -45,14 +47,22 @@ vi.mock(
 
 function renderConnect(onBack = vi.fn(), onConnected = vi.fn()) {
   return render(
-    <OnboardingDigitalOceanConnect onBack={onBack} onConnected={onConnected} />,
+    <ActiveBackendProvider>
+      <OnboardingDigitalOceanConnect
+        onBack={onBack}
+        onConnected={onConnected}
+      />
+    </ActiveBackendProvider>,
   );
 }
 
 beforeEach(() => {
+  window.localStorage.clear();
+  window.sessionStorage.clear();
+  __resetActiveStoreForTests();
   bridgeState.required = false;
   bridgeState.missing = false;
-  saveHostingSessionKeyMock.mockReset();
+  validateHostingSessionKeyMock.mockReset();
 });
 
 afterEach(() => {
@@ -85,7 +95,7 @@ describe("OnboardingDigitalOceanConnect hosting-auth gate", () => {
   it("keeps the DO token hidden and stays recoverable when the typed key is rejected", async () => {
     bridgeState.required = true;
     bridgeState.missing = true;
-    saveHostingSessionKeyMock.mockRejectedValue(
+    validateHostingSessionKeyMock.mockRejectedValue(
       Object.assign(new Error("session key required"), {
         message: "session key required",
       }),
@@ -111,7 +121,7 @@ describe("OnboardingDigitalOceanConnect hosting-auth gate", () => {
   it("reveals the DO token form once a valid hosting key is accepted", async () => {
     bridgeState.required = true;
     bridgeState.missing = true;
-    saveHostingSessionKeyMock.mockResolvedValue(undefined);
+    validateHostingSessionKeyMock.mockResolvedValue(undefined);
     const user = userEvent.setup();
     renderConnect();
 
@@ -123,7 +133,7 @@ describe("OnboardingDigitalOceanConnect hosting-auth gate", () => {
       screen.getByTestId("onboarding-digitalocean-hosting-submit"),
     );
 
-    expect(saveHostingSessionKeyMock).toHaveBeenCalledWith("good-key");
+    expect(validateHostingSessionKeyMock).toHaveBeenCalledWith("good-key");
     expect(
       await screen.findByTestId("managed-agents-token"),
     ).toBeInTheDocument();

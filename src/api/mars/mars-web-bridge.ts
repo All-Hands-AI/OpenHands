@@ -20,26 +20,20 @@
  */
 
 import {
-  getAgentServerBaseUrl,
   getBakedSessionApiKey,
   isServedOriginHost,
 } from "#/api/agent-server-config";
-import { setRegisteredBackends } from "#/api/backend-registry/active-store";
 import {
-  DEFAULT_LOCAL_BACKEND_NAME,
-  SEEDED_DEFAULT_BACKEND_ID,
-} from "#/api/backend-registry/default-backend";
-import { readStoredBackends } from "#/api/backend-registry/storage";
+  getEffectiveLocalBackend,
+  getRegisteredBackends,
+} from "#/api/backend-registry/active-store";
 import type { Backend } from "#/api/backend-registry/types";
 import type { MarsBridge } from "./mars-tunnel-backend";
 
 export const MARS_WEB_HEALTH_PATH = "/mars/health";
 const RPC_PREFIX = "/mars/rpc/";
 const PROBE_TIMEOUT_MS = 1_500;
-/** Header name carrying the hosting session key on `/mars/rpc/*`. */
 const REQUEST_KEY_HEADER = "x-session-api-key";
-
-/** Last `/mars/health` `authRequired` signal seen by the probe. */
 let lastProbeAuthRequired = false;
 
 interface RpcEnvelope<T> {
@@ -56,6 +50,15 @@ export class MarsWebBridgeError extends Error {
     this.name = "MarsWebBridgeError";
     this.status = status;
   }
+}
+
+/** A local backend for the page's served origin that carries a typed key. */
+function holdsServedOriginKey(backend: Backend): boolean {
+  return (
+    backend.kind === "local" &&
+    isServedOriginHost(backend.host) &&
+    backend.apiKey.trim().length > 0
+  );
 }
 
 /**
@@ -78,13 +81,13 @@ export function getMarsBridgeHeaders(baseUrl = ""): Record<string, string> {
     return { "X-Session-API-Key": bakedKey };
   }
 
-  const backends = readStoredBackends();
-  const servedBackend = backends.find(
-    (b) =>
-      b.kind === "local" &&
-      isServedOriginHost(b.host) &&
-      b.apiKey.trim().length > 0,
-  );
+  // Prefer the active backend when it holds the served-origin key, so an older
+  // key saved for the same origin cannot shadow the one in use.
+  const active = getEffectiveLocalBackend();
+  const servedBackend =
+    active && holdsServedOriginKey(active)
+      ? active
+      : getRegisteredBackends().find(holdsServedOriginKey);
 
   if (servedBackend) {
     return { "X-Session-API-Key": servedBackend.apiKey.trim() };
@@ -252,13 +255,8 @@ export function getMarsWebBridgeAuthRequired(): boolean {
   return lastProbeAuthRequired;
 }
 
-/**
- * Pass the hosting session key to the bridge immediately, then hand it to the
- * backend registry so subsequent pages reload onto an authenticated hosted
- * bridge. The key is treated purely as the bridge/host credential (never the
- * DigitalOcean token and never a guest backend key).
- */
-export async function saveHostingSessionKey(
+/** Validate the hosting key against the page's bridge before saving it. */
+export async function validateHostingSessionKey(
   key: string,
   selectors?: { fetch?: typeof fetch },
 ): Promise<void> {
@@ -279,42 +277,4 @@ export async function saveHostingSessionKey(
       response.status,
     );
   }
-  installServedOriginSessionKey(key);
-}
-
-/**
- * Persist the hosting session key onto the active served-origin local backend
- * so `getMarsBridgeHeaders()` (and the app's own `/server_info` auth) picks it
- * up on the next rendering pass. `getMarsBridgeHeaders()` looks the key up on
- * the *active* local backend, so this must write through `setRegisteredBackends`
- * (which notifies the active store) rather than `writeStoredBackends` alone.
- */
-function installServedOriginSessionKey(key: string): void {
-  const baseUrl = getAgentServerBaseUrl();
-  if (!baseUrl) return;
-
-  const backends = readStoredBackends();
-  const target = backends.find(
-    (b) => b.kind === "local" && isServedOriginHost(b.host),
-  );
-  if (target) {
-    setRegisteredBackends(
-      backends.map((b) =>
-        b.id === target.id ? { ...b, apiKey: key.trim() } : b,
-      ),
-    );
-    return;
-  }
-
-  const fallback: Backend = {
-    id: SEEDED_DEFAULT_BACKEND_ID,
-    name: DEFAULT_LOCAL_BACKEND_NAME,
-    host: baseUrl,
-    apiKey: key.trim(),
-    kind: "local",
-    // `authMode` is optional on `Backend`; omit it so the entry reads exactly
-    // like other user-created local backends (the registry validates both
-    // `undefined` and `"api-key"`).
-  };
-  setRegisteredBackends([fallback, ...backends]);
 }
