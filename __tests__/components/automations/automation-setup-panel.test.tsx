@@ -1563,7 +1563,7 @@ describe("AutomationSetupPanel", () => {
     );
   });
 
-  it("creates custom bundle drafts with entrypoint and setup script path", async () => {
+  it("creates custom bundle drafts with entrypoint, setup script path and model", async () => {
     vi.mocked(AutomationService.uploadAutomationTarball).mockResolvedValue(
       "oh-internal://uploads/custom-archive",
     );
@@ -1585,6 +1585,8 @@ describe("AutomationSetupPanel", () => {
       screen.getByTestId("automation-setup-entrypoint"),
       "python3 main.py --once",
     );
+    await user.click(screen.getByTestId("automation-setup-model"));
+    await user.click(screen.getByTestId("automation-setup-model-option-fast"));
     await user.click(screen.getByTestId("automation-setup-create"));
 
     await waitFor(() =>
@@ -1602,6 +1604,7 @@ describe("AutomationSetupPanel", () => {
         tarball_path: "oh-internal://uploads/custom-archive",
         entrypoint: "python3 main.py --once",
         setup_script_path: "setup.sh",
+        model: "fast",
       }),
       "custom",
     );
