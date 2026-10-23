@@ -48,7 +48,6 @@ describe("the command menu settings group", () => {
       "agent-settings",
       "llm-settings",
       "meta-llm-settings",
-      "condenser-settings",
       "agent-context-settings",
       "verification-settings",
       "runtime-settings",
@@ -63,9 +62,13 @@ describe("the command menu settings group", () => {
       (item) => item.to,
     );
 
-    // Assert
+    // Assert — Condenser is per agent profile on the default local backend.
     expect(routes).toEqual(
-      expect.arrayContaining(OSS_NAV_ITEMS.map((navItem) => navItem.to)),
+      expect.arrayContaining(
+        OSS_NAV_ITEMS.map((navItem) => navItem.to).filter(
+          (to) => to !== "/settings/condenser",
+        ),
+      ),
     );
   });
 

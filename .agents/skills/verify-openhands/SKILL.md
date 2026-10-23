@@ -98,6 +98,14 @@ control-openhands stop                         # stops only this run; evidence s
   agent-server has no editor binary and nothing listens there). Where that is opt-in (#17660), `--vscode`
   turns it on; where the editor is bundled (before #17660, or since #18048), it
   is always included and `--vscode` changes nothing.
+- **Launch variants** that a launcher flag or a deployment sets, not the
+  operator's shell: `--mars-web` starts the launcher with `MARS_WEB=1` (the
+  ingress hosts the Managed Agents bridge, `/mars/*`, and Add Backend offers
+  Providers; doctor checks `/mars/health`). `--lock-to-cloud <url>` also serves
+  the build locked to that Cloud host on `ports.lockedCloud` (P+4), because
+  only `scripts/static-server.mjs` takes `--lock-to-cloud`; `browser goto
+  <lockedCloud.url>/` opens it as a run page, and `stop` ends it with the run.
+  Never hand-start these processes on fixed ports: `stop` cannot see them.
 - **Doctor** checks the launcher's process group, ports, served build revision,
   unauthenticated rejection, authenticated settings, Agent Server pin and the
   UI's minimum Agent Server version, automation health and a throwaway-tab UI
@@ -151,7 +159,9 @@ control-openhands stop                         # stops only this run; evidence s
   projection is bounded to 16384 UTF-8 bytes; an oversized projection is omitted
   with `bodyFieldsOmitted.plugins` explaining why. No projection of other
   top-level fields is made, and neither body fields nor omission metadata appear
-  without `--bodies`),
+  without `--bodies`; every row also times its response: `responseMs`,
+  `durationMs`, `completedTs`, `outcome` and `completedSeq`, and `--order
+  completion` lists rows in the order they completed, for response races),
   `browser toasts` and `browser media` observe requests by origin, toasts and
   sound without changing anything; `click --observe SEL` and `scroll
   --observe SEL` record the transient states SEL shows while the action's

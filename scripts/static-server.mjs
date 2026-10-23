@@ -680,7 +680,7 @@ export function startStaticServer(config) {
   const staticMiddleware = createStaticMiddleware(dirAbs);
 
   const uninstallDiagnostics = proxy.installDiagnostics();
-  // DigitalOcean Managed Agents for the browser: this server hosts the MARS
+  // DigitalOcean Managed Agents for the browser: with MARS_WEB=1, host the MARS
   // bridge and proxies to sessions' tunnel listeners, behind the session key
   // (see mars-web-bridge.mjs). Deliberately `config.sessionApiKey`, not
   // `policy.sessionApiKey`: the policy decides whether the key may be baked
