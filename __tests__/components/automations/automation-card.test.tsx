@@ -18,6 +18,7 @@ import {
 import { ActiveBackendProvider } from "#/contexts/active-backend-context";
 import type { Backend } from "#/api/backend-registry/types";
 import { server } from "#/mocks/node";
+import { I18nKey } from "#/i18n/declaration";
 import type { InterfaceListInsights } from "#/manifests/types";
 
 vi.mock("react-i18next", () => ({
