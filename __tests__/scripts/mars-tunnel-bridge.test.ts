@@ -676,10 +676,103 @@ describe("signing in with DigitalOcean (code + PKCE)", () => {
 
     await expect(
       bridge.completeSignIn(pasted, second.attemptId),
-    ).rejects.toThrow(/no longer open/);
+    ).rejects.toThrow(/isn't from this sign-in/);
     await expect(
       bridge.completeSignIn(pasted, first.attemptId),
     ).resolves.toMatchObject({ active: { kind: "oauth" } });
+  });
+
+  it("keeps a sign-in open after a pasted address with no code, for the right one", async () => {
+    const { bridge } = setup(WITH_CLIENT);
+    vi.mocked(exchangeCode).mockResolvedValue(GRANT);
+    const { attemptId, authorizeUrl } = bridge.beginSignIn({
+      redirectUri: REDIRECT,
+    });
+    const state = stateOf(authorizeUrl);
+
+    await expect(
+      bridge.completeSignIn(`${REDIRECT}?state=${state}`, attemptId),
+    ).rejects.toThrow(/no sign-in code/);
+    await expect(
+      bridge.completeSignIn(
+        `${REDIRECT}?code=code-1&state=${state}`,
+        attemptId,
+      ),
+    ).resolves.toMatchObject({ active: { kind: "oauth" } });
+  });
+
+  it("ends the grant of a sign-in that fails after the exchange", async () => {
+    const { bridge, api } = setup(WITH_CLIENT);
+    vi.mocked(exchangeCode).mockResolvedValueOnce(GRANT);
+    // A team without Managed Agents: DigitalOcean signs in, harness-api refuses.
+    api.verifyAccess.mockRejectedValueOnce(
+      Object.assign(new Error("Managed Agents is not enabled"), {
+        status: 403,
+      }),
+    );
+    const { authorizeUrl } = bridge.beginSignIn({ redirectUri: REDIRECT });
+
+    await expect(
+      bridge.completeSignIn(
+        `${REDIRECT}?code=code-1&state=${stateOf(authorizeUrl)}`,
+      ),
+    ).rejects.toThrow(/not enabled/);
+
+    expect(revokeToken).toHaveBeenCalledWith("oauth-access");
+    expect(bridge.getAuthState().connections).toEqual([]);
+  });
+
+  it("ends the OAuth grant a new sign-in to the same team replaces, but never a personal access token", async () => {
+    const { bridge, ipcMain, credentials } = setup(WITH_CLIENT);
+    // A personal access token for team-1, then an OAuth sign-in for it.
+    await ipcMain.invoke(MARS_TUNNEL_IPC.savePat, { token: VALID_PAT });
+    credentials.setTeam(credentials.getActive()!.id, { uuid: "team-1" });
+    const signIn = async (grant: typeof GRANT) => {
+      vi.mocked(exchangeCode).mockResolvedValueOnce(grant);
+      const { authorizeUrl } = bridge.beginSignIn({ redirectUri: REDIRECT });
+      await bridge.completeSignIn(
+        `${REDIRECT}?code=code-1&state=${stateOf(authorizeUrl)}`,
+      );
+    };
+
+    await signIn(GRANT);
+    expect(revokeToken).not.toHaveBeenCalled();
+
+    await signIn({ ...GRANT, accessToken: "oauth-access-2" });
+
+    await vi.waitFor(() =>
+      expect(revokeToken).toHaveBeenCalledWith("oauth-access"),
+    );
+    expect(revokeToken).toHaveBeenCalledTimes(1);
+    expect(bridge.getAuthState().connections).toHaveLength(1);
+    expect(credentials.getActiveToken()).toBe("oauth-access-2");
+  });
+
+  it("keeps the refresh token it has when a refresh reply carries none", async () => {
+    const { bridge, registry, credentials } = setup(WITH_CLIENT);
+    const saved = credentials.save({
+      kind: CREDENTIAL_KIND_OAUTH,
+      token: "old-access",
+      refreshToken: "refresh-1",
+      accessExpiresAt: inMinutes(0.5),
+      clientId: "client-1",
+      label: "DigitalOcean",
+    });
+    vi.mocked(refreshGrant).mockResolvedValueOnce({
+      ...GRANT,
+      accessToken: "new-access",
+      refreshToken: null,
+    });
+    await bridge.openTunnel({ sessionId: "sess_a" });
+    const { getAccessToken } = registry.attach.mock.calls[0][0] as unknown as {
+      getAccessToken: () => Promise<string | null>;
+    };
+
+    await expect(getAccessToken()).resolves.toBe("new-access");
+    expect(credentials.getGrant(saved.id)).toMatchObject({
+      token: "new-access",
+      refreshToken: "refresh-1",
+    });
   });
 
   it("reports a declined sign-in to the waiting page and keeps the old connection", async () => {

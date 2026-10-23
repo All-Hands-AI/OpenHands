@@ -229,12 +229,37 @@ export function createMarsTunnelBridge({
       }
       store.updateGrant(id, {
         token: next.accessToken,
-        refreshToken: next.refreshToken,
+        // DigitalOcean always sends a new one; without it, a null here would
+        // never be refreshed again.
+        refreshToken: next.refreshToken ?? current.refreshToken,
         accessExpiresAt: next.accessExpiresAt,
         clientId,
       });
       return next.accessToken;
     });
+  }
+
+  /**
+   * End an OAuth grant nothing here holds any more. DigitalOcean revokes
+   * access tokens only, so an expired one is refreshed first, as on
+   * sign-out. A refresh refused meanwhile leaves nothing to end.
+   *
+   * @param {import("./mars-credentials.mjs").Grant} grant
+   */
+  async function endGrant(grant) {
+    let token = grant.token;
+    if (refreshDue(grant)) {
+      try {
+        const next = await refreshGrant({
+          clientId: grant.clientId ?? config.oauthClientId,
+          refreshToken: grant.refreshToken,
+        });
+        token = next.accessToken;
+      } catch {
+        return;
+      }
+    }
+    await revokeToken(token);
   }
 
   const client = api ?? clientFor(() => tokenFor(store.getActive()?.id));
@@ -366,7 +391,19 @@ export function createMarsTunnelBridge({
       if (previousId && stillActive) store.setActive(previousId);
       throw error;
     }
-    if (team) store.setTeam(saved.id, team);
+    // The credential is kept from here on, so naming its team must not
+    // fail the sign-in; a team already held then just keeps both entries.
+    if (team) {
+      try {
+        store.setTeam(saved.id, team, {
+          onReplacedGrant: (replaced) => void endGrant(replaced),
+        });
+      } catch (error) {
+        console.warn(
+          `[mars] Could not record the DigitalOcean team: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
     return authState();
   }
 
@@ -406,7 +443,13 @@ export function createMarsTunnelBridge({
     async signInWithOAuth() {
       const clientId = requireOAuthClient();
       const grant = await signInWithDigitalOcean({ clientId, openExternal });
-      return saveOAuthGrant(grant, clientId);
+      try {
+        return await saveOAuthGrant(grant, clientId);
+      } catch (failure) {
+        // Nothing keeps a grant that failed to save: end it.
+        void revokeToken(grant.accessToken);
+        throw failure;
+      }
     },
 
     /**
@@ -449,21 +492,27 @@ export function createMarsTunnelBridge({
      */
     async completeSignIn(returned, attemptId) {
       const { code, state, error } = readCallback(returned);
-      const attempt = attempts.claim(state, attemptId);
-      if (!attempt) {
-        throw new MarsApiError("This sign-in is no longer open. Start again.", {
+      // Checked before the attempt is taken, so the right address can
+      // still follow a wrong one.
+      if (!code && !error) {
+        throw new MarsApiError("That address has no sign-in code in it.", {
           status: 400,
         });
+      }
+      const attempt = attempts.claim(state, attemptId);
+      if (!attempt) {
+        throw new MarsApiError(
+          attemptId && attempts.isOpen(attemptId)
+            ? "That address isn't from this sign-in. Paste the address DigitalOcean opened after you approved."
+            : "This sign-in is no longer open. Start again.",
+          { status: 400 },
+        );
       }
       // Cancel stays possible until the grant is committed.
       const cancelled = () => attempt.cancelled === true;
       let grant = null;
       try {
-        if (error || !code) {
-          throw new MarsApiError(error ?? "DigitalOcean sent no code back.", {
-            status: 400,
-          });
-        }
+        if (error) throw new MarsApiError(error, { status: 400 });
         grant = await exchangeCode({
           clientId: attempt.clientId,
           code,
@@ -481,8 +530,9 @@ export function createMarsTunnelBridge({
         attempts.succeed(attempt.id);
         return signedIn;
       } catch (failure) {
-        // Nothing kept the grant a cancelled sign-in got: end it.
-        if (grant && cancelled()) void revokeToken(grant.accessToken);
+        // Nothing keeps a grant whose sign-in failed or was cancelled after
+        // the exchange (a team without Managed Agents, say): end it.
+        if (grant) void revokeToken(grant.accessToken);
         attempts.fail(
           attempt.id,
           failure instanceof Error ? failure.message : String(failure),
