@@ -28,7 +28,7 @@ import { useTestMcpServer } from "#/hooks/mutation/use-test-mcp-server";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 import {
   getMcpOAuthAuthenticationConfig,
-  getInstallableMcpConnectionOption,
+  getInstallableMcpConnectionOptions,
   type McpMarketplaceConnectionOption,
 } from "#/utils/mcp-marketplace-utils";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
@@ -121,10 +121,21 @@ function getRemoteHeaderFields(
   return option.transport.headerFields ?? [];
 }
 
-function makeInitialState(entry: MarketplaceEntry): FieldState {
+function getOptionLabelKey(option: McpMarketplaceConnectionOption): I18nKey {
+  if (option.auth.strategy === "oauth2") return I18nKey.MCP$OPTION_OAUTH;
+  if (["api_key", "bearer"].includes(option.auth.strategy)) {
+    return I18nKey.MCP$OPTION_API_KEY;
+  }
+  return option.transport.kind === "stdio"
+    ? I18nKey.MCP$OPTION_LOCAL
+    : I18nKey.MCP$OPTION_REMOTE;
+}
+
+function makeInitialState(
+  option: McpMarketplaceConnectionOption | undefined,
+): FieldState {
   const values: Record<string, string> = {};
   const savedAsSecret: Record<string, boolean> = {};
-  const option = getInstallableMcpConnectionOption(entry);
   const template = option?.transport;
   if (template?.kind === "stdio") {
     for (const field of template.envFields ?? []) {
@@ -172,8 +183,17 @@ export function InstallServerModal({
   const { backend } = useActiveBackend();
   const isCloudBackend = backend.kind === "cloud";
 
+  // The first installable option is the entry's preferred one; entries with
+  // several let the user pick another before filling in its fields.
+  const options = React.useMemo(
+    () => getInstallableMcpConnectionOptions(entry),
+    [entry],
+  );
+  const [selectedOptionIndex, setSelectedOptionIndex] = React.useState(0);
+  const option = options[selectedOptionIndex];
+
   const [state, setState] = React.useState<FieldState>(() =>
-    makeInitialState(entry),
+    makeInitialState(option),
   );
   // Always holds the latest state so async callbacks (onSuccess) never read
   // stale closure values, even under React concurrent-mode scheduling.
@@ -183,7 +203,6 @@ export function InstallServerModal({
   const [globalError, setGlobalError] = React.useState<string | null>(null);
   const [isFinalizingInstall, setIsFinalizingInstall] = React.useState(false);
   const [isAuthorizingOAuth, setIsAuthorizingOAuth] = React.useState(false);
-  const option = getInstallableMcpConnectionOption(entry);
   const template = option?.transport;
   // stdio servers on cloud backends get a synthetic test success (they only
   // run inside the sandbox); never seed card health from it.
@@ -220,6 +239,12 @@ export function InstallServerModal({
       values: { ...prev.values, [key]: value },
       errors: { ...prev.errors, [key]: null },
     }));
+    setGlobalError(null);
+  };
+
+  const selectOption = (index: number) => {
+    setSelectedOptionIndex(index);
+    setState(makeInitialState(options[index]));
     setGlobalError(null);
   };
 
@@ -814,6 +839,28 @@ export function InstallServerModal({
                 >
                   {t(I18nKey.MCP$VIEW_DOCS)}
                 </a>
+              )}
+
+              {options.length > 1 && (
+                <div
+                  role="tablist"
+                  aria-label={t(I18nKey.MCP$CONNECTION_METHOD)}
+                  data-testid="mcp-install-options"
+                  className="flex flex-wrap border-b border-border"
+                >
+                  {options.map((candidate, index) => (
+                    <TabButton
+                      key={candidate.id}
+                      isActive={index === selectedOptionIndex}
+                      onClick={() => selectOption(index)}
+                      disabled={isPending}
+                    >
+                      <span data-testid={`mcp-install-option-${candidate.id}`}>
+                        {t(getOptionLabelKey(candidate))}
+                      </span>
+                    </TabButton>
+                  ))}
+                </div>
               )}
 
               <div className="flex flex-col gap-3">{renderFields()}</div>
