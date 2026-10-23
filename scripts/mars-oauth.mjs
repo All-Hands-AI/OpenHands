@@ -19,10 +19,15 @@ const AUTHORIZE_URL = "https://cloud.digitalocean.com/v1/oauth/authorize";
 const TOKEN_URL = "https://cloud.digitalocean.com/v1/oauth/token";
 const REVOKE_URL = "https://cloud.digitalocean.com/v1/oauth/revoke";
 
-/** Permissions the edge enforces on `/v2/agents/*` for MARS. */
+/**
+ * Permissions required by the agent/session actions Canvas exposes. A grant
+ * issued with fewer scopes needs a new sign-in; refreshing cannot add scopes.
+ */
 export const OAUTH_SCOPES = [
   "agent_harness_session:read",
+  "agent_harness_session:create",
   "agent_harness_session:operate",
+  "agent_harness_session:manage",
 ].join(" ");
 
 /** Where a browser comes back to on the Canvas server (scripts/mars-web-bridge.mjs). */

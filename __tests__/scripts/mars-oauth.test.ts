@@ -63,6 +63,16 @@ describe("buildAuthorizeUrl and createPkce", () => {
     );
     expect(url.searchParams.get("redirect_uri")).toBe(REDIRECT);
     expect(url.searchParams.get("state")).toBe("state-1");
+    // These permissions come from DigitalOcean's Harness Runtime API contract:
+    // read lists, create provisions, operate resumes/connects, manage deletes.
+    expect(new Set(url.searchParams.get("scope")?.split(" "))).toEqual(
+      new Set([
+        "agent_harness_session:read",
+        "agent_harness_session:create",
+        "agent_harness_session:operate",
+        "agent_harness_session:manage",
+      ]),
+    );
     expect(url.toString()).not.toContain(verifier);
   });
 });
