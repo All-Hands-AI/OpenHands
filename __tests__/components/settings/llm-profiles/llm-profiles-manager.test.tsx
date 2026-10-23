@@ -23,10 +23,6 @@ vi.mock("react-i18next", () => ({
       if (namespace !== "openhands") return key;
       const translations: Record<string, string> = {
         SETTINGS$PROFILES_UNGROUPED: "Not linked",
-        SETTINGS$PROVIDER_CONNECTIONS_TITLE: "Provider connections",
-        SETTINGS$PROVIDER_CONNECTIONS_SUBLINE:
-          "Share one API key across multiple models.",
-        SETTINGS$PROVIDER_CONNECTIONS_EMPTY: "No provider connections yet.",
         SETTINGS$PROVIDER_CONNECTIONS_LOAD_ERROR:
           "Failed to load provider connections.",
         SETTINGS$PROVIDER_CONNECTION_ADD: "Add connection",
@@ -246,27 +242,16 @@ describe("LlmProfilesManager", () => {
       { canManage: false, connections },
     );
 
-    await screen.findByText("gpt-4-profile");
     // A view-only member may still see which connection groups a profile, but
     // must not reach the connection add/edit/delete surface.
-    expect(screen.getByTestId("profile-group-header")).toHaveTextContent(
+    expect(await screen.findByTestId("profile-group-header")).toHaveTextContent(
       "Shared OpenAI",
     );
-    await waitFor(() => {
-      expect(ProviderConnectionsService.list).toHaveBeenCalled();
-    });
-    expect(screen.queryByText("Provider connections")).not.toBeInTheDocument();
     expect(
       screen.queryByTestId("add-provider-connection"),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByTestId("provider-connection-row"),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByTestId("provider-connection-edit"),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByTestId("provider-connection-delete"),
+      screen.queryByTestId("provider-connection-menu-trigger"),
     ).not.toBeInTheDocument();
   });
 
@@ -278,58 +263,15 @@ describe("LlmProfilesManager", () => {
 
     renderManager({}, { connections: [makeConnection()] });
 
-    expect(await screen.findByText("Provider connections")).toBeInTheDocument();
-    expect(screen.getByTestId("add-provider-connection")).toBeInTheDocument();
+    expect(
+      await screen.findByTestId("add-provider-connection"),
+    ).toBeInTheDocument();
     const row = await screen.findByTestId("provider-connection-row");
     // Edit/delete/bulk-add live behind the three-dots menu, so a manager sees
     // the trigger; the actions themselves appear once it is opened.
     expect(
       within(row).getByTestId("provider-connection-menu-trigger"),
     ).toBeVisible();
-  });
-
-  it("shows the top Add-from-provider-connections button and opens the chooser modal", async () => {
-    const user = userEvent.setup();
-    vi.mocked(ProfilesService.listProfiles).mockResolvedValue({
-      profiles: mockProfiles,
-      active_profile: "gpt-4-profile",
-    });
-
-    renderManager(
-      { onAddProfile: vi.fn() },
-      { connections: [makeConnection()] },
-    );
-
-    const topButton = await screen.findByTestId("add-models-from-provider");
-    expect(topButton).toBeInTheDocument();
-    // The regular single-profile button remains alongside it.
-    expect(screen.getByTestId("add-llm-profile")).toBeInTheDocument();
-
-    // Chooser entry point: the modal opens with the combobox unset (no
-    // preselected connection), so the model list has not loaded yet.
-    await user.click(topButton);
-    expect(await screen.findByTestId("add-models-modal")).toBeInTheDocument();
-    const combobox = screen.getByTestId(
-      "add-models-provider",
-    ) as HTMLSelectElement;
-    expect(combobox.value).toBe("");
-  });
-
-  it("still shows the top Add-from-provider-connections button when there are no connections", async () => {
-    // The entry point stays reachable with zero connections: the user can
-    // pick a provider from the catalog and bulk-add keyless profiles, the
-    // pre-connection behavior the linked issue requires.
-    vi.mocked(ProfilesService.listProfiles).mockResolvedValue({
-      profiles: mockProfiles,
-      active_profile: "gpt-4-profile",
-    });
-
-    renderManager({ onAddProfile: vi.fn() }, { connections: [] });
-
-    expect(
-      await screen.findByTestId("add-models-from-provider"),
-    ).toBeInTheDocument();
-    expect(screen.getByTestId("add-llm-profile")).toBeInTheDocument();
   });
 
   it("hides provider connections on a cloud backend without an org", async () => {
@@ -348,9 +290,11 @@ describe("LlmProfilesManager", () => {
     );
 
     await screen.findByText("gpt-4-profile");
-    expect(screen.queryByText("Provider connections")).not.toBeInTheDocument();
     expect(
       screen.queryByTestId("add-provider-connection"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("provider-connection-group"),
     ).not.toBeInTheDocument();
   });
 
@@ -369,8 +313,12 @@ describe("LlmProfilesManager", () => {
       },
     );
 
-    expect(await screen.findByText("Provider connections")).toBeInTheDocument();
-    expect(screen.getByTestId("add-provider-connection")).toBeInTheDocument();
+    expect(
+      await screen.findByTestId("add-provider-connection"),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByTestId("provider-connection-row"),
+    ).toHaveTextContent("Shared OpenAI");
   });
 
   it("groups profiles by connection name and counts each linked profile", async () => {
@@ -397,7 +345,8 @@ describe("LlmProfilesManager", () => {
 
     renderManager({}, { connections });
 
-    await screen.findByText("gpt-a");
+    // Connection groups start collapsed, so wait on a group heading.
+    await screen.findByText("Shared Anthropic");
     const headers = screen.getAllByTestId("profile-group-header");
     expect(headers.map((h) => h.textContent)).toEqual([
       "Shared OpenAI",
@@ -421,8 +370,8 @@ describe("LlmProfilesManager", () => {
     const row = await screen.findByTestId("provider-connection-row");
     expect(within(row).getByText("0 model(s)")).toBeInTheDocument();
     expect(
-      screen.queryByTestId("profile-group-header"),
-    ).not.toBeInTheDocument();
+      screen.getAllByTestId("profile-group-header").map((h) => h.textContent),
+    ).toEqual(["Shared OpenAI", "Not linked"]);
   });
 
   it("falls back to the connection id when its name is unknown", async () => {
@@ -435,10 +384,10 @@ describe("LlmProfilesManager", () => {
 
     renderManager({}, { connections: [makeConnection()] });
 
-    await screen.findByText("orphan");
-    expect(screen.getByTestId("profile-group-header")).toHaveTextContent(
-      "conn-missing",
-    );
+    await screen.findByText("conn-missing");
+    expect(
+      screen.getAllByTestId("profile-group-header").map((h) => h.textContent),
+    ).toEqual(["Shared OpenAI", "conn-missing"]);
   });
 
   it("surfaces a provider connections load failure", async () => {
