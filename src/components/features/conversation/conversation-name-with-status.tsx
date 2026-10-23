@@ -47,8 +47,7 @@ export function ConversationNameWithStatus() {
   const runtimeUnavailable = isRuntimeUnavailableSandboxStatus(sandboxStatus);
   const isStartingStatus =
     curAgentState === AgentState.LOADING || curAgentState === AgentState.INIT;
-  const isStopStatus =
-    isExecutionErrored(executionStatus) || isExecutionPaused(executionStatus);
+  const isStopStatus = isExecutionErrored(executionStatus);
 
   const statusColor = getStatusColor({
     isPausing: false,

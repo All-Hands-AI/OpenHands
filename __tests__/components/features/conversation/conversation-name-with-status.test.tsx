@@ -504,22 +504,25 @@ describe("conversation name status controls", () => {
     expect(screen.queryByTestId("start-server-button")).not.toBeInTheDocument();
   });
 
-  it("shows the paused dot color and Start Runtime for a paused conversation with an available runtime", () => {
-    mocks.conversation = {
-      execution_status: ExecutionStatus.PAUSED,
-      sandbox_status: "PAUSED",
-    };
-    mocks.curAgentState = AgentState.PAUSED;
-    renderSubject();
+  it.each(["RUNNING", "PAUSED", null] as const)(
+    "preserves the baseline header color and Start Runtime for paused execution with sandbox_status %s",
+    (sandboxStatus) => {
+      mocks.conversation = {
+        execution_status: ExecutionStatus.PAUSED,
+        sandbox_status: sandboxStatus,
+      };
+      mocks.curAgentState = AgentState.PAUSED;
+      renderSubject();
 
-    expect(screen.getByTestId("conversation-status-dot")).toHaveAttribute(
-      "data-color",
-      "#ffffff",
-    );
+      expect(screen.getByTestId("conversation-status-dot")).toHaveAttribute(
+        "data-color",
+        OH_STATUS_SUCCESS_COLOR,
+      );
 
-    openStatusMenu();
+      openStatusMenu();
 
-    expect(screen.getByTestId("start-server-button")).toBeInTheDocument();
-    expect(screen.queryByTestId("stop-server-button")).not.toBeInTheDocument();
-  });
+      expect(screen.getByTestId("start-server-button")).toBeInTheDocument();
+      expect(screen.queryByTestId("stop-server-button")).not.toBeInTheDocument();
+    },
+  );
 });
