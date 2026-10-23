@@ -1,17 +1,22 @@
-import { matchPath, useLocation, useParams } from "react-router";
+import { useMatch, useParams } from "react-router";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { useConversationStateStore } from "#/stores/conversation-state-store";
 import { getAgentStateEmoji } from "#/utils/agent-state-emoji";
-import { useCanvasExtensionsRuntime } from "#/components/features/canvas-extensions/canvas-extensions-runtime";
+import {
+  selectCanvasExtensionPage,
+  useCanvasExtensionsRuntime,
+} from "#/components/features/canvas-extensions/canvas-extensions-runtime";
 
 const APP_TITLE = "OpenHands";
 
 export const useAppTitle = () => {
-  const { pathname } = useLocation();
+  const appRoute = useMatch("/extensions/:extensionName/*");
   const { pages } = useCanvasExtensionsRuntime();
-  const appPage = pages
-    .filter((page) => matchPath(`${page.href}/*`, pathname))
-    .sort((left, right) => right.href.length - left.href.length)[0];
+  const appPage = selectCanvasExtensionPage(
+    pages,
+    appRoute?.params.extensionName ?? "",
+    appRoute?.params["*"] ?? "",
+  );
   const { conversationId } = useParams<{ conversationId: string }>();
   const { data: conversation } = useUserConversation(conversationId ?? null);
   const liveExecutionStatus = useConversationStateStore((state) =>

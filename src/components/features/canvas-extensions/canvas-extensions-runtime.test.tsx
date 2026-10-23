@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, Route, Routes } from "react-router";
+import CanvasExtensionPage from "#/routes/canvas-extension-page";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAppTitle } from "#/hooks/use-app-title";
 import CanvasExtensionsService from "#/api/canvas-extensions-service";
@@ -84,6 +85,13 @@ function renderRuntime(
         <MemoryRouter initialEntries={[path]}>
           <CanvasExtensionsRuntimeProvider moduleLoader={moduleLoader}>
             <RuntimeProbe />
+            <Routes>
+              <Route
+                path="/extensions/:extensionName/*"
+                element={<CanvasExtensionPage />}
+              />
+              <Route path="*" element={null} />
+            </Routes>
           </CanvasExtensionsRuntimeProvider>
         </MemoryRouter>
       </ActiveBackendProvider>
@@ -144,13 +152,17 @@ describe("CanvasExtensionsRuntimeProvider", () => {
     ["/extensions/demo-extension/dashboard", "Dashboard | OpenHands"],
     ["/extensions/demo-extension/dashboard/nested", "Dashboard | OpenHands"],
     ["/extensions/demo-extension/dashboard-other", "OpenHands"],
+    ["/extensions/demo-extension/DASHBOARD", "OpenHands"],
+    ["/extensions/demo-extension/%64ashboard", "Dashboard | OpenHands"],
     ["/extensions/other/dashboard", "OpenHands"],
     ["/", "OpenHands"],
   ])("sets the browser title for %s", async (path, expectedTitle) => {
     renderRuntime(
       async () => ({
         activate: (host: CanvasExtensionHost) => {
-          host.registerPage("dashboard", () => undefined);
+          host.registerPage("dashboard", ({ container }) => {
+            container.append(document.createTextNode("Dashboard mounted"));
+          });
         },
       }),
       path,
@@ -160,6 +172,11 @@ describe("CanvasExtensionsRuntimeProvider", () => {
       expect(screen.getByTestId("page-count")).toHaveTextContent("1"),
     );
     expect(screen.getByTestId("app-title").textContent).toBe(expectedTitle);
+    if (expectedTitle === "Dashboard | OpenHands") {
+      expect(await screen.findByText("Dashboard mounted")).toBeInTheDocument();
+    } else {
+      expect(screen.queryByText("Dashboard mounted")).not.toBeInTheDocument();
+    }
   });
 
   it("re-activates an extension refreshed without a version change", async () => {
