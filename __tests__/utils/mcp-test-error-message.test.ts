@@ -21,6 +21,34 @@ const REMOTE_DETAIL =
   "Client failed to connect: All connection attempts failed";
 
 describe("makeMcpTestErrorMessage", () => {
+  it("leaves out an HTML page the server answered with, keeping the detail before it", () => {
+    const html404 =
+      "<!DOCTYPE html> <html lang=en><meta charset=utf-8><title>Error</title><style>*,*::before{box-sizing:border-box}</style></html>";
+
+    const message = makeMcpTestErrorMessage(
+      t,
+      "connection",
+      `Client failed to connect: Registration failed: 404 ${html404}`,
+      "shttp",
+    );
+
+    expect(message).toBe(
+      "Could not reach the server (check the URL and server type): Client failed to connect: Registration failed: 404",
+    );
+  });
+
+  it("leaves out an HTML page that starts without a doctype", () => {
+    const message = makeMcpTestErrorMessage(
+      t,
+      "unknown",
+      "Unexpected response 502 <HTML><head><title>Bad Gateway</title></head></HTML>",
+      "shttp",
+    );
+
+    expect(message).not.toMatch(/<html|<title>/i);
+    expect(message).toContain("Unexpected response 502");
+  });
+
   it("explains a stdio connection failure as a command that could not start, with the backend detail", () => {
     const message = makeMcpTestErrorMessage(
       t,

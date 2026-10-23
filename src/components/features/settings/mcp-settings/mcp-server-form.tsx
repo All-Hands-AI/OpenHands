@@ -710,8 +710,8 @@ export function MCPServerForm({
           data-testid="mcp-test-message"
           className={
             testMessage.ok
-              ? "text-sm text-feedback-success whitespace-pre-wrap"
-              : "text-sm text-feedback-error whitespace-pre-wrap"
+              ? "text-sm text-feedback-success whitespace-pre-wrap break-words"
+              : "text-sm text-feedback-error whitespace-pre-wrap break-words"
           }
         >
           {testMessage.text}
