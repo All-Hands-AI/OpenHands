@@ -974,6 +974,23 @@ test("cited test ids resolve through literals and dynamic prefixes", () => {
   assert.deepEqual(result.unresolved, [
     { id: "renamed-away-button", files: ["F14-secrets.md"] },
   ]);
+  // A one-word prefix accounts for an id only when the source builds ids
+  // from it; otherwise a removed id such as automation-setup-agent-profile
+  // would resolve through the plain word "automation".
+  const words = new Set(["automation", "edit"]);
+  words.heads = new Set(["edit"]);
+  words.tails = new Set(["message"]);
+  const strict = resolveTestids(
+    new Map([
+      ["automation-setup-agent-profile", new Set(["F28.md"])],
+      ["edit-automation-save", new Set(["F23.md"])],
+      ["agent-message", new Set(["F06.md"])],
+    ]),
+    words,
+  );
+  assert.deepEqual(strict.unresolved, [
+    { id: "automation-setup-agent-profile", files: ["F28.md"] },
+  ]);
   // The live map against the live source tree: zero unresolved today, and
   // --strict makes any drift a failing exit.
   const res = spawnSync(process.execPath, [cli, "map", "testids", "--strict"], {
