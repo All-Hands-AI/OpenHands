@@ -108,6 +108,62 @@ export interface AutomationHealthResponse {
   message?: string;
 }
 
+/**
+ * Request body of POST /api/automation/v1/plugin-spec
+ * (CreatePluginSpecAutomationRequest in OpenHands/automation). `trigger` and
+ * `timeout` are optional: the service falls back to the manifest's
+ * `suggested_trigger` when no trigger is given. `template` dedupes repeated
+ * installs: the service returns an existing automation (HTTP 200) when one
+ * already carries the same template id.
+ */
+export interface CreatePluginSpecAutomationRequest {
+  name: string;
+  plugin: {
+    source: string;
+    ref?: string | null;
+    repo_path?: string | null;
+  };
+  config?: Record<string, unknown>;
+  trigger?: unknown;
+  timeout?: number;
+  enabled?: boolean;
+  template?: {
+    id: string;
+    version?: number | string;
+    config?: Record<string, unknown>;
+  };
+}
+
+/**
+ * Response of GET /api/automation/v1/plugin-spec/preflight
+ * (PluginSpecPreflightResponse in OpenHands/automation#630): the parsed
+ * manifest plus the trigger an install would default to, with no side
+ * effects. Absent on older backends — callers must degrade gracefully.
+ */
+export interface PluginSpecPreflightResponse {
+  manifest: {
+    name: string;
+    description?: string | null;
+    config_schema?: {
+      type: "object";
+      properties?: Record<string, Record<string, unknown>>;
+      required?: string[];
+    };
+    runtime?: {
+      agent_profile?: Record<string, unknown> | null;
+      llm_profile?: Record<string, unknown> | null;
+    };
+    entrypoint?: Record<string, unknown>;
+  };
+  resolved_ref?: string | null;
+  suggested_trigger?: {
+    type: string;
+    schedule?: string;
+    timezone?: string;
+    [key: string]: unknown;
+  } | null;
+}
+
 type AutomationSdkVersionResponse =
   | string
   | {
@@ -634,6 +690,67 @@ class AutomationService {
     }
 
     const { data } = await localAutomationAxios.post<AutomationRun>(path);
+    return data;
+  }
+
+  /**
+   * Create an automation from a plugin's `.plugin/plugin.json` `automation`
+   * block. The automation service fetches the plugin, validates `config`
+   * against the manifest's `config_schema`, resolves the declared
+   * agent/LLM profile, and falls back to the manifest's suggested trigger.
+   * Backend: POST /api/automation/v1/plugin-spec (OpenHands/automation#580)
+   */
+  static async createPluginSpecAutomation(
+    body: CreatePluginSpecAutomationRequest,
+  ): Promise<Automation> {
+    const active = getActiveBackend().backend;
+    // Literal path (outside the interface manifest surface) like the drafts and
+    // run-cancel paths.
+    const path = `${AUTOMATION_BASE_PATH}/v1/plugin-spec`;
+
+    if (active.kind === "cloud") {
+      return callCloudProxy<Automation>({
+        backend: active,
+        method: "POST",
+        path,
+        body,
+        headers: await buildAutomationRequestHeaders(),
+      });
+    }
+
+    const { data } = await localAutomationAxios.post<Automation>(path, body);
+    return data;
+  }
+
+  /**
+   * Read-only preflight for a plugin spec: the parsed manifest (config
+   * schema, runtime profile requirements, suggested trigger) with no side
+   * effects. Absent on backends predating OpenHands/automation#630 — callers
+   * must treat any failure as "preflight unavailable" and degrade gracefully.
+   * Backend: GET /api/automation/v1/plugin-spec/preflight
+   */
+  static async pluginSpecPreflight(plugin: {
+    source: string;
+    ref?: string | null;
+    repo_path?: string | null;
+  }): Promise<PluginSpecPreflightResponse> {
+    const active = getActiveBackend().backend;
+    const query = new URLSearchParams({ source: plugin.source });
+    if (plugin.ref) query.set("ref", plugin.ref);
+    if (plugin.repo_path) query.set("repo_path", plugin.repo_path);
+    const path = `${AUTOMATION_BASE_PATH}/v1/plugin-spec/preflight?${query.toString()}`;
+
+    if (active.kind === "cloud") {
+      return callCloudProxy<PluginSpecPreflightResponse>({
+        backend: active,
+        method: "GET",
+        path,
+        headers: await buildAutomationRequestHeaders(),
+      });
+    }
+
+    const { data } =
+      await localAutomationAxios.get<PluginSpecPreflightResponse>(path);
     return data;
   }
 

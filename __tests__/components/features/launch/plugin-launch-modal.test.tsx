@@ -4,8 +4,10 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PluginLaunchModal } from "#/components/features/launch/plugin-launch-modal";
 import { PluginSpec } from "#/api/conversation-service/agent-server-conversation-service.types";
+import type { SchemaFormField } from "#/utils/plugin-launch-preflight";
 
 const mockOnStartConversation = vi.fn();
+const mockOnInstallAutomation = vi.fn();
 const mockOnClose = vi.fn();
 
 function renderModal(
@@ -14,6 +16,17 @@ function renderModal(
     message: string;
     isLoading: boolean;
     parametersSupported: boolean;
+    mode: "conversation" | "automation";
+    preflight: {
+      description?: string | null;
+      resolvedRef?: string | null;
+      fields: SchemaFormField[];
+      suggestedTrigger?: {
+        type: string;
+        schedule?: string;
+        timezone?: string;
+      } | null;
+    } | null;
   }> = {},
 ) {
   const queryClient = new QueryClient({
@@ -27,7 +40,12 @@ function renderModal(
         parametersSupported={props.parametersSupported ?? true}
         message={props.message}
         isLoading={props.isLoading ?? false}
+        mode={props.mode ?? "conversation"}
+        preflight={props.preflight ?? null}
         onStartConversation={mockOnStartConversation}
+        onInstallAutomation={
+          props.mode === "automation" ? mockOnInstallAutomation : undefined
+        }
         onClose={mockOnClose}
       />
     </QueryClientProvider>,
@@ -456,5 +474,121 @@ describe("unsupported backend plugin parameters", () => {
       [{ source: "local-plugin", parameters: {} }],
       undefined,
     );
+  });
+});
+
+describe("automation mode preflight", () => {
+  const cronPreflight = {
+    description: "A recipe automation",
+    resolvedRef: "main",
+    fields: [
+      { key: "repo", type: "string", label: "repo", required: false },
+      {
+        key: "style",
+        type: "string",
+        label: "style",
+        required: false,
+        options: ["compact", "full"],
+      },
+    ] as SchemaFormField[],
+    suggestedTrigger: { type: "cron", schedule: "0 9 * * *", timezone: "UTC" },
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("shows the preflight description and editable cron trigger", async () => {
+    renderModal([{ source: "github:org/recipe" }], {
+      mode: "automation",
+      preflight: cronPreflight,
+    });
+
+    expect(
+      screen.getByTestId("plugin-preflight-description"),
+    ).toHaveTextContent("A recipe automation");
+    expect(screen.getByTestId("plugin-trigger-schedule")).toHaveValue(
+      "0 9 * * *",
+    );
+    expect(screen.getByTestId("plugin-trigger-timezone")).toHaveValue("UTC");
+  });
+
+  it("passes the edited cron trigger on install", async () => {
+    const user = userEvent.setup();
+    renderModal([{ source: "github:org/recipe" }], {
+      mode: "automation",
+      preflight: cronPreflight,
+    });
+
+    await user.clear(screen.getByTestId("plugin-trigger-schedule"));
+    await user.type(
+      screen.getByTestId("plugin-trigger-schedule"),
+      "*/15 * * * *",
+    );
+    await user.click(screen.getByTestId("trust-checkbox"));
+    await user.click(screen.getByTestId("start-conversation-button"));
+
+    expect(mockOnInstallAutomation).toHaveBeenCalledWith(
+      [
+        {
+          source: "github:org/recipe",
+          parameters: { repo: "", style: "compact" },
+        },
+      ],
+      { type: "cron", schedule: "*/15 * * * *", timezone: "UTC" },
+    );
+  });
+
+  it("renders enum schema fields as selects with help text", () => {
+    renderModal(
+      [{ source: "github:org/recipe", parameters: { style: "full" } }],
+      {
+        mode: "automation",
+        preflight: {
+          ...cronPreflight,
+          fields: [
+            { key: "repo", type: "string", label: "repo", required: false },
+            {
+              key: "style",
+              type: "string",
+              label: "style",
+              required: false,
+              options: ["compact", "full"],
+              helpText: "Report style",
+            },
+          ],
+        },
+      },
+    );
+
+    const select = screen.getByTestId("plugin-0-param-style");
+    expect(select.tagName).toBe("SELECT");
+    expect(screen.getByText("Report style")).toBeInTheDocument();
+  });
+
+  it("installs without an explicit trigger when preflight has no cron suggestion", async () => {
+    const user = userEvent.setup();
+    renderModal([{ source: "github:org/recipe" }], {
+      mode: "automation",
+      preflight: {
+        ...cronPreflight,
+        suggestedTrigger: null,
+      },
+    });
+
+    expect(
+      screen.queryByTestId("plugin-trigger-schedule"),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByTestId("trust-checkbox"));
+    await user.click(screen.getByTestId("start-conversation-button"));
+
+    expect(mockOnInstallAutomation).toHaveBeenCalledTimes(1);
+    expect(mockOnInstallAutomation.mock.calls[0][1]).toBeUndefined();
+    expect(mockOnInstallAutomation.mock.calls[0][0]).toEqual([
+      {
+        source: "github:org/recipe",
+        parameters: { repo: "", style: "compact" },
+      },
+    ]);
   });
 });

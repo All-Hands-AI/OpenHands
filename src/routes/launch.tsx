@@ -6,8 +6,22 @@ import { PluginSpec } from "#/api/conversation-service/agent-server-conversation
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { I18nKey } from "#/i18n/declaration";
 import { useActiveBackend } from "#/contexts/active-backend-context";
+import AutomationService from "#/api/automation-service/automation-service.api";
+import {
+  automationDetailPath,
+  hasAutomationInterface,
+} from "#/manifests/automation-interface";
+import {
+  configSchemaToFormFields,
+  pluginSpecTemplateId,
+  pluginSpecTemplateVersion,
+} from "#/utils/plugin-launch-preflight";
 
-type ErrorType = "no_plugins" | "invalid_format" | "creation_failed";
+type ErrorType =
+  | "no_plugins"
+  | "invalid_format"
+  | "creation_failed"
+  | "install_failed";
 
 interface ParseResult {
   plugins: PluginSpec[];
@@ -85,10 +99,12 @@ function parsePluginsFromUrl(searchParams: URLSearchParams): ParseResult {
 
 function ErrorDisplay({
   errorType,
+  detail,
   onGoHome,
   onTryAgain,
 }: {
   errorType: ErrorType;
+  detail?: string | null;
   onGoHome: () => void;
   onTryAgain?: () => void;
 }) {
@@ -98,6 +114,7 @@ function ErrorDisplay({
     no_plugins: t(I18nKey.LAUNCH$ERROR_NO_PLUGINS),
     invalid_format: t(I18nKey.LAUNCH$ERROR_INVALID_FORMAT),
     creation_failed: t(I18nKey.LAUNCH$ERROR_CREATION_FAILED),
+    install_failed: t(I18nKey.LAUNCH$ERROR_INSTALL_UNKNOWN),
   };
 
   return (
@@ -110,6 +127,11 @@ function ErrorDisplay({
           {t(I18nKey.LAUNCH$ERROR_TITLE)}
         </h2>
         <p className="mb-6 text-text-tertiary">{errorMessages[errorType]}</p>
+        {detail && (
+          <p className="mb-6 break-words text-sm text-text-tertiary">
+            {detail}
+          </p>
+        )}
         <div className="flex justify-center gap-3">
           <button
             type="button"
@@ -143,11 +165,71 @@ export default function LaunchRoute() {
   const createConversation = useCreateConversation();
 
   const [creationError, setCreationError] = React.useState<string | null>(null);
+  const [creationErrorKind, setCreationErrorKind] = React.useState<
+    "conversation" | "automation"
+  >("conversation");
+  const [isInstalling, setIsInstalling] = React.useState(false);
 
   const parseResult = React.useMemo(
     () => parsePluginsFromUrl(searchParams),
     [searchParams],
   );
+
+  // `mode=automation` asks the route to install the plugin as an automation
+  // (POST /plugin-spec) instead of starting a conversation. Requires an
+  // admitted automation interface manifest, since submit navigates to the
+  // automation detail page afterwards.
+  const automationMode =
+    searchParams.get("mode") === "automation" &&
+    hasAutomationInterface() &&
+    parseResult.plugins.length === 1;
+
+  // Preflight (OpenHands/automation#630): fetch the manifest's config schema
+  // and suggested trigger so the modal renders typed fields and an editable
+  // trigger. Any failure means the backend predates the endpoint — the modal
+  // silently falls back to the free-text-parameter flow, and the create
+  // request still works (the service applies manifest defaults itself).
+  const [preflight, setPreflight] = React.useState<
+    | {
+        description?: string | null;
+        resolvedRef?: string | null;
+        fields: ReturnType<typeof configSchemaToFormFields>;
+        suggestedTrigger?: {
+          type: string;
+          schedule?: string;
+          timezone?: string;
+        } | null;
+      }
+    | null
+    | undefined
+  >(automationMode ? undefined : null);
+
+  React.useEffect(() => {
+    if (!automationMode) return;
+    const plugin = parseResult.plugins[0];
+    let cancelled = false;
+    AutomationService.pluginSpecPreflight({
+      source: plugin.source,
+      ref: plugin.ref,
+      repo_path: plugin.repo_path,
+    })
+      .then((response) => {
+        if (cancelled) return;
+        setPreflight({
+          description: response.manifest.description ?? null,
+          resolvedRef: response.resolved_ref ?? null,
+          fields: configSchemaToFormFields(response),
+          suggestedTrigger: response.suggested_trigger ?? null,
+        });
+      })
+      .catch(() => {
+        // Endpoint absent or unreachable: fall back to the plain flow.
+        if (!cancelled) setPreflight(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [automationMode]);
 
   const handleStartConversation = async (
     plugins: PluginSpec[],
@@ -162,7 +244,63 @@ export default function LaunchRoute() {
       });
       navigate(`/conversations/${result.conversation_id}`);
     } catch {
+      setCreationErrorKind("conversation");
       setCreationError(t(I18nKey.LAUNCH$ERROR_CREATION_UNKNOWN));
+    }
+  };
+
+  /**
+   * Automation name derived from the plugin source, e.g.
+   * `github:org/recipe` -> `recipe (org)`.
+   */
+  const automationNameForPlugin = (plugin: PluginSpec): string => {
+    const source = plugin.source
+      .replace(/^github:/, "")
+      .replace(/^https?:\/\/github\.com\//, "")
+      .replace(/\.git$/, "");
+    const parts = source.split("/");
+    const repo = parts[parts.length - 1] || plugin.source;
+    const owner = parts.length > 1 ? parts[0] : null;
+    return owner ? `${repo} (${owner})` : repo;
+  };
+
+  const handleInstallAutomation = async (
+    plugins: PluginSpec[],
+    trigger?: { type: "cron"; schedule: string; timezone: string } | null,
+  ) => {
+    const plugin = plugins[0];
+    setCreationError(null);
+    setIsInstalling(true);
+    try {
+      const created = await AutomationService.createPluginSpecAutomation({
+        name: automationNameForPlugin(plugin),
+        plugin: {
+          source: plugin.source,
+          ref: plugin.ref ?? undefined,
+          repo_path: plugin.repo_path ?? undefined,
+        },
+        config: (plugin.parameters ?? undefined) as
+          | Record<string, unknown>
+          | undefined,
+        trigger,
+        // Dedupe repeated badge clicks: the service returns the existing
+        // automation (HTTP 200) when this template id is already installed.
+        template: {
+          id: pluginSpecTemplateId(plugin),
+          version: pluginSpecTemplateVersion(preflight?.resolvedRef, plugin),
+        },
+        enabled: true,
+      });
+      navigate(automationDetailPath(created.id));
+    } catch (error) {
+      setCreationErrorKind("automation");
+      setCreationError(
+        error instanceof Error
+          ? error.message
+          : t(I18nKey.LAUNCH$ERROR_INSTALL_UNKNOWN),
+      );
+    } finally {
+      setIsInstalling(false);
     }
   };
 
@@ -182,11 +320,16 @@ export default function LaunchRoute() {
     );
   }
 
-  // Show error if conversation creation failed
+  // Show error if conversation creation or automation install failed
   if (creationError) {
     return (
       <ErrorDisplay
-        errorType="creation_failed"
+        errorType={
+          creationErrorKind === "automation"
+            ? "install_failed"
+            : "creation_failed"
+        }
+        detail={creationError}
         onGoHome={handleGoHome}
         onTryAgain={handleTryAgain}
       />
@@ -199,8 +342,13 @@ export default function LaunchRoute() {
         plugins={parseResult.plugins}
         parametersSupported={backend.kind !== "local"}
         message={parseResult.message}
-        isLoading={createConversation.isPending}
+        isLoading={createConversation.isPending || isInstalling}
+        mode={automationMode ? "automation" : "conversation"}
+        preflight={automationMode ? (preflight ?? null) : null}
         onStartConversation={handleStartConversation}
+        onInstallAutomation={
+          automationMode ? handleInstallAutomation : undefined
+        }
         onClose={handleGoHome}
       />
     </div>
