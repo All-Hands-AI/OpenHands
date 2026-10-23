@@ -1135,10 +1135,10 @@ describe("static-server.mjs MARS web bridge (Docker arguments)", () => {
     return `http://127.0.0.1:${address.port}`;
   }
 
-  // docker/entrypoint.sh runs `--host :: --session-api-key <key>` with no
-  // `--allow-lan-session-key`: the key is stripped from the HTML, but the
-  // opted-in bridge must still mount behind it.
-  it("mounts with MARS_WEB=1 and the entrypoint's `--host :: --session-api-key` arguments", async () => {
+  // docker/entrypoint.sh passes the key via SESSION_API_KEY with --host ::
+  // but no --allow-lan-session-key: HTML omits the key while the opted-in
+  // bridge still mounts behind it.
+  it("mounts with MARS_WEB=1 and the entrypoint's non-loopback host and key", async () => {
     vi.stubEnv("MARS_WEB", "1");
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const origin = await start({ host: "::", sessionApiKey: "docker-key" });
@@ -1177,7 +1177,7 @@ describe("static-server.mjs MARS web bridge (Docker arguments)", () => {
     expect(
       entrypoint.match(/^.*node \/opt\/agent-canvas\/static-server\.mjs/gm),
     ).toEqual([
-      "node /opt/agent-canvas/static-server.mjs",
+      'SESSION_API_KEY="$EFFECTIVE_SESSION_KEY" node /opt/agent-canvas/static-server.mjs',
       "  MARS_WEB=0 node /opt/agent-canvas/static-server.mjs",
     ]);
   });
