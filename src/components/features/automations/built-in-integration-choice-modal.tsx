@@ -16,6 +16,7 @@ import { McpLogoBadge } from "#/components/features/mcp-logo-badge";
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import { modalTitleLgClassName } from "#/utils/modal-classes";
+import { pillToggleClassName } from "#/utils/pill-toggle-classes";
 
 /**
  * Whether the current user has already connected the built-in integration
@@ -101,7 +102,7 @@ export function BuiltInIntegrationChoiceModal({
     >
       <div
         data-testid="built-in-integration-choice-modal"
-        className="relative flex w-xl max-w-full flex-col rounded-xl border border-border bg-base-secondary"
+        className="relative flex w-[92vw] max-w-xl flex-col rounded-xl border border-border bg-base-secondary"
       >
         <ModalCloseButton
           onClose={onClose}
@@ -120,7 +121,11 @@ export function BuiltInIntegrationChoiceModal({
             )}
           </p>
         </header>
-        <div role="tablist" className="flex w-full items-center gap-2 px-6">
+        <div
+          role="tablist"
+          aria-label={t(I18nKey.AUTOMATION_SETUP_CHOICE$TITLE)}
+          className="flex w-full flex-wrap items-center gap-2 px-6"
+        >
           {tabs.map(({ id, label, recommended }) => {
             const isActive = selectedTab === id;
             return (
@@ -128,14 +133,14 @@ export function BuiltInIntegrationChoiceModal({
                 key={id}
                 type="button"
                 role="tab"
+                id={`built-in-integration-choice-tab-${id}`}
                 aria-selected={isActive}
+                aria-controls={`built-in-integration-choice-panel-${id}`}
                 data-testid={`built-in-integration-choice-tab-${id}`}
                 onClick={() => setSelectedTab(id)}
                 className={cn(
-                  "inline-flex flex-1 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-full border-0 px-3 py-1.5 text-center text-sm transition-colors",
-                  isActive
-                    ? "bg-contrast text-contrast-foreground"
-                    : "bg-contrast/5 text-tertiary-light hover:bg-surface-raised hover:text-contrast",
+                  pillToggleClassName(isActive),
+                  "flex-1 justify-center text-center",
                 )}
               >
                 {label}
@@ -155,7 +160,12 @@ export function BuiltInIntegrationChoiceModal({
             );
           })}
         </div>
-        <div className="px-6 pb-6 pt-4">
+        <div
+          role="tabpanel"
+          id={`built-in-integration-choice-panel-${selectedTab}`}
+          aria-labelledby={`built-in-integration-choice-tab-${selectedTab}`}
+          className="px-6 pb-6 pt-4"
+        >
           {selectedTab === "built-in" ? (
             <div
               data-testid="built-in-integration-choice-option-built-in"
@@ -165,9 +175,7 @@ export function BuiltInIntegrationChoiceModal({
                 <McpLogoBadge entry={integration} />
                 <div className="flex flex-col gap-1">
                   <h3 className="text-sm font-semibold text-contrast">
-                    {t(I18nKey.AUTOMATION_SETUP_CHOICE$BUILT_IN_TITLE, {
-                      name,
-                    })}
+                    {name}
                   </h3>
                   <p className="text-xs leading-relaxed text-tertiary-light">
                     {t(I18nKey.AUTOMATION_SETUP_CHOICE$BUILT_IN_DESCRIPTION, {

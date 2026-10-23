@@ -41111,24 +41111,6 @@
     "zh-TW": "當能夠持續監聽事件時，{{name}} 回應程式的效果最佳。請選擇符合你需求的設定方式。",
     "id": "Responder {{name}} bekerja paling baik saat dapat memantau peristiwa secara terus-menerus. Pilih penyiapan yang sesuai dengan kebutuhan Anda."
   },
-  "AUTOMATION_SETUP_CHOICE$BUILT_IN_TITLE": {
-    "ar": "{{name}}",
-    "ca": "{{name}}",
-    "de": "{{name}}",
-    "en": "{{name}}",
-    "es": "{{name}}",
-    "fr": "{{name}}",
-    "it": "{{name}}",
-    "ja": "{{name}}",
-    "ko-KR": "{{name}}",
-    "no": "{{name}}",
-    "pt": "{{name}}",
-    "tr": "{{name}}",
-    "uk": "{{name}}",
-    "zh-CN": "{{name}}",
-    "zh-TW": "{{name}}",
-    "id": "{{name}}"
-  },
   "AUTOMATION_SETUP_CHOICE$BUILT_IN_DESCRIPTION": {
     "ar": "الطريقة الأسرع والأبسط لإعداد مُستجيب {{name}}.",
     "ca": "La manera més ràpida i senzilla de configurar un responedor de {{name}}.",

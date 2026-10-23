@@ -1133,11 +1133,12 @@ describe("recommended automations", () => {
       );
 
       // Assert
-      expect(
-        await screen.findByTestId("built-in-integration-choice-modal"),
-      ).toHaveTextContent(
-        `AUTOMATION_SETUP_CHOICE$BUILT_IN_TITLE:${integrationName}`,
+      const modal = await screen.findByTestId(
+        "built-in-integration-choice-modal",
       );
+      expect(
+        within(modal).getByRole("heading", { level: 3, name: integrationName }),
+      ).toBeInTheDocument();
       expect(mockNavigate).not.toHaveBeenCalled();
       expect(screen.queryByTestId("mcp-install-modal")).not.toBeInTheDocument();
     },
@@ -1168,6 +1169,41 @@ describe("recommended automations", () => {
     ).not.toBeInTheDocument();
     expect(screen.queryByTestId("mcp-install-modal")).not.toBeInTheDocument();
     expect(mockCreateConversationMutate).not.toHaveBeenCalled();
+  });
+
+  it("shows a connected user how to use the built-in integration and closes without opening its settings", async () => {
+    // Arrange
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+    openSpy.mockClear();
+    await activateCloudBackend({
+      providersConfigured: ["github"],
+      settings: { provider_tokens_set: { github: null } },
+    });
+    renderLauncher({ withBackendProvider: true });
+    // Wait until the settings show GitHub as connected.
+    await within(
+      await screen.findByTestId(
+        "recommended-automation-pills-github-repo-monitor-wrap",
+      ),
+    ).findByText("RECOMMENDED_AUTOMATIONS$CONNECTED");
+    fireEvent.click(
+      screen.getByTestId("recommended-automation-card-github-issue-to-pr"),
+    );
+    expect(
+      await screen.findByTestId("built-in-integration-choice-example"),
+    ).toBeInTheDocument();
+
+    // Act
+    fireEvent.click(
+      screen.getByTestId("built-in-integration-choice-use-built-in"),
+    );
+
+    // Assert
+    expect(openSpy).not.toHaveBeenCalled();
+    expect(
+      screen.queryByTestId("built-in-integration-choice-modal"),
+    ).not.toBeInTheDocument();
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it("shows the native integration first and the MCP server on its own tab", async () => {
