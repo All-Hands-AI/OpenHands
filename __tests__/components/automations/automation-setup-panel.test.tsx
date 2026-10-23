@@ -421,9 +421,6 @@ describe("AutomationSetupPanel", () => {
       screen.queryByText("AUTOMATION_SETUP$PYTHON_CODE"),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByTestId("automation-setup-model"),
-    ).not.toBeInTheDocument();
-    expect(
       screen.getByTestId("automation-setup-custom-code-grip"),
     ).toBeInTheDocument();
     expect(
@@ -3017,7 +3014,7 @@ describe("AutomationSetupPanel", () => {
     expect(queryClient.getQueryState(listKey)?.isInvalidated).toBe(true);
   });
 
-  it("shows existing custom bundle metadata without replacing it on save", async () => {
+  it("shows existing custom bundle metadata and saves a model change without replacing the bundle", async () => {
     vi.mocked(AutomationService.updateAutomation).mockResolvedValue({
       id: "auto-1",
     } as never);
@@ -3055,6 +3052,8 @@ describe("AutomationSetupPanel", () => {
       screen.queryByTestId("automation-setup-custom-code"),
     ).not.toBeInTheDocument();
 
+    await user.click(screen.getByTestId("automation-setup-model"));
+    await user.click(screen.getByTestId("automation-setup-model-option-fast"));
     await user.click(screen.getByTestId("automation-setup-save"));
 
     await waitFor(() =>
@@ -3062,6 +3061,7 @@ describe("AutomationSetupPanel", () => {
         "auto-1",
         expect.objectContaining({
           name: "Nightly scan",
+          model: "fast",
         }),
       ),
     );
