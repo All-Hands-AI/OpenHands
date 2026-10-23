@@ -58,6 +58,14 @@ if (!runDir) {
 const privateDir = join(runDir, "private");
 const evidenceDir = join(runDir, "evidence");
 const baseUrl = new URL(process.env.OH_VERIFY_BASE_URL);
+// Other origins this run serves (`launch --lock-to-cloud`): its own pages too.
+const runOrigins = new Set([
+  baseUrl.origin,
+  ...(process.env.OH_VERIFY_EXTRA_ORIGINS ?? "")
+    .split(",")
+    .filter(Boolean)
+    .map((u) => new URL(u).origin),
+]);
 const eventsPath = join(privateDir, "browser-events.jsonl");
 const VIEWPORTS = {
   desktop: { width: 1440, height: 1000 },
@@ -225,7 +233,7 @@ function record(kind, page, detail) {
     ...detail,
   };
   const subject = entry.url || entry.page;
-  entry.appOrigin = originOf(subject) === baseUrl.origin;
+  entry.appOrigin = runOrigins.has(originOf(subject));
   events.push(entry);
   try {
     appendFileSync(eventsPath, `${JSON.stringify(entry)}\n`, { mode: 0o600 });
@@ -291,7 +299,7 @@ function watch(page) {
       query: query || undefined,
       method: request.method(),
       type: request.resourceType(),
-      app: origin === baseUrl.origin,
+      app: runOrigins.has(origin),
       body,
       ...bodyDetails,
     };
@@ -537,9 +545,9 @@ function evidencePath(feature, name, ext) {
 
 function assertAppUrl(target, allowExternal) {
   const url = new URL(target, baseUrl);
-  if (!allowExternal && url.origin !== baseUrl.origin) {
+  if (!allowExternal && !runOrigins.has(url.origin)) {
     throw new Error(
-      `Refusing to navigate outside this run (${baseUrl.origin}); pass --allow-external for a deliberate external check`,
+      `Refusing to navigate outside this run (${[...runOrigins].join(", ")}); pass --allow-external for a deliberate external check`,
     );
   }
   return url.toString();

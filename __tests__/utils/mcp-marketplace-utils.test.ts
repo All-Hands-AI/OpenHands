@@ -6,6 +6,7 @@ import {
   getDefaultMcpConnectionOption,
   getDefaultMcpTransport,
   getInstallableMcpConnectionOption,
+  getInstallableMcpConnectionOptions,
   getMarketplaceEntriesByPopularity,
   getMarketplaceEntryById,
   getMcpConnectionOptions,
@@ -198,6 +199,66 @@ describe("getInstallableMcpConnectionOption", () => {
     };
     const option = getInstallableMcpConnectionOption(noOptionsEntry);
     expect(option).toBeUndefined();
+  });
+});
+
+describe("getInstallableMcpConnectionOptions", () => {
+  it("offers Sentry's OAuth and personal-token options, OAuth first", () => {
+    const sentry = MCP_MARKETPLACE.find((e) => e.id === "sentry")!;
+    const options = getInstallableMcpConnectionOptions(sentry);
+
+    expect(options.map((option) => option.id)).toEqual(["mcp", "api"]);
+    expect(options[0]).toMatchObject({
+      transport: { kind: "shttp", url: "https://mcp.sentry.dev/mcp" },
+      auth: { strategy: "oauth2" },
+    });
+    expect(options[1].transport).toMatchObject({
+      kind: "stdio",
+      command: "npx",
+      args: ["-y", "@sentry/mcp-server"],
+    });
+    expect(getInstallableMcpConnectionOption(sentry)).toBe(options[0]);
+  });
+
+  it("keeps a single option for entries with one installable option", () => {
+    expect(
+      getInstallableMcpConnectionOptions(slackEntry).map((o) => o.id),
+    ).toEqual(["api"]);
+  });
+
+  it("offers one OAuth fallback when no option is directly installable", () => {
+    const entry = {
+      ...slackEntry,
+      connectionOptions: [
+        {
+          id: "first",
+          provider: "mcp",
+          auth: {
+            strategy: "oauth2",
+            oauth: { authorizationUrl: "https://example.com/authorize" },
+          },
+          transport: { kind: "shttp", url: "https://example.com/mcp" },
+        },
+        {
+          id: "second",
+          provider: "mcp",
+          auth: {
+            strategy: "oauth2",
+            oauth: { tokenUrl: "https://example.com/token" },
+          },
+          transport: { kind: "shttp", url: "https://example.com/other" },
+        },
+      ],
+    } as typeof slackEntry;
+
+    const options = getInstallableMcpConnectionOptions(entry);
+
+    expect(options).toHaveLength(1);
+    expect(options[0]).toMatchObject({
+      id: "first",
+      auth: { strategy: "oauth2" },
+    });
+    expect(options[0].auth.oauth).toBeUndefined();
   });
 });
 

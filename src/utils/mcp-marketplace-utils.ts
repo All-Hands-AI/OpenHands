@@ -79,15 +79,25 @@ function getDiscoveryOAuthOption(
   return { ...option, auth: { strategy: "oauth2" } };
 }
 
+/**
+ * The options the install dialog can offer, in catalog order. The first one
+ * is the entry's preferred option and the dialog's default.
+ */
+export function getInstallableMcpConnectionOptions(
+  entry: MarketplaceEntry,
+): McpMarketplaceConnectionOption[] {
+  const options = getMcpConnectionOptions(entry);
+  const installable = options.filter(isLocallyInstallableMcpOption);
+  if (installable.length > 0) return installable;
+  // @spec MCP-006 — Library installs never dead-end
+  const fallback = options.map(getDiscoveryOAuthOption).find(Boolean);
+  return fallback ? [fallback] : [];
+}
+
 export function getInstallableMcpConnectionOption(
   entry: MarketplaceEntry,
 ): McpMarketplaceConnectionOption | undefined {
-  const options = getMcpConnectionOptions(entry);
-  // @spec MCP-006 — Library installs never dead-end
-  return (
-    options.find(isLocallyInstallableMcpOption) ??
-    options.map(getDiscoveryOAuthOption).find(Boolean)
-  );
+  return getInstallableMcpConnectionOptions(entry)[0];
 }
 
 export function getDefaultMcpTransport(
