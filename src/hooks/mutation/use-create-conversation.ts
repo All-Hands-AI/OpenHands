@@ -11,7 +11,10 @@ import { useActiveBackend } from "#/contexts/active-backend-context";
 import PluginsManagementService, {
   type InstalledPluginInfo,
 } from "#/api/plugins-management-service";
-import { PLUGINS_QUERY_KEYS } from "#/hooks/query/query-keys";
+import {
+  PLUGINS_QUERY_KEYS,
+  SANDBOX_TEMPLATES_QUERY_KEYS,
+} from "#/hooks/query/query-keys";
 import { launchConversation } from "#/hooks/mutation/resolve-conversation-launch";
 import { pluginReferenceKey } from "#/utils/plugin-display";
 import {
@@ -40,6 +43,7 @@ export interface CreateConversationVariables {
   // active AgentProfile (if any) is used so home-composed conversations
   // launch from the user's selected profile (#3727).
   agentProfileId?: string;
+  sandboxSpecId?: string;
   // Cloud: run on this LLM profile (a member's home pick) without activating it.
   llmProfile?: string;
   entryPoint?: string; // analytics only; not forwarded to the service
@@ -103,6 +107,7 @@ export const useCreateConversation = ({
         parentConversationId,
         agentType,
         agentProfileId,
+        sandboxSpecId,
         llmProfile,
       } = variables;
 
@@ -119,6 +124,9 @@ export const useCreateConversation = ({
         },
         {
           initialUserMsg: query,
+          ...(sandboxSpecId && backend.kind === "cloud"
+            ? { sandboxSpecId }
+            : {}),
           automationSetup,
           ...(automationSetupTags ? { automationSetupTags } : {}),
           conversationInstructions,
@@ -212,6 +220,13 @@ export const useCreateConversation = ({
       };
     },
     onSuccess: async (data, variables) => {
+      if (variables.sandboxSpecId) {
+        // Start tasks may fail asynchronously after creation. Refresh the
+        // menu now so a revoked choice isn't offered again on return home.
+        queryClient.invalidateQueries({
+          queryKey: [...SANDBOX_TEMPLATES_QUERY_KEYS.all, backend.id, orgId],
+        });
+      }
       trackConversationCreated({
         conversationId: data.conversation_id,
         taskId: data.task_id,
