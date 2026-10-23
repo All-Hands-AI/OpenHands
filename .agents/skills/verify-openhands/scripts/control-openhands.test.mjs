@@ -25,6 +25,7 @@ import { BUILD_INPUTS } from "./lib/build-inputs.mjs";
 import {
   editorOffset,
   launcherEnvFor,
+  lockedCloudOrigin,
   portsAfterRestart,
   runPorts,
 } from "./lib/launcher-env.mjs";
@@ -73,6 +74,7 @@ import {
   knownBugBlocks,
   parseBugPredicate,
   proofVerdict,
+  viewportToRestore,
 } from "./lib/known-bug.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -690,6 +692,53 @@ test("this checkout's launcher answers the editor probe, and --vscode opts in", 
   assert.match(help.stdout, /OH_CANVAS_ENABLE_VSCODE/);
 });
 
+test("--lock-to-cloud takes P+4, keeps it across a restart, and needs an http(s) URL", () => {
+  const launcher = (offset) => ({ offset, source: "launcher" });
+  const locked = runPorts(18800, null, { lockedCloud: true });
+  assert.deepEqual(locked, {
+    ingress: 18800,
+    agentServer: 18801,
+    automation: 18802,
+    frontend: 18803,
+    lockedCloud: 18804,
+  });
+  // The locked page is not the launcher's: whatever the editor answer, a
+  // restart keeps its port.
+  assert.equal(
+    portsAfterRestart(locked, launcher(null)).ports.lockedCloud,
+    18804,
+  );
+  assert.equal(
+    portsAfterRestart(locked, launcher(1000)).ports.lockedCloud,
+    18804,
+  );
+  assert.equal(
+    portsAfterRestart(runPorts(18800, null), launcher(null)).ports.lockedCloud,
+    undefined,
+  );
+  assert.equal(
+    lockedCloudOrigin("https://app.all-hands.dev/"),
+    "https://app.all-hands.dev",
+  );
+  assert.throws(() => lockedCloudOrigin("app.all-hands.dev"), /Cloud URL/);
+  assert.throws(() => lockedCloudOrigin("ftp://example.com"), /http\(s\)/);
+  // A bad or missing URL is a usage error before anything is built or started.
+  for (const flags of [
+    ["--lock-to-cloud", "ftp://example.com"],
+    ["--lock-to-cloud"],
+  ]) {
+    const result = run(["launch", "--new", ...flags]);
+    assert.equal(result.status, 2, JSON.stringify(result.json));
+    assert.match(result.json.hint, /--lock-to-cloud https:/);
+  }
+  const help = spawnSync(process.execPath, [cli, "help", "launch"], {
+    encoding: "utf8",
+  });
+  assert.match(help.stdout, /--mars-web/);
+  assert.match(help.stdout, /MARS_WEB=1/);
+  assert.match(help.stdout, /--lock-to-cloud URL/);
+});
+
 test("a restart follows the launcher's editor answer, or keeps its ports", () => {
   const without = runPorts(18800, null);
   const withEditor = runPorts(18800, 1000);
@@ -924,6 +973,23 @@ test("cited test ids resolve through literals and dynamic prefixes", () => {
   assert.equal(result.cited, 4);
   assert.deepEqual(result.unresolved, [
     { id: "renamed-away-button", files: ["F14-secrets.md"] },
+  ]);
+  // A one-word prefix accounts for an id only when the source builds ids
+  // from it; otherwise a removed id such as automation-setup-agent-profile
+  // would resolve through the plain word "automation".
+  const words = new Set(["automation", "edit"]);
+  words.heads = new Set(["edit"]);
+  words.tails = new Set(["message"]);
+  const strict = resolveTestids(
+    new Map([
+      ["automation-setup-agent-profile", new Set(["F28.md"])],
+      ["edit-automation-save", new Set(["F23.md"])],
+      ["agent-message", new Set(["F06.md"])],
+    ]),
+    words,
+  );
+  assert.deepEqual(strict.unresolved, [
+    { id: "automation-setup-agent-profile", files: ["F28.md"] },
   ]);
   // The live map against the live source tree: zero unresolved today, and
   // --strict makes any drift a failing exit.
@@ -2874,4 +2940,19 @@ test("browser media validates motion before dispatch and preserves playback obse
     await new Promise((resolve) => server.close(resolve));
     rmSync(runDir, { recursive: true, force: true });
   }
+});
+
+test("bug run puts back the viewport a block changed", () => {
+  const desktop = { width: 1440, height: 1000 };
+  const phone = { width: 390, height: 844 };
+  // F07.overview-toggle phone-overview switches to phone: back to desktop.
+  assert.equal(viewportToRestore(desktop, phone), "1440x1000");
+  assert.equal(viewportToRestore(phone, desktop), "390x844");
+  // Unchanged, or nothing known before the block: nothing to restore.
+  assert.equal(viewportToRestore(desktop, { ...desktop }), null);
+  assert.equal(viewportToRestore(undefined, phone), null);
+  const help = spawnSync(process.execPath, [cli, "help", "bug"], {
+    encoding: "utf8",
+  });
+  assert.match(help.stdout, /viewportRestored/);
 });
