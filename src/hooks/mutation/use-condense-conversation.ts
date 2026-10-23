@@ -22,6 +22,9 @@ export const useCondenseConversation = () => {
         variables.conversationUrl,
         variables.sessionApiKey,
       ),
+    // The Compact context action toasts its own failure; the global mutation
+    // toast would show the same message a second time.
+    meta: { disableToast: true },
     onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["conversation-metrics", variables.conversationId],
