@@ -200,7 +200,7 @@ test("project skill in workspace/.agents/skills/ triggers on matching keyword", 
   });
 });
 
-test("user skill in ~/.openhands/skills/ triggers on matching keyword", async ({
+test("user skill in the persistence directory triggers on matching keyword", async ({
   page,
   request,
   journey,

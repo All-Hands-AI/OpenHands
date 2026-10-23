@@ -149,10 +149,10 @@ jobs:
           AGENT_SERVER_VERSION: ${{ steps.defaults.outputs.agent_server_version }}
         run: |
           uv venv .mock-llm-venv
-          uv pip install -p .mock-llm-venv "openhands-sdk==$AGENT_SERVER_VERSION"
+          uv pip install -p .mock-llm-venv "openhands-sdk==$AGENT_SERVER_VERSION" pytest
 
-      - name: Test mock LLM title isolation
-        run: .mock-llm-venv/bin/python3 -m unittest discover -s tests/e2e/mock-llm/scripts -p 'test_*.py'
+      - name: Test mock LLM server
+        run: .mock-llm-venv/bin/python3 -m pytest tests/e2e/mock-llm/scripts -q
 
       - name: Verify mock LLM server starts
         run: |
@@ -177,10 +177,6 @@ jobs:
       # Docker) and require build/index.html to exist locally. The regular
       # mock-llm-e2e workflow builds before running; we do the same here.
       - name: Build frontend (for partial-stack tests)
-        env:
-          # Partial-stack tests use the local static build, so keep its tool
-          # payload consistent with the mock-LLM stack runtime settings.
-          VITE_ENABLE_BROWSER_TOOLS: "false"
         run: npm run build:app
 
       # ── Run tests ──────────────────────────────────────────────────────

@@ -1,6 +1,11 @@
 name: Mock-LLM E2E Tests
 
 on:
+  pull_request:
+    paths:
+      - "tests/e2e/mock-llm/**"
+      - "playwright.mock-llm.config.ts"
+      - ".github/workflows/mock-llm-e2e.yml"
   push:
     branches: [main]
   workflow_dispatch:
@@ -28,6 +33,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Read defaults from config/defaults.json
         id: defaults
@@ -75,7 +82,7 @@ jobs:
           AGENT_SERVER_VERSION: ${{ steps.defaults.outputs.agent_server_version }}
         run: |
           uv venv .mock-llm-venv
-          uv pip install -p .mock-llm-venv "openhands-sdk==$AGENT_SERVER_VERSION"
+          uv pip install -p .mock-llm-venv "openhands-sdk==$AGENT_SERVER_VERSION" pytest
 
       - name: Pre-warm automation backend (uvx cache)
         env:
@@ -87,8 +94,8 @@ jobs:
           # before the automation backend finishes installing (~60-90s).
           uvx --from "openhands-automation==$AUTOMATION_VERSION" python -c "from openhands.automation.app import app; print('automation package cached')"
 
-      - name: Test mock LLM title isolation
-        run: .mock-llm-venv/bin/python3 -m unittest discover -s tests/e2e/mock-llm/scripts -p 'test_*.py'
+      - name: Test mock LLM server
+        run: .mock-llm-venv/bin/python3 -m pytest tests/e2e/mock-llm/scripts -q
 
       - name: Verify mock LLM server starts
         run: |
@@ -110,10 +117,6 @@ jobs:
           kill $SERVER_PID
 
       - name: Build frontend (for agent-canvas binary)
-        env:
-          # VITE_ENABLE_BROWSER_TOOLS is evaluated at Vite build time;
-          # setting it only when the static stack starts is too late.
-          VITE_ENABLE_BROWSER_TOOLS: "false"
         run: npm run build:app
 
       - name: Run mock-LLM E2E tests
@@ -204,7 +207,7 @@ jobs:
             --results "test-results-mock-llm/results.json" \
             --output "$MOCK_LLM_REPORT_PATH" \
             --workflow-url "$MOCK_LLM_WORKFLOW_URL" \
-            --commit "${{ github.sha }}" \
+            --commit "${{ github.event.pull_request.head.sha || github.sha }}" \
             --artifact-url "${{ steps.upload_artifacts.outputs.artifact-url || '' }}" \
             --exit-code "${{ steps.run_tests.outputs.exit_code }}"
           cat "$MOCK_LLM_REPORT_PATH" >> "$GITHUB_STEP_SUMMARY"

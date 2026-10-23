@@ -98,6 +98,7 @@ async function prepareAttachedConversation(
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await dismissAnalyticsModal(page);
   await waitForTestId(page, "home-chat-launcher");
+  await page.getByTestId("home-launcher-mode-code").click();
 
   // Type and send a message from the home page launcher
   await page.evaluate(
@@ -231,7 +232,10 @@ test("commits tab opens for attached workspace", async ({
     if (await commitsTab.isVisible().catch(() => false)) {
       await commitsTab.click();
     } else {
-      await page.getByTestId("ellipsis-button").click();
+      await page
+        .getByTestId("tabs-pane-header")
+        .getByTestId("ellipsis-button")
+        .click();
       await page.getByTestId("conversation-tabs-menu-open-commits").click();
     }
     await expect(page.getByTestId("conversation-tab-commits")).toBeVisible({
@@ -290,6 +294,7 @@ test("files tab defaults to file-tree view without attached workspace", async ({
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await dismissAnalyticsModal(page);
   await waitForTestId(page, "home-chat-launcher");
+  await page.getByTestId("home-launcher-mode-code").click();
 
   // Start a brand-new conversation WITHOUT seeding any workspace metadata
   await page.evaluate(
