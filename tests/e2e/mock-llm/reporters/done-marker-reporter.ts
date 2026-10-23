@@ -46,6 +46,7 @@ interface TestRecord {
 class DoneMarkerReporter implements Reporter {
   private totalTests = 0;
   private completedTests = 0;
+  private completedTestIds = new Set<string>();
   private allPassed = true;
   private tests: TestRecord[] = [];
   private markerDirCreated = false;
@@ -55,7 +56,8 @@ class DoneMarkerReporter implements Reporter {
   }
 
   onTestEnd(test: TestCase, result: TestResult) {
-    this.completedTests++;
+    this.completedTestIds.add(test.id);
+    this.completedTests = this.completedTestIds.size;
     const passed = result.status === "passed" || result.status === "skipped";
     if (!passed) {
       this.allPassed = false;
@@ -74,12 +76,20 @@ class DoneMarkerReporter implements Reporter {
 
     // Always flush results so a mid-suite kill still leaves usable data.
     this.writeResults();
+    // Preserve completion evidence before potentially hanging server teardown.
+    if (this.totalTests > 0 && this.completedTests >= this.totalTests) {
+      this.writeCompletionMarkers();
+    }
   }
 
-  onEnd(_result: FullResult) {
+  onEnd(result: FullResult) {
     // Fallback: if onTestEnd never fired (webServer timeout, config
     // error, etc.), treat that as a failure and write what we have.
-    if (this.totalTests === 0 || this.completedTests === 0) {
+    if (
+      result.status !== "passed" ||
+      this.totalTests === 0 ||
+      this.completedTests === 0
+    ) {
       this.allPassed = false;
     }
     // If the run was truncated (globalTimeout), completed < total means
