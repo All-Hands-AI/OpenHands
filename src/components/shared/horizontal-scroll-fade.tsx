@@ -1,24 +1,13 @@
 import React from "react";
+import { useDragScroll } from "#/hooks/use-drag-scroll";
+import {
+  readScrollFadeState,
+  SCROLL_EDGE_THRESHOLD_PX,
+  type ScrollFadeState,
+} from "#/utils/scroll-fade-state";
 import { cn } from "#/utils/utils";
 
-const SCROLL_EDGE_THRESHOLD_PX = 1;
 const FADE_WIDTH_CLASS = "w-10";
-
-export interface ScrollFadeState {
-  left: boolean;
-  right: boolean;
-}
-
-export function readScrollFadeState(element: HTMLDivElement): ScrollFadeState {
-  const { scrollLeft, scrollWidth, clientWidth } = element;
-  const maxScroll = scrollWidth - clientWidth;
-  const hasOverflow = maxScroll > SCROLL_EDGE_THRESHOLD_PX;
-
-  return {
-    left: hasOverflow && scrollLeft > SCROLL_EDGE_THRESHOLD_PX,
-    right: hasOverflow && scrollLeft < maxScroll - SCROLL_EDGE_THRESHOLD_PX,
-  };
-}
 
 interface HorizontalScrollFadeProps {
   children: React.ReactNode;
@@ -34,9 +23,6 @@ interface HorizontalScrollFadeProps {
   draggable?: boolean;
 }
 
-/** Pointer travel beyond which a press counts as a drag, not a click. */
-const DRAG_THRESHOLD_PX = 4;
-
 export function HorizontalScrollFade({
   children,
   className,
@@ -46,6 +32,8 @@ export function HorizontalScrollFade({
   draggable = false,
 }: HorizontalScrollFadeProps) {
   const scrollRef = React.useRef<HTMLDivElement>(null);
+  const { handleMouseDown, handleClickCapture, handleDragStart } =
+    useDragScroll(scrollRef);
   const [fadeState, setFadeState] = React.useState<ScrollFadeState>({
     left: false,
     right: false,
@@ -84,60 +72,25 @@ export function HorizontalScrollFade({
       return undefined;
     }
 
-    let startX = 0;
-    let startScrollLeft = 0;
-    let isPressed = false;
-    let didDrag = false;
-
-    const handlePointerDown = (event: PointerEvent) => {
-      if (event.pointerType !== "mouse" || event.button !== 0) return;
-      isPressed = true;
-      didDrag = false;
-      startX = event.clientX;
-      startScrollLeft = element.scrollLeft;
-    };
-    const handlePointerMove = (event: PointerEvent) => {
-      if (!isPressed) return;
-      const delta = event.clientX - startX;
-      if (!didDrag && Math.abs(delta) < DRAG_THRESHOLD_PX) return;
-      didDrag = true;
-      element.scrollLeft = startScrollLeft - delta;
-    };
-    const handlePointerEnd = () => {
-      isPressed = false;
-    };
-    // A drag ends on the element it started on; swallow that click so a
-    // dragged chip is not also toggled.
-    const handleClick = (event: MouseEvent) => {
-      if (!didDrag) return;
-      didDrag = false;
-      event.stopPropagation();
-      event.preventDefault();
-    };
     const handleWheel = (event: WheelEvent) => {
       if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
       const maxScroll = element.scrollWidth - element.clientWidth;
       if (maxScroll <= SCROLL_EDGE_THRESHOLD_PX) return;
-      const next = element.scrollLeft + event.deltaY;
-      if (next < 0 || next > maxScroll) return;
+      // Clamp so a wheel step can reach either end; once the content is at an
+      // edge, leave the event to scroll the page.
+      const next = Math.min(
+        Math.max(element.scrollLeft + event.deltaY, 0),
+        maxScroll,
+      );
+      if (Math.abs(next - element.scrollLeft) < SCROLL_EDGE_THRESHOLD_PX) {
+        return;
+      }
       event.preventDefault();
       element.scrollLeft = next;
     };
 
-    element.addEventListener("pointerdown", handlePointerDown);
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", handlePointerEnd);
-    window.addEventListener("pointercancel", handlePointerEnd);
-    element.addEventListener("click", handleClick, true);
     element.addEventListener("wheel", handleWheel, { passive: false });
-    return () => {
-      element.removeEventListener("pointerdown", handlePointerDown);
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerEnd);
-      window.removeEventListener("pointercancel", handlePointerEnd);
-      element.removeEventListener("click", handleClick, true);
-      element.removeEventListener("wheel", handleWheel);
-    };
+    return () => element.removeEventListener("wheel", handleWheel);
   }, [draggable]);
 
   return (
@@ -146,6 +99,9 @@ export function HorizontalScrollFade({
         ref={scrollRef}
         data-testid={scrollTestId}
         onScroll={updateFadeState}
+        onMouseDown={draggable ? handleMouseDown : undefined}
+        onClickCapture={draggable ? handleClickCapture : undefined}
+        onDragStart={draggable ? handleDragStart : undefined}
         className={cn(
           "max-w-full overflow-x-auto scrollbar-hide",
           draggable && "cursor-grab select-none active:cursor-grabbing",

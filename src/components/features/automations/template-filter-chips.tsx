@@ -7,6 +7,7 @@ import { McpLogoBadge } from "#/components/features/mcp-logo-badge";
 import { I18nKey } from "#/i18n/declaration";
 import type { TemplateTriggerKind } from "#/utils/automation-catalog";
 import { getMarketplaceEntryById } from "#/utils/mcp-marketplace-utils";
+import { pillToggleClassName } from "#/utils/pill-toggle-classes";
 import { cn } from "#/utils/utils";
 
 /** The Templates page filters: one integration and one trigger kind, combined. */
@@ -54,12 +55,7 @@ function FilterChip({
       data-testid={testId}
       aria-pressed={active}
       onClick={onClick}
-      className={cn(
-        "inline-flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap rounded-full border-0 px-3 py-1.5 text-sm transition-colors",
-        active
-          ? "bg-contrast text-contrast-foreground"
-          : "bg-contrast/5 text-tertiary-light hover:bg-surface-raised hover:text-contrast",
-      )}
+      className={cn(pillToggleClassName(active), "shrink-0")}
     >
       {children}
     </button>
@@ -90,6 +86,8 @@ export function TemplateFilterChips({
       draggable
       fadeTestIdPrefix="template-filters-fade"
       className="pb-2"
+      // Room for the chips' focus outline, which the scroller would clip.
+      scrollClassName="p-1"
     >
       <div
         role="group"
