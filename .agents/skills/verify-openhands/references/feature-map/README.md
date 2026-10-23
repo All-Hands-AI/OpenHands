@@ -5,7 +5,7 @@ of Agent Canvas. Read this index before driving the app, then open the matching
 feature file and run its recipe with `control-openhands`. The map is not a claim
 that every row passes today; the run's evidence ledger is.
 
-Maintenance baseline: main@d3a58cd1cc045bbb1b24f2c8c0d79a8404ef239b (2026-10-16). The next maintenance pass starts from this commit; a pass proposes the next baseline in its PR, and merging that PR accepts it.
+Maintenance baseline: main@1f7b1e69a19c1ce6162463427fb59fb0106ea780 (2026-10-20). The next maintenance pass starts from this commit; a pass proposes the next baseline in its PR, and merging that PR accepts it.
 
 ## Baseline preconditions
 
@@ -22,6 +22,7 @@ Maintenance baseline: main@d3a58cd1cc045bbb1b24f2c8c0d79a8404ef239b (2026-10-16)
   rate limit), `llm preset deepseek --no-validate` still saves the profiles:
   recipes that only need a conversation to exist can run on, and every
   recipe that reads a model reply is `blocked`, never a pass.
+- For critic checks, use an available, authorized OpenHands (`openhands/…`) or compatible OpenHands LLM-proxy profile, regardless of the main profile used for the pass. Its LLM key is reused when Critic API Key is empty. For a non-default proxy deployment, use its compatible critic endpoint. Restore the previous profile afterwards; see [F06](F06-agent-activity.md). Do not declare the critic blocked merely because the main model uses another provider. This does not authorize new credentials, additional budget, or sending private test data to another service.
 - The browser is at the desktop viewport (1440×1000) unless a recipe says
   otherwise; `control-openhands browser viewport phone` is 390×844.
 - Never drive an instance that this verification run did not start.
