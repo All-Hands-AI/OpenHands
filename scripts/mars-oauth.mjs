@@ -258,6 +258,9 @@ export function createSignInAttempts({
   function prune() {
     for (const [id, attempt] of attempts) {
       if (now() - attempt.createdAt <= ttlMs) continue;
+      // A return claimed just in time is still being finished; it settles,
+      // and is pruned, once its exchange answers.
+      if (attempt.status === "working") continue;
       if (attempt.status === "pending") {
         settle(attempt, "failed", "This sign-in expired. Start again.");
       }
@@ -330,6 +333,16 @@ export function createSignInAttempts({
       return null;
     },
 
+    /**
+     * Whether an attempt still waits for its return.
+     *
+     * @param {string} id
+     */
+    isOpen(id) {
+      prune();
+      return attempts.get(id)?.status === "pending";
+    },
+
     /** @param {string} id */
     succeed(id) {
       const attempt = attempts.get(id);
@@ -370,7 +383,8 @@ export function createSignInAttempts({
         }
         attempt.waiters.add(wake);
       });
-      return view(attempts.get(id));
+      // This attempt as it settled: expiring and cancelling also remove it.
+      return view(attempt);
     },
 
     /**
@@ -434,11 +448,13 @@ export function renderReturnPage({ ok, teamName = null, message = null }) {
 </head>
 <body><div class="card"><h1>${escapeHtml(title)}</h1><p>${escapeHtml(detail)}</p></div>
 <script>
-  // The code is spent either way; it leaves the address bar and history.
-  history.replaceState(null, "", location.pathname);
   ${
-    // A tab Canvas opened may close itself; any other stays with its message.
-    ok ? "setTimeout(function () { window.close(); }, 1500);" : ""
+    // A spent code leaves the address bar and history, and a tab Canvas
+    // opened may close itself. After a failure the address stays: its code
+    // may be unspent (another Canvas on this port), and it can be pasted.
+    ok
+      ? 'history.replaceState(null, "", location.pathname);\n  setTimeout(function () { window.close(); }, 1500);'
+      : ""
   }
 </script></body>
 </html>`;

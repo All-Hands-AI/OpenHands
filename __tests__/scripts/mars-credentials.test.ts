@@ -326,6 +326,44 @@ describe("createCredentialStore with a SecretStore (the Agent Canvas server)", (
     });
   });
 
+  it("keeps a connection another Canvas process added when this one renews a grant", () => {
+    // Two processes on one store, each with the list as it was at its start.
+    const { dir, store: first } = serverStore();
+    const teamOne = first.save({
+      kind: CREDENTIAL_KIND_OAUTH,
+      token: "team-1-access",
+      refreshToken: "team-1-refresh",
+      label: "DigitalOcean",
+    });
+    const second = serverStore(dir).store;
+    const teamTwo = first.save({
+      kind: CREDENTIAL_KIND_OAUTH,
+      token: "team-2-access",
+      refreshToken: "team-2-refresh",
+      label: "DigitalOcean",
+    });
+
+    second.updateGrant(teamOne.id, {
+      token: "team-1-access-2",
+      refreshToken: "team-1-refresh-2",
+    });
+
+    const restarted = serverStore(dir).store;
+    expect(restarted.list()).toMatchObject([
+      { id: teamOne.id },
+      { id: teamTwo.id },
+    ]);
+    expect(restarted.getActive()?.id).toBe(teamTwo.id);
+    expect(restarted.getGrant(teamOne.id)?.refreshToken).toBe(
+      "team-1-refresh-2",
+    );
+    // The renewing process sees the other's sign-in as signed in, too.
+    expect(second.list()[1]).toMatchObject({
+      id: teamTwo.id,
+      isExpired: false,
+    });
+  });
+
   it("keeps a sign-in for this run when the store refuses it, and says it was not saved", () => {
     const refusing = {
       ...createMemoryStore(),

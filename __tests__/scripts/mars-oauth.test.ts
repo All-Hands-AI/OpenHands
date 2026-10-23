@@ -255,6 +255,43 @@ describe("createSignInAttempts", () => {
       attempts.claim(new URL(authorizeUrl).searchParams.get("state")),
     ).toBeNull();
   });
+
+  it("finishes a return claimed just before its sign-in expired", async () => {
+    let now = 0;
+    const attempts = createSignInAttempts({ ttlMs: 1000, now: () => now });
+    const { attemptId, authorizeUrl } = attempts.begin({
+      clientId: "c",
+      redirectUri: REDIRECT,
+    });
+    now = 990;
+    attempts.claim(new URL(authorizeUrl).searchParams.get("state"));
+    const waiting = attempts.wait(attemptId, 10_000);
+
+    // The exchange is still out when the ten minutes pass.
+    now = 2000;
+    attempts.begin({ clientId: "c", redirectUri: REDIRECT });
+    attempts.succeed(attemptId);
+
+    await expect(waiting).resolves.toEqual({ status: "done", message: null });
+  });
+
+  it("tells a waiting page its sign-in expired", async () => {
+    let now = 0;
+    const attempts = createSignInAttempts({ ttlMs: 1000, now: () => now });
+    const { attemptId } = attempts.begin({
+      clientId: "c",
+      redirectUri: REDIRECT,
+    });
+    const waiting = attempts.wait(attemptId, 10_000);
+
+    now = 2000;
+    attempts.begin({ clientId: "c", redirectUri: REDIRECT });
+
+    await expect(waiting).resolves.toEqual({
+      status: "failed",
+      message: "This sign-in expired. Start again.",
+    });
+  });
 });
 
 describe("renderReturnPage", () => {
@@ -265,27 +302,28 @@ describe("renderReturnPage", () => {
     expect(page).not.toContain("<b>Team</b>");
   });
 
-  it("takes the spent code out of the address bar, whatever the outcome", () => {
-    for (const ok of [true, false]) {
+  it("takes the spent code out of the address bar after a sign-in, and leaves a failed one's to paste", () => {
+    const runPage = (ok: boolean) => {
       // The page's own script, run against a browser at the return address.
       const script = /<script>([\s\S]*?)<\/script>/.exec(
         renderReturnPage({ ok }),
       )![1];
       const history = { replaceState: vi.fn() };
       const location = { pathname: new URL(REDIRECT).pathname };
-
       new Function("history", "location", "setTimeout", script)(
         history,
         location,
         vi.fn(),
       );
+      return history.replaceState;
+    };
 
-      expect(history.replaceState).toHaveBeenCalledWith(
-        null,
-        "",
-        "/mars/oauth/callback",
-      );
-    }
+    expect(runPage(true)).toHaveBeenCalledWith(
+      null,
+      "",
+      "/mars/oauth/callback",
+    );
+    expect(runPage(false)).not.toHaveBeenCalled();
   });
 });
 
