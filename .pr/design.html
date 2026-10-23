@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiet Canvas backend logs by default — design doc</title>
+<style>
+  :root {
+    --bg: #fbfaf7;
+    --ink: #1b1d22;
+    --muted: #6a6f7a;
+    --line: #e2ded4;
+    --card: #ffffff;
+    --accent: #b4541f;
+    --accent-soft: #fdf1e8;
+    --green: #1f6f43;
+    --green-soft: #eaf5ee;
+    --red: #a83232;
+    --red-soft: #fbeceb;
+    --blue: #245b8f;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 48px 28px 96px; }
+  header { border-bottom: 2px solid var(--ink); padding-bottom: 22px; margin-bottom: 34px; }
+  .kicker { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  h1 { font-size: 34px; line-height: 1.2; margin: 10px 0 12px; letter-spacing: -.02em; }
+  .lede { font-size: 18px; color: #3c414b; margin: 0; max-width: 74ch; }
+  .meta { margin-top: 16px; font-family: var(--mono); font-size: 12.5px; color: var(--muted); }
+  .meta a { color: var(--blue); text-decoration: none; border-bottom: 1px dotted var(--blue); }
+  h2 { font-size: 22px; margin: 46px 0 14px; letter-spacing: -.01em; }
+  h2 .n { color: var(--accent); font-family: var(--mono); font-size: 15px; margin-right: 8px; }
+  h3 { font-size: 16px; margin: 26px 0 8px; }
+  p { margin: 10px 0; }
+  code, .mono { font-family: var(--mono); font-size: 13px; }
+  code { background: #f1eee7; padding: 1px 5px; border-radius: 4px; }
+  a { color: var(--blue); }
+  .callout {
+    border-left: 4px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 16px 20px;
+    margin: 22px 0;
+    border-radius: 0 8px 8px 0;
+  }
+  .callout .tag { font-weight: 700; color: var(--accent); }
+  .stats { display: flex; gap: 14px; flex-wrap: wrap; margin: 22px 0; }
+  .stat {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 18px; min-width: 150px;
+  }
+  .stat .k { font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .stat .v { font-family: var(--mono); font-size: 21px; font-weight: 700; margin-top: 4px; }
+  .stat .v .to { color: var(--green); }
+  .stat .v .from { color: var(--red); }
+  figure { margin: 22px 0; }
+  figcaption { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  svg { max-width: 100%; height: auto; display: block; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  td code { font-size: 12.5px; }
+  .files { background: var(--card); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .files .row { display: grid; grid-template-columns: 26px 1fr 92px; gap: 10px; padding: 11px 16px; border-bottom: 1px solid var(--line); align-items: baseline; }
+  .files .row:last-child { border-bottom: 0; }
+  .files .p { font-family: var(--mono); font-size: 13px; }
+  .files .d { font-family: var(--mono); font-size: 12.5px; text-align: right; color: var(--muted); }
+  .files .d .a { color: var(--green); }
+  .files .d .r { color: var(--red); }
+  .badge { font-size: 11px; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+  .badge.changed { background: var(--accent-soft); color: var(--accent); border-color: #eccdb6; }
+  .badge.added { background: var(--green-soft); color: var(--green); border-color: #c4e0cd; }
+  pre { background: #23252c; color: #e6e8ee; padding: 16px 18px; border-radius: 10px; overflow-x: auto; font-family: var(--mono); font-size: 12.5px; line-height: 1.55; }
+  pre .c { color: #8b93a7; }
+  pre .k { color: #ffc07a; }
+  pre .s { color: #9ae6a8; }
+  pre .x { color: #ff9d9d; }
+  details { margin: 10px 0 0; }
+  summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+  .twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 720px) { .twocol { grid-template-columns: 1fr; } }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .panel.bad { border-top: 3px solid var(--red); }
+  .panel.good { border-top: 3px solid var(--green); }
+  .panel h4 { margin: 0 0 8px; font-size: 13px; letter-spacing: .05em; text-transform: uppercase; }
+  .panel.bad h4 { color: var(--red); }
+  .panel.good h4 { color: var(--green); }
+  ul { margin: 10px 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .foot { margin-top: 54px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">Design doc · Agent Canvas</div>
+  <h1>Quiet backend logs by default</h1>
+  <p class="lede">
+    Launching Canvas printed several hundred lines of library-internal startup chatter, burying the
+    handful of lines a user needs. This PR makes a default launch readable and keeps the noise
+    available behind an explicit opt-in.
+  </p>
+  <div class="meta">
+    PR <a href="https://github.com/OpenHands/OpenHands/pull/18830">#18830</a> ·
+    Fixes <a href="https://github.com/OpenHands/OpenHands/issues/18823">#18823</a> ·
+    7 files · <span class="a">+624</span> / <span class="r">−13</span> ·
+    head <code>02d279d6c</code> · base <code>c69d5291b</code>
+  </div>
+</header>
+
+<h2><span class="n">01</span>What changed</h2>
+
+<p>
+  Both backends that Canvas spawns read <code>LOG_LEVEL</code> and default it to <code>INFO</code>.
+  At <code>INFO</code> the automation service's logging setup raises <em>every</em> registered logger —
+  including <code>sqlalchemy.orm</code> — so the SQLAlchemy model mapper narrates its own construction
+  and prints 338 lines before the service is even reachable. The launcher never set a level, so that
+  was the default experience.
+</p>
+
+<p>
+  This PR defaults both backends to <code>WARNING</code> in the shared launcher helper and in the
+  Docker entrypoint. An explicit <code>LOG_LEVEL</code> / <code>AUTOMATION_LOG_LEVEL</code> still wins,
+  and <code>--verbose</code> opts back into <code>DEBUG</code>. Uvicorn's own <code>--log-level</code>
+  is set from the same resolved value, because that flag — not <code>LOG_LEVEL</code> — governs the
+  startup banner and the per-request access lines.
+</p>
+
+<div class="callout">
+  <p><span class="tag">★ The choice of WARNING over ERROR is load-bearing.</span></p>
+  <p style="margin-bottom:0">
+    <code>ERROR</code> would have silenced the flood too, but it also hides a real, actionable warning
+    this repo emits today:
+    <code>Workspace retention is enabled but the configured root … does not exist on this host; no workspace will be purged.</code>
+    <code>WARNING</code> is the smallest change that removes the noise while keeping signals a user can act on.
+  </p>
+</div>
+
+<div class="stats">
+  <div class="stat">
+    <div class="k">Automation lines</div>
+    <div class="v"><span class="from">431</span> → <span class="to">7</span></div>
+  </div>
+  <div class="stat">
+    <div class="k">SQLAlchemy ORM lines</div>
+    <div class="v"><span class="from">338</span> → <span class="to">0</span></div>
+  </div>
+  <div class="stat">
+    <div class="k">With <code>--verbose</code></div>
+    <div class="v">1344 / 338</div>
+  </div>
+</div>
+
+<h2><span class="n">02</span>The behavior before → after</h2>
+
+<figure>
+<svg viewBox="0 0 960 300" role="img" aria-label="Before: launcher passes no level, so INFO reaches every logger including sqlalchemy.orm. After: launcher passes WARNING, so ORM output is suppressed while readiness survives.">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6a6f7a"/>
+    </marker>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a83232"/>
+    </marker>
+    <marker id="arg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f6f43"/>
+    </marker>
+  </defs>
+
+  <!-- BEFORE -->
+  <text x="12" y="22" font-size="13" font-weight="700" fill="#a83232" font-family="monospace">BEFORE</text>
+  <rect x="12" y="34" width="180" height="52" rx="8" fill="#fff" stroke="#e2ded4"/>
+  <text x="24" y="56" font-size="12" font-family="monospace" fill="#1b1d22">spawnService()</text>
+  <text x="24" y="74" font-size="11" font-family="monospace" fill="#a83232">no LOG_LEVEL set</text>
+
+  <line x1="192" y1="60" x2="248" y2="60" stroke="#a83232" stroke-width="1.6" marker-end="url(#arr)"/>
+
+  <rect x="250" y="34" width="200" height="52" rx="8" fill="#fff" stroke="#e2ded4"/>
+  <text x="262" y="56" font-size="12" font-family="monospace" fill="#1b1d22">config.log_level</text>
+  <text x="262" y="74" font-size="11" font-family="monospace" fill="#a83232">default "INFO"</text>
+
+  <line x1="450" y1="60" x2="506" y2="60" stroke="#a83232" stroke-width="1.6" marker-end="url(#arr)"/>
+
+  <rect x="508" y="26" width="240" height="68" rx="8" fill="#fbeceb" stroke="#e0b4b2"/>
+  <text x="520" y="48" font-size="12" font-family="monospace" fill="#1b1d22">setup_all_loggers()</text>
+  <text x="520" y="66" font-size="11" font-family="monospace" fill="#a83232">every registered logger</text>
+  <text x="520" y="83" font-size="11" font-family="monospace" fill="#a83232">set to INFO, at import time</text>
+
+  <line x1="748" y1="60" x2="804" y2="60" stroke="#a83232" stroke-width="1.6" marker-end="url(#arr)"/>
+
+  <rect x="806" y="26" width="142" height="68" rx="8" fill="#fbeceb" stroke="#e0b4b2"/>
+  <text x="818" y="48" font-size="12" font-family="monospace" fill="#a83232">sqlalchemy.orm</text>
+  <text x="818" y="66" font-size="11" font-family="monospace" fill="#a83232">338 lines</text>
+  <text x="818" y="83" font-size="11" font-family="monospace" fill="#a83232">of mapper output</text>
+
+  <!-- AFTER -->
+  <text x="12" y="176" font-size="13" font-weight="700" fill="#1f6f43" font-family="monospace">AFTER</text>
+  <rect x="12" y="188" width="180" height="52" rx="8" fill="#fff" stroke="#e2ded4"/>
+  <text x="24" y="210" font-size="12" font-family="monospace" fill="#1b1d22">buildBackendLogEnv()</text>
+  <text x="24" y="228" font-size="11" font-family="monospace" fill="#1f6f43">LOG_LEVEL=WARNING</text>
+
+  <line x1="192" y1="214" x2="248" y2="214" stroke="#1f6f43" stroke-width="1.6" marker-end="url(#arg)"/>
+
+  <rect x="250" y="188" width="200" height="52" rx="8" fill="#fff" stroke="#e2ded4"/>
+  <text x="262" y="210" font-size="12" font-family="monospace" fill="#1b1d22">config.log_level</text>
+  <text x="262" y="228" font-size="11" font-family="monospace" fill="#1f6f43">"WARNING" (explicit)</text>
+
+  <line x1="450" y1="214" x2="506" y2="214" stroke="#1f6f43" stroke-width="1.6" marker-end="url(#arg)"/>
+
+  <rect x="508" y="180" width="240" height="68" rx="8" fill="#eaf5ee" stroke="#b9d8c4"/>
+  <text x="520" y="202" font-size="12" font-family="monospace" fill="#1b1d22">setup_all_loggers()</text>
+  <text x="520" y="220" font-size="11" font-family="monospace" fill="#1f6f43">every registered logger</text>
+  <text x="520" y="237" font-size="11" font-family="monospace" fill="#1f6f43">set to WARNING</text>
+
+  <line x1="748" y1="214" x2="804" y2="214" stroke="#1f6f43" stroke-width="1.6" marker-end="url(#arg)"/>
+
+  <rect x="806" y="180" width="142" height="68" rx="8" fill="#eaf5ee" stroke="#b9d8c4"/>
+  <text x="818" y="202" font-size="12" font-family="monospace" fill="#1f6f43">ORM silent</text>
+  <text x="818" y="220" font-size="11" font-family="monospace" fill="#1f6f43">0 lines</text>
+  <text x="818" y="237" font-size="11" font-family="monospace" fill="#1f6f43">Ready-at kept</text>
+</svg>
+<figcaption>
+  The mechanism is one variable. Because <code>setup_all_loggers()</code> applies the level to every
+  registered logger at import time, the level the launcher passes decides whether SQLAlchemy narrates
+  its own mapper construction.
+</figcaption>
+</figure>
+
+<div class="twocol">
+  <div class="panel bad">
+    <h4>Before — <code>LOG_LEVEL=INFO</code></h4>
+    <pre style="margin:0"><span class="c">[automation]</span> Applying database migrations
+<span class="c">[automation]</span> {"name": "sqlalchemy.orm.mapper.Mapper",
+  "message": "(Automation|automations)
+     _configure_property(runs, …)"}
+<span class="x">… 338 lines like the above …</span>
+<span class="c">[automation]</span> Ready at http://127.0.0.1:18901/…</pre>
+  </div>
+  <div class="panel good">
+    <h4>After — default</h4>
+    <pre style="margin:0"><span class="c">[automation]</span> Starting on port 18901...
+<span class="c">[automation]</span> Using local (.../automation)
+<span class="s">[automation]</span> Ready at http://127.0.0.1:18901/…</pre>
+  </div>
+</div>
+
+<h2><span class="n">03</span>Files changed</h2>
+
+<div class="files">
+  <div class="row"><span class="badge changed">✏️</span><span class="p">scripts/dev-safe.mjs</span><span class="d"><span class="a">+129</span> <span class="r">−2</span></span></div>
+  <div class="row"><span class="badge changed">✏️</span><span class="p">scripts/dev-with-automation.mjs</span><span class="d"><span class="a">+44</span> <span class="r">−8</span></span></div>
+  <div class="row"><span class="badge changed">✏️</span><span class="p">scripts/dev-static.mjs</span><span class="d"><span class="a">+16</span> <span class="r">−1</span></span></div>
+  <div class="row"><span class="badge changed">✏️</span><span class="p">docker/entrypoint.sh</span><span class="d"><span class="a">+53</span> <span class="r">−2</span></span></div>
+  <div class="row"><span class="badge changed">✏️</span><span class="p">__tests__/scripts/dev-with-automation.test.ts</span><span class="d"><span class="a">+196</span></span></div>
+  <div class="row"><span class="badge added">＋</span><span class="p">__tests__/scripts/docker-log-level.test.ts</span><span class="d"><span class="a">+184</span></span></div>
+  <div class="row"><span class="badge changed">✏️ </span><span class="p">.agents/skills/local-stack-runtime/references/guide.md</span><span class="d"><span class="a">+2</span></span></div>
+</div>
+
+<h3>The launcher gains one shared helper</h3>
+<p>
+  <code>scripts/dev-safe.mjs</code> now owns the policy, so every launch path resolves the level the
+  same way instead of each re-deriving it:
+</p>
+<pre><span class="k">export const</span> DEFAULT_BACKEND_LOG_LEVEL = <span class="s">"WARNING"</span>;   <span class="c">// dev-safe.mjs:819</span>
+
+<span class="k">export function</span> backendLogLevel({ verbose = <span class="k">false</span>, env = process.env } = {}) {
+  <span class="k">return</span> verbose ? <span class="s">"DEBUG"</span> : env.LOG_LEVEL || DEFAULT_BACKEND_LOG_LEVEL;   <span class="c">// :834</span>
+}
+
+<span class="k">export function</span> buildBackendLogEnv({ verbose, automation, env } = {}) {
+  <span class="k">const</span> level = backendLogLevel({ verbose, env });
+  <span class="k">return</span> {
+    LOG_LEVEL: level,
+    ...(automation ? { AUTOMATION_LOG_LEVEL: verbose ? <span class="s">"DEBUG"</span> : env.AUTOMATION_LOG_LEVEL || level } : {}),
+  };
+}</pre>
+
+<p>
+  Precedence is deliberate and matches how the services themselves resolve their settings:
+  an explicit environment variable is the strongest signal, <code>--verbose</code> overrides even that
+  because it is a per-invocation instruction, and the quiet default applies only when neither is present.
+</p>
+
+<table>
+  <tr><th>Invocation</th><th>Resolved <code>LOG_LEVEL</code></th><th>Uvicorn <code>--log-level</code></th></tr>
+  <tr><td><code>npm run dev</code></td><td><code>WARNING</code></td><td><code>warning</code></td></tr>
+  <tr><td><code>LOG_LEVEL=INFO npm run dev</code></td><td><code>INFO</code></td><td><code>info</code></td></tr>
+  <tr><td><code>npm run dev -- --verbose</code></td><td><code>DEBUG</code></td><td><code>debug</code></td></tr>
+  <tr><td><code>AUTOMATION_LOG_LEVEL=ERROR npm run dev</code></td><td><code>WARNING</code> / auto <code>ERROR</code></td><td><code>warning</code></td></tr>
+</table>
+
+<h3>Why Uvicorn's flag is set separately</h3>
+<p>
+  Uvicorn takes a <em>lowercase</em> level name and applies it to its own loggers, which are distinct
+  from the application's. Setting only <code>LOG_LEVEL</code> would leave the startup banner and one
+  access line per request at <code>INFO</code>. Measured on a real launch, access lines go from 1 to 0.
+  <code>--verbose</code> restores them.
+</p>
+
+<h3>Docker follows the same default</h3>
+<p>
+  <code>docker/entrypoint.sh</code> defaults both variables and passes the resolved level to both
+  Uvicorn invocations. The two lines are marked with a delimited block
+  (<code># &gt;&gt;&gt; backend-log-level</code> … <code># &lt;&lt;&lt; backend-log-level</code>) so the new
+  test can extract and execute exactly those lines rather than grepping the whole script:
+</p>
+<pre><span class="c"># docker/entrypoint.sh:308</span>
+<span class="k">export</span> LOG_LEVEL=<span class="s">"${LOG_LEVEL:-WARNING}"</span>
+<span class="k">export</span> AUTOMATION_LOG_LEVEL=<span class="s">"${AUTOMATION_LOG_LEVEL:-${LOG_LEVEL}}"</span>
+
+<span class="c"># :413 and :419 — both uvicorn invocations</span>
+--log-level <span class="s">"$(uvicorn_log_level "${LOG_LEVEL}")"</span></pre>
+
+<h3>The two sides accept different vocabularies</h3>
+<p>
+  Narrowing the value is not cosmetic. The application reads <code>LOG_LEVEL</code> through Python's
+  <code>logging</code> module, which also understands the aliases <code>WARN</code> and <code>FATAL</code>,
+  numeric levels, and <code>NOTSET</code>. Uvicorn validates <code>--log-level</code> with a
+  <code>click.Choice</code> over <code>critical | error | warning | info | debug | trace</code> and exits
+  <code>2</code> on anything else — before the service ever binds. Forwarding the env value verbatim would
+  therefore turn a documented override into a crash:
+</p>
+<pre><span class="c">$ LOG_LEVEL=WARN npm run dev        # before this fix</span>
+<span class="r">Invalid value for '--log-level': 'warn' is not one of 'critical', 'error', 'warning', …</span>
+<span class="r">The automation backend exited during startup</span></pre>
+<p>
+  A single normalizer — <code>uvicornLogLevel()</code> in JS, <code>uvicorn_log_level()</code> in the
+  entrypoint — maps aliases to their equivalents (<code>WARN</code> → <code>warning</code>,
+  <code>FATAL</code> → <code>critical</code>), numeric levels to the nearest name, and everything with no
+  Uvicorn equivalent (<code>NOTSET</code>, <code>0</code>, an unrecognized string) to <code>info</code>,
+  which is what Uvicorn defaulted to before this PR set the flag at all. The environment value keeps its
+  raw form, so the application still sees exactly what the user asked for; only the CLI argument is narrowed.
+</p>
+
+<h3>A latent bug fixed along the way</h3>
+<p>
+  <code>scripts/dev-static.mjs</code> carries its own copies of both starters and was silently dropping
+  <code>--verbose</code>: it parsed the flag into <code>config.verbose</code> but never passed it on, so
+  verbose launches from that path were not verbose. It now threads the flag through to both services.
+</p>
+
+<h2><span class="n">04</span>Evidence</h2>
+<p>
+  Measured from real launches on this branch — <code>npm run dev --backend-only</code> against the
+  pinned automation 1.23.2, counting <code>[automation]</code> lines only so the comparison isolates the
+  service under discussion.
+</p>
+
+<table>
+  <tr><th>Run</th><th>Automation lines</th><th>ORM lines</th><th>Ready-at line</th></tr>
+  <tr><td><code>LOG_LEVEL=INFO</code> (previous default)</td><td>431</td><td>338</td><td>present</td></tr>
+  <tr><td>default (this PR)</td><td><strong>7</strong></td><td><strong>0</strong></td><td>present</td></tr>
+  <tr><td><code>--verbose</code></td><td>1344</td><td>338</td><td>present</td></tr>
+</table>
+
+<p>
+  The evidence image attached to the PR shows the same two panels rendered from those captured logs.
+  The tests assert the policy rather than the log text: which variable each launch path sets, that the
+  agent-server does not receive <code>AUTOMATION_LOG_LEVEL</code> (it does not read it), and that every
+  Uvicorn invocation in the entrypoint receives the resolved level.
+</p>
+
+<h2><span class="n">05</span>Compatibility and risk</h2>
+<ul>
+  <li><strong>Standalone deployments are unaffected.</strong> The automation service keeps its
+    <code>INFO</code> default; this PR only changes what Canvas passes when it spawns the service, plus
+    the Docker image's fallback for an unset variable.</li>
+  <li><strong>Not a breaking change for overrides.</strong> Anything already setting <code>LOG_LEVEL</code>
+    keeps working, because the launcher defers to it.</li>
+  <li><strong>Trade-off:</strong> a user who was relying on application <code>INFO</code> logs appearing
+    by default now needs <code>LOG_LEVEL=INFO</code>. That is the intended change; the noisy default was
+    the reported problem.</li>
+  <li><strong>Not addressed here:</strong> selecting <code>INFO</code> still raises third-party loggers,
+    because the pinned automation service silences <code>sqlalchemy.engine</code> but not
+    <code>sqlalchemy.orm</code> in its own <code>lifespan</code>. Fixing that belongs in the automation
+    repository and is tracked as a follow-up; see the PR notes.</li>
+</ul>
+
+<div class="foot">
+  Self-contained page, no external assets. Temporary review artifact under <code>.pr/</code>, removed
+  automatically after merge.
+</div>
+
+</div>
+</body>
+</html>
