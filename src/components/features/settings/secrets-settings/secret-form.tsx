@@ -6,10 +6,7 @@ import { useCreateSecret } from "#/hooks/mutation/use-create-secret";
 import { useUpdateSecret } from "#/hooks/mutation/use-update-secret";
 import { SettingsInput } from "../settings-input";
 import { cn } from "#/utils/utils";
-import {
-  formControlMultilineFieldClassName,
-  formControlSettingsFieldClassName,
-} from "#/utils/form-control-classes";
+import { formControlSettingsFieldClassName } from "#/utils/form-control-classes";
 import { BrandButton } from "../brand-button";
 import { useSearchSecrets } from "#/hooks/query/use-get-secrets";
 import { OptionalTag } from "../optional-tag";
@@ -24,8 +21,6 @@ interface SecretFormProps {
   defaultName?: string;
   /** Keep the form open after a failed save so the user can retry. */
   keepOpenOnError?: boolean;
-  /** Visible height of the value field, in lines. */
-  valueRows?: number;
 }
 
 export function SecretForm({
@@ -35,7 +30,6 @@ export function SecretForm({
   onSaved,
   defaultName = "",
   keepOpenOnError = false,
-  valueRows = 8,
 }: SecretFormProps) {
   const queryClient = useQueryClient();
   const { t } = useTranslation("openhands");
@@ -195,19 +189,18 @@ export function SecretForm({
             ? t(I18nKey.FORM$VALUE)
             : t(I18nKey.SECRETS$SECRET_VALUE_LEAVE_BLANK)}
         </span>
-        <textarea
+        <input
           data-testid="value-input"
           name="secret-value"
+          type="password"
+          autoComplete="new-password"
           required={mode === "add"}
           value={value}
           onChange={(event) => setValue(event.currentTarget.value)}
           className={cn(
-            "resize-none",
-            formControlMultilineFieldClassName,
-            "placeholder:italic",
+            formControlSettingsFieldClassName,
             "disabled:bg-surface-raised disabled:border-border-subtle disabled:cursor-not-allowed",
           )}
-          rows={valueRows}
         />
       </label>
 

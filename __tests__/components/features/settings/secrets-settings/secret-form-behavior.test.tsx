@@ -83,8 +83,11 @@ describe("Secret form behavior", () => {
     );
     expect(screen.getByTestId("name-input")).toBeRequired();
     expect(screen.getByTestId("value-input")).toBeRequired();
+    expect(screen.getByTestId("value-input")).toHaveAttribute(
+      "type",
+      "password",
+    );
     expect(screen.getByTestId("value-input")).toHaveClass(
-      "resize-none",
       "placeholder:italic",
       "disabled:bg-surface-raised",
       "disabled:border-border-subtle",
@@ -121,6 +124,10 @@ describe("Secret form behavior", () => {
     // Edit mode now exposes an optional value field that starts blank; leaving
     // it blank keeps the existing secret value.
     expect(screen.getByTestId("value-input")).toHaveValue("");
+    expect(screen.getByTestId("value-input")).toHaveAttribute(
+      "type",
+      "password",
+    );
     expect(screen.getByTestId("description-input")).toHaveValue(
       "production credential",
     );
