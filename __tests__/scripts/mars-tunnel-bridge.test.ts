@@ -2,7 +2,7 @@
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   MARS_TUNNEL_IPC,
@@ -14,11 +14,19 @@ import {
   CREDENTIAL_KIND_OAUTH,
   createCredentialStore,
 } from "../../scripts/mars-credentials.mjs";
-import { revokeToken } from "../../scripts/mars-oauth.mjs";
+import {
+  OAuthError,
+  exchangeCode,
+  refreshGrant,
+  revokeToken,
+} from "../../scripts/mars-oauth.mjs";
+import { createEncryptedFileStore } from "../../scripts/mars-secret-store.mjs";
 
 vi.mock("../../scripts/mars-oauth.mjs", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../scripts/mars-oauth.mjs")>()),
-  revokeToken: vi.fn(async () => {}),
+  revokeToken: vi.fn(async () => true),
+  exchangeCode: vi.fn(),
+  refreshGrant: vi.fn(),
 }));
 
 const VALID_PAT = `dop_v1_${"a".repeat(64)}`;
@@ -56,21 +64,35 @@ function fakeIpcMain() {
   };
 }
 
+/**
+ * Remembers what it attached, like the real registry's snapshots; set
+ * `nextLocalPort` to have the next attach listen elsewhere.
+ */
 function fakeRegistry() {
+  const ports = { nextLocalPort: 51000 };
+  const snapshot = (params: { sessionId: string; remotePort: number }) => ({
+    ...params,
+    localPort: ports.nextLocalPort,
+    status: "connected" as const,
+    error: undefined,
+    upstreamFailure: null,
+  });
+  const attached = new Map<string, ReturnType<typeof snapshot>>();
   return {
-    attach: vi.fn(
-      async (params: { sessionId: string; remotePort: number }) => ({
-        ...params,
-        localPort: 51000,
-        status: "connected" as const,
-        error: undefined,
-        upstreamFailure: null,
-      }),
-    ),
-    detach: vi.fn(async () => {}),
-    detachAll: vi.fn(async () => {}),
+    ports,
+    attach: vi.fn(async (params: { sessionId: string; remotePort: number }) => {
+      const tunnel = snapshot(params);
+      attached.set(params.sessionId, tunnel);
+      return tunnel;
+    }),
+    detach: vi.fn(async (sessionId: string) => {
+      attached.delete(sessionId);
+    }),
+    detachAll: vi.fn(async () => {
+      attached.clear();
+    }),
     detachOwnedBy: vi.fn(async () => {}),
-    get: vi.fn(() => undefined),
+    get: vi.fn((sessionId: string) => attached.get(sessionId)),
   };
 }
 
@@ -110,6 +132,7 @@ function fakeApi() {
     destroySession: vi.fn(async () => {}),
     deleteAgentConfig: vi.fn(async () => {}),
     getSession: vi.fn(async () => null),
+    getAccount: vi.fn(async () => null),
   };
 }
 
@@ -117,7 +140,10 @@ function fakeApi() {
  * `realRegistry` keeps the bridge's own tunnel registry, whose listeners bind
  * loopback without dialing anything until a client connects.
  */
-function setup({ realRegistry = false } = {}) {
+function setup({
+  realRegistry = false,
+  env = {},
+}: { realRegistry?: boolean; env?: Record<string, string> } = {}) {
   const registry = fakeRegistry();
   const api = fakeApi();
   const credentials = createCredentialStore({
@@ -127,12 +153,16 @@ function setup({ realRegistry = false } = {}) {
     session_id: sessionId,
     status: "SESSION_STATUS_READY",
   }));
+  const prepare = vi.fn(
+    async (): Promise<"prepared" | "unreachable" | "failed"> => "prepared",
+  );
   const bridge = createMarsTunnelBridge({
     registry: realRegistry ? undefined : registry,
     api,
     credentials,
     ensureAwake,
-    env: { MARS_API_BASE_URL: API_URL },
+    prepare,
+    env: { MARS_API_BASE_URL: API_URL, ...env },
   });
   const ipcMain = fakeIpcMain();
   bridge.registerIpc(ipcMain);
@@ -141,6 +171,7 @@ function setup({ realRegistry = false } = {}) {
     api,
     credentials,
     ensureAwake,
+    prepare,
     bridge,
     ipcMain,
   };
@@ -214,18 +245,18 @@ describe("createMarsTunnelBridge", () => {
     const firstId = first.active!.id;
     await ipcMain.invoke(MARS_TUNNEL_IPC.openTunnel, { sessionId: "sess_a" });
     const { getAccessToken } = registry.attach.mock.calls[0][0] as unknown as {
-      getAccessToken: () => string | null;
+      getAccessToken: () => Promise<string | null>;
     };
 
     // Act
     await ipcMain.invoke(MARS_TUNNEL_IPC.savePat, { token: OTHER_PAT });
-    const tokenAfterSwitch = getAccessToken();
+    const tokenAfterSwitch = await getAccessToken();
     await ipcMain.invoke(MARS_TUNNEL_IPC.signOut, firstId);
 
     // Assert
     expect(tokenAfterSwitch).toBe(VALID_PAT);
     expect(registry.detachOwnedBy).toHaveBeenCalledWith(firstId);
-    expect(getAccessToken()).toBeNull();
+    expect(await getAccessToken()).toBeNull();
   });
 
   it("signOut revokes an OAuth connection's token even when it is not the active one", async () => {
@@ -245,6 +276,96 @@ describe("createMarsTunnelBridge", () => {
     expect(revokeToken).toHaveBeenCalledWith("oauth-token");
   });
 
+  it("prepares a session's sandbox on connect, once, for every caller", async () => {
+    const { bridge, prepare, ipcMain } = setup();
+    await ipcMain.invoke(MARS_TUNNEL_IPC.savePat, { token: VALID_PAT });
+
+    await Promise.all([
+      bridge.openTunnel({ sessionId: "sess_a" }),
+      bridge.openTunnel({ sessionId: "sess_a" }),
+    ]);
+    await bridge.openTunnel({ sessionId: "sess_a" });
+    await bridge.openTunnel({ sessionId: "sess_b" });
+
+    expect(prepare).toHaveBeenCalledTimes(2);
+    expect(prepare).toHaveBeenCalledWith({
+      baseUrl: "http://127.0.0.1:51000",
+      readFailure: expect.any(Function),
+    });
+  });
+
+  it.each([
+    { why: "the sandbox could not be reached", result: "unreachable" },
+    {
+      why: "a step failed while the sandbox was still booting",
+      result: "failed",
+    },
+  ])("tries the preparation again when $why", async ({ result }) => {
+    const { bridge, prepare, ipcMain } = setup();
+    await ipcMain.invoke(MARS_TUNNEL_IPC.savePat, { token: VALID_PAT });
+    prepare.mockResolvedValueOnce(result as never);
+
+    await bridge.openTunnel({ sessionId: "sess_a" });
+    await bridge.openTunnel({ sessionId: "sess_a" });
+
+    expect(prepare).toHaveBeenCalledTimes(2);
+  });
+
+  it.each(["prepared", "unreachable", "failed"] as const)(
+    "tells the caller the sandbox came out %s",
+    async (result) => {
+      const { bridge, prepare, ipcMain } = setup();
+      await ipcMain.invoke(MARS_TUNNEL_IPC.savePat, { token: VALID_PAT });
+      prepare.mockResolvedValueOnce(result);
+
+      expect(await bridge.openTunnel({ sessionId: "sess_a" })).toMatchObject({
+        status: "connected",
+        sandbox: result,
+      });
+    },
+  );
+
+  it("prepares again for a tunnel that came back on another port, rather than wait on the old run", async () => {
+    const { bridge, prepare, registry, ipcMain } = setup();
+    await ipcMain.invoke(MARS_TUNNEL_IPC.savePat, { token: VALID_PAT });
+    let finishFirst!: (result: "unreachable") => void;
+    prepare.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishFirst = resolve;
+        }),
+    );
+    const first = bridge.openTunnel({ sessionId: "sess_a" });
+    await vi.waitFor(() => expect(prepare).toHaveBeenCalledTimes(1));
+
+    registry.ports.nextLocalPort = 52000;
+    const second = await bridge.openTunnel({ sessionId: "sess_a" });
+
+    expect(prepare).toHaveBeenCalledTimes(2);
+    expect(prepare).toHaveBeenLastCalledWith({
+      baseUrl: "http://127.0.0.1:52000",
+      readFailure: expect.any(Function),
+    });
+    expect(second).toMatchObject({ localPort: 52000, sandbox: "prepared" });
+    finishFirst("unreachable");
+    await first;
+  });
+
+  it("answers with the tunnel as it is once preparing ends, not as it was", async () => {
+    const { bridge, prepare, registry, ipcMain } = setup();
+    await ipcMain.invoke(MARS_TUNNEL_IPC.savePat, { token: VALID_PAT });
+    prepare.mockImplementationOnce(async () => {
+      await registry.detach("sess_a");
+      return "prepared";
+    });
+
+    expect(await bridge.openTunnel({ sessionId: "sess_a" })).toMatchObject({
+      status: "error",
+      localPort: undefined,
+      host: undefined,
+    });
+  });
+
   it("openTunnel refuses to connect while signed out", async () => {
     const { registry, ipcMain } = setup();
 
@@ -252,6 +373,80 @@ describe("createMarsTunnelBridge", () => {
       ipcMain.invoke(MARS_TUNNEL_IPC.openTunnel, { sessionId: "sess_a" }),
     ).toThrow(/Sign in to DigitalOcean/);
     expect(registry.attach).not.toHaveBeenCalled();
+  });
+
+  it("verifies a token and names its team with that token, even if another tab switches teams meanwhile", async () => {
+    // DigitalOcean's answers, per token: each belongs to its own team.
+    const teamOf: Record<string, string> = {
+      [VALID_PAT]: "team-a",
+      [OTHER_PAT]: "team-b",
+    };
+    const calls: { path: string; token: string }[] = [];
+    let holdVerify = false;
+    let releaseVerify = () => {};
+    const verifyHeld = new Promise<void>((resolve) => {
+      releaseVerify = resolve;
+    });
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async (url, init) => {
+        const { pathname } = new URL(String(url));
+        const headers = init?.headers as Record<string, string>;
+        const token = headers.Authorization.replace(/^Bearer /, "");
+        calls.push({ path: pathname, token });
+        if (pathname === "/v2/agents/sessions" && holdVerify) {
+          holdVerify = false;
+          await verifyHeld;
+        }
+        const team = teamOf[token];
+        const body =
+          pathname === "/v2/account"
+            ? {
+                account: {
+                  email: `${team}@example.com`,
+                  team: { uuid: team, name: team },
+                },
+              }
+            : { sessions: [] };
+        return new Response(JSON.stringify(body), {
+          headers: { "Content-Type": "application/json" },
+        });
+      });
+    try {
+      const credentials = createCredentialStore({
+        userDataPath: mkdtempSync(join(tmpdir(), "mars-bridge-")),
+      });
+      const bridge = createMarsTunnelBridge({
+        registry: fakeRegistry(),
+        credentials,
+        prepare: vi.fn(async () => "prepared" as const),
+        env: { MARS_API_BASE_URL: API_URL },
+      });
+      await bridge.savePat({ token: OTHER_PAT });
+      const teamB = credentials.getActive()!.id;
+
+      holdVerify = true;
+      const savingA = bridge.savePat({ token: VALID_PAT });
+      await vi.waitFor(() => expect(calls.at(-1)?.token).toBe(VALID_PAT));
+      bridge.setActiveConnection(teamB);
+      releaseVerify();
+      await savingA;
+
+      expect(
+        calls.filter((c) => c.path === "/v2/account").map((c) => c.token),
+      ).toEqual([OTHER_PAT, VALID_PAT]);
+      expect(credentials.getToken(teamB)).toBe(OTHER_PAT);
+      expect(credentials.getActive()?.id).toBe(teamB);
+      const teamA = credentials
+        .list()
+        .find(
+          (c: { id: string; teamName: string | null }) =>
+            c.teamName === "team-a",
+        );
+      expect(teamA && credentials.getToken(teamA.id)).toBe(VALID_PAT);
+    } finally {
+      fetchSpy.mockRestore();
+    }
   });
 
   it("savePat keeps a token only once the API accepts it", async () => {
@@ -530,5 +725,371 @@ describe("createMarsTunnelBridge", () => {
     ).rejects.toMatchObject({ status: 409 });
 
     expect(registry.detach).not.toHaveBeenCalled();
+  });
+});
+
+describe("signing in with DigitalOcean (code + PKCE)", () => {
+  // The OAuth calls are module mocks: start each case with no calls seen.
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const REDIRECT = "http://127.0.0.1:3000/mars/oauth/callback";
+  const WITH_CLIENT = { env: { DO_OAUTH_CLIENT_ID: "client-1" } };
+  const inMinutes = (minutes: number) =>
+    new Date(Date.now() + minutes * 60_000).toISOString();
+  const GRANT = {
+    accessToken: "oauth-access",
+    refreshToken: "refresh-1",
+    accessExpiresAt: inMinutes(60),
+    account: { uuid: "team-1", name: "My Team", email: "me@example.com" },
+  };
+  const stateOf = (authorizeUrl: string) =>
+    new URL(authorizeUrl).searchParams.get("state");
+
+  it("finishes a browser sign-in from its return address, named after DigitalOcean's reply", async () => {
+    const { bridge, api } = setup(WITH_CLIENT);
+    vi.mocked(exchangeCode).mockResolvedValueOnce(GRANT);
+    const { attemptId, authorizeUrl } = bridge.beginSignIn({
+      redirectUri: REDIRECT,
+    });
+    const waiting = bridge.awaitSignIn(attemptId);
+    // What the return route hands over: its request's path and query.
+    const returned = `${new URL(REDIRECT).pathname}?code=code-1&state=${stateOf(authorizeUrl)}`;
+
+    await bridge.completeSignIn(returned);
+
+    expect(exchangeCode).toHaveBeenCalledWith({
+      clientId: "client-1",
+      code: "code-1",
+      verifier: expect.any(String),
+      redirectUri: REDIRECT,
+    });
+    await expect(waiting).resolves.toMatchObject({
+      status: "done",
+      authState: {
+        active: { kind: "oauth", teamName: "My Team", email: "me@example.com" },
+      },
+    });
+    expect(api.getAccount).not.toHaveBeenCalled();
+    await expect(bridge.completeSignIn(returned)).rejects.toThrow(
+      /no longer open/,
+    );
+  });
+
+  it("takes a pasted return address only for the attempt it belongs to", async () => {
+    const { bridge } = setup(WITH_CLIENT);
+    vi.mocked(exchangeCode).mockResolvedValue(GRANT);
+    const first = bridge.beginSignIn({ redirectUri: REDIRECT });
+    const second = bridge.beginSignIn({ redirectUri: REDIRECT });
+    const pasted = `${REDIRECT}?code=code-1&state=${stateOf(first.authorizeUrl)}`;
+
+    await expect(
+      bridge.completeSignIn(pasted, second.attemptId),
+    ).rejects.toThrow(/no longer open/);
+    await expect(
+      bridge.completeSignIn(pasted, first.attemptId),
+    ).resolves.toMatchObject({ active: { kind: "oauth" } });
+  });
+
+  it("reports a declined sign-in to the waiting page and keeps the old connection", async () => {
+    const { bridge, ipcMain } = setup(WITH_CLIENT);
+    await ipcMain.invoke(MARS_TUNNEL_IPC.savePat, { token: VALID_PAT });
+    const { attemptId, authorizeUrl } = bridge.beginSignIn({
+      redirectUri: REDIRECT,
+    });
+
+    await expect(
+      bridge.completeSignIn(
+        `${REDIRECT}?error=access_denied&state=${stateOf(authorizeUrl)}`,
+      ),
+    ).rejects.toThrow(/access_denied/);
+
+    await expect(bridge.awaitSignIn(attemptId)).resolves.toMatchObject({
+      status: "failed",
+      message: "access_denied",
+    });
+    expect(bridge.getAuthState().active).toMatchObject({ kind: "pat" });
+  });
+
+  it("says sign-in is not set up when this Canvas has no OAuth client", () => {
+    const { bridge } = setup();
+
+    expect(() => bridge.beginSignIn({ redirectUri: REDIRECT })).toThrow(
+      /personal access token/,
+    );
+  });
+
+  it("refreshes an expiring token once for concurrent dials, and keeps the new refresh token", async () => {
+    const { bridge, registry, credentials } = setup(WITH_CLIENT);
+    const saved = credentials.save({
+      kind: CREDENTIAL_KIND_OAUTH,
+      token: "old-access",
+      refreshToken: "refresh-1",
+      accessExpiresAt: inMinutes(0.5),
+      clientId: "client-1",
+      label: "DigitalOcean",
+    });
+    vi.mocked(refreshGrant).mockImplementationOnce(async () => ({
+      ...GRANT,
+      accessToken: "new-access",
+      refreshToken: "refresh-2",
+    }));
+    await bridge.openTunnel({ sessionId: "sess_a" });
+    const { getAccessToken } = registry.attach.mock.calls[0][0] as unknown as {
+      getAccessToken: () => Promise<string | null>;
+    };
+
+    const tokens = await Promise.all([getAccessToken(), getAccessToken()]);
+
+    expect(tokens).toEqual(["new-access", "new-access"]);
+    expect(refreshGrant).toHaveBeenCalledTimes(1);
+    expect(refreshGrant).toHaveBeenCalledWith({
+      clientId: "client-1",
+      refreshToken: "refresh-1",
+    });
+    expect(credentials.getGrant(saved.id)).toMatchObject({
+      token: "new-access",
+      refreshToken: "refresh-2",
+    });
+  });
+
+  /** The tunnel registry's token getter for the first session opened. */
+  async function dialToken(
+    bridge: ReturnType<typeof setup>["bridge"],
+    registry: ReturnType<typeof setup>["registry"],
+  ) {
+    await bridge.openTunnel({ sessionId: "sess_a" });
+    const { getAccessToken } = registry.attach.mock.calls[0][0] as unknown as {
+      getAccessToken: () => Promise<string | null>;
+    };
+    return getAccessToken;
+  }
+
+  const expiring = {
+    kind: CREDENTIAL_KIND_OAUTH,
+    token: "old-access",
+    refreshToken: "refresh-1",
+    clientId: "client-1",
+    label: "DigitalOcean",
+  };
+
+  it("uses a refresh another Canvas process already made instead of spending the old refresh token", async () => {
+    // Two processes sharing one store: each has its own cache and its own
+    // refresh in flight, only the files in common.
+    const dir = mkdtempSync(join(tmpdir(), "mars-shared-"));
+    const storeFor = () =>
+      createCredentialStore({
+        userDataPath: dir,
+        secrets: createEncryptedFileStore({ dir, secretKey: "k".repeat(64) }),
+      });
+    const first = storeFor();
+    const saved = first.save({ ...expiring, accessExpiresAt: inMinutes(0.5) });
+    const second = storeFor();
+    const bridgeFor = (credentials: ReturnType<typeof storeFor>) => {
+      const registry = fakeRegistry();
+      const bridge = createMarsTunnelBridge({
+        registry,
+        api: fakeApi(),
+        credentials,
+        prepare: vi.fn(async () => "prepared" as const),
+        env: { ...WITH_CLIENT.env, MARS_API_BASE_URL: API_URL },
+      });
+      return { bridge, registry };
+    };
+    const a = bridgeFor(first);
+    const b = bridgeFor(second);
+    // One answer only: spending refresh-1 a second time is the bug.
+    vi.mocked(refreshGrant).mockResolvedValueOnce({
+      ...GRANT,
+      accessToken: "new-access",
+      refreshToken: "refresh-2",
+    });
+
+    expect(await (await dialToken(a.bridge, a.registry))()).toBe("new-access");
+    expect(await (await dialToken(b.bridge, b.registry))()).toBe("new-access");
+
+    expect(refreshGrant).toHaveBeenCalledTimes(1);
+    expect(second.getGrant(saved.id)).toMatchObject({
+      token: "new-access",
+      refreshToken: "refresh-2",
+    });
+  });
+
+  it.each([
+    {
+      late: "fails",
+      answer: () =>
+        Promise.reject(
+          new OAuthError("revoked", { status: 400, code: "invalid_grant" }),
+        ),
+    },
+    {
+      late: "succeeds",
+      answer: async () => ({
+        ...GRANT,
+        accessToken: "refreshed-access",
+        refreshToken: "refresh-2",
+      }),
+    },
+  ])(
+    "keeps a new sign-in for the team when a refresh already out $late",
+    async ({ answer }) => {
+      const { bridge, registry, credentials } = setup(WITH_CLIENT);
+      const saved = credentials.save({
+        ...expiring,
+        accessExpiresAt: inMinutes(-1),
+      });
+      credentials.setTeam(saved.id, { uuid: "team-1", name: "My Team" });
+      let release = () => {};
+      vi.mocked(refreshGrant).mockImplementationOnce(
+        () =>
+          new Promise((resolve, reject) => {
+            release = () => answer().then(resolve, reject);
+          }),
+      );
+      const getAccessToken = await dialToken(bridge, registry);
+      const dialing = getAccessToken();
+      await vi.waitFor(() => expect(refreshGrant).toHaveBeenCalled());
+
+      vi.mocked(exchangeCode).mockResolvedValueOnce({
+        ...GRANT,
+        accessToken: "signed-in-again",
+        refreshToken: "refresh-new",
+      });
+      const { authorizeUrl } = bridge.beginSignIn({ redirectUri: REDIRECT });
+      await bridge.completeSignIn(
+        `${REDIRECT}?code=c&state=${stateOf(authorizeUrl)}`,
+      );
+      release();
+
+      expect(await dialing).toBe("signed-in-again");
+      expect(credentials.getGrant(saved.id)).toMatchObject({
+        token: "signed-in-again",
+        refreshToken: "refresh-new",
+      });
+    },
+  );
+
+  it("ends the grant a refresh got when a new sign-in replaced it meanwhile", async () => {
+    const { bridge, registry, credentials } = setup(WITH_CLIENT);
+    const saved = credentials.save({
+      ...expiring,
+      accessExpiresAt: inMinutes(-1),
+    });
+    credentials.setTeam(saved.id, { uuid: "team-1", name: "My Team" });
+    let release = () => {};
+    vi.mocked(refreshGrant).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = () =>
+            resolve({
+              ...GRANT,
+              accessToken: "refreshed-access",
+              refreshToken: "refresh-2",
+            });
+        }),
+    );
+    const dialing = (await dialToken(bridge, registry))();
+    await vi.waitFor(() => expect(refreshGrant).toHaveBeenCalled());
+    vi.mocked(exchangeCode).mockResolvedValueOnce({
+      ...GRANT,
+      accessToken: "signed-in-again",
+      refreshToken: "refresh-new",
+    });
+    const { authorizeUrl } = bridge.beginSignIn({ redirectUri: REDIRECT });
+    await bridge.completeSignIn(
+      `${REDIRECT}?code=c&state=${stateOf(authorizeUrl)}`,
+    );
+
+    release();
+    await dialing;
+
+    expect(revokeToken).toHaveBeenCalledWith("refreshed-access");
+  });
+
+  it.each([
+    { during: "while its code is exchanged", step: "exchange" },
+    { during: "while its token is checked", step: "verify" },
+  ])(
+    "leaves everything as it was when a sign-in is cancelled $during, and ends the grant it got",
+    async ({ step }) => {
+      const { bridge, api, credentials } = setup(WITH_CLIENT);
+      await bridge.savePat({ token: VALID_PAT });
+      const before = bridge.getAuthState();
+      let release = () => {};
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      vi.mocked(exchangeCode).mockImplementationOnce(async () => {
+        if (step === "exchange") await held;
+        return { ...GRANT, accessToken: "cancelled-access" };
+      });
+      if (step === "verify") {
+        vi.mocked(api.verifyAccess).mockImplementationOnce(() => held);
+      }
+      const { attemptId, authorizeUrl } = bridge.beginSignIn({
+        redirectUri: REDIRECT,
+      });
+      const completing = bridge.completeSignIn(
+        `${REDIRECT}?code=c&state=${stateOf(authorizeUrl)}`,
+      );
+      await vi.waitFor(() =>
+        expect(
+          step === "exchange" ? exchangeCode : api.verifyAccess,
+        ).toHaveBeenCalled(),
+      );
+
+      bridge.cancelSignIn(attemptId);
+      release();
+
+      await expect(completing).rejects.toThrow(/cancelled/);
+      expect(bridge.getAuthState()).toEqual(before);
+      expect(credentials.list()).toHaveLength(1);
+      expect(revokeToken).toHaveBeenCalledWith("cancelled-access");
+    },
+  );
+
+  it("signs out by revoking a current access token, refreshing an expired one first", async () => {
+    const { bridge, credentials } = setup(WITH_CLIENT);
+    const saved = credentials.save({
+      kind: CREDENTIAL_KIND_OAUTH,
+      token: "old-access",
+      refreshToken: "refresh-1",
+      accessExpiresAt: inMinutes(-5),
+      clientId: "client-1",
+      label: "DigitalOcean",
+    });
+    vi.mocked(refreshGrant).mockResolvedValueOnce({
+      ...GRANT,
+      accessToken: "fresh-access",
+    });
+
+    await bridge.signOut(saved.id);
+
+    expect(revokeToken).toHaveBeenCalledWith("fresh-access");
+    expect(bridge.getAuthState().connections).toEqual([]);
+  });
+
+  it("asks for sign-in again when DigitalOcean no longer honours the refresh token", async () => {
+    const { bridge, registry, credentials } = setup(WITH_CLIENT);
+    credentials.save({
+      kind: CREDENTIAL_KIND_OAUTH,
+      token: "old-access",
+      refreshToken: "refresh-1",
+      accessExpiresAt: inMinutes(-1),
+      clientId: "client-1",
+      label: "DigitalOcean",
+    });
+    vi.mocked(refreshGrant).mockRejectedValueOnce(
+      new OAuthError("Token is used", { status: 400, code: "invalid_grant" }),
+    );
+    await bridge.openTunnel({ sessionId: "sess_a" });
+    const { getAccessToken } = registry.attach.mock.calls[0][0] as unknown as {
+      getAccessToken: () => Promise<string | null>;
+    };
+
+    expect(await getAccessToken()).toBeNull();
+    expect(bridge.getAuthState().active).toMatchObject({ isExpired: true });
   });
 });

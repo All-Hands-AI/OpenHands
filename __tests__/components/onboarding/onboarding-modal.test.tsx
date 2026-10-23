@@ -315,6 +315,7 @@ afterEach(() => {
   window.localStorage.clear();
   window.sessionStorage.clear();
   vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
   __resetActiveStoreForTests();
 });
 
@@ -392,6 +393,21 @@ describe("OnboardingModal", () => {
     ).not.toBeInTheDocument();
     expect(screen.getByTestId("onboarding-backend-cloud-title")).toBeVisible();
     expect(screen.getByTestId("onboarding-backend-login-button")).toBeVisible();
+  });
+
+  it("says why it asks for a key when a pairing link did not work", () => {
+    window.localStorage.clear();
+    window.sessionStorage.setItem("openhands-pairing-failed", "1");
+    vi.stubEnv("VITE_BACKEND_BASE_URL", "");
+    vi.stubEnv("VITE_SESSION_API_KEY", "");
+    __resetActiveStoreForTests();
+
+    renderModal();
+
+    expect(
+      screen.getByTestId("onboarding-backend-pairing-failed"),
+    ).toHaveTextContent("AUTH$PAIRING_LINK_FAILED");
+    window.sessionStorage.clear();
   });
 
   it("locks no-backend onboarding to Cloud login when VITE_LOCK_TO_CLOUD is set", () => {
@@ -1542,7 +1558,9 @@ describe("OnboardingModal", () => {
       vi.mocked(bridge.openTunnel).mockResolvedValue({
         sessionId: session.session_id,
         status: "connected",
+        localPort: null,
         remotePort: 8000,
+        error: null,
         host: `${window.location.origin}/mars/sessions/${session.session_id}`,
       });
       await probeMarsWebBridge(

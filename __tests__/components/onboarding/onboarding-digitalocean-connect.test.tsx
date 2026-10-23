@@ -4,7 +4,11 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ActiveBackendProvider } from "#/contexts/active-backend-context";
-import { __resetActiveStoreForTests } from "#/api/backend-registry/active-store";
+import {
+  __resetActiveStoreForTests,
+  getRegisteredBackends,
+  setRegisteredBackends,
+} from "#/api/backend-registry/active-store";
 import { OnboardingDigitalOceanConnect } from "#/components/features/onboarding/steps/onboarding-digitalocean-connect";
 
 const bridgeState = vi.hoisted(() => ({
@@ -66,6 +70,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.unstubAllEnvs();
   vi.clearAllMocks();
 });
 
@@ -116,6 +121,52 @@ describe("OnboardingDigitalOceanConnect hosting-auth gate", () => {
     expect(
       screen.queryByTestId("managed-agents-token"),
     ).not.toBeInTheDocument();
+  });
+
+  it("saves a hosting key only on the page origin when a different backend is configured", async () => {
+    // Arrange: an edited seed and a guest must not receive this Canvas key.
+    vi.stubEnv("VITE_BACKEND_BASE_URL", "https://remote.example.com");
+    const foreign = {
+      id: "default-local",
+      name: "Remote",
+      host: "https://remote.example.com",
+      apiKey: "remote-key",
+      kind: "local" as const,
+    };
+    const guest = {
+      id: "guest",
+      name: "Guest",
+      host: `${window.location.origin}/mars/sessions/existing`,
+      apiKey: "",
+      kind: "local" as const,
+      marsSessionId: "existing",
+    };
+    setRegisteredBackends([foreign, guest]);
+    bridgeState.required = true;
+    bridgeState.missing = true;
+    validateHostingSessionKeyMock.mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    renderConnect();
+
+    // Act: validate and persist the page's hosting credential.
+    await user.type(
+      screen.getByTestId("onboarding-digitalocean-hosting-key"),
+      "hosting-key",
+    );
+    await user.click(
+      screen.getByTestId("onboarding-digitalocean-hosting-submit"),
+    );
+    await screen.findByTestId("managed-agents-token");
+
+    // Assert: original entries survive and a separate root holds the new key.
+    const backends = getRegisteredBackends();
+    expect(backends).toEqual(expect.arrayContaining([foreign, guest]));
+    expect(
+      backends.filter((backend) => backend.apiKey === "hosting-key"),
+    ).toEqual([
+      expect.objectContaining({ host: window.location.origin, kind: "local" }),
+    ]);
+    expect(new Set(backends.map((backend) => backend.id)).size).toBe(3);
   });
 
   it("reveals the DO token form once a valid hosting key is accepted", async () => {

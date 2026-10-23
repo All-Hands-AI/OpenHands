@@ -1,9 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import {
-  getAgentServerBaseUrl,
-  isServedOriginHost,
-} from "#/api/agent-server-config";
+import { isCanvasRootBackend } from "#/api/mars/canvas-root-backend";
 import { DEFAULT_LOCAL_BACKEND_NAME } from "#/api/backend-registry/default-backend";
 import { useActiveBackendContext } from "#/contexts/active-backend-context";
 import DigitalOceanLogo from "#/assets/branding/digitalocean-logo.svg?react";
@@ -62,19 +59,15 @@ export function OnboardingDigitalOceanConnect({
     try {
       const key = hostingKey.trim();
       await validateHostingSessionKey(key);
-      const isHostingBackend = (backend: typeof active.backend) =>
-        backend.kind === "local" &&
-        !backend.marsSessionId &&
-        isServedOriginHost(backend.host);
-      const root = isHostingBackend(active.backend)
+      const root = isCanvasRootBackend(active.backend)
         ? active.backend
-        : backends.find(isHostingBackend);
+        : backends.find(isCanvasRootBackend);
       if (root) {
         updateBackend(root.id, { apiKey: key });
       } else {
         addBackend({
           name: DEFAULT_LOCAL_BACKEND_NAME,
-          host: getAgentServerBaseUrl() ?? window.location.origin,
+          host: window.location.origin,
           apiKey: key,
           kind: "local",
         });

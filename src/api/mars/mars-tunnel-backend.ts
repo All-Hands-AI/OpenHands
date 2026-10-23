@@ -31,19 +31,58 @@ export interface MarsConnection {
   kind: MarsCredentialKind;
   label: string;
   teamName: string | null;
+  /** The DigitalOcean account's email, once the bridge has looked it up. */
+  email?: string | null;
   /** ISO timestamp; OAuth grants expire after 30 days and cannot be refreshed. */
   expiresAt: string | null;
   isExpired: boolean;
+  /** False when the store refused the token; it lasts only for this run. */
+  isSaved?: boolean;
+}
+
+/** Where the bridge keeps tokens, so the UI can say whether a restart keeps them. */
+export interface MarsStorage {
+  kind: "keychain" | "encrypted-file" | "memory";
+  /** The store's own name, such as "macOS Keychain". */
+  label: string;
+  /** The machine that holds the tokens: the one running Canvas. */
+  host: string;
 }
 
 export interface MarsAuthState {
   connections: MarsConnection[];
   active: MarsConnection | null;
-  /** False when the OS keychain is unavailable, so tokens are session-only. */
+  /** False when nothing on the host keeps tokens, so they are session-only. */
   isPersistent: boolean;
+  /** Absent from older bridges, which report only `isPersistent`. */
+  storage?: MarsStorage;
   /** False when this build has no registered OAuth client; PAT still works. */
   canUseOAuth: boolean;
 }
+
+/** A browser sign-in that has started; the bridge holds its PKCE proof. */
+export interface MarsSignInAttempt {
+  attemptId: string;
+  /** DigitalOcean's sign-in page, to open in a new tab. */
+  authorizeUrl: string;
+  /**
+   * False when DigitalOcean's return address will not load on this device
+   * (Canvas runs elsewhere); the user pastes that address back instead.
+   */
+  returnsHere?: boolean;
+}
+
+/** A one-time link that lets another device in; see src/api/mars/pairing.ts. */
+export interface MarsPairingLink {
+  /** One per address this Canvas listens on; empty when only on this computer. */
+  links: string[];
+  expiresAt: string;
+}
+
+export type MarsSignInStatus =
+  | { status: "pending" }
+  | { status: "done"; authState: MarsAuthState }
+  | { status: "failed"; message?: string | null };
 
 export interface MarsSession {
   session_id: string;
@@ -141,6 +180,12 @@ export interface MarsTunnelStatus {
   localPort: number | undefined;
   error: string | undefined;
   upstreamFailure?: MarsUpstreamFailure | null;
+  /**
+   * How preparing the sandbox went, when the bridge prepares it on connect
+   * (scripts/mars-sandbox-prep.mjs). `unreachable` means the bridge already
+   * waited out the guest agent-server, so the renderer need not wait again.
+   */
+  sandbox?: "prepared" | "unreachable" | "failed";
 }
 
 export interface OpenMarsTunnelParams {
@@ -157,7 +202,20 @@ interface ListOptions {
 
 export interface MarsBridge {
   getAuthState: () => Promise<MarsAuthState>;
+  /** The desktop app's sign-in: the main process opens the system browser. */
   signInWithOAuth: () => Promise<MarsAuthState>;
+  /** A page's sign-in (web build): start, then wait or paste the return. */
+  beginSignIn?: () => Promise<MarsSignInAttempt>;
+  /** Waits a little; answers "pending" until the sign-in finishes. */
+  awaitSignIn?: (attemptId: string) => Promise<MarsSignInStatus>;
+  /** Finish from the address DigitalOcean sent the browser to. */
+  completeSignIn?: (
+    returned: string,
+    attemptId?: string,
+  ) => Promise<MarsAuthState>;
+  cancelSignIn?: (attemptId: string) => Promise<void>;
+  /** Web build only: a one-time link for another device. */
+  createPairingLink?: () => Promise<MarsPairingLink>;
   savePat: (payload: {
     token: string;
     label?: string;
@@ -369,7 +427,8 @@ export async function waitForMarsAgentServer(
   {
     sessionId,
     budgetMs = AGENT_SERVER_WAIT_MS,
-  }: { sessionId?: string; budgetMs?: number } = {},
+    portClosedGraceMs = GUEST_PORT_CLOSED_GRACE_MS,
+  }: { sessionId?: string; budgetMs?: number; portClosedGraceMs?: number } = {},
 ): Promise<string | null> {
   const startedAt = Date.now();
   const deadline = startedAt + budgetMs;
@@ -390,7 +449,7 @@ export async function waitForMarsAgentServer(
       const now = Date.now();
       if (failure?.closeCode === CLOSE_GUEST_DIAL_FAILED) {
         guestPortClosedSince ??= now;
-        if (now - guestPortClosedSince >= GUEST_PORT_CLOSED_GRACE_MS) {
+        if (now - guestPortClosedSince >= portClosedGraceMs) {
           throw new MarsAttachError("not-openhands", failure.message);
         }
       } else {
