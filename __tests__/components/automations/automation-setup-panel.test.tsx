@@ -3034,6 +3034,7 @@ describe("AutomationSetupPanel", () => {
         entrypoint: "python3 scan.py",
         setup_script_path: "install.sh",
         tarball_path: "oh-internal://uploads/REAL-user-code.tar.gz",
+        model: "fast",
         trigger: {
           type: "cron",
           schedule: "0 9 * * *",
@@ -3055,8 +3056,16 @@ describe("AutomationSetupPanel", () => {
       screen.queryByTestId("automation-setup-custom-code"),
     ).not.toBeInTheDocument();
 
+    expect(screen.getByTestId("automation-setup-model")).toHaveAttribute(
+      "aria-label",
+      "fast",
+    );
     await user.click(screen.getByTestId("automation-setup-model"));
-    await user.click(screen.getByTestId("automation-setup-model-option-fast"));
+    await user.click(
+      screen.getByTestId(
+        "automation-setup-model-option-claude-opus-4-5-20251101",
+      ),
+    );
     await user.click(screen.getByTestId("automation-setup-save"));
 
     await waitFor(() =>
@@ -3064,7 +3073,7 @@ describe("AutomationSetupPanel", () => {
         "auto-1",
         expect.objectContaining({
           name: "Nightly scan",
-          model: "fast",
+          model: "claude-opus-4-5-20251101",
         }),
       ),
     );
