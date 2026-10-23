@@ -22,10 +22,12 @@ vi.mock("react-i18next", () => ({
     t: (key: string, params?: Record<string, string | number>) => {
       if (namespace !== "openhands") return key;
       const translations: Record<string, string> = {
-        SETTINGS$PROFILES_UNGROUPED: "Not linked",
+        SETTINGS$PROFILES_UNGROUPED: "Unlinked Profiles",
         SETTINGS$PROVIDER_CONNECTIONS_LOAD_ERROR:
           "Failed to load provider connections.",
-        SETTINGS$PROVIDER_CONNECTION_ADD: "Add connection",
+        SETTINGS$PROVIDER_CONNECTION_ADD: "Add Provider Connection",
+        SETTINGS$PROVIDER_CONNECTION_ADD_TOOLTIP:
+          "Save a provider's API key once, then reuse it for every LLM profile you add from that provider.",
         SETTINGS$PROVIDER_CONNECTION_EDIT_TITLE: "Edit provider connection",
         SETTINGS$PROVIDER_CONNECTION_DELETE_TITLE: "Delete provider connection",
         SETTINGS$PROVIDER_CONNECTION_MODEL_COUNT: `${params?.count} model(s)`,
@@ -274,6 +276,24 @@ describe("LlmProfilesManager", () => {
     ).toBeVisible();
   });
 
+  it("explains what a provider connection is when hovering its add button", async () => {
+    const user = userEvent.setup();
+    vi.mocked(ProfilesService.listProfiles).mockResolvedValue({
+      profiles: mockProfiles,
+      active_profile: "gpt-4-profile",
+    });
+
+    renderManager({}, { connections: [makeConnection()] });
+
+    await user.hover(await screen.findByTestId("add-provider-connection"));
+
+    expect(
+      await screen.findByText(
+        "Save a provider's API key once, then reuse it for every LLM profile you add from that provider.",
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("hides provider connections on a cloud backend without an org", async () => {
     vi.mocked(ProfilesService.listProfiles).mockResolvedValue({
       profiles: mockProfiles,
@@ -351,7 +371,7 @@ describe("LlmProfilesManager", () => {
     expect(headers.map((h) => h.textContent)).toEqual([
       "Shared OpenAI",
       "Shared Anthropic",
-      "Not linked",
+      "Unlinked Profiles",
     ]);
 
     const rows = await screen.findAllByTestId("provider-connection-row");
@@ -371,7 +391,7 @@ describe("LlmProfilesManager", () => {
     expect(within(row).getByText("0 model(s)")).toBeInTheDocument();
     expect(
       screen.getAllByTestId("profile-group-header").map((h) => h.textContent),
-    ).toEqual(["Shared OpenAI", "Not linked"]);
+    ).toEqual(["Shared OpenAI", "Unlinked Profiles"]);
   });
 
   it("falls back to the connection id when its name is unknown", async () => {
@@ -526,6 +546,32 @@ describe("LlmProfilesManager", () => {
       );
     });
     expect(displayErrorToast).not.toHaveBeenCalled();
+  });
+
+  it("activates the profile picked in the default LLM profile selector", async () => {
+    vi.mocked(ProfilesService.listProfiles).mockResolvedValue({
+      profiles: mockProfiles,
+      active_profile: "gpt-4-profile",
+    });
+    vi.mocked(ProfilesService.activateProfile).mockResolvedValue({
+      name: "claude-profile",
+      message: "Profile activated",
+      llm_applied: true,
+    });
+    const user = userEvent.setup();
+
+    renderManager();
+    const selector = await screen.findByTestId("default-llm-profile");
+    await user.click(within(selector).getByRole("combobox"));
+    await user.click(
+      await screen.findByRole("option", { name: /^claude-profile/ }),
+    );
+
+    await waitFor(() => {
+      expect(ProfilesService.activateProfile).toHaveBeenCalledWith(
+        "claude-profile",
+      );
+    });
   });
 
   it("reports activation failures without claiming success", async () => {

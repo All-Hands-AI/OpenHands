@@ -15,20 +15,20 @@ import {
 import { I18nKey } from "#/i18n/declaration";
 
 interface ProviderConnectionGroupProps {
-  /** Group heading: the connection's display name, or "Not linked". */
+  /** Group heading: the connection's display name, or "Unlinked Profiles". */
   label: string;
   /** Muted text beside the heading (provider id or a short explanation). */
   description?: string | null;
   profileCount: number;
   /**
-   * The connection this group represents. Null for the "Not linked" group and
+   * The connection this group represents. Null for the "Unlinked Profiles" group and
    * for profiles whose connection is not in the loaded list; those groups
    * render without key status or a connection menu.
    */
   connection: ProviderConnection | null;
   /** When false, connection actions are hidden (cloud view-only members). */
   canManage: boolean;
-  /** Visually separates the "Not linked" group from real connections. */
+  /** Visually separates the "Unlinked Profiles" group from real connections. */
   isUnlinked?: boolean;
   onAddModels?: (connection: ProviderConnection) => void;
   onEdit?: (connection: ProviderConnection) => void;
@@ -67,6 +67,7 @@ export function ProviderConnectionGroup({
       aria-label={label}
       className={cn(
         settingsListContainerClassName,
+        "group/connection",
         isUnlinked && "border-dashed bg-transparent",
       )}
     >
@@ -108,6 +109,19 @@ export function ProviderConnectionGroup({
           </span>
           {connection ? <KeyStatusIcon isSet={connection.api_key_set} /> : null}
         </button>
+        {showActions && onAddModels ? (
+          // Revealed while the card is hovered or holds focus; touch screens,
+          // which have no hover, always show it.
+          <BrandButton
+            testId="provider-connection-group-add-models"
+            type="button"
+            variant="secondary"
+            onClick={() => onAddModels(connection)}
+            className="shrink-0 opacity-0 group-hover/connection:opacity-100 group-focus-within/connection:opacity-100 pointer-coarse:opacity-100"
+          >
+            {t(I18nKey.SETTINGS$PROVIDER_CONNECTION_ADD_MODELS)}
+          </BrandButton>
+        ) : null}
         {showActions && (
           <div className="relative shrink-0">
             <EllipsisButton
@@ -146,16 +160,6 @@ export function ProviderConnectionGroup({
               <span className="text-sm text-muted">
                 {t(I18nKey.SETTINGS$PROVIDER_CONNECTION_NO_PROFILES)}
               </span>
-              {showActions && onAddModels ? (
-                <BrandButton
-                  testId="provider-connection-group-add-models"
-                  type="button"
-                  variant="secondary"
-                  onClick={() => onAddModels(connection)}
-                >
-                  {t(I18nKey.SETTINGS$PROVIDER_CONNECTION_ADD_MODELS)}
-                </BrandButton>
-              ) : null}
             </div>
           )}
         </div>

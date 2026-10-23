@@ -1,10 +1,13 @@
 import { useMemo, useState } from "react";
+import { Info } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { BrandButton } from "#/components/features/settings/brand-button";
+import { StyledTooltip } from "#/components/shared/buttons/styled-tooltip";
 import { RenameProfileModal } from "./rename-profile-modal";
 import { DeleteProfileModal } from "./delete-profile-modal";
 import { AddModelsModal } from "./add-models-modal";
 import { ProfilesBody } from "./profiles-body";
+import { DefaultLlmProfileSelector } from "./default-llm-profile-selector";
 import { ProviderConnectionModal } from "./provider-connection-modal";
 import { DeleteProviderConnectionModal } from "./delete-provider-connection-modal";
 import ProfilesService, {
@@ -132,6 +135,18 @@ export function LlmProfilesManager({
 
   return (
     <>
+      {!isLoading && !error && profiles.length > 0 ? (
+        <div className="mb-8">
+          <DefaultLlmProfileSelector
+            profiles={profiles}
+            activeProfile={active}
+            connections={connectionList}
+            canManage={canManage}
+            isActivating={activateProfile.isPending}
+            onSelect={handleActivate}
+          />
+        </div>
+      ) : null}
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-base font-medium text-contrast">
@@ -139,14 +154,25 @@ export function LlmProfilesManager({
           </h2>
           <div className="ml-auto flex items-center gap-2">
             {canManage && supportsConnections ? (
-              <BrandButton
-                testId="add-provider-connection"
-                type="button"
-                variant="secondary"
-                onClick={() => setIsCreatingConnection(true)}
+              <StyledTooltip
+                content={t(I18nKey.SETTINGS$PROVIDER_CONNECTION_ADD_TOOLTIP)}
+                placement="top"
+                tooltipClassName="max-w-xs whitespace-normal"
               >
-                {t(I18nKey.SETTINGS$PROVIDER_CONNECTION_ADD)}
-              </BrandButton>
+                {/* BrandButton doesn't forward the tooltip's trigger props, so
+                    this span carries them; focus bubbles up to it too. */}
+                <span className="inline-flex">
+                  <BrandButton
+                    testId="add-provider-connection"
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setIsCreatingConnection(true)}
+                  >
+                    {t(I18nKey.SETTINGS$PROVIDER_CONNECTION_ADD)}
+                    <Info aria-hidden className="h-4 w-4 text-muted" />
+                  </BrandButton>
+                </span>
+              </StyledTooltip>
             ) : null}
             {onAddProfile && canManage ? (
               <BrandButton

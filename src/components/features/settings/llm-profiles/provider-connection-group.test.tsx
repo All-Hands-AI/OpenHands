@@ -158,6 +158,9 @@ describe("Provider connection groups", () => {
     expect(
       within(unlinked).queryByTestId("provider-connection-menu-trigger"),
     ).not.toBeInTheDocument();
+    expect(
+      within(unlinked).queryByTestId("provider-connection-group-add-models"),
+    ).not.toBeInTheDocument();
   });
 
   it("starts connection groups collapsed and toggles their profiles", async () => {
@@ -193,19 +196,20 @@ describe("Provider connection groups", () => {
     expect(screen.getByTestId("add-models-connection")).toHaveValue("conn-1");
   });
 
-  it("offers Add models from an empty connection", async () => {
+  it("offers Add models from a connection's header without expanding it", async () => {
     const user = userEvent.setup();
     renderManager({ connections: [emptyConnection], profiles: [] });
 
+    const group = await findGroup("My Anthropic");
     await user.click(
-      await screen.findByTestId("provider-connection-group-toggle"),
-    );
-    await user.click(
-      screen.getByTestId("provider-connection-group-add-models"),
+      within(group).getByTestId("provider-connection-group-add-models"),
     );
 
     expect(await screen.findByTestId("add-models-modal")).toBeInTheDocument();
     expect(screen.getByTestId("add-models-connection")).toHaveValue("conn-2");
+    expect(
+      within(group).getByTestId("provider-connection-group-toggle"),
+    ).toHaveAttribute("aria-expanded", "false");
   });
 
   it("shows supported providers in the create-connection selector", async () => {
