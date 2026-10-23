@@ -435,7 +435,11 @@ function startAutomationBackend(config) {
 export function buildMarsWebEnv(role, config) {
   if (role === "static") return { MARS_WEB: "0" };
   return config.sessionApiKey
-    ? { MARS_WEB_KEY: config.sessionApiKey }
+    ? {
+        MARS_WEB_KEY: config.sessionApiKey,
+        ...(config.stateDir ? { MARS_STATE_DIR: config.stateDir } : {}),
+        ...(config.secretKey ? { OH_SECRET_KEY: config.secretKey } : {}),
+      }
     : { MARS_WEB: "0" };
 }
 

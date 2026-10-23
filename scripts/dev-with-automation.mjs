@@ -547,6 +547,9 @@ async function buildConfig(args, env = process.env) {
 
     // Auth — single key for both backends
     sessionApiKey,
+    // Settings encryption key; the MARS web bridge also encrypts saved
+    // DigitalOcean sign-ins with it where the host has no keychain.
+    secretKey: safeConfig.secretKey,
 
     // Public mode — the session key should NOT be baked into the frontend
     isPublic,
@@ -1217,13 +1220,19 @@ process.on("SIGHUP", shutdown);
  * destroySession and savePat from any local process, the agent's shell
  * included, so a stack with no session key mounts nothing. Electron turns it
  * off altogether (`config.marsWebBridge`), its preload provides the bridge.
+ * The bridge keeps sign-ins under the stack's state directory, encrypted with
+ * its secret key where the host has no keychain.
  */
 export function buildMarsWebEnv(role, config) {
   if (role === "static" || config.marsWebBridge === false) {
     return { MARS_WEB: "0" };
   }
   return config.sessionApiKey
-    ? { MARS_WEB_KEY: config.sessionApiKey }
+    ? {
+        MARS_WEB_KEY: config.sessionApiKey,
+        ...(config.stateDir ? { MARS_STATE_DIR: config.stateDir } : {}),
+        ...(config.secretKey ? { OH_SECRET_KEY: config.secretKey } : {}),
+      }
     : { MARS_WEB: "0" };
 }
 
