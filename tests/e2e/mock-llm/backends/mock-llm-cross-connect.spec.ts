@@ -33,6 +33,7 @@ import {
   releaseHeldPorts,
   reholdPorts,
 } from "../utils/allocate-mock-llm-ports";
+import { openModifiedClickTab } from "../utils/modified-click-tab";
 
 const CROSS_PORT_HOLDS = ["crossFe", "crossBeA", "crossBeB"];
 
@@ -677,7 +678,7 @@ test.describe("cross-connect: sidebar links pin their backend", () => {
   test("cmd-clicking a sidebar conversation opens it on the owning backend", async ({
     page,
     context,
-  }) => {
+  }, testInfo) => {
     // Two backend-only instances via uvx — very slow
     test.setTimeout(360_000);
 
@@ -828,9 +829,7 @@ test.describe("cross-connect: sidebar links pin their backend", () => {
 
     const href = await card.getAttribute("href");
 
-    const newTabPromise = context.waitForEvent("page");
-    await card.click({ modifiers: ["ControlOrMeta"] });
-    const newTab = await newTabPromise;
+    const newTab = await openModifiedClickTab(card, testInfo);
 
     // ── 7. The new tab must resolve the conversation on backend A ─────
     // A freshly opened tab starts at about:blank, so wait for the real

@@ -47,7 +47,7 @@ candidate. Sources, roughly in order of yield:
 6. **Backends and modes**: local vs Cloud backend, public vs local auth, ACP
    agents, partial stacks (`agent-canvas --help`), Electron, Docker, and the
    embeddable library (`src/index.ts` / `build:lib`).
-7. **Docs, specs and tests**: `README.md`, `docs/*.md`, `specs/*.md` describe
+7. **Docs and tests**: `README.md`, `docs/*.md` describe
    intended behavior. The Playwright suites under `tests/e2e/` (mock-LLM, live,
    bind-policy, live-acp) assert behaviors a user sees too: read them for
    selectors and for behaviors the map lacks, then map those behaviors as
@@ -130,7 +130,13 @@ sections, in this order:
    exemptions). The map should know every open bug. Record one on the bullet
    that reproduces it, next to the expected result, as `Known failure
    (reproduced <date>, #<issue>): <what happens>`; list it here as
-   `Known issue #<issue>: ...` only when no recipe can drive it.
+   `Known issue #<issue>: ...` only when no recipe can drive it. The completed
+   [existing-bug backfill](backfills/2026-10-12-open-bugs.md) accounts for its frozen
+   inventory; the [main refresh](backfills/2026-10-16-main-refresh.md) records later
+   reconciliation. [bug-backfill.md](bug-backfill.md) defines ongoing intake and outcome
+   labels. Absence of `ready-for-dev` is not an exclusion.
+   Use full repository-qualified links for SDK and automation issues, so their
+   numbers cannot be mistaken for Canvas issue numbers.
 
    Make the note executable when a recipe can drive it: indent a fenced block
    under it, opened with `` ```sh known-bug <ID> [name] `` (the name tells
