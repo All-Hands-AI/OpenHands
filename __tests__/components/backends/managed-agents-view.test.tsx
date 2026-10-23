@@ -131,6 +131,57 @@ afterEach(() => {
 });
 
 describe("ManagedAgentsView", () => {
+  it("offers sign-in when an agent-list request discovers a revoked OAuth grant", async () => {
+    const connection = { ...CONNECTION, kind: "oauth" as const };
+    const bridge = fakeBridge({
+      ...SIGNED_IN,
+      canUseOAuth: true,
+      connections: [connection],
+      active: connection,
+    });
+    vi.mocked(bridge.listAgentConfigs).mockImplementation(async () => {
+      const expired = { ...connection, isExpired: true };
+      vi.mocked(bridge.getAuthState).mockResolvedValue({
+        ...SIGNED_IN,
+        canUseOAuth: true,
+        connections: [expired],
+        active: expired,
+      });
+      throw new Error("Sign in to DigitalOcean first.");
+    });
+    window.marsBridge = bridge;
+
+    renderView();
+
+    expect(
+      await screen.findByTestId("managed-agents-oauth"),
+    ).toBeInTheDocument();
+  });
+
+  it.each(["still-valid", "unavailable"] as const)(
+    "keeps the original list failure when the auth recheck is %s",
+    async (authRecheck) => {
+      const bridge = fakeBridge({ ...SIGNED_IN, canUseOAuth: true });
+      vi.mocked(bridge.listAgentConfigs).mockImplementation(async () => {
+        if (authRecheck === "unavailable") {
+          vi.mocked(bridge.getAuthState).mockRejectedValue(
+            new Error("Auth state could not be loaded."),
+          );
+        }
+        throw new Error("DigitalOcean is temporarily unreachable.");
+      });
+      window.marsBridge = bridge;
+
+      renderView();
+
+      await waitFor(() => expect(bridge.getAuthState).toHaveBeenCalledTimes(2));
+      expect(
+        await screen.findByText("DigitalOcean is temporarily unreachable."),
+      ).toBeInTheDocument();
+      expect(screen.queryByTestId("managed-agents-oauth")).toBeNull();
+    },
+  );
+
   it("asks a signed-out user for a token and shows their agents once it is accepted", async () => {
     const bridge = fakeBridge(SIGNED_OUT);
     window.marsBridge = bridge;
