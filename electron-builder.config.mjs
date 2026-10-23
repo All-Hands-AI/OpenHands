@@ -82,13 +82,22 @@ const isUniversal = ELECTRON_ARCH === "universal";
 //                                          port-forward tunnel client)
 //   scripts/dev-safe.mjs       → @openhands/extensions (read from disk by
 //                                          the agent-server as EXTENSIONS_PATH)
+//   scripts/mars-sandbox-prep.mjs → @openhands/typescript-client
+//                                          (imported through the MARS bridge
+//                                          main.mjs loads)
 // Their dependency closure is copied back into Resources/app/node_modules
 // after the strip below. If a spawned script (or main.mjs itself) gains a
 // new bare import, add the package here — a missing one crashes that
 // service in the installed app with ERR_MODULE_NOT_FOUND (invisible under
 // Finder, where stdout goes to /dev/null) and the splash times out waiting
 // for port 8000.
-const RUNTIME_PACKAGES = ["sirv", "httpxy", "ws", "@openhands/extensions"];
+const RUNTIME_PACKAGES = [
+  "sirv",
+  "httpxy",
+  "ws",
+  "@openhands/extensions",
+  "@openhands/typescript-client",
+];
 
 const repoRoot = dirname(fileURLToPath(import.meta.url));
 
