@@ -261,7 +261,7 @@ export function CheckBackendStep({
       {/* Keep the manual/Cloud form mounted while the provider view is open so
           any already-entered name/host/apiKey survive a back/cancel; only the
           visual visibility toggles (the HTML `hidden` attribute rather than a
-          CSS class so the state-preserving unmount is observable). */}
+          CSS class so the inactive form is hidden from interaction). */}
       <div hidden={digitalOceanOpen} className="flex flex-col gap-6">
         <header className="flex flex-col gap-2">
           <h2 className="text-2xl font-medium text-contrast">{t(titleKey)}</h2>
