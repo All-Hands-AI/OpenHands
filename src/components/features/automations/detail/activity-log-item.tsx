@@ -4,7 +4,10 @@ import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import TerminalIcon from "#/icons/terminal.svg?react";
 import { useCancelAutomationRun } from "#/hooks/query/use-automations";
-import { useAutomationPermissions } from "#/hooks/use-automation-permissions";
+import {
+  useAutomationPermissions,
+  useIsAutomationOwner,
+} from "#/hooks/use-automation-permissions";
 import { isInFlightAutomationRun } from "#/hooks/use-home-automation-actions";
 import {
   AutomationRunStatus,
@@ -26,6 +29,21 @@ interface ActivityLogItemProps {
   run: AutomationRun;
   automation?: Automation;
 }
+
+/**
+ * Placeholder automation used to keep `useIsAutomationOwner` hooked when the
+ * `automation` prop is absent (rules-of-hooks). Its `user_id` won't match any
+ * real user, so the owner check safely returns `false`.
+ */
+const nullAutomation: Automation = {
+  id: "",
+  name: "",
+  prompt: null,
+  trigger: { type: "cron" },
+  enabled: false,
+  created_at: "",
+  updated_at: "",
+};
 
 function formatRunTimestamp(dateStr: string, locale: string): string {
   const date = new Date(dateStr);
@@ -59,7 +77,10 @@ function formatRunCost(cost: number | null | undefined): string | null {
 
 export function ActivityLogItem({ run, automation }: ActivityLogItemProps) {
   const { t, i18n } = useTranslation("openhands");
-  const { canManage } = useAutomationPermissions();
+  const { canManage: hasManagePermission } = useAutomationPermissions();
+  const isOwner = useIsAutomationOwner(automation ?? nullAutomation);
+  // Write actions on a specific automation: manage OR creator (escape hatch).
+  const canManage = hasManagePermission || isOwner;
   const cancelMutation = useCancelAutomationRun();
   const hasConversation = !!run.conversation_id;
   const hasBashCommand = !!run.bash_command_id;

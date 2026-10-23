@@ -17,6 +17,10 @@ import {
 } from "#/api/backend-registry/active-store";
 import { ActiveBackendProvider } from "#/contexts/active-backend-context";
 import type { Backend } from "#/api/backend-registry/types";
+import {
+  getCloudOrganizationMe,
+  getCloudOrganizations,
+} from "#/api/cloud/organization-service.api";
 import { I18nKey } from "#/i18n/declaration";
 
 // In tests the i18n backend doesn't resolve translation values, so the
@@ -25,6 +29,14 @@ const LOGS_BUTTON_NAME = (name: string) =>
   name.includes(I18nKey.AUTOMATIONS$DETAIL$LOGS_VIEW);
 const CANCEL_BUTTON_NAME = (name: string) =>
   name.includes(I18nKey.AUTOMATIONS$CANCEL_RUN);
+
+vi.mock("#/api/cloud/organization-service.api", async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import("#/api/cloud/organization-service.api")
+  >()),
+  getCloudOrganizations: vi.fn(),
+  getCloudOrganizationMe: vi.fn(),
+}));
 
 // Per this repo's testing rules (AGENTS.md): don't mock the hook, mock the
 // service it calls. useCancelAutomationRun and react-query run for real;
@@ -527,6 +539,119 @@ describe("ActivityLogItem — cancel button", () => {
   });
 });
 
+const ORG_ID = "org-1";
+
+const cloudBackend: Backend = {
+  id: "cloud-1",
+  name: "Production",
+  host: "https://app.all-hands.dev",
+  apiKey: "bearer-key",
+  kind: "cloud",
+};
+
+describe("ActivityLogItem — cancellation gating on cloud (creator escape hatch)", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    __resetActiveStoreForTests();
+    setRegisteredBackends([cloudBackend]);
+    setActiveSelection({ backendId: cloudBackend.id, orgId: ORG_ID });
+    vi.mocked(getCloudOrganizations).mockResolvedValue({
+      items: [],
+      currentOrgId: null,
+    });
+    vi.mocked(AutomationService.cancelAutomationRun).mockReset();
+  });
+
+  afterEach(() => {
+    window.localStorage.clear();
+    __resetActiveStoreForTests();
+  });
+
+  it("renders a cancel button for a creator who lacks manage_automations permission (member role)", async () => {
+    // Arrange: on cloud, a member has canManage === false, but if they created
+    // the automation (user_id matches caller's userId), the creator escape hatch
+    // grants write access to cancel the in-flight run.
+    vi.mocked(getCloudOrganizationMe).mockResolvedValue({
+      orgId: ORG_ID,
+      userId: "creator-user",
+      role: "member",
+      permissions: ["view_automations"],
+    });
+
+    const run = makeRun({
+      status: AutomationRunStatus.RUNNING,
+      conversation_id: null,
+      bash_command_id: null,
+    });
+    const automation = makeAutomation({ user_id: "creator-user" });
+
+    // Act
+    renderItem(run, automation);
+
+    // Assert
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: CANCEL_BUTTON_NAME }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("does not render a cancel button for a non-creator member lacking manage_automations permission", async () => {
+    // Arrange: caller is a member (not manager) and did NOT create the automation.
+    vi.mocked(getCloudOrganizationMe).mockResolvedValue({
+      orgId: ORG_ID,
+      userId: "other-user",
+      role: "member",
+      permissions: ["view_automations"],
+    });
+
+    const run = makeRun({
+      status: AutomationRunStatus.RUNNING,
+      conversation_id: null,
+      bash_command_id: null,
+    });
+    const automation = makeAutomation({ user_id: "creator-user" });
+
+    // Act
+    renderItem(run, automation);
+
+    // Assert: permissions resolve, but cancel button is not rendered.
+    await waitFor(() => {
+      expect(vi.mocked(getCloudOrganizationMe)).toHaveBeenCalled();
+    });
+    expect(
+      screen.queryByRole("button", { name: CANCEL_BUTTON_NAME }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders a cancel button for a manager who did not create the automation", async () => {
+    // Arrange: caller has manage_automations permission directly.
+    vi.mocked(getCloudOrganizationMe).mockResolvedValue({
+      orgId: ORG_ID,
+      userId: "manager-user",
+      role: "admin",
+      permissions: ["view_automations", "manage_automations"],
+    });
+
+    const run = makeRun({
+      status: AutomationRunStatus.RUNNING,
+      conversation_id: null,
+      bash_command_id: null,
+    });
+    const automation = makeAutomation({ user_id: "creator-user" });
+
+    // Act
+    renderItem(run, automation);
+
+    // Assert
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: CANCEL_BUTTON_NAME }),
+      ).toBeInTheDocument();
+    });
+  });
+});
+
 describe("ActivityLogItem — run phase", () => {
   beforeEach(() => {
     __resetActiveStoreForTests();
@@ -579,7 +704,6 @@ describe("ActivityLogItem — run phase", () => {
     ).not.toBeInTheDocument();
   });
 });
-
 
 describe("ActivityLogItem — run phase absent entirely", () => {
   beforeEach(() => {
