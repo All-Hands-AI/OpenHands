@@ -1227,19 +1227,26 @@ describe("profile launch additions", () => {
     expect(skills[0].source).toMatch(new RegExp(`/${entry.name}/SKILL\\.md$`));
   });
 
-  it.each([
-    ["an ACP profile", "acp" as const, (name: string) => `/${name} please`],
-    [
-      "a message that invokes no catalog skill",
-      "openhands" as const,
-      () => "/not-a-catalog-skill please",
-    ],
-  ])("adds no skills for %s", (_case, kind, query) => {
+  it("adds the invoked catalog skill to an ACP launch", () => {
+    const [entry] = SKILLS_CATALOG;
+    const payload = buildStartConversationRequest({
+      settings: DEFAULT_SETTINGS,
+      agentProfileId: "profile-acp",
+      agentProfileKind: "acp",
+      query: `/${entry.name} please`,
+    });
+
+    expect(additionsOf(payload)?.skills?.map((skill) => skill.name)).toContain(
+      entry.name,
+    );
+  });
+
+  it("adds no skills for a message that invokes no catalog skill", () => {
     const payload = buildStartConversationRequest({
       settings: DEFAULT_SETTINGS,
       agentProfileId: "profile-1",
-      agentProfileKind: kind,
-      query: query(SKILLS_CATALOG[0].name),
+      agentProfileKind: "openhands",
+      query: "/not-a-catalog-skill please",
     });
 
     expect(additionsOf(payload)?.skills).toBeUndefined();
