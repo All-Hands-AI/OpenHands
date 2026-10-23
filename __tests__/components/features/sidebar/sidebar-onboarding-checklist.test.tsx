@@ -1,8 +1,26 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type MockInstance,
+  vi,
+} from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { http, HttpResponse } from "msw";
+import {
+  __resetActiveStoreForTests,
+  setActiveSelection,
+  setRegisteredBackends,
+} from "#/api/backend-registry/active-store";
+import SuperAdminSetupGuide from "#/components/features/setup-guide/super-admin-setup-guide";
+import { ActiveBackendProvider } from "#/contexts/active-backend-context";
+import { server } from "#/mocks/node";
 import { ONBOARDING_COMPLETED_STORAGE_KEY } from "#/components/features/onboarding/use-onboarding-completion";
+import { GettingStartedChecklistSwitch } from "#/components/features/settings/app-settings/getting-started-checklist-switch";
 import { SidebarOnboardingChecklist } from "#/components/features/sidebar/sidebar-onboarding-checklist";
 import {
   OPENHANDS_SLACK_COMMUNITY_URL,
@@ -11,6 +29,7 @@ import {
   SIDEBAR_ONBOARDING_CHECKLIST_SLACK_JOINED_STORAGE_KEY,
 } from "#/components/features/sidebar/sidebar-onboarding-checklist.constants";
 import {
+  readSidebarOnboardingChecklistDismissed,
   readSidebarOnboardingChecklistMinimized,
   readSidebarOnboardingChecklistSlackJoined,
 } from "#/components/features/sidebar/sidebar-onboarding-checklist-storage";
@@ -19,6 +38,7 @@ import {
   type NavigationContextValue,
 } from "#/context/navigation-context";
 import { I18nKey } from "#/i18n/declaration";
+import * as telemetry from "#/services/telemetry";
 
 const mockUsePaginatedConversations = vi.fn();
 const mockUseAutomationHealth = vi.fn();
@@ -51,31 +71,38 @@ vi.mock("#/hooks/query/use-llm-profiles", () => ({
   useLlmProfiles: () => mockUseLlmProfiles(),
 }));
 
-function renderChecklist() {
+function renderChecklist({ withSettingsSwitch = false } = {}) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
+  const navigate = vi.fn();
   const navigation: NavigationContextValue = {
     currentPath: "/",
     conversationId: null,
     isNavigating: false,
-    navigate: vi.fn(),
+    navigate,
   };
 
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <NavigationProvider value={navigation}>
-        <SidebarOnboardingChecklist collapsed={false} />
-      </NavigationProvider>
-    </QueryClientProvider>,
-  );
+  return {
+    ...render(
+      <QueryClientProvider client={queryClient}>
+        <NavigationProvider value={navigation}>
+          <SidebarOnboardingChecklist collapsed={false} />
+          {withSettingsSwitch ? <GettingStartedChecklistSwitch /> : null}
+        </NavigationProvider>
+      </QueryClientProvider>,
+    ),
+    navigate,
+  };
 }
 
 describe("SidebarOnboardingChecklist", () => {
   beforeEach(() => {
     window.localStorage.clear();
     window.localStorage.setItem(ONBOARDING_COMPLETED_STORAGE_KEY, "1");
-    window.localStorage.removeItem(SIDEBAR_ONBOARDING_CHECKLIST_MINIMIZED_STORAGE_KEY);
+    window.localStorage.removeItem(
+      SIDEBAR_ONBOARDING_CHECKLIST_MINIMIZED_STORAGE_KEY,
+    );
     window.localStorage.removeItem(
       SIDEBAR_ONBOARDING_CHECKLIST_CUSTOMIZE_EXPLORED_STORAGE_KEY,
     );
@@ -262,9 +289,52 @@ describe("SidebarOnboardingChecklist", () => {
     expect(readSidebarOnboardingChecklistMinimized()).toBe(false);
   });
 
+  it.each([
+    ["expanded", false],
+    ["minimized", true],
+  ] as const)(
+    "dismisses from the %s state and updates the Application switch",
+    async (_label, minimized) => {
+      if (minimized) {
+        window.localStorage.setItem(
+          SIDEBAR_ONBOARDING_CHECKLIST_MINIMIZED_STORAGE_KEY,
+          "true",
+        );
+      }
+      const user = userEvent.setup();
+      renderChecklist({ withSettingsSwitch: true });
+
+      const switchControl = screen.getByTestId(
+        "show-getting-started-checklist-switch",
+      );
+      await user.click(
+        screen.getByRole("button", {
+          name: I18nKey.SIDEBAR$ONBOARDING_CHECKLIST_DISMISS,
+        }),
+      );
+
+      expect(readSidebarOnboardingChecklistDismissed()).toBe(true);
+      expect(readSidebarOnboardingChecklistMinimized()).toBe(minimized);
+      expect(
+        screen.queryByTestId("sidebar-onboarding-checklist"),
+      ).not.toBeInTheDocument();
+      expect(switchControl).not.toBeChecked();
+
+      await user.click(switchControl);
+
+      expect(readSidebarOnboardingChecklistDismissed()).toBe(false);
+      expect(
+        screen.getByTestId("sidebar-onboarding-checklist"),
+      ).toHaveAttribute("data-minimized", String(minimized));
+    },
+  );
+
   it("hides when collapsed", () => {
     const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     const navigation: NavigationContextValue = {
       currentPath: "/",
@@ -284,5 +354,216 @@ describe("SidebarOnboardingChecklist", () => {
     expect(
       screen.queryByTestId("sidebar-onboarding-checklist"),
     ).not.toBeInTheDocument();
+  });
+
+  describe("onboarding link tracking", () => {
+    let captureMock: MockInstance<typeof telemetry.trackEvent>;
+
+    beforeEach(() => {
+      captureMock = vi
+        .spyOn(telemetry, "trackEvent")
+        .mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+      captureMock.mockRestore();
+    });
+
+    const linkClickEvents = () =>
+      captureMock.mock.calls.filter(
+        ([name]) => name === "onboarding_link_clicked",
+      );
+
+    it("captures a single onboarding_link_clicked when the Join Slack row is clicked", async () => {
+      const user = userEvent.setup();
+      renderChecklist();
+
+      await user.click(
+        screen.getByTestId("sidebar-onboarding-checklist-item-join-slack"),
+      );
+
+      expect(linkClickEvents()).toHaveLength(1);
+      expect(linkClickEvents()[0][1]).toMatchObject({
+        link_id: "join_slack",
+        destination_type: "community",
+        surface: "landing_checklist",
+        checklist_item: "join_slack",
+        is_external: true,
+      });
+    });
+
+    it("captures onboarding_link_clicked for an internal row and still navigates", async () => {
+      const user = userEvent.setup();
+      const { navigate } = renderChecklist();
+
+      await user.click(
+        screen.getByTestId("sidebar-onboarding-checklist-item-configure-llm"),
+      );
+
+      expect(linkClickEvents()).toHaveLength(1);
+      expect(linkClickEvents()[0][1]).toMatchObject({
+        link_id: "configure_llm",
+        destination_type: "settings",
+        surface: "landing_checklist",
+        checklist_item: "configure_llm",
+        is_external: false,
+      });
+      expect(navigate).toHaveBeenCalledWith("/settings/llm", {
+        replace: false,
+      });
+    });
+
+    it("captures open_docs with the owning checklist item when a preview docs link is clicked", async () => {
+      const user = userEvent.setup();
+      renderChecklist();
+
+      await user.hover(
+        screen.getByTestId("sidebar-onboarding-checklist-item-connect-mcp"),
+      );
+      await user.click(
+        await screen.findByTestId(
+          "sidebar-onboarding-checklist-preview-docs-connect-mcp",
+        ),
+      );
+
+      expect(linkClickEvents()).toHaveLength(1);
+      expect(linkClickEvents()[0][1]).toMatchObject({
+        link_id: "open_docs",
+        destination_type: "documentation",
+        surface: "landing_checklist",
+        checklist_item: "connect_mcp",
+        is_external: true,
+      });
+    });
+
+    it("captures the row's link_id when a preview action CTA is clicked", async () => {
+      const user = userEvent.setup();
+      renderChecklist();
+
+      await user.hover(
+        screen.getByTestId("sidebar-onboarding-checklist-item-schedule-task"),
+      );
+      await user.click(
+        await screen.findByTestId(
+          "sidebar-onboarding-checklist-preview-action-schedule-task",
+        ),
+      );
+
+      expect(linkClickEvents()).toHaveLength(1);
+      expect(linkClickEvents()[0][1]).toMatchObject({
+        link_id: "schedule_task",
+        destination_type: "automation",
+        surface: "landing_checklist",
+        checklist_item: "schedule_task",
+        is_external: false,
+      });
+    });
+  });
+
+  describe("with the Super Admin setup guide", () => {
+    function serveCloudUser(permissions: string[]) {
+      server.use(
+        http.get("*/api/organizations/:orgId/me", ({ params }) =>
+          HttpResponse.json({
+            org_id: params.orgId,
+            user_id: "user-1",
+            role: "owner",
+            permissions,
+          }),
+        ),
+        http.get("*/api/admin/setup-state", () =>
+          HttpResponse.json({
+            wizard_pending: false,
+            guide_org_id: "org-1",
+            guide_dismissed: false,
+            guide_steps: {
+              org_llm: false,
+              mcp_server: false,
+              automation: false,
+              invite: false,
+            },
+          }),
+        ),
+      );
+    }
+
+    function renderOnCloud() {
+      const navigation: NavigationContextValue = {
+        currentPath: "/",
+        conversationId: null,
+        isNavigating: false,
+        navigate: vi.fn(),
+      };
+      render(
+        <QueryClientProvider
+          client={
+            new QueryClient({ defaultOptions: { queries: { retry: false } } })
+          }
+        >
+          <ActiveBackendProvider>
+            <NavigationProvider value={navigation}>
+              <SidebarOnboardingChecklist collapsed={false} />
+              <SuperAdminSetupGuide />
+            </NavigationProvider>
+          </ActiveBackendProvider>
+        </QueryClientProvider>,
+      );
+    }
+
+    beforeEach(() => {
+      __resetActiveStoreForTests();
+      setRegisteredBackends([
+        {
+          id: "cloud-1",
+          name: "OHE",
+          host: "https://ohe.example.com",
+          apiKey: "",
+          kind: "cloud",
+        },
+      ]);
+      setActiveSelection({ backendId: "cloud-1", orgId: "org-1" });
+    });
+
+    afterEach(() => {
+      __resetActiveStoreForTests();
+      vi.unstubAllEnvs();
+    });
+
+    it("steps aside while the setup guide is shown", async () => {
+      serveCloudUser(["manage_super_admins"]);
+
+      renderOnCloud();
+
+      expect(
+        await screen.findByTestId("super-admin-setup-guide"),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByTestId("sidebar-onboarding-checklist"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("stays for cloud users who have no setup guide", async () => {
+      serveCloudUser(["view_automations"]);
+
+      renderOnCloud();
+
+      expect(
+        await screen.findByTestId("sidebar-onboarding-checklist"),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByTestId("super-admin-setup-guide"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("never shows on a canvas locked to its Cloud host, even with no setup guide", async () => {
+      vi.stubEnv("VITE_LOCK_TO_CLOUD", "https://ohe.example.com");
+      serveCloudUser(["view_automations"]);
+
+      renderOnCloud();
+
+      await expect(
+        screen.findByTestId("sidebar-onboarding-checklist"),
+      ).rejects.toThrow();
+    });
   });
 });

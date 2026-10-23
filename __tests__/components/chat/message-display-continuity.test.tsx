@@ -1,9 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { screen } from "@testing-library/react";
-import { QueryClient } from "@tanstack/react-query";
+import { screen, render } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes } from "react-router";
-import { render } from "@testing-library/react";
-import { QueryClientProvider } from "@tanstack/react-query";
 import { useParamsMock, createUserMessageEvent } from "test-utils";
 import { ChatInterface } from "#/components/features/chat/chat-interface";
 import {
@@ -16,7 +14,6 @@ import { useConfig } from "#/hooks/query/use-config";
 import { useUnifiedUploadFiles } from "#/hooks/mutation/use-unified-upload-files";
 import { useEventStore } from "#/stores/use-event-store";
 import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
-import { useAgentState } from "#/hooks/use-agent-state";
 import { AgentState } from "#/types/agent-state";
 
 // Module-level mocks
@@ -50,6 +47,11 @@ vi.mock("#/hooks/use-agent-state", () => ({
   useAgentState: vi.fn(() => ({
     curAgentState: AgentState.AWAITING_USER_INPUT,
   })),
+  usePlanningAgentState: vi.fn(() => ({
+    localPlanningConversationId: null,
+    curPlanningAgentState: AgentState.AWAITING_USER_INPUT,
+    isPlanningAgentRunning: false,
+  })),
 }));
 
 vi.mock("#/components/features/chat/btw-messages", () => ({
@@ -66,13 +68,6 @@ vi.mock("#/components/features/chat/interactive-chat-box", () => ({
 
 vi.mock("#/components/shared/buttons/scroll-to-bottom-button", () => ({
   ScrollToBottomButton: () => <button type="button">Scroll to bottom</button>,
-}));
-
-vi.mock("#/components/conversation-events/chat", async (importOriginal) => ({
-  ...(await importOriginal<
-    typeof import("#/components/conversation-events/chat")
-  >()),
-  Messages: () => <div data-testid="conversation-messages" />,
 }));
 
 // Helper to render with QueryClient and route params
@@ -108,7 +103,7 @@ describe("ChatInterface – message display continuity (spec 3.1)", () => {
       conversationId: "test-conversation-id",
     });
 
-    useOptimisticUserMessageStore.setState({ pendingMessages: [] });
+    useOptimisticUserMessageStore.getState().clearPendingMessages();
 
     (useConfig as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       data: { app_mode: "local" },
@@ -144,8 +139,10 @@ describe("ChatInterface – message display continuity (spec 3.1)", () => {
       vi.mocked(useConversationWebSocket).mockReturnValue({
         isLoadingHistory: true,
         connectionState: "OPEN",
+        mainConnectionState: "OPEN",
         sendMessage: vi.fn(),
         reconnect: vi.fn(),
+        hasConnectedOnce: true,
       });
 
       // Put agent-server user events in the store
@@ -163,10 +160,7 @@ describe("ChatInterface – message display continuity (spec 3.1)", () => {
       expect(
         screen.queryByTestId("chat-messages-skeleton"),
       ).not.toBeInTheDocument();
-      expect(
-        screen.queryByTestId("conversation-messages") ??
-          screen.queryByTestId("user-message"),
-      ).not.toBeNull();
+      expect(screen.getByTestId("user-message")).toBeInTheDocument();
     });
 
     it("shows skeleton when store is empty and loading", () => {
@@ -174,8 +168,10 @@ describe("ChatInterface – message display continuity (spec 3.1)", () => {
       vi.mocked(useConversationWebSocket).mockReturnValue({
         isLoadingHistory: true,
         connectionState: "OPEN",
+        mainConnectionState: "OPEN",
         sendMessage: vi.fn(),
         reconnect: vi.fn(),
+        hasConnectedOnce: true,
       });
 
       // Store is empty
@@ -195,8 +191,10 @@ describe("ChatInterface – message display continuity (spec 3.1)", () => {
       vi.mocked(useConversationWebSocket).mockReturnValue({
         isLoadingHistory: true,
         connectionState: "OPEN",
+        mainConnectionState: "OPEN",
         sendMessage: vi.fn(),
         reconnect: vi.fn(),
+        hasConnectedOnce: true,
       });
 
       useEventStore.setState({
@@ -225,8 +223,10 @@ describe("ChatInterface – message display continuity (spec 3.1)", () => {
       vi.mocked(useConversationWebSocket).mockReturnValue({
         isLoadingHistory: false,
         connectionState: "OPEN",
+        mainConnectionState: "OPEN",
         sendMessage: vi.fn(),
         reconnect: vi.fn(),
+        hasConnectedOnce: true,
       });
 
       // agent-server events in store
@@ -243,10 +243,7 @@ describe("ChatInterface – message display continuity (spec 3.1)", () => {
       expect(
         screen.queryByTestId("chat-messages-skeleton"),
       ).not.toBeInTheDocument();
-      expect(
-        screen.queryByTestId("conversation-messages") ??
-          screen.queryByTestId("user-message"),
-      ).not.toBeNull();
+      expect(screen.getByTestId("user-message")).toBeInTheDocument();
     });
   });
 });

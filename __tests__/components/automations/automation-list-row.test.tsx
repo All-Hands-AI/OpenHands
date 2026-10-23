@@ -8,6 +8,7 @@ import {
   type AutomationRun,
 } from "#/types/automation";
 import type { InterfaceListInsights } from "#/manifests/types";
+import { I18nKey } from "#/i18n/declaration";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -20,9 +21,35 @@ vi.mock("#/context/navigation-context", () => ({
   useNavigation: () => ({ navigate: vi.fn(), currentPath: "/" }),
 }));
 
-vi.mock("#/hooks/use-has-permission", () => ({
-  useHasPermission: () => true,
+vi.mock("#/hooks/use-automation-permissions", () => ({
+  useAutomationPermissions: () => ({
+    canView: true,
+    canManage: true,
+    isLoading: false,
+  }),
+  useIsAutomationOwner: () => true,
 }));
+
+// The pinned package predates the `impact` field, so an entry carrying one is
+// appended to the real catalog.
+vi.mock("@openhands/extensions/automations", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@openhands/extensions/automations")>();
+  return {
+    ...actual,
+    AUTOMATION_CATALOG: [
+      ...actual.AUTOMATION_CATALOG,
+      {
+        id: "widget-checker",
+        impact: {
+          basis: "completed-runs",
+          one: "1 widget check completed",
+          other: "{{count}} widget checks completed",
+        },
+      },
+    ] as typeof actual.AUTOMATION_CATALOG,
+  };
+});
 
 const automation: Automation = {
   id: "automation-1",
@@ -95,6 +122,25 @@ describe("AutomationListRow", () => {
     );
   });
 
+  it("marks draft automations separately from inactive rows", () => {
+    render(
+      <AutomationListRow
+        automation={{ ...automation, enabled: false, state: "DRAFT" }}
+        onToggle={vi.fn()}
+        onRunNow={vi.fn()}
+        onExport={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("active-status-badge-draft")).toHaveTextContent(
+      I18nKey.AUTOMATIONS$DETAIL$DRAFT,
+    );
+    expect(
+      screen.queryByTestId("active-status-badge-inactive"),
+    ).not.toBeInTheDocument();
+  });
+
   it("shows last-run status, relative time, and a sparkline when insights are present", () => {
     const latestRun = createRun({
       started_at: new Date(Date.now() - 10 * 60_000).toISOString(),
@@ -113,6 +159,7 @@ describe("AutomationListRow", () => {
           state: {
             summary: {
               total: 4,
+              completedTotal: 4,
               latestRun,
               recentRuns: [latestRun],
               recentSuccessRate: 1,
@@ -132,6 +179,48 @@ describe("AutomationListRow", () => {
     expect(
       screen.getByTestId("automation-activity-automation-1"),
     ).toBeInTheDocument();
+  });
+
+  it("shows the value statement in the meta line", () => {
+    // Arrange — provenance joining back to a catalog entry with an impact
+    // declaration, and a summary carrying the lifetime completed count.
+    const latestRun = createRun();
+
+    // Act
+    render(
+      <AutomationListRow
+        automation={{
+          ...automation,
+          preset_metadata: {
+            template: { id: "widget-checker", version: "1.0.0", config: {} },
+          },
+        }}
+        onToggle={vi.fn()}
+        onRunNow={vi.fn()}
+        onExport={vi.fn()}
+        onDelete={vi.fn()}
+        insights={{
+          spec: insightsSpec satisfies InterfaceListInsights,
+          state: {
+            summary: {
+              total: 5,
+              completedTotal: 4,
+              latestRun,
+              recentRuns: [latestRun],
+              recentSuccessRate: 1,
+              averageDurationMs: 120_000,
+            },
+            isLoading: false,
+            isError: false,
+          },
+        }}
+      />,
+    );
+
+    // Assert
+    expect(
+      screen.getByTestId("automation-impact-automation-1"),
+    ).toHaveTextContent("4 widget checks completed");
   });
 
   it("opens the actions menu without triggering row navigation handlers", async () => {

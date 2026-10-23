@@ -1,4 +1,8 @@
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
+import { compile } from "@tailwindcss/node";
 import {
+  act,
   render,
   screen,
   fireEvent,
@@ -15,6 +19,7 @@ import {
   NavigationProvider,
   type NavigationContextValue,
 } from "#/context/navigation-context";
+import { getPinnedHomeRouteKey } from "#/hooks/use-pinned-home-route";
 import translations from "#/i18n/translation.json";
 
 // The global `useTranslation` mock in `vitest.setup.ts` returns the key
@@ -191,13 +196,6 @@ vi.mock("#/components/features/backends/manage-backends-modal", () => ({
   ),
 }));
 
-vi.mock(
-  "#/components/features/conversation-panel/new-conversation-button",
-  () => ({
-    NewConversationButton: () => <div data-testid="new-conversation-button" />,
-  }),
-);
-
 vi.mock("#/components/features/sidebar/sidebar-conversation-list", () => ({
   SidebarConversationList: () => (
     <div data-testid="sidebar-conversation-list" />
@@ -276,6 +274,87 @@ describe("Sidebar", () => {
         screen.queryByTestId("sidebar-mobile-drawer"),
       ).not.toBeInTheDocument();
     });
+  });
+
+  it("keeps the CSS drawer and backdrop timing in step with removal", async () => {
+    // Arrange: compile the production stylesheet, then drive the real drawer.
+    const compiler = await compile(
+      await readFile(resolve("src/tailwind.css"), "utf8"),
+      { base: resolve("src"), onDependency: () => {} },
+    );
+    vi.useFakeTimers();
+    try {
+      renderSidebar("/conversations");
+      fireEvent.click(screen.getByTestId("sidebar-mobile-menu-toggle"));
+      act(() => vi.advanceTimersToNextFrame());
+      const drawer = screen.getByTestId("sidebar-mobile-drawer");
+      const backdrop = drawer.previousElementSibling as HTMLElement;
+      expect(drawer).toHaveAttribute("aria-hidden", "false");
+      expect(backdrop).toHaveAttribute("aria-hidden", "false");
+
+      // Act: use only duration classes actually emitted by each element.
+      const durations = [drawer, backdrop].map((element) => {
+        const css = compiler.build(
+          [...element.classList].filter((candidate) =>
+            candidate.startsWith("duration-"),
+          ),
+        );
+        const declarations = [
+          ...css.matchAll(/\.((?:\\.|[\w-])+)\s*\{([^}]+)\}/g),
+        ]
+          .filter(([, selector]) =>
+            element.classList.contains(selector.replace(/\\(.)/g, "$1")),
+          )
+          .map(([, , body]) => body)
+          .join("\n");
+        const property = declarations.match(
+          /transition-duration:\s*var\((--[\w-]+)\);/,
+        )?.[1];
+        expect(property).toBeDefined();
+        const value = element.style.getPropertyValue(property!);
+        expect(value).toMatch(/^\d+ms$/);
+        return Number.parseFloat(value);
+      });
+
+      // Assert: the visible CSS duration and the lifecycle timer agree.
+      const [duration] = durations;
+      expect(duration).toBeGreaterThan(0);
+      expect(durations[1]).toBe(duration);
+      fireEvent.click(
+        within(drawer).getByTestId("sidebar-mobile-drawer-close"),
+      );
+      expect(drawer).toHaveAttribute("aria-hidden", "true");
+      expect(backdrop).toHaveAttribute("aria-hidden", "true");
+      act(() => vi.advanceTimersByTime(duration - 1));
+      expect(drawer).toBeInTheDocument();
+      expect(backdrop).toBeInTheDocument();
+      act(() => vi.advanceTimersByTime(1));
+      expect(drawer).not.toBeInTheDocument();
+      expect(backdrop).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("leaves the mobile drawer open when a menu inside it already handled Escape", () => {
+    renderSidebar("/conversations");
+    const toggle = screen.getByTestId("sidebar-mobile-menu-toggle");
+    fireEvent.click(toggle);
+
+    const handledEscape = new KeyboardEvent("keydown", {
+      key: "Escape",
+      bubbles: true,
+      cancelable: true,
+    });
+    handledEscape.preventDefault();
+    act(() => {
+      document.body.dispatchEvent(handledEscape);
+    });
+
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
   });
 
   it("toggles between expanded and collapsed states and persists the choice", () => {
@@ -512,6 +591,58 @@ describe("Sidebar", () => {
     );
     expect(screen.getByTestId("sidebar-automations-link")).toHaveTextContent(
       "Automate",
+    );
+  });
+
+  it.each(["/customize", "/mcp", "/skills", "/plugins", "/apps"])(
+    "marks the Customize row as the current page on %s",
+    (path) => {
+      renderSidebar(path);
+
+      expect(screen.getByTestId("sidebar-skills-link")).toHaveAttribute(
+        "aria-current",
+        "page",
+      );
+    },
+  );
+
+  it.each(["/conversations", "/automations"])(
+    "does not mark the Customize row as current on %s",
+    (path) => {
+      renderSidebar(path);
+
+      expect(screen.getByTestId("sidebar-skills-link")).not.toHaveAttribute(
+        "aria-current",
+      );
+    },
+  );
+
+  it("pins and unpins a sidebar page as the home route without navigating", () => {
+    // Arrange: the mocked active backend is `local` with no org.
+    const pinKey = getPinnedHomeRouteKey("local", null);
+    const { navigate } = renderSidebar("/conversations");
+    const pinToggle = screen.getByTestId("sidebar-pin-home-toggle-customize");
+    expect(pinToggle).toHaveAttribute("aria-pressed", "false");
+    expect(pinToggle).toHaveAttribute("aria-label", "Pin as home page");
+
+    // Act: pin Customize as the home page.
+    fireEvent.click(pinToggle);
+
+    // Assert: the toggle flips and the pin persists for the active backend.
+    expect(pinToggle).toHaveAttribute("aria-pressed", "true");
+    expect(pinToggle).toHaveAttribute("aria-label", "Unpin as home page");
+    expect(window.localStorage.getItem(pinKey)).toBe(
+      JSON.stringify("/customize"),
+    );
+    expect(navigate).not.toHaveBeenCalled();
+
+    // Act: unpin from the same control.
+    fireEvent.click(pinToggle);
+
+    // Assert: the pin is gone.
+    expect(pinToggle).toHaveAttribute("aria-pressed", "false");
+    expect(window.localStorage.getItem(pinKey)).not.toBe(
+      JSON.stringify("/customize"),
     );
   });
 });

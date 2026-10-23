@@ -1,4 +1,10 @@
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import {
+  createElement,
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import type { RecommendedAutomation } from "@openhands/extensions/automations";
 import {
@@ -8,7 +14,10 @@ import {
 import { I18nKey } from "#/i18n/declaration";
 import { McpLogoBadge } from "#/components/features/mcp-logo-badge";
 import { getMarketplaceEntryById } from "#/utils/mcp-marketplace-utils";
-import { getIntegrationIds } from "#/utils/automation-catalog";
+import {
+  getAutomationIcon,
+  getIntegrationIds,
+} from "#/utils/automation-catalog";
 import {
   flattenRecommendedRailGroups,
   getRecommendedRailGroups,
@@ -22,11 +31,17 @@ import {
   extensionModuleCardInteractiveClassName,
   extensionModuleCardSurfaceClassName,
 } from "#/utils/extension-module-card-classes";
+import { X } from "lucide-react";
+import { hoverRevealActionClassName } from "#/utils/hover-reveal-classes";
 
 interface RecommendedAutomationsRailProps {
   installedAutomations: readonly Pick<Automation, "name">[];
+  /** Catalog entries the active backend's deployment does not offer. */
+  hiddenAutomationIds?: ReadonlySet<string>;
   onSelect: (automation: RecommendedAutomation) => void;
   className?: string;
+  dismissible?: boolean;
+  onDismiss?: () => void;
 }
 
 /** Current catalog tiles reserve 40px for the icon; keep that row height. */
@@ -42,23 +57,40 @@ function integrationEntries(
 }
 
 function RailIntegrationIcons({
+  automation,
   entries,
   testId,
 }: {
+  automation: RecommendedAutomation;
   entries: MarketplaceEntry[];
   testId: string;
 }) {
   const visibleEntries = entries.slice(0, 4);
   const isOverlap = visibleEntries.length > 1;
+  // A declared glyph replaces the logos rather than joining them: it is the
+  // whole identity of an entry that names one.
+  const Icon = getAutomationIcon(automation);
 
   return (
     <span
       aria-hidden="true"
       data-testid={testId}
-      data-layout={isOverlap ? "overlap" : undefined}
-      className={cn(RAIL_ICON_ROW_CLASS_NAME, isOverlap && "-space-x-2")}
+      data-layout={isOverlap && !Icon ? "overlap" : undefined}
+      className={cn(
+        RAIL_ICON_ROW_CLASS_NAME,
+        isOverlap && !Icon && "-space-x-2",
+      )}
     >
-      {visibleEntries.length === 0 ? (
+      {Icon ? (
+        <McpLogoBadge
+          entry={null}
+          size="base"
+          fallback={createElement(Icon, {
+            className: "h-5 w-5",
+            strokeWidth: 2.25,
+          })}
+        />
+      ) : visibleEntries.length === 0 ? (
         <McpLogoBadge entry={null} size="base" />
       ) : (
         visibleEntries.map((entry) => (
@@ -66,11 +98,7 @@ function RailIntegrationIcons({
             key={entry.id}
             entry={entry}
             size="base"
-            className={
-              isOverlap
-                ? "ring-2 ring-[var(--oh-color-base-secondary)]"
-                : undefined
-            }
+            className={isOverlap ? "ring-2 ring-base-secondary" : undefined}
           />
         ))
       )}
@@ -80,12 +108,15 @@ function RailIntegrationIcons({
 
 export function RecommendedAutomationsRail({
   installedAutomations,
+  hiddenAutomationIds,
   onSelect,
   className,
+  dismissible = false,
+  onDismiss,
 }: RecommendedAutomationsRailProps) {
   const { t } = useTranslation("openhands");
   const items = flattenRecommendedRailGroups(
-    getRecommendedRailGroups(installedAutomations),
+    getRecommendedRailGroups(installedAutomations, hiddenAutomationIds),
   );
   const scrollRef = useRef<HTMLDivElement>(null);
   const { handleMouseDown, handleClickCapture, handleDragStart } =
@@ -126,11 +157,33 @@ export function RecommendedAutomationsRail({
     <section
       data-testid="recommended-automations-rail"
       aria-label={t(I18nKey.RECOMMENDED_AUTOMATIONS$SECTION_LABEL)}
-      className={cn("w-full", AUTOMATION_STACK_SECTION_BOTTOM_CLASS, className)}
+      className={cn(
+        "group w-full",
+        AUTOMATION_STACK_SECTION_BOTTOM_CLASS,
+        className,
+      )}
     >
-      <h2 className="mb-2 text-sm font-medium text-[var(--oh-foreground)]">
-        {t(I18nKey.RECOMMENDED_AUTOMATIONS$SECTION_LABEL)}
-      </h2>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h2 className="text-sm font-medium text-foreground">
+          {t(I18nKey.RECOMMENDED_AUTOMATIONS$SECTION_LABEL)}
+        </h2>
+        {/* @spec HL-002 — Named X, revealed on hover or focus, always visible on touch */}
+        {dismissible && onDismiss && (
+          <button
+            type="button"
+            data-testid="recommended-automations-rail-dismiss"
+            aria-label={t(I18nKey.RECOMMENDED_AUTOMATIONS$DISMISS_LABEL)}
+            onClick={onDismiss}
+            className={cn(
+              "inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted",
+              "transition-opacity motion-reduce:transition-none hover:text-content",
+              hoverRevealActionClassName(),
+            )}
+          >
+            <X className="size-4" />
+          </button>
+        )}
+      </div>
 
       <div className="relative">
         {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- mouse drag-to-scroll is a pointer convenience; keyboard users scroll the list natively via the focusable cards. */}
@@ -151,17 +204,18 @@ export function RecommendedAutomationsRail({
                 data-testid={`recommended-automation-rail-card-${automation.id}`}
                 onClick={() => onSelect(automation)}
                 className={cn(
-                  "flex w-[220px] shrink-0 flex-col gap-3 p-3 text-left",
+                  "flex w-55 shrink-0 flex-col gap-3 p-3 text-left",
                   extensionModuleCardSurfaceClassName,
                   extensionModuleCardInteractiveClassName,
                 )}
               >
                 <RailIntegrationIcons
+                  automation={automation}
                   entries={integrationEntries(automation)}
                   testId={`recommended-automation-rail-icon-${automation.id}`}
                 />
                 <div className="min-w-0">
-                  <h3 className="truncate text-sm font-semibold text-white">
+                  <h3 className="truncate text-sm font-semibold text-contrast">
                     {automation.name}
                   </h3>
                   <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-tertiary-light">

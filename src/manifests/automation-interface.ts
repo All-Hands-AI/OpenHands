@@ -20,7 +20,6 @@ import { AUTOMATION_CATALOG } from "@openhands/extensions/automations";
 import { validateInterfaceManifest } from "./interface-validation";
 import { AUTOMATION_INTERFACE_CANDIDATE } from "./manifest-sources";
 import type {
-  AutomationAttributeName,
   InterfaceDashboardFilter,
   InterfaceDashboardSort,
   InterfaceEndpointName,
@@ -126,6 +125,17 @@ export function automationTemplatesPath(): string {
 }
 
 /**
+ * Whether `path` (a location pathname) is inside the automation surface: the
+ * list route itself or anything nested under it (detail, setup, templates,
+ * git-sync). Prefix-safe: "/automations-foo" does not match.
+ */
+export function isAutomationsRoute(path: string): boolean {
+  return (
+    path === MOUNTED_ROUTES.list || path.startsWith(`${MOUNTED_ROUTES.list}/`)
+  );
+}
+
+/**
  * A declared endpoint path. Empty for one the manifest may omit - the two a
  * bundle needs were added after the block shipped - so a caller that needs one
  * says so rather than reading a host-held default that does not exist.
@@ -164,39 +174,6 @@ export function getInterfaceCopy(): InterfaceCopy {
     listSubtitle: manifest.pages.list.subtitle,
     detailBackLabel: manifest.pages.detail.backLabel,
     editTitle: manifest.pages.edit.title,
-  };
-}
-
-export interface AttributeSpec {
-  present: boolean;
-  label: string;
-  /** Null when the manifest states no help text for the attribute. */
-  help: string | null;
-  required: boolean;
-  min: number | null;
-  max: number | null;
-}
-
-/** An attribute the manifest does not declare is not offered at all. */
-const ABSENT_ATTRIBUTE: AttributeSpec = {
-  present: false,
-  label: "",
-  help: null,
-  required: false,
-  min: null,
-  max: null,
-};
-
-export function getAttributeSpec(name: AutomationAttributeName): AttributeSpec {
-  const attribute = requireInterface().attributes[name];
-  if (!attribute) return ABSENT_ATTRIBUTE;
-  return {
-    present: true,
-    label: attribute.label,
-    help: attribute.help ?? null,
-    required: attribute.required,
-    min: attribute.constraints?.min ?? null,
-    max: attribute.constraints?.max ?? null,
   };
 }
 
