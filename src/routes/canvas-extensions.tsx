@@ -4,6 +4,7 @@ import CanvasExtensionsService, {
 import { ProfileScopeList } from "#/components/features/settings/agent-profiles/profile-scope-list";
 import { useSearchSecrets } from "#/hooks/query/use-get-secrets";
 import React from "react";
+import { buildAgentCanvasPath } from "#/utils/base-path";
 import { useTranslation } from "react-i18next";
 import { ExternalLink } from "lucide-react";
 import {
@@ -345,8 +346,8 @@ export default function CanvasExtensionsScreen() {
                     names: missingSecrets.join(", "),
                   })}{" "}
                   —{" "}
-                  <a href="/settings/secrets">
-                    {t(I18nKey.SETTINGS$APPS_BACKEND_SECRETS)}
+                  <a href={buildAgentCanvasPath("/settings/secrets")}>
+                    {t(I18nKey.COMMAND_MENU$SECRETS_SETTINGS_TITLE)}
                   </a>
                 </p>
               )}
