@@ -41,6 +41,7 @@ import {
   knownBugBlocks,
   parseBugPredicate,
   proofVerdict,
+  viewportToRestore,
 } from "./lib/known-bug.mjs";
 import { routePattern } from "./lib/route-pattern.mjs";
 import {
@@ -3620,6 +3621,10 @@ async function cmdBug({ positional, flags }) {
         const logFile = join(work, `${stamp}.asserts.jsonl`);
         const failureFile = join(work, `${stamp}.failed`);
         const doctorBefore = doctor();
+        // Every attempt starts at the viewport the caller had, and leaves it so.
+        const viewportBefore = daemonInfo(run)
+          ? (await browserCall(run, "url").catch(() => ({}))).viewport
+          : undefined;
         let exec = {
           exitCode: null,
           timedOut: false,
@@ -3660,6 +3665,15 @@ async function cmdBug({ positional, flags }) {
         const page = daemonInfo(run)
           ? await browserCall(run, "url").catch(() => ({}))
           : {};
+        const restore = viewportToRestore(viewportBefore, page.viewport);
+        let viewportRestored;
+        if (restore) {
+          viewportRestored = await browserCall(run, "viewport", {
+            size: restore,
+          })
+            .then(() => restore)
+            .catch((error) => `failed: ${error.message}`);
+        }
         const transcript = join(dir, `${stamp}.json`);
         writeFileSync(
           transcript,
@@ -3709,6 +3723,7 @@ async function cmdBug({ positional, flags }) {
           viewport: page.viewport
             ? `${page.viewport.width}x${page.viewport.height}`
             : undefined,
+          ...(viewportRestored ? { viewportRestored } : {}),
           transcript: relative(run.dir, transcript),
         };
         appendFileSync(attemptsFile(run.dir), `${JSON.stringify(attempt)}\n`);
@@ -4855,6 +4870,9 @@ attempt after a passing doctor, and classifies it:
 Each attempt is appended to evidence/known-bugs/attempts.jsonl (revision,
 backend, viewport, recipe hash, failing line, assertion, transcript) and to the
 ledger as an xfail/xpass/fail row. Exit 0 only when every attempt is xfail.
+Every attempt starts at the viewport the browser had before 'run': a block that
+switches it (browser viewport phone) is put back afterwards, and the attempt
+records the size it ran at (viewport) and what it restored (viewportRestored).
 Each assertion is logged with the recipe line that ran it, and the first
 failure is the one kept, so a cleanup step (an EXIT trap) cannot replace the
 marked command's observation.
