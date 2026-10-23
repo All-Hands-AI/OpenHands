@@ -1558,9 +1558,9 @@ describe("OnboardingModal", () => {
       vi.mocked(bridge.openTunnel).mockResolvedValue({
         sessionId: session.session_id,
         status: "connected",
-        localPort: null,
+        localPort: undefined,
         remotePort: 8000,
-        error: null,
+        error: undefined,
         host: `${window.location.origin}/mars/sessions/${session.session_id}`,
       });
       await probeMarsWebBridge(
