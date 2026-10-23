@@ -32,6 +32,7 @@ import {
   initializeAutomationFormSession,
   isPendingAutomationSetupId,
   patchAutomationFormSession,
+  setAutomationFormSessionRepositories,
   subscribeAutomationFormSession,
 } from "#/api/automation-form-session";
 import type {
@@ -62,6 +63,7 @@ import { AutomationSetupPromptStack } from "#/components/features/automations/se
 import { ContextMenuListItem } from "#/components/features/context-menu/context-menu-list-item";
 import { formatTriggerSourceLabel } from "#/components/features/home/featured-automations/automation-run-health";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
+import { useSettings } from "#/hooks/query/use-settings";
 import { usePromptTextareaResize } from "#/hooks/use-prompt-textarea-resize";
 import { useSendMessage } from "#/hooks/use-send-message";
 import {
@@ -77,6 +79,8 @@ import {
 import { Divider } from "#/ui/divider";
 import { cn } from "#/utils/utils";
 import { useDeploymentCapabilities } from "#/hooks/query/use-manifest-capabilities";
+import { AUTOMATION_DETAIL_QUERY_KEY } from "#/hooks/query/use-automation-detail";
+import { AUTOMATIONS_QUERY_KEY } from "#/hooks/query/use-automations";
 import {
   invalidateConversationQueries,
   patchConversationInCache,
@@ -112,11 +116,19 @@ import {
   removeAutomationDraftTags,
 } from "#/utils/automation-draft-tags";
 import { setupDraftFromAutomation } from "#/utils/automation-edit-draft";
+import { withPresetSources } from "#/utils/automation-preset-sources";
+import {
+  automationCloneProviders,
+  automationRepositoriesChanged,
+  buildAutomationRepoSources,
+} from "#/utils/automation-repo-sources";
 
 const DEFAULT_TIMEZONE = "America/New_York";
 const DEFAULT_TIME = "09:00";
 const DEFAULT_CUSTOM_SCHEDULE = "0 9 * * *";
 const DEFAULT_EVENT_SOURCE = "github";
+// Capability feature: preset repositories can be changed with PATCH.
+const REPO_UPDATE_FEATURE = "repoUpdate";
 /** Used when the deployment has not advertised its event sources yet. */
 const FALLBACK_EVENT_SOURCES = ["github", "gitlab", "slack", "linear", "jira"];
 const DEFAULT_EVENT_KEY = "issue_comment.created";
@@ -648,6 +660,13 @@ export function AutomationSetupPanel({
   const { t } = useTranslation("openhands");
   const { navigate } = useNavigation();
   const deploymentCapabilities = useDeploymentCapabilities();
+  // Connected self-hosted providers name their hosts here; a repository on
+  // one of them is sent with its provider so the run can authenticate, as
+  // long as the service can clone from that provider at all.
+  const providerHosts = useSettings().data?.provider_tokens_set;
+  const cloneProviders = automationCloneProviders(
+    deploymentCapabilities.data?.repoProviders,
+  );
   const eventSourceOptions = deploymentCapabilities.data?.eventSources ?? [];
   const eventTypeOptions = deploymentCapabilities.data?.eventTypes ?? [];
   const initialDraft = conversationId
@@ -727,6 +746,20 @@ export function AutomationSetupPanel({
   const [existingCustomTarballPath, setExistingCustomTarballPath] = useState(
     draft.existingCustomTarballPath ?? "",
   );
+  const [existingRepositories, setExistingRepositories] = useState(
+    draft.existingRepositories ?? [],
+  );
+  const [canUpdateRepositories, setCanUpdateRepositories] = useState(
+    draft.canUpdateRepositories ?? false,
+  );
+  // A new automation sends its repositories on create. An existing one can
+  // change them only when the service can rebuild it with them.
+  const repositoriesEditable =
+    !isEditingExisting ||
+    (canUpdateRepositories &&
+      (deploymentCapabilities.data?.features ?? []).includes(
+        REPO_UPDATE_FEATURE,
+      ));
   const streamQueueRef = useRef<
     {
       field: AutomationSetupField;
@@ -752,6 +785,11 @@ export function AutomationSetupPanel({
   useEffect(() => {
     setExistingCustomTarballPath(draft.existingCustomTarballPath ?? "");
   }, [draft.existingCustomTarballPath]);
+
+  useEffect(() => {
+    setExistingRepositories(draft.existingRepositories ?? []);
+    setCanUpdateRepositories(draft.canUpdateRepositories ?? false);
+  }, [draft.existingRepositories, draft.canUpdateRepositories]);
 
   const updateConversationTags = useCallback(
     async (
@@ -848,6 +886,8 @@ export function AutomationSetupPanel({
         const nextForm = buildInitialForm(next);
         initializeAutomationFormSession(conversationId, next);
         setExistingCustomTarballPath(next.existingCustomTarballPath ?? "");
+        setExistingRepositories(next.existingRepositories ?? []);
+        setCanUpdateRepositories(next.canUpdateRepositories ?? false);
         setForm(nextForm);
       })
       .catch((error: unknown) => {
@@ -1216,7 +1256,12 @@ export function AutomationSetupPanel({
     } as SetupRequestBody;
     const repositories = parseAutomationSetupRepositories(repository);
     if (repositories.length > 0) {
-      body.repos = repositories.map((url) => ({ url, provider: "github" }));
+      body.repos = buildAutomationRepoSources(
+        repositories,
+        [],
+        providerHosts,
+        cloneProviders,
+      );
     }
     if (showTimeout && timeoutSeconds.trim())
       body.timeout = Number(timeoutSeconds);
@@ -1692,8 +1737,9 @@ export function AutomationSetupPanel({
 
   /**
    * Only fields accepted by the backend PATCH contract are sent when editing an
-   * existing automation. Repositories, plugins and uploaded code are create-time
-   * configuration today, so the edit form must not include them in PATCH.
+   * existing automation. Plugins and uploaded code are create-time
+   * configuration, and repositories are sent only when they changed and the
+   * service can rebuild this automation with them.
    */
   const buildExistingAutomationBody = () => {
     const body: Record<string, unknown> = {
@@ -1706,6 +1752,18 @@ export function AutomationSetupPanel({
     if (kind === "custom")
       body.agent_profile_id = agentProfileId.trim() || null;
     else body.prompt = prompt.trim();
+    const repositories = parseAutomationSetupRepositories(repository);
+    if (
+      repositoriesEditable &&
+      automationRepositoriesChanged(repositories, existingRepositories)
+    ) {
+      body.repos = buildAutomationRepoSources(
+        repositories,
+        existingRepositories,
+        providerHosts,
+        cloneProviders,
+      );
+    }
     return body as Partial<Automation>;
   };
 
@@ -1715,10 +1773,24 @@ export function AutomationSetupPanel({
     setSaveState("saving");
     try {
       if (!(await ensureCustomWebhookSource())) return;
-      await AutomationService.updateAutomation(
+      const updated = await AutomationService.updateAutomation(
         editingAutomationId,
         buildExistingAutomationBody(),
       );
+      const saved = withPresetSources(updated);
+      const savedRepositories = saved.repositories ?? [];
+      // The session re-supplies this draft on every edit, so it must hold the
+      // saved list too, or the next change is compared with the old one.
+      if (conversationId) {
+        setAutomationFormSessionRepositories(conversationId, savedRepositories);
+      }
+      setExistingRepositories(savedRepositories);
+      // The automation's page opens Edit from its cached copy, so replace that
+      // copy with the saved automation before anything can reopen it.
+      const detailKey = [...AUTOMATION_DETAIL_QUERY_KEY, editingAutomationId];
+      queryClient.setQueriesData({ queryKey: detailKey }, saved);
+      queryClient.invalidateQueries({ queryKey: detailKey });
+      queryClient.invalidateQueries({ queryKey: AUTOMATIONS_QUERY_KEY });
       setSaveState("saved");
       toast.success(t(I18nKey.AUTOMATIONS$EDIT_SUCCESS));
     } catch (error) {
@@ -2017,6 +2089,7 @@ export function AutomationSetupPanel({
                       onRepositoryChange={(value) =>
                         updateField("repository", value)
                       }
+                      repositoryReadOnly={!repositoriesEditable}
                       model={model}
                       onModelChange={(value) => updateField("model", value)}
                     />
