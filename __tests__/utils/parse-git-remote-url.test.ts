@@ -193,6 +193,15 @@ describe("parseGitRemoteUrl", () => {
     expect(gitlab?.repository).toBe("qa-group/Web Apps/qa-f07-repo");
   });
 
+  it("keeps an encoded slash encoded, so segment structure survives", () => {
+    // A decoded %2F would split the project into two segments and the
+    // Azure link would lose its _git layout (review of #18817).
+    const result = parseGitRemoteUrl(
+      "https://dev.azure.com/org/a%2Fb/_git/repo",
+    );
+    expect(result?.repository).toBe("org/a%2Fb/repo");
+  });
+
   it("falls back to the raw segment when an escape is malformed", () => {
     const result = parseGitRemoteUrl("https://github.com/qa-example/%E0%A4%A");
     expect(result?.repository).toBe("qa-example/%E0%A4%A");

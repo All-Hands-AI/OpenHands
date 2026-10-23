@@ -51,14 +51,17 @@ function stripGitSuffix(path: string): string {
  * keeps the remote's encoding (`Web%20Apps`), but `repository` doubles as a
  * display label and as input to the link builders, which re-encode each
  * segment -- so decode here. A segment with a malformed escape (for example
- * `%E0%A4%A`) falls back to its raw text rather than throwing.
+ * `%E0%A4%A`) falls back to its raw text rather than throwing, and a decoded
+ * `%2F` stays encoded: it would otherwise split the segment in two and an
+ * Azure `org/a%2Fb/_git/r` would lose its `_git` layout downstream.
  */
 function decodePathSegments(path: string): string {
   return path
     .split("/")
     .map((segment) => {
       try {
-        return decodeURIComponent(segment);
+        const decoded = decodeURIComponent(segment);
+        return decoded.includes("/") ? segment : decoded;
       } catch {
         return segment;
       }
