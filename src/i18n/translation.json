@@ -12185,6 +12185,24 @@
     "uk": "Причина агента:",
     "id": "Alasan agen:"
   },
+  "MODEL$ROUTER_SWITCH_REASON": {
+    "en": "Model router’s reason:",
+    "ja": "モデルルーターの理由：",
+    "zh-CN": "模型路由器给出的原因：",
+    "zh-TW": "模型路由器提供的原因：",
+    "ko-KR": "모델 라우터의 이유:",
+    "no": "Modellruterens begrunnelse:",
+    "ar": "سبب موجّه النماذج:",
+    "de": "Begründung des Modell-Routers:",
+    "fr": "Raison du routeur de modèles :",
+    "it": "Motivo del router dei modelli:",
+    "pt": "Motivo do roteador de modelos:",
+    "es": "Motivo del enrutador de modelos:",
+    "ca": "Motiu de l'encaminador de models:",
+    "tr": "Model yönlendiricisinin gerekçesi:",
+    "uk": "Причина маршрутизатора моделей:",
+    "id": "Alasan router model:"
+  },
   "MODEL$SWITCHED_TO_PROFILE": {
     "en": "Switched to profile <cmd>{{name}}</cmd>",
     "ja": "プロファイル <cmd>{{name}}</cmd> に切り替えました",

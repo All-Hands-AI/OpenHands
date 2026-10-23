@@ -402,6 +402,9 @@ describe("seedModelSwitchesFromHistory", () => {
       expect(entries[0]).toMatchObject({
         switchedTo: "kimi-k2.6",
         anchorEventId: "u1",
+        initiator: "router",
+        // The classifier's `chosen_class` is surfaced as the switch reason.
+        reason: "model: kimi-k2.6",
       });
       expect(activeProfileFor("c1")).toBe("kimi-k2.6");
       expect(stampedProfileFor("c1")).toBe("kimi-k2.6");

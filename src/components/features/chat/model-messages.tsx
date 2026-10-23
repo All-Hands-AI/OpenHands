@@ -104,14 +104,21 @@ export function ModelMessages({
                 }
                 details=""
               />
-              {entry.initiator === "agent" && entry.reason?.trim() && (
-                <p className="text-sm text-muted whitespace-pre-wrap break-words pl-5">
-                  <span className="font-medium">
-                    <Trans i18nKey={I18nKey.MODEL$AGENT_SWITCH_REASON} />
-                  </span>{" "}
-                  {entry.reason}
-                </p>
-              )}
+              {(entry.initiator === "agent" || entry.initiator === "router") &&
+                entry.reason?.trim() && (
+                  <p className="text-sm text-muted whitespace-pre-wrap break-words pl-5">
+                    <span className="font-medium">
+                      <Trans
+                        i18nKey={
+                          entry.initiator === "router"
+                            ? I18nKey.MODEL$ROUTER_SWITCH_REASON
+                            : I18nKey.MODEL$AGENT_SWITCH_REASON
+                        }
+                      />
+                    </span>{" "}
+                    {entry.reason}
+                  </p>
+                )}
             </div>
           );
         }

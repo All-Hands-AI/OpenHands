@@ -133,6 +133,7 @@ export function seedModelSwitchesFromHistory(
         anchorEventId: lastRenderableId,
         profileName,
         initiator: "router",
+        reason: event.observation.chosen_class,
       });
       latestSwitch = {
         profileName,

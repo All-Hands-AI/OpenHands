@@ -37,6 +37,7 @@ describe("ModelMessages", () => {
       MODEL$ROUTER_SWITCHED:
         "Model router switched models to <cmd>{{name}}</cmd>",
       MODEL$AGENT_SWITCH_REASON: "Agent’s reason:",
+      MODEL$ROUTER_SWITCH_REASON: "Model router’s reason:",
       MODEL$SWITCHED_TO_PROFILE: "ℹ️ Switched to profile <cmd>{{name}}</cmd>",
     };
     i18n.addResourceBundle("en", "translation", resources, true, true);
@@ -143,6 +144,25 @@ describe("ModelMessages", () => {
     expect(screen.getByTestId("model-messages")).toHaveTextContent(
       "Model router switched models to fast",
     );
+    expect(screen.queryByText("Agent’s reason:")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Model router’s reason:"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows the router's chosen class as its reason when present", () => {
+    useModelStore.getState().recordSwitch(CONVERSATION_ID, null, "fast", {
+      initiator: "router",
+      reason: "model: fast",
+    });
+    renderWithProviders(
+      <ModelMessages conversationId={CONVERSATION_ID} anchorEventId={null} />,
+    );
+    expect(screen.getByTestId("model-messages")).toHaveTextContent(
+      "Model router switched models to fast",
+    );
+    expect(screen.getByText("Model router’s reason:")).toBeVisible();
+    expect(screen.getByText("model: fast")).toBeVisible();
     expect(screen.queryByText("Agent’s reason:")).not.toBeInTheDocument();
   });
 

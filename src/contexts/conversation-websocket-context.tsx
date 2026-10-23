@@ -853,6 +853,7 @@ export function ConversationWebSocketProvider({
             recordModelSwitchMessage(conversationId, profileName, undefined, {
               id: `history-classify-switch:${classifyAndSwitchLLMObservation.id}`,
               initiator: "router",
+              reason: classifyAndSwitchLLMObservation.observation.chosen_class,
             });
 
             stampActiveLlmProfile(
