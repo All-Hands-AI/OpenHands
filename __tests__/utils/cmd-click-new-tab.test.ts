@@ -2,6 +2,48 @@ import { describe, expect, it, vi } from "vitest";
 import { cmdClickAndExpectNewTab } from "../../tests/e2e/mock-llm/utils/cmd-click-new-tab";
 
 describe("cmdClickAndExpectNewTab", () => {
+  it.each([false, true])(
+    "records final defaultPrevented when propagation is stopped: %s",
+    async (stopPropagation) => {
+      const anchor = document.createElement("a");
+      anchor.href = "/conversations/123";
+      anchor.dataset.testid = "conversation-card";
+      document.body.append(anchor);
+      anchor.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (stopPropagation) event.stopPropagation();
+      });
+      // Only the Playwright transport is substituted; evaluate runs the real listener.
+      const page = { evaluate: async (callback: () => unknown) => callback() };
+      let rejectTabWait: (error: Error) => void;
+      const card = {
+        page: () => page,
+        click: async () => {
+          anchor.dispatchEvent(
+            new MouseEvent("click", {
+              bubbles: true,
+              cancelable: true,
+              ctrlKey: true,
+            }),
+          );
+          setTimeout(() => rejectTabWait(new Error("Timeout exceeded")), 0);
+        },
+      };
+      const context = {
+        waitForEvent: () =>
+          new Promise((_, reject) => {
+            rejectTabWait = reject;
+          }),
+      };
+      try {
+        await expect(
+          cmdClickAndExpectNewTab(context as any, card as any, { timeout: 30 }),
+        ).rejects.toThrow(/"defaultPrevented":true/);
+      } finally {
+        anchor.remove();
+      }
+    },
+  );
   it("resolves the newly opened tab when waitForEvent succeeds", async () => {
     const mockPage = {
       evaluate: vi.fn().mockResolvedValue(null),

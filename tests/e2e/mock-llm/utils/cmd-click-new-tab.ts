@@ -35,18 +35,23 @@ export async function cmdClickAndExpectNewTab(
       (event) => {
         const target = event.target as HTMLElement | null;
         const anchor = target?.closest?.("a");
-        (
-          window as unknown as {
-            __lastCmdClickDiagnostics?: ClickDiagnostics | null;
-          }
-        ).__lastCmdClickDiagnostics = {
+        const diagnostics: ClickDiagnostics = {
           targetTag: target?.tagName,
           targetTestId: target?.getAttribute?.("data-testid") ?? null,
           anchorHref: anchor?.getAttribute?.("href") ?? null,
           ctrlKey: event.ctrlKey,
           metaKey: event.metaKey,
-          defaultPrevented: event.defaultPrevented,
         };
+        (
+          window as unknown as {
+            __lastCmdClickDiagnostics?: ClickDiagnostics | null;
+          }
+        ).__lastCmdClickDiagnostics = diagnostics;
+        // Keep capture evidence even if the app stops propagation, but sample
+        // cancellation only after its synchronous click handlers have run.
+        setTimeout(() => {
+          diagnostics.defaultPrevented = event.defaultPrevented;
+        }, 0);
       },
       { capture: true, once: true },
     );
