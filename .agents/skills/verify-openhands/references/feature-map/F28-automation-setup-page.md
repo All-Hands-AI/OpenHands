@@ -28,7 +28,7 @@ Source: `src/routes/automation-setup-new.tsx`, `src/components/features/automati
 - `F28.event-trigger`: choosing **Event** replaces the schedule with Event source (default **GitHub**, sent as `github`; its menu lists the webhook sources registered on this backend plus **Custom**), Event key (default `issue_comment.created`), **Add Filter** (one free-text filter input), **Ask Agent**, the notice `Event sources need a public URL to deliver webhooks to this instance.`, and a **Test event payload** pre-filled with a JSON object for that source and key. A source the backend has not registered (menu **Custom**, then a typed name) adds **Register this as a custom webhook source**, checked by default.
 - `F28.timeout`: **Add Timeout** adds an optional **Timeout seconds** number field with a remove button; `1800` saves and the draft reads **Ready to test**.
 - `F28.draft-save`: **Save draft** works on any form, valid or not; the first save replaces the URL with `?draftId=<id>`, shows the **Draft saved** bar (relative time, **View test runs**, **Test**) and the toast `Draft saved in this conversation.`, and the save state reads **Saved just now**. The draft appears in the dashboard Drafts group (F21).
-- `F28.draft-validation`: the server validates on save, not on blur. An invalid draft is still saved (`dispatchable: false`) and its first error replaces **Ready to test** in the draft bar: an empty prompt shows `Field required` (also under Prompt), a bad custom cron shows `Value error, Invalid cron expression: every day`. A field error stays until the next save. **Test** stays enabled on a saved invalid draft: it saves again, opens **Test runs** with the same error in a red alert and dispatches nothing. Known failure (reproduced twice 2026-10-17, [#18601](https://github.com/OpenHands/OpenHands/issues/18601)): after a successful draft Test, saving an invalid cron and reloading shows a red `Latest test passed` pill instead of the current validation error, although the API marks the draft non-dispatchable. The Test runs alert still shows the correct error.
+- `F28.draft-validation`: the server validates on save, not on blur. An invalid draft is still saved (`dispatchable: false`) and its first error replaces **Ready to test** in the draft bar: an empty prompt shows `Field required` (also under Prompt), a bad custom cron shows `Value error, Invalid cron expression: every day`. A field error stays until the next save. **Test** stays enabled on a saved invalid draft: it saves again, opens **Test runs** with the same error in a red alert and dispatches nothing. The current validation error comes before any test status: after a successful draft Test the pill reads **Latest test passed**, and once an invalid cron is saved it reads the cron error (also after a reload, at desktop and phone widths) while the API marks the draft non-dispatchable.
 - `F28.draft-save-error`: a draft the server refuses outright (a timeout above 1800 returns `422`) sets the save state to **Save failed** and shows one error toast with the reason the API gives (a timeout of 1801 reads `Value error, timeout must not exceed 1800 seconds (30 minutes)`). The draft bar drops its validity pill (no stale **Ready to test**) until a save succeeds.
 - `F28.required-before-test`: Test and Create check locally first and send nothing when a required field is empty: `Add a prompt before continuing.` (Prompt or Plugin kind), `Add a plugin source before continuing.`, `Add Python code before continuing.`, `Add an entrypoint command before continuing.`, `Add a setup script path before continuing.`, `Add a setup script before continuing.`; an event Test with a payload that is not a JSON object shows `Enter a valid JSON object before testing this event automation.` A blank Name is not an error: it is derived from the prompt.
 - `F28.test-gated`: in create mode **Test** stays disabled until the draft is saved and unchanged since; editing any field after a save disables it again until the next **Save draft**.
@@ -78,7 +78,9 @@ control-openhands browser screenshot --feature F28.schedule-presets --name weekl
 control-openhands assert --field value --equals '30 10 * * 3' -- browser value 'testid=automation-setup-custom-schedule'
 ```
 
-```sh known-bug F28.draft-validation stale-test-success
+Validation error after a passed Test (`F28.draft-validation`):
+
+```sh
 control-openhands browser viewport desktop
 control-openhands browser goto /automations/setup
 control-openhands browser fill 'testid=automation-setup-name' QA_Stale_Test_Success
@@ -107,8 +109,8 @@ control-openhands browser click 'testid=automation-setup-save-draft'
 control-openhands browser hover 'testid=automation-setup-name'
 control-openhands browser reload
 control-openhands assert --field body.dispatchable --equals false -- api GET "/api/automation/v1/drafts/$QA_DRAFT_ID"
-control-openhands browser screenshot --feature F28.draft-validation --name stale-test-success
-control-openhands assert --field text --equals 'Value error, Invalid cron expression: every day' --bug-shows 'Latest test passed' -- browser text 'testid=automation-setup-draft-validity' # bug
+control-openhands browser screenshot --feature F28.draft-validation --name validation-after-test
+control-openhands assert --field text --equals 'Value error, Invalid cron expression: every day' -- browser text 'testid=automation-setup-draft-validity'
 ```
 
 
@@ -119,5 +121,5 @@ control-openhands assert --field text --equals 'Value error, Invalid cron expres
 - Change one field per Save draft when checking a validation message: a save shows only the first server error, so two edits in one save hide the second.
 - A cold load of `/automations/setup?draftId=<id>` or `?automationId=<id>` (a reload or a typed URL) opens the form: re-checked 2026-10-14 on a `control-openhands launch` of main with this family (both read their Name back). An earlier instance of unknown build stayed on **Loading saved draft…** for more than 20 s; if that returns, compare with opening the same draft from the dashboard.
 - The draft bar duplicates the prompt error: `Field required` appears both under Prompt and in the bar.
-- Kebab **Edit** on a Custom Python automation shows the code editor instead of the saved bundle summary: open bug #18341 (`F23`), with fixes in PRs #18353 and #18444.
+- Kebab **Edit** on a Custom Python (tarball) automation shows the **Existing code bundle** summary, not the code editor, and Save keeps that bundle without asking for upload-time fields (`F23.edit-open`, `F23.edit-save`).
 - Escape on the setup page does nothing, by design (`F23.edit-close`).

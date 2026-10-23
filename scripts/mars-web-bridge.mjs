@@ -102,6 +102,10 @@ const CANVAS_ONLY_HEADERS = ["cookie", AUTH_HEADER, "origin", "referer"];
  * `MARS_WEB_KEY` wins so a deployment can decouple it from the agent-server
  * key; otherwise the server's own `--session-api-key` is reused, which is
  * what the renderer already holds.
+ *
+ * @param {object} [options]
+ * @param {Record<string, string | undefined>} [options.env]
+ * @param {string | null} [options.sessionApiKey]
  */
 export function resolveMarsWebKey({
   env = process.env,
@@ -114,21 +118,19 @@ export function resolveMarsWebKey({
 }
 
 /**
- * Mount the bridge for a server, or return null when it must not be. On by
- * default; off when:
+ * The web integration is experimental: mount only with `MARS_WEB=1`.
+ * This readiness flag is separate from authentication. An opted-in bridge
+ * still refuses a non-loopback bind without a key. Launchers set `MARS_WEB=0`
+ * on static children and under Electron so only the web ingress hosts it.
+ * Off is silent unless the env suggests someone meant it on
+ * (`marsWebOffWarning`).
  *
- * - `MARS_WEB=0`. The explicit opt-out, for a server that fronts nothing a
- *   browser reaches directly (dev-with-automation's static child behind the
- *   ingress) or runs under Electron, where the preload already provides the
- *   bridge and a second one would only hold its own sign-in state.
- * - No key on a non-loopback bind: the routes would be open to the LAN with
- *   the DO token behind them.
- *
- * The refusal is a warning only when someone asked for the bridge (the old
- * `MARS_WEB=1` opt-in, or `MARS_TOKEN` set); a Docker public-mode instance
- * that never uses DigitalOcean gets a debug line, not a warning on every
- * start. `MARS_WEB_KEY` is not a signal here: with it set there is a key and
- * this branch is never reached.
+ * @param {object} [options]
+ * @param {Record<string, string | undefined>} [options.env]
+ * @param {string} [options.host]
+ * @param {string | null} [options.sessionApiKey]
+ * @param {(message: string) => void} [options.log]
+ * @param {(message: string) => void} [options.debug]
  */
 export function mountMarsWebBridge({
   env = process.env,
@@ -137,11 +139,14 @@ export function mountMarsWebBridge({
   log = (message) => console.warn(`[mars-web] ${message}`),
   debug = (message) => console.debug(`[mars-web] ${message}`),
 } = {}) {
-  if (isMarsWebDisabled(env, log)) return null;
+  if (env.MARS_WEB !== "1") {
+    const warning = marsWebOffWarning(env);
+    if (warning) log(warning);
+    return null;
+  }
   const key = resolveMarsWebKey({ env, sessionApiKey });
   if (!key && !isLoopbackBind(host)) {
-    const optedIn = env.MARS_WEB === "1" || Boolean(env.MARS_TOKEN?.trim());
-    (optedIn ? log : debug)(
+    log(
       `no key and bind host ${host} is not loopback; not mounting /mars/* (set MARS_WEB_KEY or --session-api-key).`,
     );
     return null;
@@ -150,27 +155,23 @@ export function mountMarsWebBridge({
   return createMarsWebBridge({ env, host, key });
 }
 
-const MARS_WEB_OFF = new Set(["0", "false", "off", "no"]);
-const MARS_WEB_ON = new Set(["", "1", "true", "on", "yes"]);
-
 /**
- * `MARS_WEB=0` (also `false`, `off`, `no`) turns the bridge off for a server
- * that must not host it. The old `MARS_WEB=1` opt-in and its synonyms mean
- * on, which is the default anyway. Anything else is a typo in the off switch:
- * say so once, and stay on, since on is what no value means.
+ * Why the bridge stays off, for an operator who seems to have wanted it on;
+ * null otherwise, so a server nobody pointed at DigitalOcean starts quietly.
+ * Any value but `1` or `0` (launchers set `0` on purpose) gets a line, since
+ * it may be a mistyped opt-in (`true`, `"1 "`, a quoted `"1"` from
+ * `docker run --env-file`), and so does `MARS_TOKEN` with no `MARS_WEB`.
  */
-export function isMarsWebDisabled(
-  env = process.env,
-  log = (message) => console.warn(`[mars-web] ${message}`),
-) {
-  const value = (env.MARS_WEB ?? "").trim().toLowerCase();
-  if (MARS_WEB_OFF.has(value)) return true;
-  if (!MARS_WEB_ON.has(value)) {
-    log(
-      `MARS_WEB=${JSON.stringify(env.MARS_WEB)} is not recognised (use 0/false/off/no to turn the bridge off); leaving it on.`,
-    );
+function marsWebOffWarning(env) {
+  const value = env.MARS_WEB ?? "";
+  if (value.trim() === "0") return null;
+  if (value) {
+    return `MARS_WEB=${JSON.stringify(value)} is not "1"; not mounting /mars/* (set MARS_WEB=1).`;
   }
-  return false;
+  if (env.MARS_TOKEN?.trim()) {
+    return `MARS_TOKEN is set but MARS_WEB is not "1"; not mounting /mars/* (set MARS_WEB=1).`;
+  }
+  return null;
 }
 
 function safeEqual(a, b) {

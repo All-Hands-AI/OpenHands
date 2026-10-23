@@ -12,6 +12,7 @@ const useSettingsMock = vi.fn();
 const changeLanguageMock = vi.fn();
 const ensureActiveProfileMock = vi.fn();
 const migrateEnabledSkillsMock = vi.fn();
+const migrateDefaultAgentProfileMock = vi.fn();
 const syncTelemetryConsentMock = vi.fn();
 const syncAutomationTelemetryConsentMock = vi.fn();
 const telemetryIdentityMock = vi.fn();
@@ -27,6 +28,10 @@ vi.mock("#/hooks/query/use-settings", () => ({
 
 vi.mock("#/hooks/use-migrate-enabled-skills", () => ({
   useMigrateEnabledSkills: () => migrateEnabledSkillsMock(),
+}));
+
+vi.mock("#/hooks/use-migrate-default-agent-profile", () => ({
+  useMigrateDefaultAgentProfile: () => migrateDefaultAgentProfileMock(),
 }));
 
 vi.mock("#/hooks/use-sync-telemetry-consent", () => ({
@@ -266,6 +271,7 @@ describe("root layout", () => {
 
     expect(changeLanguageMock).toHaveBeenCalledWith("en");
     expect(migrateEnabledSkillsMock).toHaveBeenCalledOnce();
+    expect(migrateDefaultAgentProfileMock).toHaveBeenCalledOnce();
     expect(syncTelemetryConsentMock).toHaveBeenCalledOnce();
     expect(syncAutomationTelemetryConsentMock).toHaveBeenCalledOnce();
     expect(telemetryIdentityMock).toHaveBeenCalledOnce();

@@ -25,6 +25,7 @@ import { BUILD_INPUTS } from "./lib/build-inputs.mjs";
 import {
   editorOffset,
   launcherEnvFor,
+  lockedCloudOrigin,
   portsAfterRestart,
   runPorts,
 } from "./lib/launcher-env.mjs";
@@ -73,6 +74,7 @@ import {
   knownBugBlocks,
   parseBugPredicate,
   proofVerdict,
+  viewportToRestore,
 } from "./lib/known-bug.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -99,8 +101,8 @@ function recorder(path = []) {
   };
 }
 
-function run(args, env = {}) {
-  const result = spawnSync(process.execPath, [cli, ...args], {
+function run(args, env = {}, execArgv = []) {
+  const result = spawnSync(process.execPath, [...execArgv, cli, ...args], {
     encoding: "utf8",
     env: {
       ...process.env,
@@ -206,6 +208,103 @@ test("usage errors exit 2 with a hint; a missing run exits 3", () => {
   const noRun = run(["doctor"]);
   assert.equal(noRun.status, 3);
   assert.match(noRun.json.hint, /control-openhands launch/);
+});
+
+// Exercise the real launch guard with deterministic OS inputs. An empty PATH
+// stops an accepted measurement at the next prerequisite, before any build or
+// service starts. The preload changes only memory readings in this child.
+function launchWithMemory(memory, flags = []) {
+  const emptyPath = mkdtempSync(join(tmpdir(), "cov-empty-path-"));
+  const preload = `
+    import fs from "node:fs";
+    import os from "node:os";
+    import { syncBuiltinESMExports } from "node:module";
+    const memory = ${JSON.stringify(memory)};
+    Object.defineProperty(process, "platform", { value: memory.platform });
+    process.availableMemory = () => memory.availableMb * 1024 * 1024;
+    os.freemem = () => memory.freeMb * 1024 * 1024;
+    const readFileSync = fs.readFileSync;
+    fs.readFileSync = (path, ...args) => {
+      if (path !== "/proc/meminfo") return readFileSync(path, ...args);
+      if (memory.meminfo !== undefined) return memory.meminfo;
+      throw new Error("/proc/meminfo is unavailable");
+    };
+    syncBuiltinESMExports();
+  `;
+  try {
+    return run(["launch", "--new", ...flags], { PATH: emptyPath }, [
+      "--import",
+      `data:text/javascript,${encodeURIComponent(preload)}`,
+    ]);
+  } finally {
+    rmSync(emptyPath, { recursive: true, force: true });
+  }
+}
+
+test.each([
+  {
+    name: "macOS launch accepts available memory beyond unused pages",
+    platform: "darwin",
+    freeMb: 300,
+    availableMb: 8192,
+    error: /uvx is not on PATH/,
+  },
+  {
+    name: "macOS launch refuses genuinely low available memory",
+    platform: "darwin",
+    freeMb: 8192,
+    availableMb: 1024,
+    error: /Only 1024 MB of memory available/,
+  },
+  {
+    name: "macOS launch refuses an unknown native memory reading",
+    platform: "darwin",
+    freeMb: 8192,
+    availableMb: 0,
+    error: /Only 0 MB of memory available/,
+  },
+  {
+    name: "macOS launch honors a custom minimum against available memory",
+    platform: "darwin",
+    freeMb: 300,
+    availableMb: 3000,
+    flags: ["--min-free-mb", "4000"],
+    error: /Only 3000 MB of memory available/,
+  },
+  {
+    name: "Linux launch keeps using MemAvailable",
+    platform: "linux",
+    freeMb: 300,
+    availableMb: 0,
+    meminfo: "MemFree:        307200 kB\nMemAvailable:  8388608 kB\n",
+    error: /uvx is not on PATH/,
+  },
+  {
+    name: "Linux launch keeps the free memory fallback when proc is missing",
+    platform: "linux",
+    freeMb: 4096,
+    availableMb: 0,
+    error: /uvx is not on PATH/,
+  },
+  {
+    name: "Linux launch keeps the free memory fallback without MemAvailable",
+    platform: "linux",
+    freeMb: 1024,
+    availableMb: 8192,
+    meminfo: "MemFree:       1048576 kB\n",
+    error: /Only 1024 MB of memory available/,
+  },
+  {
+    name: "other platforms keep the free memory fallback",
+    platform: "win32",
+    freeMb: 4096,
+    availableMb: 0,
+    error: /uvx is not on PATH/,
+  },
+])("$name", ({ flags, error, ...memory }) => {
+  const result = launchWithMemory(memory, flags);
+  assert.equal(result.status, 3);
+  assert.match(result.json.error, error);
 });
 
 test("keys are refused on argv before any request is made", () => {
@@ -591,6 +690,53 @@ test("this checkout's launcher answers the editor probe, and --vscode opts in", 
   });
   assert.match(help.stdout, /--vscode/);
   assert.match(help.stdout, /OH_CANVAS_ENABLE_VSCODE/);
+});
+
+test("--lock-to-cloud takes P+4, keeps it across a restart, and needs an http(s) URL", () => {
+  const launcher = (offset) => ({ offset, source: "launcher" });
+  const locked = runPorts(18800, null, { lockedCloud: true });
+  assert.deepEqual(locked, {
+    ingress: 18800,
+    agentServer: 18801,
+    automation: 18802,
+    frontend: 18803,
+    lockedCloud: 18804,
+  });
+  // The locked page is not the launcher's: whatever the editor answer, a
+  // restart keeps its port.
+  assert.equal(
+    portsAfterRestart(locked, launcher(null)).ports.lockedCloud,
+    18804,
+  );
+  assert.equal(
+    portsAfterRestart(locked, launcher(1000)).ports.lockedCloud,
+    18804,
+  );
+  assert.equal(
+    portsAfterRestart(runPorts(18800, null), launcher(null)).ports.lockedCloud,
+    undefined,
+  );
+  assert.equal(
+    lockedCloudOrigin("https://app.all-hands.dev/"),
+    "https://app.all-hands.dev",
+  );
+  assert.throws(() => lockedCloudOrigin("app.all-hands.dev"), /Cloud URL/);
+  assert.throws(() => lockedCloudOrigin("ftp://example.com"), /http\(s\)/);
+  // A bad or missing URL is a usage error before anything is built or started.
+  for (const flags of [
+    ["--lock-to-cloud", "ftp://example.com"],
+    ["--lock-to-cloud"],
+  ]) {
+    const result = run(["launch", "--new", ...flags]);
+    assert.equal(result.status, 2, JSON.stringify(result.json));
+    assert.match(result.json.hint, /--lock-to-cloud https:/);
+  }
+  const help = spawnSync(process.execPath, [cli, "help", "launch"], {
+    encoding: "utf8",
+  });
+  assert.match(help.stdout, /--mars-web/);
+  assert.match(help.stdout, /MARS_WEB=1/);
+  assert.match(help.stdout, /--lock-to-cloud URL/);
 });
 
 test("a restart follows the launcher's editor answer, or keeps its ports", () => {
@@ -2777,4 +2923,19 @@ test("browser media validates motion before dispatch and preserves playback obse
     await new Promise((resolve) => server.close(resolve));
     rmSync(runDir, { recursive: true, force: true });
   }
+});
+
+test("bug run puts back the viewport a block changed", () => {
+  const desktop = { width: 1440, height: 1000 };
+  const phone = { width: 390, height: 844 };
+  // F07.overview-toggle phone-overview switches to phone: back to desktop.
+  assert.equal(viewportToRestore(desktop, phone), "1440x1000");
+  assert.equal(viewportToRestore(phone, desktop), "390x844");
+  // Unchanged, or nothing known before the block: nothing to restore.
+  assert.equal(viewportToRestore(desktop, { ...desktop }), null);
+  assert.equal(viewportToRestore(undefined, phone), null);
+  const help = spawnSync(process.execPath, [cli, "help", "bug"], {
+    encoding: "utf8",
+  });
+  assert.match(help.stdout, /viewportRestored/);
 });
