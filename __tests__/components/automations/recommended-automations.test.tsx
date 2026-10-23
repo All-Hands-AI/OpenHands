@@ -38,6 +38,7 @@ import {
   type RecommendedAutomation,
 } from "@openhands/extensions/automations";
 import { INTEGRATION_CATALOG } from "@openhands/extensions/integrations";
+import type { TemplateFilters } from "#/components/features/automations/template-filter-chips";
 
 const {
   mockCreateConversationMutate,
@@ -349,6 +350,41 @@ describe("recommended automations", () => {
     expect(
       screen.queryByTestId("recommended-automation-card-github-pr-reviewer"),
     ).not.toBeInTheDocument();
+  });
+
+  it("keeps the filter chip rail mounted when a filter empties and refills the grid", () => {
+    const renderWithFilters = (filters: TemplateFilters) => (
+      <RecommendedAutomationsSection
+        backendKind="local"
+        installedServers={[]}
+        onSelect={vi.fn()}
+        filters={filters}
+        onFiltersChange={vi.fn()}
+      />
+    );
+    const tavily: TemplateFilters = {
+      integrationId: "tavily",
+      trigger: null,
+    };
+    const { rerender } = render(renderWithFilters(tavily));
+    const rail = screen.getByTestId("template-filters");
+    expect(
+      screen.queryByTestId("automations-filtered-empty"),
+    ).not.toBeInTheDocument();
+
+    // Tavily templates are all scheduled, so adding Event driven matches none.
+    rerender(renderWithFilters({ ...tavily, trigger: "event" }));
+    expect(
+      screen.getByTestId("automations-filtered-empty"),
+    ).toBeInTheDocument();
+    // The same node, so the rail keeps its horizontal scroll position.
+    expect(screen.getByTestId("template-filters")).toBe(rail);
+
+    rerender(renderWithFilters(tavily));
+    expect(
+      screen.queryByTestId("automations-filtered-empty"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId("template-filters")).toBe(rail);
   });
 
   it("shows a left-aligned MCP icon stack on each card", () => {

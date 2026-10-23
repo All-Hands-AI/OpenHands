@@ -427,7 +427,8 @@ export function RecommendedAutomationsSection({
       />
     ) : null;
 
-  if (visibleAutomations.length === 0) {
+  const isEmpty = visibleAutomations.length === 0;
+  if (isEmpty) {
     // A search or filter that matches nothing says so, with a way back. A
     // surface without either control keeps rendering nothing.
     const canClear = !!onClearQuery || !!onFiltersChange;
@@ -435,21 +436,6 @@ export function RecommendedAutomationsSection({
       query.trim().length > 0 ||
       (!!filters && hasActiveTemplateFilter(filters));
     if (!canClear || !isNarrowed) return null;
-    return (
-      <section
-        data-testid="recommended-automations-section"
-        className={cn("flex flex-col gap-4", filterChips ? "mt-0" : "mt-3")}
-      >
-        {filterChips}
-        <AutomationsFilteredEmptyState
-          message={t(I18nKey.RECOMMENDED_AUTOMATIONS$NO_MATCHING_TEMPLATES)}
-          onClear={() => {
-            onClearQuery?.();
-            onFiltersChange?.(EMPTY_TEMPLATE_FILTERS);
-          }}
-        />
-      </section>
-    );
   }
 
   const provenAutomations = visibleAutomations.filter(isProvenAutomation);
@@ -473,7 +459,20 @@ export function RecommendedAutomationsSection({
             "min-h-0 flex-1 overflow-y-auto custom-scrollbar-always",
         )}
       >
+        {/* The chips keep one place in the tree whether or not anything
+            matches, so their scroll rail is not remounted (and scrolled
+            back to the start) when a filter empties or refills the grid. */}
         {filterChips && <div className="mb-4">{filterChips}</div>}
+
+        {isEmpty && (
+          <AutomationsFilteredEmptyState
+            message={t(I18nKey.RECOMMENDED_AUTOMATIONS$NO_MATCHING_TEMPLATES)}
+            onClear={() => {
+              onClearQuery?.();
+              onFiltersChange?.(EMPTY_TEMPLATE_FILTERS);
+            }}
+          />
+        )}
 
         {provenAutomations.length > 0 && (
           <>
