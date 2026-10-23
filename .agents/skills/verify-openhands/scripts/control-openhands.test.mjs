@@ -25,6 +25,7 @@ import { BUILD_INPUTS } from "./lib/build-inputs.mjs";
 import {
   editorOffset,
   launcherEnvFor,
+  lockedCloudOrigin,
   portsAfterRestart,
   runPorts,
 } from "./lib/launcher-env.mjs";
@@ -689,6 +690,53 @@ test("this checkout's launcher answers the editor probe, and --vscode opts in", 
   });
   assert.match(help.stdout, /--vscode/);
   assert.match(help.stdout, /OH_CANVAS_ENABLE_VSCODE/);
+});
+
+test("--lock-to-cloud takes P+4, keeps it across a restart, and needs an http(s) URL", () => {
+  const launcher = (offset) => ({ offset, source: "launcher" });
+  const locked = runPorts(18800, null, { lockedCloud: true });
+  assert.deepEqual(locked, {
+    ingress: 18800,
+    agentServer: 18801,
+    automation: 18802,
+    frontend: 18803,
+    lockedCloud: 18804,
+  });
+  // The locked page is not the launcher's: whatever the editor answer, a
+  // restart keeps its port.
+  assert.equal(
+    portsAfterRestart(locked, launcher(null)).ports.lockedCloud,
+    18804,
+  );
+  assert.equal(
+    portsAfterRestart(locked, launcher(1000)).ports.lockedCloud,
+    18804,
+  );
+  assert.equal(
+    portsAfterRestart(runPorts(18800, null), launcher(null)).ports.lockedCloud,
+    undefined,
+  );
+  assert.equal(
+    lockedCloudOrigin("https://app.all-hands.dev/"),
+    "https://app.all-hands.dev",
+  );
+  assert.throws(() => lockedCloudOrigin("app.all-hands.dev"), /Cloud URL/);
+  assert.throws(() => lockedCloudOrigin("ftp://example.com"), /http\(s\)/);
+  // A bad or missing URL is a usage error before anything is built or started.
+  for (const flags of [
+    ["--lock-to-cloud", "ftp://example.com"],
+    ["--lock-to-cloud"],
+  ]) {
+    const result = run(["launch", "--new", ...flags]);
+    assert.equal(result.status, 2, JSON.stringify(result.json));
+    assert.match(result.json.hint, /--lock-to-cloud https:/);
+  }
+  const help = spawnSync(process.execPath, [cli, "help", "launch"], {
+    encoding: "utf8",
+  });
+  assert.match(help.stdout, /--mars-web/);
+  assert.match(help.stdout, /MARS_WEB=1/);
+  assert.match(help.stdout, /--lock-to-cloud URL/);
 });
 
 test("a restart follows the launcher's editor answer, or keeps its ports", () => {
