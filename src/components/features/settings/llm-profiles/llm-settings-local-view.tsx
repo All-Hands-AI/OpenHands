@@ -519,6 +519,7 @@ export function LlmSettingsLocalView() {
               : createProfileInitialValues
           }
           showProviderConnection={supportsConnections}
+          initialView={viewMode === "create" ? "basic" : undefined}
           onSaveControlChange={handleSaveControlChange}
         />
       )}
