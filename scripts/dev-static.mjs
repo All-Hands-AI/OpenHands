@@ -122,6 +122,7 @@ export function parseArgs(argv = process.argv.slice(2)) {
     skipBuild: false,
     verbose: false,
     host: null,
+    allowLanSessionKey: false,
   };
 
   for (let i = 0; i < argv.length; i++) {
@@ -133,6 +134,9 @@ export function parseArgs(argv = process.argv.slice(2)) {
       case "-H":
       case "--host":
         config.host = argv[++i];
+        break;
+      case "--allow-lan-session-key":
+        config.allowLanSessionKey = true;
         break;
       case "--automation-ref":
         config.automationGitRef = argv[++i];
@@ -171,6 +175,7 @@ USAGE:
 OPTIONS:
   -p, --port <port>           Ingress port (default: 8000)
   -H, --host <host>           Bind address for ingress/static (default: 127.0.0.1)
+  --allow-lan-session-key     Permit session API key injection when binding to LAN
   --automation-ref <ref>      Git ref for automation backend (default: main)
   --automation-repo <url>     Git repo URL for automation
   --skip-build                Reuse existing build/ directory (faster restart)
@@ -472,6 +477,7 @@ function startStaticServer(config) {
         const policy = applySessionKeyPolicy({
           host: config.bindHost,
           sessionApiKey: config.sessionApiKey,
+          allowLanSessionKey: config.allowLanSessionKey,
           warn: (msg) => logService("static", msg, c.yellow),
         });
         const flags = [];
@@ -480,6 +486,9 @@ function startStaticServer(config) {
         }
         if (policy.authRequired) {
           flags.push("--auth-required");
+        }
+        if (config.allowLanSessionKey) {
+          flags.push("--allow-lan-session-key");
         }
         return flags;
       })(),
@@ -709,6 +718,14 @@ const isMainModule =
 
 if (isMainModule) {
   main().catch((err) => {
+    if (
+      err.message?.startsWith(
+        "Cannot start: the following ports are already in use",
+      )
+    ) {
+      console.error(err.message);
+      process.exit(1);
+    }
     logError(`Fatal error: ${err.message}`);
     if (err.stack) {
       console.error(c.dim + err.stack + c.reset);
