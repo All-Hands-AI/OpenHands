@@ -1,0 +1,130 @@
+
+ RUN  v5.0.0 /Users/enyst/.codex/worktrees/repair-main-ci/odie
+
+ ❯ |jsdom| __tests__/e2e/mock-llm-done-marker-reporter.test.ts (10 tests | 8 failed) 11794ms
+   ❯ mock-LLM completion markers with real Playwright scheduling (10)
+     × waits for the final retry and reports one result per case in default mode 690ms
+     × waits for the final retry and reports one result per case in serial mode 700ms
+     × keeps a permanent failure red after its retry 679ms
+     × does not rescue a run cut short by globalTimeout 3260ms
+     × honors expected failures (unexpected pass=false) 493ms
+     × honors expected failures (unexpected pass=true) 461ms
+     × fails global errors before marker finalization 490ms
+     × fails global errors after marker finalization 501ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |jsdom| __tests__/e2e/mock-llm-done-marker-reporter.test.ts > mock-LLM completion markers with real Playwright scheduling > waits for the final retry and reports one result per case in default mode
+AssertionError: expected [ false, false, false, true ] to not include true
+ ❯ __tests__/e2e/mock-llm-done-marker-reporter.test.ts:88:14
+     86|       expect(run.exitCode).toBe(0);
+     87|       expect(run.read("markers.jsonl").trim().split("\n").map((line) =…
+     88|         .not.toContain(true);
+       |              ^
+     89|       expect(run.done).toBe("passed");
+     90|       expect(run.passed).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  |jsdom| __tests__/e2e/mock-llm-done-marker-reporter.test.ts > mock-LLM completion markers with real Playwright scheduling > waits for the final retry and reports one result per case in serial mode
+AssertionError: expected [ false, false, true, true, true ] to not include true
+ ❯ __tests__/e2e/mock-llm-done-marker-reporter.test.ts:88:14
+     86|       expect(run.exitCode).toBe(0);
+     87|       expect(run.read("markers.jsonl").trim().split("\n").map((line) =…
+     88|         .not.toContain(true);
+       |              ^
+     89|       expect(run.done).toBe("passed");
+     90|       expect(run.passed).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  |jsdom| __tests__/e2e/mock-llm-done-marker-reporter.test.ts > mock-LLM completion markers with real Playwright scheduling > keeps a permanent failure red after its retry
+AssertionError: expected [ { …(4) }, { …(4) } ] to have a length of 1 but got 2
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ __tests__/e2e/mock-llm-done-marker-reporter.test.ts:103:31
+    101|     expect(run.done).toBe("failed");
+    102|     expect(run.passed).toBe(false);
+    103|     expect(run.results.tests).toHaveLength(1);
+       |                               ^
+    104|     expect(run.results.tests[0].status).toBe("failed");
+    105|   }, 30_000);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  |jsdom| __tests__/e2e/mock-llm-done-marker-reporter.test.ts > mock-LLM completion markers with real Playwright scheduling > does not rescue a run cut short by globalTimeout
+AssertionError: expected 'passed' to be 'failed' // Object.is equality
+
+Expected: "failed"
+Received: "passed"
+
+ ❯ __tests__/e2e/mock-llm-done-marker-reporter.test.ts:116:22
+    114|
+    115|     expect(run.exitCode).not.toBe(0);
+    116|     expect(run.done).toBe("failed");
+       |                      ^
+    117|     expect(run.passed).toBe(false);
+    118|     expect(run.results.completed).toBeLessThan(run.results.total);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  |jsdom| __tests__/e2e/mock-llm-done-marker-reporter.test.ts > mock-LLM completion markers with real Playwright scheduling > honors expected failures (unexpected pass=false)
+AssertionError: expected 'failed' to be 'passed' // Object.is equality
+
+Expected: "passed"
+Received: "failed"
+
+ ❯ __tests__/e2e/mock-llm-done-marker-reporter.test.ts:128:22
+    126|
+    127|     expect(run.exitCode).toBe(unexpectedPass ? 1 : 0);
+    128|     expect(run.done).toBe(unexpectedPass ? "failed" : "passed");
+       |                      ^
+    129|     expect(run.passed).toBe(!unexpectedPass);
+    130|     expect(run.results.tests[0].status).toBe(unexpectedPass ? "failed"…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  |jsdom| __tests__/e2e/mock-llm-done-marker-reporter.test.ts > mock-LLM completion markers with real Playwright scheduling > honors expected failures (unexpected pass=true)
+AssertionError: expected 'passed' to be 'failed' // Object.is equality
+
+Expected: "failed"
+Received: "passed"
+
+ ❯ __tests__/e2e/mock-llm-done-marker-reporter.test.ts:128:22
+    126|
+    127|     expect(run.exitCode).toBe(unexpectedPass ? 1 : 0);
+    128|     expect(run.done).toBe(unexpectedPass ? "failed" : "passed");
+       |                      ^
+    129|     expect(run.passed).toBe(!unexpectedPass);
+    130|     expect(run.results.tests[0].status).toBe(unexpectedPass ? "failed"…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+ FAIL  |jsdom| __tests__/e2e/mock-llm-done-marker-reporter.test.ts > mock-LLM completion markers with real Playwright scheduling > fails global errors before marker finalization
+ FAIL  |jsdom| __tests__/e2e/mock-llm-done-marker-reporter.test.ts > mock-LLM completion markers with real Playwright scheduling > fails global errors after marker finalization
+AssertionError: expected 'passed' to be 'failed' // Object.is equality
+
+Expected: "failed"
+Received: "passed"
+
+ ❯ __tests__/e2e/mock-llm-done-marker-reporter.test.ts:143:22
+    141|
+    142|     expect(run.exitCode).toBe(1);
+    143|     expect(run.done).toBe("failed");
+       |                      ^
+    144|     expect(run.passed).toBe(false);
+    145|   }, 30_000);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  8 failed | 2 passed (10)
+   Start at  11:17:02
+   Duration  12.14s (tests 98%, setup 1%, transform 1%)
+
