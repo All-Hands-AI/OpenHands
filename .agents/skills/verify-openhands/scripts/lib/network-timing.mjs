@@ -38,16 +38,18 @@ export function networkTiming(now = Date.now) {
 }
 
 /**
- * Entries in request order (the default), or by completion: completed
- * entries first in the order they completed, then those still pending in
- * request order.
+ * The last `last` entries in request order (the default), or by completion:
+ * the last `last` completed entries in the order they completed, then the
+ * last `last` still pending in request order. The two windows are separate,
+ * so open sockets and slow requests never push the completions out.
  */
-export function orderNetworkEntries(list, order = "request") {
-  if (order === "request") return list;
+export function orderNetworkEntries(list, order = "request", last = Infinity) {
+  if (order === "request") return list.slice(-last);
   if (order !== "completion")
     throw new Error(`--order must be request or completion, got ${order}`);
   const done = list
     .filter((e) => e.completedSeq !== undefined)
     .sort((a, b) => a.completedSeq - b.completedSeq);
-  return [...done, ...list.filter((e) => e.completedSeq === undefined)];
+  const pending = list.filter((e) => e.completedSeq === undefined);
+  return [...done.slice(-last), ...pending.slice(-last)];
 }

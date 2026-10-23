@@ -25,6 +25,7 @@ import { BUILD_INPUTS } from "./lib/build-inputs.mjs";
 import {
   editorOffset,
   launcherEnvFor,
+  lockedCloudOrigin,
   portsAfterRestart,
   runPorts,
 } from "./lib/launcher-env.mjs";
@@ -77,6 +78,7 @@ import {
   knownBugBlocks,
   parseBugPredicate,
   proofVerdict,
+  viewportToRestore,
 } from "./lib/known-bug.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -692,6 +694,53 @@ test("this checkout's launcher answers the editor probe, and --vscode opts in", 
   });
   assert.match(help.stdout, /--vscode/);
   assert.match(help.stdout, /OH_CANVAS_ENABLE_VSCODE/);
+});
+
+test("--lock-to-cloud takes P+4, keeps it across a restart, and needs an http(s) URL", () => {
+  const launcher = (offset) => ({ offset, source: "launcher" });
+  const locked = runPorts(18800, null, { lockedCloud: true });
+  assert.deepEqual(locked, {
+    ingress: 18800,
+    agentServer: 18801,
+    automation: 18802,
+    frontend: 18803,
+    lockedCloud: 18804,
+  });
+  // The locked page is not the launcher's: whatever the editor answer, a
+  // restart keeps its port.
+  assert.equal(
+    portsAfterRestart(locked, launcher(null)).ports.lockedCloud,
+    18804,
+  );
+  assert.equal(
+    portsAfterRestart(locked, launcher(1000)).ports.lockedCloud,
+    18804,
+  );
+  assert.equal(
+    portsAfterRestart(runPorts(18800, null), launcher(null)).ports.lockedCloud,
+    undefined,
+  );
+  assert.equal(
+    lockedCloudOrigin("https://app.all-hands.dev/"),
+    "https://app.all-hands.dev",
+  );
+  assert.throws(() => lockedCloudOrigin("app.all-hands.dev"), /Cloud URL/);
+  assert.throws(() => lockedCloudOrigin("ftp://example.com"), /http\(s\)/);
+  // A bad or missing URL is a usage error before anything is built or started.
+  for (const flags of [
+    ["--lock-to-cloud", "ftp://example.com"],
+    ["--lock-to-cloud"],
+  ]) {
+    const result = run(["launch", "--new", ...flags]);
+    assert.equal(result.status, 2, JSON.stringify(result.json));
+    assert.match(result.json.hint, /--lock-to-cloud https:/);
+  }
+  const help = spawnSync(process.execPath, [cli, "help", "launch"], {
+    encoding: "utf8",
+  });
+  assert.match(help.stdout, /--mars-web/);
+  assert.match(help.stdout, /MARS_WEB=1/);
+  assert.match(help.stdout, /--lock-to-cloud URL/);
 });
 
 test("a restart follows the launcher's editor answer, or keeps its ports", () => {
@@ -2921,8 +2970,36 @@ test("browser network times responses and can list them in completion order", ()
     ],
   );
   assert.throws(() => orderNetworkEntries(list, "size"), /request or completion/);
+  // --last windows completed and pending rows separately: 15 open sockets
+  // must not push the two completions out of a --last 15 listing.
+  const sockets = Array.from({ length: 15 }, (_, i) => ({ path: `/ws/${i}` }));
+  const busy = orderNetworkEntries([...list, ...sockets], "completion", 15);
+  assert.deepEqual(
+    busy.slice(0, 2).map((e) => e.path),
+    ["/api/settings/conversation-schema", "/api/settings/agent-schema"],
+  );
+  assert.equal(busy.length, 17);
+  assert.deepEqual(
+    orderNetworkEntries([...list, ...sockets], "request", 2).map((e) => e.path),
+    ["/ws/13", "/ws/14"],
+  );
   const help = spawnSync(process.execPath, [cli, "help", "browser"], {
     encoding: "utf8",
   });
   assert.match(help.stdout, /--order request\|completion/);
+});
+
+test("bug run puts back the viewport a block changed", () => {
+  const desktop = { width: 1440, height: 1000 };
+  const phone = { width: 390, height: 844 };
+  // F07.overview-toggle phone-overview switches to phone: back to desktop.
+  assert.equal(viewportToRestore(desktop, phone), "1440x1000");
+  assert.equal(viewportToRestore(phone, desktop), "390x844");
+  // Unchanged, or nothing known before the block: nothing to restore.
+  assert.equal(viewportToRestore(desktop, { ...desktop }), null);
+  assert.equal(viewportToRestore(undefined, phone), null);
+  const help = spawnSync(process.execPath, [cli, "help", "bug"], {
+    encoding: "utf8",
+  });
+  assert.match(help.stdout, /viewportRestored/);
 });
