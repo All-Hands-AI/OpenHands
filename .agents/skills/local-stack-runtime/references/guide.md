@@ -93,11 +93,11 @@ you are running inside of — NOT the automation backend.
 - `scripts/dev-safe.mjs` uses `uvx` for temporary agent-server installation — no permanent `uv tool install` needed. Environment variables (highest precedence first):
   - `OH_AGENT_SERVER_LOCAL_PATH` — absolute path to a local `software-agent-sdk` checkout. Runs the local checkout via `uvx` with `--with-editable` for `openhands-sdk`/`openhands-tools`/`openhands-workspace` and `--reinstall` for `openhands-agent-server`, so SDK edits are picked up on restart. Highest precedence.
   - `OH_AGENT_SERVER_GIT_REF` — git commit SHA or branch name (takes precedence over version)
-  - `OH_AGENT_SERVER_VERSION` — specific PyPI version (e.g., "1.57.0")
+  - `OH_AGENT_SERVER_VERSION` — specific PyPI version (e.g., "1.58.1")
   - `UV_PYTHON` — Python version or range uvx may use for agent-server and automation. Defaults to `python.uvxRequest` in `config/defaults.json` (`>=3.12,<3.15`), so a machine with no supported Python downloads the newest 3.14 instead of the newest CPython, whose wheels the SDK's compiled dependencies lag behind (#18654).
   - `OH_SECRET_KEY` — secret key for settings encryption; auto-generated and persisted to `~/.openhands/agent-canvas/secret-key.txt` on first run (same file Docker uses), ensuring dev mode and Docker share the same key when both mount the same `~/.openhands` directory. Override with the env var to pin a specific key.
   - `SESSION_API_KEY` / `OH_SESSION_API_KEYS_0` / `VITE_SESSION_API_KEY` — session API key for agent-server authentication; auto-generated using `crypto.randomBytes(32)` if not set, passed to both agent-server (`OH_SESSION_API_KEYS_0`) and frontend (`VITE_SESSION_API_KEY`)
-  - Default: released PyPI version `1.57.0` for agent-server SDK libraries
+  - Default: released PyPI version `1.58.1` for agent-server SDK libraries
 
 - Security: launchers generate and persist a 64-character session API key at `~/.openhands/agent-canvas/session-api-key.txt` unless overridden. The agent-server and automation backend share that session key. `OH_SECRET_KEY` protects settings encryption and is persisted separately at `~/.openhands/agent-canvas/secret-key.txt`.
 - `scripts/dev-safe.mjs` should fail fast if `uvx` cannot be spawned (for example missing PATH entries).
@@ -116,6 +116,8 @@ you are running inside of — NOT the automation backend.
   - Security: the automation backend receives the same session key as the agent-server through `AUTOMATION_LOCAL_API_KEY`; the frontend does not bake a separate automation API key.
 - `scripts/ingress.mjs` is a standalone HTTP reverse proxy that can be used independently to route traffic to multiple backends based on URL path prefix.
 - `scripts/dev-safe.mjs` (now `npm run dev:minimal`) runs just agent-server + Vite without automation.
+- **Backend log level**: every Canvas launch path defaults the spawned backends to `WARNING` so a plain launch is readable — at `INFO` the automation service's `setup_all_loggers()` raises *every* registered logger, including `sqlalchemy.orm`, which emits hundreds of model-mapping lines before the service is reachable. The policy lives in `scripts/dev-safe.mjs` (`DEFAULT_BACKEND_LOG_LEVEL`, `backendLogLevel()`, `buildBackendLogEnv()`), which `dev-with-automation.mjs`, `dev-static.mjs`, and `docker/entrypoint.sh` all use; the same resolved level is passed to Uvicorn's `--log-level`, because that flag — not `LOG_LEVEL` — governs the startup banner and per-request access lines. Precedence: `--verbose` > an explicit `LOG_LEVEL` / `AUTOMATION_LOG_LEVEL` > the `WARNING` default. Standalone automation-service deployments keep their own `INFO` default; only what Canvas passes changes. `WARNING` rather than `ERROR` is deliberate — `ERROR` would also hide the workspace-retention warning.
+  - The two sides accept different vocabularies, so the Uvicorn argument is narrowed by `uvicornLogLevel()` (and the shell's `uvicorn_log_level()` in the entrypoint) rather than forwarded verbatim. The app reads `LOG_LEVEL` through Python's logging module, which also understands `WARN`, `FATAL`, `NOTSET` and numeric levels; Uvicorn validates `--log-level` with a `click.Choice` over `critical | error | warning | info | debug | trace` and exits `2` on anything else, which would take the service — and the dev stack — down. Aliases map to their equivalents (`WARN` → `warning`, `FATAL` → `critical`), numbers map to the nearest name, and values with no Uvicorn equivalent (`NOTSET`, `0`, unrecognized strings) fall back to `info`, Uvicorn's own default. The env value keeps its raw form; only the CLI argument is narrowed.
 
 - **Centralized config**: `config/defaults.json` is the single source of truth for version pins (agent-server, automation, automation SDK), port defaults, persistence paths, and package names. All consumers read from this file:
   - JS scripts (`dev-safe.mjs`, `dev-with-automation.mjs`, `check-sdk-version-sync.mjs`) read it via `JSON.parse(readFileSync(...))`.
@@ -124,3 +126,21 @@ you are running inside of — NOT the automation backend.
   - Dockerfile ARG defaults are kept as fallbacks for local `docker build` without the CI workflow; CI always passes `--build-arg` overrides from the JSON.
   - To bump a version, edit `config/defaults.json` only — the JS scripts, Docker build, and CI workflow all derive their values from it.
 - Docker all-in-one image: `.github/workflows/docker.yml` builds and publishes `ghcr.io/openhands/agent-canvas` — a combined image that bundles the agent-server (from `ghcr.io/openhands/agent-server`), the automation server (`openhands-automation` via pip), and the agent-canvas frontend (static build). The Dockerfile lives at `docker/Dockerfile`, the entrypoint at `docker/entrypoint.sh`. The workflow structure mirrors the SDK repo's `server.yml`: a `build-and-push-image` matrix job (2 × arch: amd64 on `ubuntu-24.04`, arm64 on `ubuntu-24.04-arm`) pushes arch-suffixed tags, then `merge-manifests` creates multi-arch manifests via `docker buildx imagetools create`, then `consolidate-build-info` aggregates artifacts, and `update-pr-description` updates the PR body (using `<!-- AGENT_CANVAS_DOCKER_START -->` / `<!-- AGENT_CANVAS_DOCKER_END -->` markers). The workflow triggers on push to main, `v*` tags (releases), PRs, and `workflow_dispatch`. On release tags it also pushes semver tags (e.g. `1.2.3`, `1.2`, `1`, `latest`). Fork PRs are skipped (no GHCR auth). On PRs that link an `OpenHands/software-agent-sdk` PR in the description, the Docker workflow uses that SDK PR's published branch image (`ghcr.io/openhands/agent-server:<branch-with-slashes-as-dashes>-python`) as the agent-server base image unless a `workflow_dispatch` input explicitly overrides it. The image exposes port 8000 as a unified entry point: `/api/automation/*` → automation (:18001), `/api/*` → agent-server (:18000), `/*` → static frontend. The Dockerfile accepts the public `VITE_POSTHOG_API_KEY` build arg; CI passes staging for PR/main images and production for tagged releases. The npm release workflow passes the same production key to both the app and library builds. The entrypoint auto-generates **both** the session API key and `OH_SECRET_KEY` (persisted to `~/.openhands/agent-canvas/session-api-key.txt` and `secret-key.txt` respectively) when none is provided, so the image runs secure by default. Users can override either via env var (`OH_SECRET_KEY`, `SESSION_API_KEY` / `OH_SESSION_API_KEYS_0`). `scripts/dev-safe.mjs` uses the same `secret-key.txt` file, so dev mode and Docker share the same key when both use the same `~/.openhands` directory.
+
+
+## DigitalOcean OAuth permissions
+
+The authorization request in `scripts/mars-oauth.mjs` must cover the actions
+Canvas exposes: `agent_harness_session:read` for listing and inspecting agents
+and sessions, `:create` for creating them, `:operate` for connecting, pausing,
+and resuming, and `:manage` for stopping sessions and deleting agent configs.
+The source of this contract is DigitalOcean's
+[Harness Runtime API](https://docs.digitalocean.com/reference/api/reference/harness-runtime/).
+Testing with a full-access personal token does not verify OAuth permissions.
+When scopes are added, existing OAuth grants need a new sign-in to approve them;
+refreshing an older grant cannot expand its permissions.
+
+A failed DigitalOcean agent-list request can be the first call to discover a
+revoked refresh grant. Re-read the bridge auth state after that failure so the
+UI offers sign-in promptly. A network error must keep the connection selected
+and preserve the original list error; it is not proof that credentials expired.
