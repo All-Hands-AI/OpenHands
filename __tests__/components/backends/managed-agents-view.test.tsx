@@ -604,5 +604,58 @@ describe("ManagedAgentsView", () => {
       expect(screen.queryByTestId("managed-agents-auth-error")).toBeNull();
       expect(screen.getByTestId("managed-agents-oauth")).toBeEnabled();
     });
+
+    it("stays on Add connection after a sign-in started there is cancelled", async () => {
+      const { bridge } = oauthBridge();
+      vi.mocked(bridge.getAuthState).mockResolvedValue({
+        ...SIGNED_IN,
+        canUseOAuth: true,
+      });
+      window.marsBridge = bridge;
+      vi.spyOn(window, "open").mockReturnValue(null);
+      renderView();
+      await userEvent.click(
+        await screen.findByTestId("managed-agents-add-connection"),
+      );
+      await userEvent.click(screen.getByTestId("managed-agents-oauth"));
+      await screen.findByTestId("managed-agents-pending-sign-in");
+
+      await userEvent.click(screen.getByTestId("managed-agents-sign-in-abort"));
+
+      await waitFor(() =>
+        expect(
+          screen.queryByTestId("managed-agents-pending-sign-in"),
+        ).toBeNull(),
+      );
+      expect(screen.getByTestId("managed-agents-sign-in")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("managed-agents-sign-in-cancel"),
+      ).toBeInTheDocument();
+    });
+
+    it("takes a token while a browser sign-in waits, and drops that sign-in", async () => {
+      const { bridge } = oauthBridge();
+      window.marsBridge = bridge;
+      vi.spyOn(window, "open").mockReturnValue(null);
+      renderView();
+      await userEvent.click(await screen.findByTestId("managed-agents-oauth"));
+      await screen.findByTestId("managed-agents-pending-sign-in");
+      await userEvent.click(screen.getByTestId("managed-agents-use-token"));
+      await userEvent.type(
+        screen.getByTestId("managed-agents-token"),
+        `dop_v1_${"a".repeat(64)}`,
+      );
+
+      vi.mocked(bridge.getAuthState).mockResolvedValue(SIGNED_IN);
+      await userEvent.click(screen.getByTestId("managed-agents-token-submit"));
+
+      expect(bridge.cancelSignIn).toHaveBeenCalledWith("a1");
+      expect(bridge.savePat).toHaveBeenCalledWith({
+        token: `dop_v1_${"a".repeat(64)}`,
+      });
+      expect(
+        await screen.findByTestId("managed-agents-session-sess_ready"),
+      ).toBeInTheDocument();
+    });
   });
 });

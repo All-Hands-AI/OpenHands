@@ -18,17 +18,11 @@
  */
 
 import { createHash, randomUUID } from "node:crypto";
-import {
-  mkdirSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  statSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { hostname, platform } from "node:os";
 import path from "node:path";
-import { setTimeout as sleep } from "node:timers/promises";
+
+import { withLockFile, withLockFileSync } from "./mars-lock-file.mjs";
 
 const STORE_FILENAME = "mars-credentials.json";
 const STORE_VERSION = 1;
@@ -120,58 +114,27 @@ function fingerprintOf(token) {
   return createHash("sha256").update(token).digest("hex").slice(0, 16);
 }
 
-/** Longer than any refresh takes; a lock this old was abandoned. */
-const GRANT_LOCK_STALE_MS = 120_000;
-const GRANT_LOCK_WAIT_MS = 30_000;
-const GRANT_LOCK_POLL_MS = 50;
-
-/** Whether a lock file was left by a process that is gone, or long ago. */
-function isStaleLock(lockPath) {
-  try {
-    if (Date.now() - statSync(lockPath).mtimeMs > GRANT_LOCK_STALE_MS) {
-      return true;
-    }
-    const pid = Number(readFileSync(lockPath, "utf8"));
-    if (!pid) return false; // Just created; its owner writes the pid next.
-    process.kill(pid, 0);
-    return false;
-  } catch (error) {
-    return error?.code === "ESRCH";
-  }
-}
+/**
+ * Held across one refresh: a token request times out after 15 s, so a lock
+ * this old was abandoned.
+ */
+const GRANT_LOCK = {
+  staleMs: 120_000,
+  waitMs: 30_000,
+  busyMessage:
+    "Another Canvas process is still renewing this DigitalOcean sign-in. Try again.",
+};
 
 /**
- * Run `fn` holding a lock file that every Canvas process on this machine
- * respects. A lock whose process is gone, or that is far older than any
- * refresh, is taken over.
+ * Held while the connection list is read and written back, which may include
+ * saving a secret in the keychain (its tool times out after 10 s).
  */
-async function withLockFile(lockPath, fn) {
-  mkdirSync(path.dirname(lockPath), { recursive: true });
-  const deadline = Date.now() + GRANT_LOCK_WAIT_MS;
-  for (;;) {
-    try {
-      writeFileSync(lockPath, String(process.pid), { flag: "wx", mode: 0o600 });
-      break;
-    } catch (error) {
-      if (error?.code !== "EEXIST") throw error;
-      if (isStaleLock(lockPath)) {
-        rmSync(lockPath, { force: true });
-        continue;
-      }
-      if (Date.now() >= deadline) {
-        throw new Error(
-          "Another Canvas process is still renewing this DigitalOcean sign-in. Try again.",
-        );
-      }
-      await sleep(GRANT_LOCK_POLL_MS);
-    }
-  }
-  try {
-    return await fn();
-  } finally {
-    rmSync(lockPath, { force: true });
-  }
-}
+const STORE_LOCK = {
+  staleMs: 60_000,
+  waitMs: 20_000,
+  busyMessage:
+    "Another Canvas process is still saving a DigitalOcean sign-in. Try again.",
+};
 
 function emptyState() {
   return {
@@ -215,22 +178,25 @@ export function createCredentialStore({
   );
   /**
    * Plaintext grant per connection id. The only copy when nothing persists
-   * it; otherwise a cache, so the keychain is not hit on every dial.
+   * it; otherwise a cache, so the keychain is not hit on every dial. Null
+   * records a secret that could not be read.
    *
-   * @type {Map<string, Grant>}
+   * @type {Map<string, Grant | null>}
    */
   const memoryGrants = new Map();
 
   let state = load();
 
-  function load() {
-    memoryGrants.clear();
-    if (!filePath) return emptyState();
-    let loaded;
+  /**
+   * The connection list as the file holds it now; null when there is no
+   * usable file. Other Canvas processes sharing the store write it too.
+   */
+  function readState() {
+    if (!filePath) return null;
     try {
       const parsed = JSON.parse(readFileSync(filePath, "utf8"));
-      if (parsed?.version !== STORE_VERSION) return emptyState();
-      loaded = {
+      if (parsed?.version !== STORE_VERSION) return null;
+      return {
         ...emptyState(),
         ...parsed,
         connections: Array.isArray(parsed.connections)
@@ -238,27 +204,56 @@ export function createCredentialStore({
           : [],
       };
     } catch {
-      // Missing or corrupt store — start clean rather than blocking sign-in.
-      return emptyState();
+      return null;
     }
+  }
+
+  /** Read a connection's secret into the cache. */
+  function readSecret(id) {
+    let grant = null;
+    try {
+      grant = grantFromSecret(secrets.read(secretAccountFor(id)));
+    } catch (error) {
+      // A locked keychain: the connection stays listed, needing sign-in.
+      log(error instanceof Error ? error.message : String(error));
+    }
+    memoryGrants.set(id, grant);
+    return grant;
+  }
+
+  function load() {
+    memoryGrants.clear();
+    // Missing or corrupt store — start clean rather than blocking sign-in.
+    const loaded = readState() ?? emptyState();
     if (secrets) {
-      for (const connection of loaded.connections) {
-        try {
-          const grant = grantFromSecret(
-            secrets.read(secretAccountFor(connection.id)),
-          );
-          if (grant) memoryGrants.set(connection.id, grant);
-        } catch (error) {
-          // A locked keychain: the connection stays listed, needing sign-in.
-          log(error instanceof Error ? error.message : String(error));
-        }
-      }
+      for (const connection of loaded.connections) readSecret(connection.id);
     }
     return loaded;
   }
 
+  /**
+   * Change the store as the file holds it now, under the store's lock, and
+   * write it back, so a change another Canvas process made meanwhile is
+   * kept. `change` returns false when it changed nothing in the file.
+   *
+   * @param {() => boolean | void} change
+   */
+  function mutate(change) {
+    if (!filePath) {
+      change();
+      return;
+    }
+    withLockFileSync(
+      `${filePath}.lock`,
+      () => {
+        state = readState() ?? state;
+        if (change() !== false) persist();
+      },
+      STORE_LOCK,
+    );
+  }
+
   function persist() {
-    if (!filePath) return;
     mkdirSync(path.dirname(filePath), { recursive: true });
     const serializable = {
       ...state,
@@ -285,6 +280,8 @@ export function createCredentialStore({
   function decrypt(connection) {
     const cached = memoryGrants.get(connection.id);
     if (cached !== undefined) return cached;
+    // A connection another Canvas process added since this one started.
+    if (secrets) return readSecret(connection.id);
     if (!canEncrypt || !connection.token) return null;
     try {
       const grant = grantFromSecret(
@@ -451,6 +448,7 @@ export function createCredentialStore({
       return withLockFile(
         path.join(path.dirname(filePath), `grant-${id}.lock`),
         fn,
+        GRANT_LOCK,
       );
     },
 
@@ -462,15 +460,23 @@ export function createCredentialStore({
      * @param {Grant | null} grant
      */
     updateGrant(id, grant) {
-      const connection = find(id);
-      if (!connection) return;
-      if (grant) {
-        connection.isSaved = storeGrant(connection, grant);
-      } else {
-        forgetToken(id);
-        connection.token = null;
-      }
-      persist();
+      mutate(() => {
+        const connection = find(id);
+        if (!connection) return false;
+        const before = { token: connection.token, isSaved: connection.isSaved };
+        if (grant) {
+          connection.isSaved = storeGrant(connection, grant);
+        } else {
+          forgetToken(id);
+          connection.token = null;
+        }
+        // With a SecretStore a renewal changes nothing in the file, unless
+        // the secret could not be saved.
+        return (
+          connection.token !== before.token ||
+          connection.isSaved !== before.isSaved
+        );
+      });
     },
 
     /**
@@ -493,26 +499,29 @@ export function createCredentialStore({
       teamName = null,
     }) {
       const fingerprint = fingerprintOf(token);
-      const existing = state.connections.find(
-        (connection) => connection.fingerprint === fingerprint,
-      );
-      const connection = existing ?? { id: randomUUID() };
-      Object.assign(connection, {
-        kind,
-        label,
-        teamName: teamName ?? connection.teamName ?? null,
-        expiresAt,
-        fingerprint,
+      let connection;
+      let existing;
+      mutate(() => {
+        existing = state.connections.find(
+          (other) => other.fingerprint === fingerprint,
+        );
+        connection = existing ?? { id: randomUUID() };
+        Object.assign(connection, {
+          kind,
+          label,
+          teamName: teamName ?? connection.teamName ?? null,
+          expiresAt,
+          fingerprint,
+        });
+        connection.isSaved = storeGrant(connection, {
+          token,
+          refreshToken,
+          accessExpiresAt,
+          clientId,
+        });
+        if (!existing) state.connections = [...state.connections, connection];
+        state.activeConnectionId = connection.id;
       });
-      connection.isSaved = storeGrant(connection, {
-        token,
-        refreshToken,
-        accessExpiresAt,
-        clientId,
-      });
-      if (!existing) state.connections = [...state.connections, connection];
-      state.activeConnectionId = connection.id;
-      persist();
       return { ...toMetadata(connection), reused: Boolean(existing) };
     },
 
@@ -521,62 +530,89 @@ export function createCredentialStore({
      * older connection keeps that connection: it takes the new token, and the
      * new entry is dropped, so anything bound to the old id carries on.
      *
+     * The older connection's own OAuth grant is then held nowhere, so it is
+     * handed to `onReplacedGrant` to be ended. A personal access token is
+     * the person's own and is never handed over.
+     *
      * @param {string} id
      * @param {{ uuid?: string | null, name?: string | null, email?: string | null }} team
+     * @param {{ onReplacedGrant?: (grant: Grant) => void }} [options]
      */
-    setTeam(id, { uuid = null, name = null, email = null } = {}) {
-      const connection = find(id);
-      if (!connection) return this.getActive();
-      const older = uuid
-        ? state.connections.find(
-            (other) => other.id !== id && other.teamUuid === uuid,
-          )
-        : null;
-      const target = older ?? connection;
-      if (older) {
-        const grant = decrypt(connection);
-        Object.assign(older, {
-          kind: connection.kind,
-          label: connection.label,
-          expiresAt: connection.expiresAt ?? null,
-          fingerprint: connection.fingerprint,
-        });
-        if (grant) older.isSaved = storeGrant(older, grant);
-        forgetToken(id);
-        state.connections = state.connections.filter(
-          (other) => other.id !== id,
-        );
-        // Follow the merge only if this connection was the active one; a
-        // switch made meanwhile stands.
-        if (state.activeConnectionId === id) {
-          state.activeConnectionId = older.id;
+    setTeam(
+      id,
+      { uuid = null, name = null, email = null } = {},
+      { onReplacedGrant } = {},
+    ) {
+      let target = null;
+      let replaced = null;
+      mutate(() => {
+        const connection = find(id);
+        if (!connection) return false;
+        const older = uuid
+          ? state.connections.find(
+              (other) => other.id !== id && other.teamUuid === uuid,
+            )
+          : null;
+        target = older ?? connection;
+        if (older) {
+          const grant = decrypt(connection);
+          const previous = decrypt(older);
+          if (
+            older.kind === CREDENTIAL_KIND_OAUTH &&
+            previous &&
+            previous.token !== grant?.token
+          ) {
+            replaced = previous;
+          }
+          Object.assign(older, {
+            kind: connection.kind,
+            label: connection.label,
+            expiresAt: connection.expiresAt ?? null,
+            fingerprint: connection.fingerprint,
+          });
+          if (grant) older.isSaved = storeGrant(older, grant);
+          forgetToken(id);
+          state.connections = state.connections.filter(
+            (other) => other.id !== id,
+          );
+          // Follow the merge only if this connection was the active one; a
+          // switch made meanwhile stands.
+          if (state.activeConnectionId === id) {
+            state.activeConnectionId = older.id;
+          }
         }
-      }
-      Object.assign(target, {
-        teamUuid: uuid ?? target.teamUuid ?? null,
-        teamName: name ?? target.teamName ?? null,
-        email: email ?? target.email ?? null,
+        Object.assign(target, {
+          teamUuid: uuid ?? target.teamUuid ?? null,
+          teamName: name ?? target.teamName ?? null,
+          email: email ?? target.email ?? null,
+        });
+        return true;
       });
-      persist();
-      return toMetadata(target);
+      if (replaced) onReplacedGrant?.(replaced);
+      return target ? toMetadata(target) : this.getActive();
     },
 
     setActive(id) {
-      if (!find(id)) return null;
-      state.activeConnectionId = id;
-      persist();
-      return this.getActive();
+      let found = false;
+      mutate(() => {
+        found = Boolean(find(id));
+        if (!found) return false;
+        state.activeConnectionId = id;
+        return true;
+      });
+      return found ? this.getActive() : null;
     },
 
     remove(id) {
-      forgetToken(id);
-      state.connections = state.connections.filter(
-        (connection) => connection.id !== id,
-      );
-      if (state.activeConnectionId === id) {
-        state.activeConnectionId = state.connections[0]?.id ?? null;
-      }
-      persist();
+      mutate(() => {
+        forgetToken(id);
+        state.connections = state.connections.filter(
+          (connection) => connection.id !== id,
+        );
+        if (state.activeConnectionId === id) {
+          state.activeConnectionId = state.connections[0]?.id ?? null;
+        }
+      });
       return this.getActive();
     },
 
