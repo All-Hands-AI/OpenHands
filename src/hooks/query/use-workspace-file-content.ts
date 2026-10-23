@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 
 import { readCloudConversationFile } from "#/api/cloud/conversation-service.api";
 import { getActiveBackend } from "#/api/backend-registry/active-store";
 import AgentServerRuntimeService from "#/api/runtime-service/agent-server-runtime-service";
 import { isAbsolutePath } from "#/api/agent-server-home";
 import { getGitPath } from "#/utils/get-git-path";
-import { getApiErrorMessage } from "#/utils/api-error-message";
+import { getApiOrConnectionErrorMessage } from "#/utils/api-error-message";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { useRuntimeIsReady } from "#/hooks/use-runtime-is-ready";
 import {
@@ -47,6 +49,8 @@ export interface WorkspaceFileContent {
   staticUrl: string;
   /** MIME type guessed from the file extension. */
   mimeType: string;
+  /** Absolute HTML/Markdown cannot resolve sibling assets from an inline URL. */
+  richPreviewNeedsWorkspace?: boolean;
 }
 
 function getExtension(path: string): string {
@@ -143,6 +147,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
  * selected yet).
  */
 export function useWorkspaceFileContent(relativePath: string | null) {
+  const { t } = useTranslation("openhands");
   const { data: conversation } = useActiveConversation();
   const runtimeIsReady = useRuntimeIsReady({ allowAgentError: true });
   const { data: workspaceSession } = useWorkspaceSession();
@@ -212,7 +217,7 @@ export function useWorkspaceFileContent(relativePath: string | null) {
           );
         } catch (error) {
           throw new Error(
-            getApiErrorMessage(error, `Could not read ${relativePath}`),
+            `${relativePath}: ${getApiOrConnectionErrorMessage(error, t(I18nKey.FILES$LOAD_ERROR))}`,
           );
         }
 
@@ -235,6 +240,8 @@ export function useWorkspaceFileContent(relativePath: string | null) {
             text,
             staticUrl: `data:${mimeType};charset=utf-8;base64,${arrayBufferToBase64(buffer)}`,
             mimeType,
+            richPreviewNeedsWorkspace:
+              mimeType === "text/html" || mimeType === "text/markdown",
           };
         }
 

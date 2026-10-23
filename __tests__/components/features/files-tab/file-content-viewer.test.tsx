@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -37,11 +37,17 @@ vi.mock("#/api/backend-registry/active-store", () => ({
   getActiveBackend: () => getActiveBackendMock(),
 }));
 
-// The hook statically imports the cloud runtime service; stub the module so
-// this local-path test never loads the real cloud/proxy machinery. The test
-// uses the fetch (local) path, so downloadFile is never called or asserted.
+vi.mock("react-i18next", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("react-i18next")>()),
+  useTranslation: () => ({
+    t: (key: string, values?: { path?: string }) =>
+      `${key} ${values?.path ?? ""}`,
+  }),
+}));
+
+const downloadFileMock = vi.fn();
 vi.mock("#/api/runtime-service/agent-server-runtime-service", () => ({
-  default: { downloadFile: vi.fn() },
+  default: { downloadFile: (...args: unknown[]) => downloadFileMock(...args) },
 }));
 
 const fetchMock = vi.fn();
@@ -64,6 +70,7 @@ describe("FileContentViewer", () => {
   beforeEach(() => {
     vi.stubGlobal("fetch", fetchMock);
     fetchMock.mockReset();
+    downloadFileMock.mockReset();
     useWorkspaceSessionMock.mockReset();
     useActiveConversationMock.mockReset();
     useRuntimeIsReadyMock.mockReset();
@@ -121,4 +128,64 @@ describe("FileContentViewer", () => {
       ).toBeInTheDocument();
     },
   );
+
+  it.each(["html", "md"])(
+    "explains why an absolute %s cannot load sibling assets instead of a broken rich preview",
+    async (extension) => {
+      const path = `/outside/report.${extension}`;
+      const source = "<p>Report with sibling assets</p>";
+      downloadFileMock.mockResolvedValue(
+        new TextEncoder().encode(source).buffer,
+      );
+      renderViewer(path);
+      expect(
+        await screen.findByTestId("file-content-viewer-relative-assets"),
+      ).toHaveTextContent(path);
+      expect(
+        screen.queryByTestId("file-content-viewer-iframe"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("file-content-viewer-markdown"),
+      ).not.toBeInTheDocument();
+    },
+  );
+
+  it.each(["html", "md"])(
+    "keeps the absolute %s source available in Plain",
+    async (extension) => {
+      downloadFileMock.mockResolvedValue(
+        new TextEncoder().encode("Report source").buffer,
+      );
+      renderViewer(`/outside/report.${extension}`, "plain");
+      expect(
+        await screen.findByTestId("file-content-viewer-highlighted"),
+      ).toHaveTextContent("Report source");
+      expect(
+        screen.queryByTestId("file-content-viewer-relative-assets"),
+      ).not.toBeInTheDocument();
+    },
+  );
+
+  it("names the absolute file when its download loses the connection", async () => {
+    downloadFileMock.mockRejectedValue(new TypeError("Failed to fetch"));
+    renderViewer("/outside/chart.png");
+    const error = await screen.findByTestId("file-content-viewer-error");
+    expect(error).toHaveTextContent("/outside/chart.png");
+    expect(error).toHaveTextContent("Disconnected");
+  });
+
+  it("replaces an undecodable image with a named error instead of a broken icon", async () => {
+    downloadFileMock.mockResolvedValue(
+      new TextEncoder().encode("not an image").buffer,
+    );
+    renderViewer("/outside/broken.png");
+    const img = await screen.findByRole("img", { name: "/outside/broken.png" });
+    fireEvent.error(img);
+    expect(
+      await screen.findByTestId("file-content-viewer-image-error"),
+    ).toHaveTextContent("/outside/broken.png");
+    expect(
+      screen.queryByRole("img", { name: "/outside/broken.png" }),
+    ).not.toBeInTheDocument();
+  });
 });
