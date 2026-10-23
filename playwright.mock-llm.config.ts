@@ -84,6 +84,7 @@ export default defineConfig({
   workers: 1,
   timeout: 60_000,
   globalTimeout: process.env.CI ? 600_000 : 0, // 10 min hard cap in CI
+  globalTeardown: "./tests/e2e/mock-llm/reporters/done-marker-teardown.ts",
   reporter: [
     ["line"],
     ["json", { outputFile: "test-results-mock-llm/results.json" }],

@@ -13,7 +13,7 @@
  *   .all-passed   — written only when the run finished and every case passed
  */
 
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type {
   FullResult,
@@ -39,19 +39,18 @@ interface TestRecord {
  * script always has data — even when the process is killed mid-suite
  * (e.g. the CI polling deadline expires before all tests finish).
  *
- * `.tests-done` / `.all-passed` are written only from `onEnd()`, letting the
- * CI wrapper distinguish "still running" from "done".
- *
- * `onEnd()` is the only safe place to decide the run is over. `onTestEnd()`
- * fires once per *attempt*, and no property of a single attempt tells you
- * whether Playwright will schedule another one: under
- * `test.describe.configure({ mode: "serial" })` — which every mock-LLM spec
- * uses — a failure re-runs the whole group, so cases that already reported
- * `passed`, and cases cut short with `skipped`, run a second time. Counting
- * attempts, or trying to classify an attempt as final, declares the suite
- * complete while cases are still queued; the workflow's poll loop then breaks
- * on the marker and kills a run that had work left.
+ * A global teardown hook signals completion after test scheduling finishes,
+ * before Playwright tears down webServer plugins. onEnd is a fallback for
+ * startup failures and reconciles the final report after normal teardown.
+ * Neither counting attempts nor counting observed cases is safe in serial
+ * mode: a group retry re-runs already passed and skipped cases.
  */
+let activeReporter: DoneMarkerReporter | undefined;
+
+export function finishTestRun() {
+  activeReporter?.finish();
+}
+
 class DoneMarkerReporter implements Reporter {
   private totalTests = 0;
   /**
@@ -65,6 +64,7 @@ class DoneMarkerReporter implements Reporter {
   private markerDirCreated = false;
 
   onBegin(_config: unknown, suite: { allTests(): TestCase[] }) {
+    activeReporter = this;
     this.totalTests = suite.allTests().length;
   }
 
@@ -85,6 +85,10 @@ class DoneMarkerReporter implements Reporter {
   }
 
   onEnd(_result: FullResult) {
+    this.finish();
+  }
+
+  finish() {
     this.runEnded = true;
     this.writeResults();
     this.writeCompletionMarkers();
@@ -154,7 +158,7 @@ class DoneMarkerReporter implements Reporter {
     }
   }
 
-  /** Write .tests-done and .all-passed — only once the run is over. */
+  /** Publish the verdict after test scheduling ends. */
   private writeCompletionMarkers() {
     const passed = this.allPassed();
     try {
@@ -165,6 +169,8 @@ class DoneMarkerReporter implements Reporter {
       );
       if (passed) {
         writeFileSync(join(MARKER_DIR, ".all-passed"), "1");
+      } else {
+        rmSync(join(MARKER_DIR, ".all-passed"), { force: true });
       }
     } catch {
       // Don't crash Playwright if marker write fails

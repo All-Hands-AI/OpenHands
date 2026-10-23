@@ -1,7 +1,14 @@
 // @vitest-environment node
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 import type { TestCase, TestResult } from "@playwright/test/reporter";
 import {
@@ -400,4 +407,87 @@ describe("DoneMarkerReporter", () => {
       expect(marker(".all-passed")).toBe("1");
     });
   });
+});
+
+describe("real Playwright teardown ordering", () => {
+  it.each([false, true])(
+    "publishes final retry results before webServer shutdown (hang=%s)",
+    (hang) => {
+      const dir = mkdtempSync(join(process.cwd(), ".done-marker-probe-"));
+      const reporter = resolve(
+        "tests/e2e/mock-llm/reporters/done-marker-reporter.ts",
+      );
+      const teardown = resolve(
+        "tests/e2e/mock-llm/reporters/done-marker-teardown.ts",
+      );
+      try {
+        writeFileSync(
+          join(dir, "server.cjs"),
+          `
+const fs = require('node:fs');
+const http = require('node:http');
+const server = http.createServer((req, res) => res.end('ok')).listen(0, '127.0.0.1', () => console.log('ready'));
+process.on('SIGTERM', () => {
+  const dir = '.mock-llm-markers/';
+  fs.writeFileSync('shutdown.json', JSON.stringify({
+    done: fs.existsSync(dir + '.tests-done') ? fs.readFileSync(dir + '.tests-done', 'utf8') : null,
+    passed: fs.existsSync(dir + '.all-passed'),
+    results: JSON.parse(fs.readFileSync(dir + '.results.json', 'utf8'))
+  }));
+  ${hang ? "" : "setTimeout(() => server.close(() => process.exit(0)), 100);"}
+});
+`,
+        );
+        writeFileSync(
+          join(dir, "probe.spec.ts"),
+          `
+import { test, expect } from '@playwright/test';
+import { existsSync } from 'node:fs';
+test.describe.configure({ mode: 'serial' });
+test('first', () => expect(existsSync('.mock-llm-markers/.tests-done')).toBe(false));
+test('flake', ({}, info) => expect(info.retry).toBe(1));
+test('last', () => expect(existsSync('.mock-llm-markers/.tests-done')).toBe(false));
+`,
+        );
+        writeFileSync(
+          join(dir, "playwright.config.ts"),
+          `
+export default {
+  testDir: '.', testMatch: 'probe.spec.ts', workers: 1, retries: 1,
+  reporter: [[${JSON.stringify(reporter)}]],
+  globalTeardown: ${JSON.stringify(teardown)},
+  webServer: { command: 'node server.cjs', wait: { stdout: /ready/ },
+    gracefulShutdown: { signal: 'SIGTERM', timeout: 500 } }
+};
+`,
+        );
+        const run = spawnSync(
+          process.execPath,
+          [
+            resolve("node_modules/playwright/cli.js"),
+            "test",
+            "-c",
+            join(dir, "playwright.config.ts"),
+          ],
+          {
+            cwd: dir,
+            encoding: "utf8",
+            timeout: 30_000,
+          },
+        );
+        expect(run.status, run.stdout + run.stderr).toBe(0);
+        const shutdown = JSON.parse(
+          readFileSync(join(dir, "shutdown.json"), "utf8"),
+        );
+        expect(shutdown).toMatchObject({
+          done: "passed",
+          passed: true,
+          results: { status: "passed", completed: 3, total: 3 },
+        });
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    },
+    40_000,
+  );
 });
