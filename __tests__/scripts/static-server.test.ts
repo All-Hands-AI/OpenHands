@@ -1,5 +1,11 @@
 import { createServer, request, type Server } from "node:http";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -1036,4 +1042,109 @@ describe("static-server.mjs", () => {
     expect(response.body).toContain("Invalid URL");
     expect(server.listening).toBe(true);
   });
+});
+
+describe("static-server.mjs MARS web bridge (Docker arguments)", () => {
+  const servers: Server[] = [];
+  const tempDirs: string[] = [];
+
+  afterEach(async () => {
+    await Promise.all(
+      servers.splice(0).map(
+        (server) =>
+          new Promise<void>((resolve) => {
+            server.close(() => resolve());
+          }),
+      ),
+    );
+    for (const dir of tempDirs.splice(0)) {
+      rmSync(dir, { recursive: true, force: true });
+    }
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  function makeBuildDir() {
+    const buildDir = mkdtempSync(path.join(tmpdir(), "agent-canvas-build-"));
+    tempDirs.push(buildDir);
+    writeFileSync(
+      path.join(buildDir, "index.html"),
+      "<html><head></head><body>app</body></html>",
+    );
+    return buildDir;
+  }
+
+  async function start(
+    overrides: Partial<Parameters<typeof startStaticServer>[0]>,
+  ) {
+    const server = await startStaticServer({
+      port: 0,
+      dir: makeBuildDir(),
+      routes: {},
+      ...overrides,
+    });
+    servers.push(server);
+    const address = server.address();
+    if (!address || typeof address === "string") {
+      throw new Error("Static server did not bind to a TCP port");
+    }
+    return `http://127.0.0.1:${address.port}`;
+  }
+
+  // docker/entrypoint.sh runs `--host :: --session-api-key <key>` with no
+  // `--allow-lan-session-key`: the key is stripped from the HTML, but the
+  // opted-in bridge must still mount behind it.
+  it("mounts with MARS_WEB=1 and the entrypoint's `--host :: --session-api-key` arguments", async () => {
+    vi.stubEnv("MARS_WEB", "1");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const origin = await start({ host: "::", sessionApiKey: "docker-key" });
+    expect(await (await fetch(`${origin}/mars/health`)).json()).toEqual({
+      ok: true,
+      authRequired: true,
+    });
+    const page = await (await fetch(`${origin}/`)).text();
+    expect(page).not.toContain("docker-key");
+    expect(
+      warn.mock.calls.some((c) => String(c[0]).includes("[mars-web]")),
+    ).toBe(false);
+  });
+
+  it("does not mount on a LAN bind with no key (public mode), and warns", async () => {
+    vi.stubEnv("MARS_WEB", "1");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const origin = await start({ host: "::", authRequired: true });
+    const response = await fetch(`${origin}/mars/health`);
+    expect(response.headers.get("content-type")).toMatch(/text\/html/);
+    expect(
+      warn.mock.calls.some((c) =>
+        /\[mars-web\].*not loopback/.test(String(c[0])),
+      ),
+    ).toBe(true);
+  });
+
+  // The public-mode instance binds `::` with no key, so a container-wide
+  // MARS_WEB=1 would make it warn on every start, or, with MARS_WEB_KEY set
+  // too, host a second bridge with its own sign-in state.
+  it("pins the entrypoint's public-mode instance to MARS_WEB=0", () => {
+    const entrypoint = readFileSync(
+      path.resolve(import.meta.dirname, "../../docker/entrypoint.sh"),
+      "utf-8",
+    );
+    expect(
+      entrypoint.match(/^.*node \/opt\/agent-canvas\/static-server\.mjs/gm),
+    ).toEqual([
+      "node /opt/agent-canvas/static-server.mjs",
+      "  MARS_WEB=0 node /opt/agent-canvas/static-server.mjs",
+    ]);
+  });
+
+  it.each([undefined, "0"])(
+    "does not mount with MARS_WEB=%s",
+    async (value) => {
+      vi.stubEnv("MARS_WEB", value);
+      const origin = await start({ host: "127.0.0.1", sessionApiKey: "k" });
+      const response = await fetch(`${origin}/mars/health`);
+      expect(response.headers.get("content-type")).toMatch(/text\/html/);
+    },
+  );
 });
