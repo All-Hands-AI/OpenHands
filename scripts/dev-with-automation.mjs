@@ -57,6 +57,9 @@ import {
   buildAgentServerCommand,
   buildSafeDevConfig,
   buildAgentServerEnv,
+  buildBackendLogEnv,
+  backendLogLevel,
+  uvicornLogLevel,
   buildNpmScriptCommand,
   buildRuntimeServicesInfo,
   buildUvxPythonArgs,
@@ -260,7 +263,7 @@ OPTIONS:
   --dynamic                   Force Vite dev server when a wrapper defaults static
   --frontend-only             Start only the frontend behind ingress
   --backend-only              Start only agent-server + automation behind ingress
-  -v, --verbose               Show detailed output
+  -v, --verbose               Set backend log level to DEBUG (default: WARNING)
   -h, --help                  Show this help
 
 ENVIRONMENT VARIABLES:
@@ -273,6 +276,11 @@ ENVIRONMENT VARIABLES:
   OH_AGENT_SERVER_GIT_REF     Git ref for agent-server SDK (overrides default version)
   OH_AGENT_SERVER_VERSION     Specific PyPI version for agent-server
   OH_SECRET_KEY               Secret key for sessions
+  LOG_LEVEL                   Log level for both backends (default: WARNING)
+                              Python names and aliases both work; aliases and
+                              numbers are mapped onto Uvicorn's own set.
+  AUTOMATION_LOG_LEVEL        Log level for the automation service only
+                              (default: LOG_LEVEL)
 
 SECRETS:
   The session API key is automatically seeded into agent-server secrets
@@ -539,6 +547,9 @@ async function buildConfig(args, env = process.env) {
 
     // Auth — single key for both backends
     sessionApiKey,
+    // Settings encryption key; the MARS web bridge also encrypts saved
+    // DigitalOcean sign-ins with it where the host has no keychain.
+    secretKey: safeConfig.secretKey,
 
     // Public mode — the session key should NOT be baked into the frontend
     isPublic,
@@ -967,6 +978,7 @@ function startAgentServer(config) {
     // advertises resolves to the editor port on the canvas origin.
     ...buildAgentServerEnv(safeConfig, {
       vscodeBasePath: config.vscodeBasePath,
+      verbose: config.verbose,
     }),
     ...buildAgentServerAutomationEnv(config),
     OPENHANDS_REMOTE_WS_READY_REQUIRED:
@@ -1000,6 +1012,32 @@ function startAgentServer(config) {
   );
 }
 
+/**
+ * Extra CLI arguments for the automation service, on top of the uvicorn
+ * invocation the command builder already produced.
+ *
+ * `--log-level` is Uvicorn's own level, separate from the app's `LOG_LEVEL`: it
+ * governs the startup banner and per-request access lines. Keeping it in step
+ * with the service level means a default launch is quiet while `--verbose`
+ * still shows request traffic. The value is narrowed by
+ * {@link uvicornLogLevel}, since Uvicorn rejects the Python aliases and numeric
+ * levels the app itself accepts.
+ *
+ * @param {{autoBackendPort: number, verbose?: boolean}} config
+ * @param {Record<string, string | undefined>} [env]
+ * @returns {string[]}
+ */
+export function buildAutomationLogArgs(config, env = process.env) {
+  return [
+    "--host",
+    "127.0.0.1",
+    "--port",
+    config.autoBackendPort.toString(),
+    "--log-level",
+    uvicornLogLevel(backendLogLevel({ verbose: config.verbose, env })),
+  ];
+}
+
 function startAutomationBackend(config) {
   logService(
     "automation",
@@ -1010,22 +1048,23 @@ function startAutomationBackend(config) {
   const automationCmd = buildAutomationCommand(process.env);
   logService("automation", `Using ${automationCmd.source}`, c.dim);
 
+  // Quiet the automation service by default; see buildBackendLogEnv.
+  const logEnv = buildBackendLogEnv({
+    verbose: config.verbose,
+    automation: true,
+  });
+
   return spawnService(
     "automation",
     automationCmd.command,
-    [
-      ...automationCmd.args,
-      "--host",
-      "127.0.0.1",
-      "--port",
-      config.autoBackendPort.toString(),
-    ],
+    [...automationCmd.args, ...buildAutomationLogArgs(config)],
     {
       cwd: config.stateDir,
       env: {
         // Force UTF-8 for all Python file I/O (same reason as agent-server;
         // see buildAgentServerEnv in dev-safe.mjs).
         PYTHONUTF8: "1",
+        ...logEnv,
         OPENHANDS_REMOTE_WS_READY_REQUIRED:
           process.env.OPENHANDS_REMOTE_WS_READY_REQUIRED || "false",
         // The URL the automation backend itself uses to call the
@@ -1181,13 +1220,19 @@ process.on("SIGHUP", shutdown);
  * destroySession and savePat from any local process, the agent's shell
  * included, so a stack with no session key mounts nothing. Electron turns it
  * off altogether (`config.marsWebBridge`), its preload provides the bridge.
+ * The bridge keeps sign-ins under the stack's state directory, encrypted with
+ * its secret key where the host has no keychain.
  */
 export function buildMarsWebEnv(role, config) {
   if (role === "static" || config.marsWebBridge === false) {
     return { MARS_WEB: "0" };
   }
   return config.sessionApiKey
-    ? { MARS_WEB_KEY: config.sessionApiKey }
+    ? {
+        MARS_WEB_KEY: config.sessionApiKey,
+        ...(config.stateDir ? { MARS_STATE_DIR: config.stateDir } : {}),
+        ...(config.secretKey ? { OH_SECRET_KEY: config.secretKey } : {}),
+      }
     : { MARS_WEB: "0" };
 }
 
