@@ -7,8 +7,6 @@ import { AUTOMATION_FORM_UPDATE_TOOL_NAME } from "#/constants/automation-form";
 
 import {
   ACP_SERVER_TAG_KEY,
-  AGENT_CANVAS_SOURCE,
-  CLIENT_SOURCE_TAG_KEY,
   WORKSPACE_TAG_KEY,
   buildWorkspaceTags,
   buildRuntimeServicesSystemSuffix,
@@ -23,6 +21,7 @@ import {
 } from "#/api/agent-server-adapter";
 import SettingsService from "#/api/settings-service/settings-service.api";
 import { SecretsService } from "#/api/secrets-service";
+import AgentProfilesService from "#/api/agent-profiles-service/agent-profiles-service.api";
 import {
   removeStoredConversationMetadata,
   setStoredConversationMetadata,
@@ -1227,19 +1226,26 @@ describe("profile launch additions", () => {
     expect(skills[0].source).toMatch(new RegExp(`/${entry.name}/SKILL\\.md$`));
   });
 
-  it.each([
-    ["an ACP profile", "acp" as const, (name: string) => `/${name} please`],
-    [
-      "a message that invokes no catalog skill",
-      "openhands" as const,
-      () => "/not-a-catalog-skill please",
-    ],
-  ])("adds no skills for %s", (_case, kind, query) => {
+  it("adds the invoked catalog skill to an ACP launch", () => {
+    const [entry] = SKILLS_CATALOG;
+    const payload = buildStartConversationRequest({
+      settings: DEFAULT_SETTINGS,
+      agentProfileId: "profile-acp",
+      agentProfileKind: "acp",
+      query: `/${entry.name} please`,
+    });
+
+    expect(additionsOf(payload)?.skills?.map((skill) => skill.name)).toContain(
+      entry.name,
+    );
+  });
+
+  it("adds no skills for a message that invokes no catalog skill", () => {
     const payload = buildStartConversationRequest({
       settings: DEFAULT_SETTINGS,
       agentProfileId: "profile-1",
-      agentProfileKind: kind,
-      query: query(SKILLS_CATALOG[0].name),
+      agentProfileKind: "openhands",
+      query: "/not-a-catalog-skill please",
     });
 
     expect(additionsOf(payload)?.skills).toBeUndefined();
@@ -1337,6 +1343,45 @@ describe("buildStartConversationRequestWithEncryptedSettings", () => {
 
     expect(payload.hook_config).toBeUndefined();
     expect(payload.agent_profile_id).toBe("profile-1");
+  });
+
+  describe("skills for an ACP launch", () => {
+    const launch = () =>
+      buildStartConversationRequestWithEncryptedSettings({
+        settings: DEFAULT_SETTINGS,
+        agentProfileId: "profile-acp",
+        agentProfileKind: "acp",
+        hooksProjectDir: null,
+      });
+    const skillNames = (payload: unknown) =>
+      (additionsOf(payload)?.skills ?? []).map((skill) => skill.name);
+    const [first, second] = SKILLS_CATALOG;
+
+    it("follows the OpenHands default profile that owns the Skills page", async () => {
+      const profileSpy = vi
+        .spyOn(AgentProfilesService, "getProfile")
+        .mockResolvedValue({
+          profile: {
+            agent_kind: "openhands",
+            public_skills: [first.name, second.name],
+            disabled_skills: [first.name],
+          },
+        } as unknown as Awaited<
+          ReturnType<typeof AgentProfilesService.getProfile>
+        >);
+
+      expect(skillNames(await launch())).toEqual([second.name]);
+      profileSpy.mockRestore();
+    });
+
+    it("falls back to the settings lists when there is no default profile", async () => {
+      const profileSpy = vi
+        .spyOn(AgentProfilesService, "getProfile")
+        .mockRejectedValue(new Error("404"));
+
+      expect(skillNames(await launch()).length).toBeGreaterThan(2);
+      profileSpy.mockRestore();
+    });
   });
 
   it("routes the first message for a profile that carries a router", async () => {
