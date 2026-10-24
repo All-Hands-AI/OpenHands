@@ -119,4 +119,40 @@ describe("unpackTarGzip", () => {
       unpackTarGzip(packTar(files), { maxTotalBytes: 20 }),
     ).rejects.toBeInstanceOf(TarTooLargeError);
   });
+
+  it.each(["plain", "gzip"])(
+    "accepts a %s archive at the exact size budget",
+    async (format) => {
+      // Arrange
+      const plainArchive = packTar(files);
+      const archive =
+        format === "gzip"
+          ? new Uint8Array(await packTarGzip(files))
+          : plainArchive;
+
+      // Act
+      const entries = await unpackTarGzip(archive, {
+        maxTotalBytes: plainArchive.byteLength,
+      });
+
+      // Assert
+      expect(entries).toHaveLength(files.length);
+    },
+  );
+
+  it("stops inflating when a gzip stream crosses the size budget", async () => {
+    // Arrange: corrupt the checksum after a highly compressible payload. A
+    // streaming size check reaches the limit before it reaches the bad footer.
+    const archive = new Uint8Array(
+      await packTarGzip([
+        { name: "large.txt", content: "x".repeat(1024 * 1024) },
+      ]),
+    );
+    archive[archive.length - 8] ^= 0xff;
+
+    // Act + Assert
+    await expect(
+      unpackTarGzip(archive, { maxTotalBytes: 64 * 1024 }),
+    ).rejects.toBeInstanceOf(TarTooLargeError);
+  });
 });

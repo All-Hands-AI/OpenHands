@@ -60,6 +60,7 @@ function isGzip(bytes: Uint8Array): boolean {
 
 async function gunzip(
   bytes: Uint8Array<ArrayBuffer>,
+  maxTotalBytes: number,
 ): Promise<Uint8Array<ArrayBuffer>> {
   // Streamed from the bytes rather than through a Blob, mirroring
   // `packTarGzip`: a Blob's stream() is absent in the jsdom test environment.
@@ -69,10 +70,21 @@ async function gunzip(
       controller.close();
     },
   });
-  const inflated = new Response(
-    source.pipeThrough(new DecompressionStream("gzip")),
-  );
-  return new Uint8Array(await inflated.arrayBuffer());
+  let totalBytes = 0;
+  const bounded = source
+    .pipeThrough(new DecompressionStream("gzip"))
+    .pipeThrough(
+      new TransformStream<Uint8Array<ArrayBuffer>, Uint8Array<ArrayBuffer>>({
+        transform(chunk, controller) {
+          totalBytes += chunk.byteLength;
+          if (totalBytes > maxTotalBytes) {
+            throw new TarTooLargeError(maxTotalBytes);
+          }
+          controller.enqueue(chunk);
+        },
+      }),
+    );
+  return new Uint8Array(await new Response(bounded).arrayBuffer());
 }
 
 /** A NUL-terminated header string field. */
@@ -122,15 +134,19 @@ function decodeText(bytes: Uint8Array): string | null {
  *
  * Throws `TarFormatError` when the bytes are not an archive — a response
  * that is really an error page, say — and `TarTooLargeError` once the
- * unpacked members exceed `maxTotalBytes`.
+ * inflated archive exceeds `maxTotalBytes`.
  */
 export async function unpackTarGzip(
   bytes: Uint8Array<ArrayBuffer>,
   options: { maxTotalBytes: number },
 ): Promise<TarEntry[]> {
-  const archive = isGzip(bytes) ? await gunzip(bytes) : bytes;
+  const archive = isGzip(bytes)
+    ? await gunzip(bytes, options.maxTotalBytes)
+    : bytes;
+  if (archive.byteLength > options.maxTotalBytes) {
+    throw new TarTooLargeError(options.maxTotalBytes);
+  }
   const entries: TarEntry[] = [];
-  let unpackedBytes = 0;
 
   let offset = 0;
   while (offset + BLOCK_SIZE <= archive.length) {
@@ -150,10 +166,6 @@ export async function unpackTarGzip(
 
     const typeflag = String.fromCharCode(header[TYPEFLAG_OFFSET]);
     if (REGULAR_FILE_TYPEFLAGS.has(typeflag)) {
-      unpackedBytes += size;
-      if (unpackedBytes > options.maxTotalBytes) {
-        throw new TarTooLargeError(options.maxTotalBytes);
-      }
       entries.push({
         path: entryPath(header),
         size,
