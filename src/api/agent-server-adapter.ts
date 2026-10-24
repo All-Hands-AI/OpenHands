@@ -970,6 +970,7 @@ type StartConversationPayloadBase = Record<string, unknown> & {
   stuck_detection: true;
   autotitle: boolean;
   title_llm_profile?: string;
+  prompt?: string;
   worktree: boolean;
   secrets_encrypted?: true;
   conversation_id?: string;
@@ -1030,6 +1031,7 @@ export interface StartConversationOptions {
   /** The ACP profile's server, stamped as the `acpserver` tag. */
   acpServer?: string;
   titleLlmProfile?: string;
+  prompt?: string;
   runtimeServicesInfo?: RuntimeServicesInfo | null;
   executionRuntime?: AgentServerInfo["execution_runtime"];
   workspaceHookConfig?: HookConfig | null;
@@ -1141,6 +1143,7 @@ export function buildStartConversationRequest(
     ...(options.titleLlmProfile
       ? { title_llm_profile: options.titleLlmProfile }
       : {}),
+    ...(options.prompt ? { prompt: options.prompt } : {}),
     worktree:
       options.executionRuntime === "docker"
         ? false
@@ -1520,6 +1523,7 @@ export async function buildStartConversationRequestWithEncryptedSettings(options
   profileHasRouter?: boolean;
   acpServer?: string;
   titleLlmProfile?: string;
+  prompt?: string;
 }): Promise<Record<string, unknown>> {
   const [{ SecretsService }, { default: HooksService }] = await Promise.all([
     import("./secrets-service"),
