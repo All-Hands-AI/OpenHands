@@ -181,6 +181,36 @@ describe("AgentServerConversationService cloud branch", () => {
     expect(requestBody).not.toHaveProperty("agent_launch_additions");
   });
 
+  it("createConversation omits agent_launch_additions on the cloud path when an LLM profile was explicitly picked (#18773)", async () => {
+    fetchMock.mockResolvedValue(
+      mockJsonResponse({
+        id: "task-127",
+        created_by_user_id: null,
+        status: "WORKING",
+        detail: null,
+        app_conversation_id: null,
+        agent_server_url: null,
+        request: {},
+        created_at: "2026-05-06T00:00:00Z",
+        updated_at: "2026-05-06T00:00:00Z",
+      }),
+    );
+
+    await AgentServerConversationService.createConversation({
+      initialUserMsg: "fix the bug",
+      runRouterAtConversationStart: true,
+      hasActiveMetaProfile: true,
+      llmProfile: "claude-opus",
+    });
+
+    const [, init] = getFetchCall(fetchMock);
+    const requestBody = getJsonBody(init);
+
+    expect(requestBody).not.toHaveProperty("agent_launch_additions");
+    // The pick itself still lands on the launch.
+    expect(requestBody).toHaveProperty("llm_profile", "claude-opus");
+  });
+
   it("getStartTask polls /api/v1/app-conversations/start-tasks?ids= directly", async () => {
     fetchMock.mockResolvedValue(
       mockJsonResponse([
