@@ -58,6 +58,9 @@ import {
   NoBackendAvailableError,
 } from "../agent-server-client-options";
 import SettingsService from "../settings-service/settings-service.api";
+import SetupScriptService, {
+  type SetupScriptStatusUpdate,
+} from "../setup-script-service";
 import { getTelemetryDistinctId } from "../../services/telemetry";
 import {
   ConversationMetadata,
@@ -82,6 +85,7 @@ import type {
   AppConversationStartRequest,
   AppConversationStartTask,
   MetricsSnapshot,
+  MessageContent,
   RuntimeConversationInfo,
   RuntimeConversationStats,
   SendMessageRequest,
@@ -99,6 +103,40 @@ const INVALID_CONVERSATION_RESPONSE_MESSAGE =
   "update the agent server if needed.";
 function invalidConversationResponse(): Error {
   return new Error(INVALID_CONVERSATION_RESPONSE_MESSAGE);
+}
+
+/**
+ * A conversation was created but its withheld first message could not be sent.
+ *
+ * The workspace bootstrap splits what used to be one request into create +
+ * send, so a failed send leaves a real, idle conversation behind. Carrying its
+ * id lets a caller recover — retry the message on the same conversation —
+ * instead of creating a second one and stranding the first.
+ *
+ * The exact `content` the send was attempted with is carried too: the local
+ * path folds `conversationInstructions` into the message body, so rebuilding
+ * the retry from the caller's raw `query` alone would drop those instructions
+ * (and leave no retry at all for an instructions-only launch).
+ */
+export class ConversationFirstMessageError extends Error {
+  readonly conversationId: string;
+  readonly content: MessageContent[];
+  readonly cause: unknown;
+
+  constructor(
+    conversationId: string,
+    content: MessageContent[],
+    cause: unknown,
+  ) {
+    const detail = cause instanceof Error ? cause.message : String(cause);
+    super(
+      `Conversation ${conversationId} was created, but its first message could not be sent: ${detail}`,
+    );
+    this.name = "ConversationFirstMessageError";
+    this.conversationId = conversationId;
+    this.content = content;
+    this.cause = cause;
+  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -472,6 +510,12 @@ export interface CreateConversationOptions {
   agentLlmProfileRef?: string | null;
   /** Local only: run the agent profile with this LLM profile instead of its own. */
   agentLlmProfileOverride?: string;
+  /**
+   * Progress of the workspace bootstrap (`.openhands/setup.sh`). Called with
+   * "running" before the script starts and a terminal phase after, so the UI
+   * can show a non-blocking indicator. Absent for workspaces with no script.
+   */
+  onSetupScriptProgress?: (update: SetupScriptStatusUpdate) => void;
   /** Cloud only: run this conversation on the named LLM profile (`llm_profile`). */
   llmProfile?: string;
 }
@@ -535,6 +579,7 @@ class AgentServerConversationService {
       agentLlmProfileOverride,
       profileHasRouter,
       acpServer,
+      onSetupScriptProgress,
       llmProfile,
     } = options;
 
@@ -617,6 +662,18 @@ class AgentServerConversationService {
     const resolvedWorkspaceMode =
       workspaceMode ?? (workingDirOverride ? "local_repo" : "new_worktree");
 
+    // Detect the workspace bootstrap before creating the conversation so the
+    // first agent turn can be withheld until setup finishes: the script
+    // typically installs dependencies that turn needs. Probing the requested
+    // workspace is enough to decide *whether* to withhold — a `new_worktree`
+    // launch copies the attached workspace, so it carries the same script.
+    // `isSupported` is false on cloud backends, older agent-servers, and when
+    // the pinned client lacks `executeTool`, so other launch paths are
+    // unchanged.
+    const preCreatePlan = (await SetupScriptService.isSupported())
+      ? await SetupScriptService.prepare(workingDir)
+      : null;
+
     // Use encrypted settings to avoid exposing secrets in the browser
     const payload = await buildStartConversationRequestWithEncryptedSettings({
       settings,
@@ -655,6 +712,19 @@ class AgentServerConversationService {
       payload.tags = { ...existingTags, ...workspaceTags };
     }
 
+    // Hold the first message back so setup runs before the agent's first turn.
+    // `initial_message` is what starts the run server-side, so removing it
+    // creates the conversation idle; the message is re-sent below. Only done
+    // when setup is possible, so the no-setup path stays a single request.
+    const withheldInitialMessage = preCreatePlan
+      ? (payload.initial_message as
+          | AppConversationStartRequest["initial_message"]
+          | undefined)
+      : undefined;
+    if (withheldInitialMessage) {
+      delete payload.initial_message;
+    }
+
     const telemetryDistinctId = await getTelemetryDistinctId();
     const data = await new ConversationClient(
       getAgentServerClientOptions({ timeout: CREATE_CONVERSATION_TIMEOUT_MS }),
@@ -665,13 +735,45 @@ class AgentServerConversationService {
     const localBackend = getEffectiveLocalBackend();
     if (!localBackend) throw new NoBackendAvailableError();
 
+    // Re-target setup at the workspace the server actually assigned. A
+    // `new_worktree` launch does not run in the requested dir: the server cuts
+    // a fresh worktree (`/…/conversation-worktrees/<id>/…`) and reports it in
+    // `workspace.working_dir`. Sourcing the script from the requested dir would
+    // run it against the user's own checkout — polluting it and leaving the
+    // worktree the agent uses unprovisioned. Probe the reported workspace, and
+    // if the script is not there, fall through to sending the withheld message
+    // so the launch still starts.
+    const assignedWorkingDir = data.workspace?.working_dir;
+    const setupPlan =
+      preCreatePlan && assignedWorkingDir && assignedWorkingDir !== workingDir
+        ? await SetupScriptService.prepare(assignedWorkingDir)
+        : preCreatePlan;
+
+    if (setupPlan) {
+      const result = await SetupScriptService.run(
+        setupPlan,
+        data.id,
+        onSetupScriptProgress,
+      );
+      if (result.status === "ran" && result.failed) {
+        console.warn(
+          `\`.openhands/setup.sh\` exited with code ${result.exitCode}; starting the agent anyway.`,
+        );
+      } else if (result.status === "error") {
+        console.warn(
+          `Could not run \`.openhands/setup.sh\`; starting the agent anyway: ${result.message}`,
+        );
+      }
+    }
+
+    // Persist the home-page selection before the first message is sent, so a
+    // failed send still leaves a fully-described conversation in the sidebar.
+    // The agent-server runtime has no concept of selected repo/branch/
+    // workspace, so this lives client-side: `toAppConversation` reads the
+    // repo/branch fields back to hydrate the chat-page badges;
+    // `useHasAttachedSource` reads `selected_workspace` to default the Files
+    // tab to Diff mode when the user explicitly attached a local workspace.
     if (metadata?.selected_repository || workingDirOverride) {
-      // The agent-server runtime has no concept of selected repo/branch/
-      // workspace, so persist the home-page selection client-side.
-      // `toAppConversation` reads the repo/branch fields back to hydrate
-      // the chat-page badges; `useHasAttachedSource` reads
-      // `selected_workspace` to default the Files tab to Diff mode when
-      // the user explicitly attached a local workspace.
       setStoredConversationMetadata(data.id, {
         selected_repository: metadata?.selected_repository ?? null,
         selected_branch: metadata?.selected_branch ?? null,
@@ -679,6 +781,30 @@ class AgentServerConversationService {
         selected_workspace: workingDirOverride ?? null,
         workspace_mode: resolvedWorkspaceMode,
       });
+    }
+
+    // Sending the withheld message with `run: true` starts the agent's first
+    // turn, now that setup has run in the same terminal session. The
+    // conversation already exists, so a failed send must not lose its id: a
+    // caller that retried blindly would strand this conversation idle and
+    // create another. Surface the id on the error so the caller can recover on
+    // the same conversation. Deliberately not retried here — the server may
+    // have accepted the event before the response was lost, and a blind retry
+    // would duplicate the user's first message.
+    if (withheldInitialMessage) {
+      try {
+        await new ConversationClient(
+          getAgentServerClientOptions({
+            timeout: CREATE_CONVERSATION_TIMEOUT_MS,
+          }),
+        ).sendEvent(data.id, withheldInitialMessage, { run: true });
+      } catch (error) {
+        throw new ConversationFirstMessageError(
+          data.id,
+          withheldInitialMessage.content,
+          error,
+        );
+      }
     }
 
     return {
@@ -689,7 +815,9 @@ class AgentServerConversationService {
       app_conversation_id: data.id,
       agent_server_url: localBackend.host,
       request: {
-        initial_message: payload.initial_message as
+        // The withheld message was sent after setup ran, so report it here for
+        // callers that inspect the launch (the value is unchanged either way).
+        initial_message: (withheldInitialMessage ?? payload.initial_message) as
           | AppConversationStartRequest["initial_message"]
           | undefined,
         plugins: plugins ?? null,
