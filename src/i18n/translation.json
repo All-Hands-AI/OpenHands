@@ -8225,6 +8225,24 @@
     "ca": "Inicia una conversa nova",
     "id": "Mulai percakapan baru"
   },
+  "CONVERSATION$NEW_IN_SANDBOX": {
+    "en": "New Conversation in Sandbox",
+    "ja": "サンドボックスで新規会話",
+    "zh-CN": "在沙箱中新建对话",
+    "zh-TW": "在沙箱中新增對話",
+    "ko-KR": "샌드박스에서 새 대화",
+    "no": "Ny samtale i sandkassen",
+    "it": "Nuova conversazione nella sandbox",
+    "pt": "Nova conversa no sandbox",
+    "es": "Nueva conversación en el sandbox",
+    "ar": "محادثة جديدة في بيئة الاختبار",
+    "fr": "Nouvelle conversation dans le sandbox",
+    "tr": "Sandbox içinde yeni sohbet",
+    "de": "Neue Unterhaltung in der Sandbox",
+    "uk": "Нова розмова в пісочниці",
+    "ca": "Conversa nova al sandbox",
+    "id": "Percakapan baru di sandbox"
+  },
   "CONVERSATION$REPOSITORY": {
     "en": "Repository",
     "ja": "リポジトリ",
