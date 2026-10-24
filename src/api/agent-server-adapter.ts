@@ -628,6 +628,11 @@ export const RESERVED_CONVERSATION_TAG_KEYS: ReadonlySet<string> = new Set([
   "archiveworkspacepath",
   "workspace",
   "working_dir",
+  // `pinned` / `archived` are the sidebar's pin/archive flags (see
+  // `conversation-tag-flags.ts`), surfaced by the pin icon and the archived
+  // presentation rather than as generic tag chips.
+  "pinned",
+  "archived",
   LOCAL_PLANNER_PARENT_TAG_KEY,
 ]);
 
